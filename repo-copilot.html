@@ -12,7 +12,7 @@
 /* === ART DIRECTION ===
    Concept: developer tool, mobile-first, dense
    Palette: Nexus dark surfaces, Hydra Teal accent
-   Typography: Satoshi body only — no display font needed
+   Typography: Satoshi body only
    Density: maximum, compact, thumb-optimized */
 
 :root, [data-theme="light"] {
@@ -103,10 +103,8 @@ a, button, [role="button"] { transition: color var(--transition-interactive), ba
 :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: var(--radius-sm); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
 
-/* === LAYOUT === */
 .app { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
 
-/* HEADER */
 .header { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex-shrink: 0; min-height: 52px; }
 .header-logo { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
 .header-logo svg { width: 24px; height: 24px; color: var(--color-primary); }
@@ -116,7 +114,6 @@ a, button, [role="button"] { transition: color var(--transition-interactive), ba
 .theme-toggle:hover { color: var(--color-text); background: var(--color-surface-dynamic); }
 .theme-toggle:active { background: var(--color-surface-offset-2); }
 
-/* TABS */
 .tabs { display: flex; background: var(--color-surface); border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
 .tab { flex: 1; padding: var(--space-3) var(--space-2); font-size: var(--text-sm); font-weight: 500; color: var(--color-text-muted); border-bottom: 2px solid transparent; text-align: center; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
 .tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
@@ -124,17 +121,14 @@ a, button, [role="button"] { transition: color var(--transition-interactive), ba
 .tab:active { background: var(--color-surface-offset-2); }
 .tab-badge { background: var(--color-primary); color: var(--color-text-inverse); font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: var(--radius-full); display: inline-flex; align-items: center; justify-content: center; padding: 0 5px; }
 
-/* MAIN CONTENT */
 .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
 .panel { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; flex-direction: column; }
 .panel.active { display: flex; }
 
-/* SECTIONS */
 .section { padding: var(--space-4); border-bottom: 1px solid var(--color-divider); }
 .section:last-child { border-bottom: none; }
 .section-label { font-size: var(--text-xs); font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: var(--space-3); }
 
-/* INPUTS */
 .input-row { display: flex; gap: var(--space-2); }
 .input { flex: 1; background: var(--color-surface-offset); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-3); font-size: var(--text-sm); color: var(--color-text); min-height: 44px; transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive); }
 .input::placeholder { color: var(--color-text-faint); }
@@ -143,7 +137,6 @@ a, button, [role="button"] { transition: color var(--transition-interactive), ba
 textarea.input { min-height: 80px; resize: vertical; }
 select.input { cursor: pointer; }
 
-/* BUTTONS */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); font-size: var(--text-sm); font-weight: 600; border-radius: var(--radius-md); min-height: 44px; white-space: nowrap; }
 .btn-primary { background: var(--color-primary); color: var(--color-text-inverse); }
 .btn-primary:hover { background: var(--color-primary-hover); }
@@ -159,13 +152,18 @@ select.input { cursor: pointer; }
 .btn-sm { padding: var(--space-2) var(--space-3); min-height: 36px; font-size: var(--text-xs); }
 .btn-full { width: 100%; }
 
-/* FILTER BUTTONS — active = teal primary style */
 .filter-btn { padding: var(--space-2) var(--space-3); min-height: 36px; font-size: var(--text-xs); font-weight: 600; border-radius: var(--radius-md); background: var(--color-surface-dynamic); color: var(--color-text-muted); border: 1px solid var(--color-border); transition: background var(--transition-interactive), color var(--transition-interactive), border-color var(--transition-interactive); }
 .filter-btn:hover { background: var(--color-surface-offset-2); color: var(--color-text); }
 .filter-btn.active { background: var(--color-primary); color: var(--color-text-inverse); border-color: var(--color-primary); }
 .filter-btn.active:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
 
-/* REPO INFO CARD */
+/* PAT row */
+.pat-row { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
+.pat-row label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; flex-shrink: 0; }
+.rate-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); background: var(--color-primary-highlight); color: var(--color-primary); flex-shrink: 0; }
+.rate-badge.warn { background: color-mix(in oklch, var(--color-warning) 15%, var(--color-surface)); color: var(--color-warning); }
+.rate-badge.danger { background: color-mix(in oklch, var(--color-error) 15%, var(--color-surface)); color: var(--color-error); }
+
 .repo-card { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); }
 .repo-card-name { font-size: var(--text-base); font-weight: 700; color: var(--color-text); margin-bottom: var(--space-1); }
 .repo-card-desc { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--space-3); line-height: 1.5; }
@@ -173,7 +171,6 @@ select.input { cursor: pointer; }
 .repo-meta-item { display: flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); color: var(--color-text-muted); }
 .repo-meta-item svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-/* STATUS */
 .status { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-md); font-size: var(--text-xs); }
 .status-loading { background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface)); color: var(--color-primary); }
 .status-error { background: color-mix(in oklch, var(--color-error) 10%, var(--color-surface)); color: var(--color-error); }
@@ -181,7 +178,6 @@ select.input { cursor: pointer; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* MAILBOX PINNED SECTION */
 .mailbox-section { background: color-mix(in oklch, var(--color-primary) 6%, var(--color-surface)); border-bottom: 1px solid var(--color-divider); flex-shrink: 0; }
 .mailbox-header { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); cursor: pointer; min-height: 40px; }
 .mailbox-header:hover { background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface)); }
@@ -199,11 +195,9 @@ select.input { cursor: pointer; }
 .mailbox-item-cb { width: 14px; height: 14px; accent-color: var(--color-primary); cursor: pointer; flex-shrink: 0; }
 .mailbox-empty { font-size: var(--text-xs); color: var(--color-text-faint); padding: var(--space-2) var(--space-3); }
 
-/* FILE TREE */
 .file-tree-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-divider); align-items: center; flex-shrink: 0; }
 .file-tree-toolbar .toolbar-left { display: flex; gap: var(--space-2); flex: 1; flex-wrap: wrap; align-items: center; }
 .toolbar-divider { width: 1px; height: 20px; background: var(--color-border); flex-shrink: 0; }
-.filter-summary { font-size: var(--text-xs); color: var(--color-primary); font-weight: 600; padding: var(--space-1) var(--space-2); background: var(--color-primary-highlight); border-radius: var(--radius-sm); display: none; }
 .file-count { font-size: var(--text-xs); color: var(--color-text-muted); align-self: center; flex-shrink: 0; }
 
 .tree-container { flex: 1; overflow-y: auto; padding: var(--space-2); }
@@ -222,7 +216,6 @@ select.input { cursor: pointer; }
 .tree-children { padding-left: var(--space-5); display: none; }
 .tree-children.open { display: block; }
 
-/* FILE PREVIEW SHEET */
 .sheet-backdrop { position: fixed; inset: 0; background: oklch(0.1 0 0 / 0.6); z-index: 100; display: none; backdrop-filter: blur(2px); }
 .sheet-backdrop.open { display: block; }
 .sheet { position: fixed; bottom: 0; left: 0; right: 0; max-height: 85dvh; background: var(--color-surface); border-radius: var(--radius-xl) var(--radius-xl) 0 0; z-index: 101; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1); box-shadow: var(--shadow-lg); }
@@ -235,12 +228,10 @@ select.input { cursor: pointer; }
 .sheet-body { flex: 1; overflow-y: auto; padding: var(--space-4); }
 .code-block { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; font-size: 12px; line-height: 1.6; color: var(--color-text); white-space: pre-wrap; word-break: break-word; background: var(--color-surface-offset); padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--color-border); }
 
-/* EXPORT SECTION */
 .export-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .export-info { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3); padding: var(--space-3); background: var(--color-surface-offset); border-radius: var(--radius-md); line-height: 1.6; }
 .export-info strong { color: var(--color-text); }
 
-/* CHAT PANEL */
 .chat-wrap { display: flex; flex-direction: column; height: 100%; }
 .chat-config { padding: var(--space-4); border-bottom: 1px solid var(--color-divider); display: flex; flex-direction: column; gap: var(--space-3); flex-shrink: 0; }
 .form-row { display: flex; flex-direction: column; gap: var(--space-1); }
@@ -248,6 +239,18 @@ select.input { cursor: pointer; }
 .form-row-inline { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .token-est { font-size: var(--text-xs); color: var(--color-text-faint); text-align: right; margin-top: var(--space-1); }
 .token-est span { color: var(--color-primary); font-weight: 600; }
+
+/* Preset select */
+.preset-row { display: flex; gap: var(--space-2); align-items: center; }
+.preset-select { flex: 1; background: var(--color-surface-offset); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-3); font-size: var(--text-xs); color: var(--color-text-muted); min-height: 36px; cursor: pointer; }
+.preset-select:focus { outline: none; border-color: var(--color-primary); }
+
+/* Session log export button in chat header */
+.chat-toolbar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-divider); background: var(--color-surface); flex-shrink: 0; }
+.chat-toolbar-label { font-size: var(--text-xs); color: var(--color-text-faint); flex: 1; }
+.btn-log { font-size: var(--text-xs); font-weight: 600; padding: var(--space-1) var(--space-3); min-height: 30px; border-radius: var(--radius-md); background: var(--color-surface-dynamic); color: var(--color-text-muted); border: 1px solid var(--color-border); display: flex; align-items: center; gap: var(--space-1); }
+.btn-log:hover { color: var(--color-text); background: var(--color-surface-offset-2); }
+.btn-log:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .chat-messages { flex: 1; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
 .chat-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); color: var(--color-text-faint); padding: var(--space-8); text-align: center; }
@@ -268,13 +271,11 @@ select.input { cursor: pointer; }
 .chat-send:active { background: var(--color-primary-active); }
 .chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* LOADING DOTS */
 @keyframes loading-dots { 0%, 80%, 100% { opacity: 0; } 40% { opacity: 1; } }
 .loading-dots span { animation: loading-dots 1.4s ease-in-out infinite; display: inline-block; }
 .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
 .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
 
-/* BADGE */
 .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--radius-full); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .badge-teal { background: var(--color-primary-highlight); color: var(--color-primary); }
 </style>
@@ -282,7 +283,6 @@ select.input { cursor: pointer; }
 <body>
 <div class="app">
 
-  <!-- HEADER -->
   <header class="header">
     <div class="header-logo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="repo-copilot logo">
@@ -296,7 +296,6 @@ select.input { cursor: pointer; }
     </button>
   </header>
 
-  <!-- TABS -->
   <nav class="tabs" role="tablist">
     <button class="tab active" role="tab" data-tab="files" aria-selected="true">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
@@ -309,13 +308,11 @@ select.input { cursor: pointer; }
     </button>
   </nav>
 
-  <!-- MAIN -->
   <main class="main">
 
     <!-- FILES PANEL -->
     <div class="panel active" id="panel-files" role="tabpanel">
 
-      <!-- REPO LOADER -->
       <div class="section">
         <div class="section-label">Repository</div>
         <div class="input-row" style="margin-bottom:var(--space-2)">
@@ -324,11 +321,16 @@ select.input { cursor: pointer; }
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
-        <div id="repo-status"></div>
+        <!-- PAT row -->
+        <div class="pat-row">
+          <label for="pat-input">GitHub PAT</label>
+          <input class="input" id="pat-input" type="password" placeholder="ghp_... (optional, unlocks private repos &amp; 5000 req/hr)" autocomplete="off" style="font-size:var(--text-xs);min-height:36px;">
+          <span class="rate-badge" id="rate-badge" style="display:none"></span>
+        </div>
+        <div id="repo-status" style="margin-top:var(--space-2)"></div>
         <div id="repo-card" style="display:none;margin-top:var(--space-3)"></div>
       </div>
 
-      <!-- MAILBOX PINNED (hidden until loaded) -->
       <div id="mailbox-section" class="mailbox-section" style="display:none">
         <div class="mailbox-header" id="mailbox-header" role="button" aria-expanded="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -338,7 +340,6 @@ select.input { cursor: pointer; }
         <div class="mailbox-list open" id="mailbox-list"></div>
       </div>
 
-      <!-- FILE TREE (hidden until loaded) -->
       <div id="tree-section" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
         <div class="file-tree-toolbar">
           <div class="toolbar-left">
@@ -356,7 +357,6 @@ select.input { cursor: pointer; }
         <div class="tree-container" id="tree-container"></div>
       </div>
 
-      <!-- EXPORT (hidden until files loaded) -->
       <div id="export-section" style="display:none" class="section">
         <div class="section-label">Export</div>
         <div class="export-info" id="export-info"></div>
@@ -413,6 +413,31 @@ select.input { cursor: pointer; }
           <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
         </div>
 
+        <!-- Session log toolbar -->
+        <div class="chat-toolbar">
+          <span class="chat-toolbar-label" id="session-log-label">No turns yet</span>
+          <button class="btn-log" id="export-log-btn" disabled aria-label="Export session log">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Log
+          </button>
+        </div>
+
+        <!-- Preset row -->
+        <div style="padding:var(--space-2) var(--space-4) var(--space-2);border-bottom:1px solid var(--color-divider);background:var(--color-surface);flex-shrink:0">
+          <div class="preset-row">
+            <select class="preset-select" id="preset-select" aria-label="Prompt preset">
+              <option value="">— Prompt preset —</option>
+              <option value="explain">Explain this codebase architecture</option>
+              <option value="debug">Find potential bugs in this code</option>
+              <option value="summarize">Summarize what each file does</option>
+              <option value="refactor">Suggest refactoring improvements</option>
+              <option value="security">Review for security issues</option>
+              <option value="deps">Explain key dependencies and why they're used</option>
+              <option value="onboard">Write an onboarding guide for a new developer</option>
+            </select>
+          </div>
+        </div>
+
         <div class="chat-messages" id="chat-messages">
           <div class="chat-empty" id="chat-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -432,7 +457,6 @@ select.input { cursor: pointer; }
   </main>
 </div>
 
-<!-- FILE PREVIEW SHEET -->
 <div class="sheet-backdrop" id="sheet-backdrop"></div>
 <div class="sheet" id="preview-sheet" role="dialog" aria-modal="true" aria-label="File preview">
   <div class="sheet-header">
@@ -447,7 +471,7 @@ select.input { cursor: pointer; }
 </div>
 
 <script>
-// =================== THEME TOGGLE ===================
+// =================== THEME ===================
 (function(){
   const t = document.querySelector('[data-theme-toggle]');
   const r = document.documentElement;
@@ -457,11 +481,7 @@ select.input { cursor: pointer; }
   const moonIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
   function updateIcon() { t.innerHTML = d === 'dark' ? sunIcon : moonIcon; }
   updateIcon();
-  t.addEventListener('click', () => {
-    d = d === 'dark' ? 'light' : 'dark';
-    r.setAttribute('data-theme', d);
-    updateIcon();
-  });
+  t.addEventListener('click', () => { d = d === 'dark' ? 'light' : 'dark'; r.setAttribute('data-theme', d); updateIcon(); });
 })();
 
 // =================== TABS ===================
@@ -483,27 +503,26 @@ let fileContents = {};
 let checkedPaths = new Set();
 let expandedDirs = new Set();
 let mailboxFiles = [];
-// activeFilters: Set of 'code'|'docs'|'config' — empty means no filter active
 let activeFilters = new Set();
+// Session log: array of { turn, timestamp, repo, filesSelected, prompt, response }
+let sessionLog = [];
 
 const CODE_EXTS   = new Set(['.js','.ts','.jsx','.tsx','.py','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte']);
 const DOC_EXTS    = new Set(['.md','.txt','.rst','.mdx','.csv','.log','.pdf']);
 const CONFIG_EXTS = new Set(['.json','.yaml','.yml','.toml','.env','.gitignore','.eslintrc','.prettierrc','.editorconfig','.nvmrc','.html','.css','.sh']);
-// Combined set for "any known" extension (used by All button)
-const ALL_KNOWN_EXTS = new Set([...CODE_EXTS, ...DOC_EXTS, ...CONFIG_EXTS]);
 
 function getExt(path) {
   if (!path.includes('.')) return '';
   const base = path.split('/').pop();
   const dotIdx = base.lastIndexOf('.');
-  if (dotIdx === 0) return base.toLowerCase(); // dotfiles like .gitignore
+  if (dotIdx === 0) return base.toLowerCase();
   return ('.' + base.slice(dotIdx + 1)).toLowerCase();
 }
 
 function parseRepoInput(val) {
   val = val.trim();
-  val = val.replace(/^https?:\/\/(www\.)?github\.com\//,'');
-  val = val.replace(/\.git$/,'');
+  val = val.replace(/^https?:\/\/(www\.)?github\.com\//, '');
+  val = val.replace(/\.git$/, '');
   const parts = val.split('/').filter(Boolean);
   if (parts.length >= 2) return { owner: parts[0], repo: parts[1] };
   if (parts.length === 1) return { owner: 'nothinginfinity', repo: parts[0] };
@@ -513,7 +532,12 @@ function parseRepoInput(val) {
 function fmtSize(bytes) {
   if (!bytes) return '';
   if (bytes < 1024) return bytes + ' B';
-  return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+function getAuthHeaders() {
+  const pat = document.getElementById('pat-input').value.trim();
+  return pat ? { 'Authorization': `Bearer ${pat}` } : {};
 }
 
 function setStatus(elId, type, msg) {
@@ -525,6 +549,20 @@ function setStatus(elId, type, msg) {
     success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
   };
   el.innerHTML = `<div class="status status-${type}">${icons[type]||''}<span>${msg}</span></div>`;
+}
+
+async function updateRateBadge(res) {
+  const remaining = res.headers.get('x-ratelimit-remaining');
+  const limit = res.headers.get('x-ratelimit-limit');
+  if (!remaining || !limit) return;
+  const badge = document.getElementById('rate-badge');
+  const rem = parseInt(remaining, 10);
+  const lim = parseInt(limit, 10);
+  badge.textContent = `${rem}/${lim} req`;
+  badge.style.display = 'inline-flex';
+  badge.className = 'rate-badge';
+  if (rem < 10) badge.classList.add('danger');
+  else if (rem < 100) badge.classList.add('warn');
 }
 
 // =================== REPO LOADER ===================
@@ -546,8 +584,9 @@ async function loadRepo() {
   resetFilterButtons();
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`);
-    if (!res.ok) throw new Error(res.status === 404 ? 'Repository not found' : `GitHub API error ${res.status}`);
+    const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`, { headers: getAuthHeaders() });
+    await updateRateBadge(res);
+    if (!res.ok) throw new Error(res.status === 404 ? 'Repository not found (private? Add a PAT above)' : `GitHub API error ${res.status}`);
     repoMeta = await res.json();
     renderRepoCard(repoMeta);
     setStatus('repo-status', '');
@@ -558,7 +597,7 @@ async function loadRepo() {
 }
 
 function renderRepoCard(meta) {
-  const updated = new Date(meta.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const updated = new Date(meta.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   document.getElementById('repo-card').innerHTML = `
     <div class="repo-card">
       <div class="repo-card-name">${meta.full_name}</div>
@@ -577,6 +616,7 @@ function renderRepoCard(meta) {
           ${updated}
         </div>
         ${meta.language ? `<div class="repo-meta-item"><span class="badge badge-teal">${meta.language}</span></div>` : ''}
+        ${meta.private ? `<div class="repo-meta-item"><span class="badge" style="background:color-mix(in oklch,var(--color-warning) 15%,var(--color-surface));color:var(--color-warning)">Private</span></div>` : ''}
       </div>
     </div>`;
   document.getElementById('repo-card').style.display = 'block';
@@ -584,15 +624,13 @@ function renderRepoCard(meta) {
 
 async function loadTree(branch) {
   setStatus('repo-status', 'loading', 'Fetching file tree...');
-  const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`);
+  const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`, { headers: getAuthHeaders() });
+  await updateRateBadge(res);
   if (!res.ok) throw new Error(`Tree fetch failed: ${res.status}`);
   const data = await res.json();
   treeFlat = data.tree.filter(n => n.type === 'blob' || n.type === 'tree');
-
-  // Detect mailbox files
   mailboxFiles = treeFlat.filter(n => n.type === 'blob' && (n.path.endsWith('/inbox.md') || n.path.endsWith('/outbox.md') || n.path === 'inbox.md' || n.path === 'outbox.md'));
   renderMailbox();
-
   setStatus('repo-status', '');
   renderTree();
   const ts = document.getElementById('tree-section');
@@ -633,18 +671,18 @@ document.getElementById('mailbox-header').addEventListener('click', () => {
   const list = document.getElementById('mailbox-list');
   const toggle = document.querySelector('.mailbox-toggle');
   const open = list.classList.contains('open');
-  if (open) { list.classList.remove('open'); toggle.classList.remove('open'); document.getElementById('mailbox-header').setAttribute('aria-expanded','false'); }
-  else { list.classList.add('open'); toggle.classList.add('open'); document.getElementById('mailbox-header').setAttribute('aria-expanded','true'); }
+  if (open) { list.classList.remove('open'); toggle.classList.remove('open'); document.getElementById('mailbox-header').setAttribute('aria-expanded', 'false'); }
+  else { list.classList.add('open'); toggle.classList.add('open'); document.getElementById('mailbox-header').setAttribute('aria-expanded', 'true'); }
 });
 
-// =================== FILE TREE RENDER ===================
+// =================== FILE TREE ===================
 function buildTreeHierarchy(flat) {
   const root = { children: {}, type: 'tree', path: '' };
   flat.forEach(node => {
     const parts = node.path.split('/');
     let cur = root;
     parts.forEach((part, i) => {
-      if (!cur.children[part]) cur.children[part] = { children: {}, type: i === parts.length-1 ? node.type : 'tree', path: parts.slice(0,i+1).join('/'), sha: node.sha, size: node.size };
+      if (!cur.children[part]) cur.children[part] = { children: {}, type: i === parts.length - 1 ? node.type : 'tree', path: parts.slice(0, i + 1).join('/'), sha: node.sha, size: node.size };
       cur = cur.children[part];
     });
   });
@@ -662,7 +700,7 @@ function renderTree() {
 
 function renderNode(node, depth) {
   const frag = document.createDocumentFragment();
-  const sorted = Object.entries(node.children).sort(([an,a],[bn,b]) => {
+  const sorted = Object.entries(node.children).sort(([an, a], [bn, b]) => {
     if (a.type !== b.type) return a.type === 'tree' ? -1 : 1;
     return an.localeCompare(bn);
   });
@@ -679,77 +717,60 @@ function renderNode(node, depth) {
       toggle.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>';
       if (expandedDirs.has(child.path)) toggle.classList.add('open');
       item.appendChild(toggle);
-
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.className = 'tree-checkbox';
       cb.checked = isDirChecked(child.path);
       cb.addEventListener('change', e => { e.stopPropagation(); toggleDir(child.path, cb.checked); });
       item.appendChild(cb);
-
       const icon = document.createElement('span');
       icon.className = 'tree-icon';
       icon.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
       item.appendChild(icon);
-
       const label = document.createElement('span');
       label.className = 'tree-name dir';
       label.textContent = name;
       item.appendChild(label);
-
       const childrenDiv = document.createElement('div');
       childrenDiv.className = 'tree-children' + (expandedDirs.has(child.path) ? ' open' : '');
       childrenDiv.appendChild(renderNode(child, depth + 1));
-
       item.addEventListener('click', e => {
         if (e.target === cb) return;
         const open = expandedDirs.has(child.path);
         if (open) { expandedDirs.delete(child.path); toggle.classList.remove('open'); childrenDiv.classList.remove('open'); }
         else { expandedDirs.add(child.path); toggle.classList.add('open'); childrenDiv.classList.add('open'); }
       });
-
       div.appendChild(item);
       div.appendChild(childrenDiv);
     } else {
       const spacer = document.createElement('span');
       spacer.className = 'tree-toggle-spacer';
       item.appendChild(spacer);
-
       const cb = document.createElement('input');
       cb.type = 'checkbox'; cb.className = 'tree-checkbox';
       cb.dataset.path = child.path;
       cb.checked = checkedPaths.has(child.path);
       cb.addEventListener('change', e => { e.stopPropagation(); toggleFile(child.path, cb.checked); });
       item.appendChild(cb);
-
       const icon = document.createElement('span');
       icon.className = 'tree-icon';
       const ext = getExt(child.path);
-      const isCode = CODE_EXTS.has(ext);
-      icon.innerHTML = isCode
+      icon.innerHTML = CODE_EXTS.has(ext)
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
         : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
       item.appendChild(icon);
-
       const label = document.createElement('span');
       label.className = 'tree-name';
       label.textContent = name;
       item.appendChild(label);
-
       if (child.size) {
         const sz = document.createElement('span');
         sz.className = 'tree-size';
         sz.textContent = fmtSize(child.size);
         item.appendChild(sz);
       }
-
-      item.addEventListener('click', e => {
-        if (e.target === cb) return;
-        previewFile(child.path);
-      });
-
+      item.addEventListener('click', e => { if (e.target === cb) return; previewFile(child.path); });
       div.appendChild(item);
     }
-
     frag.appendChild(div);
   });
   return frag;
@@ -763,29 +784,24 @@ function isDirChecked(dirPath) {
 
 function toggleFile(path, checked) {
   if (checked) checkedPaths.add(path); else checkedPaths.delete(path);
-  updateSelectionCount();
-  updateExportInfo();
-  updateTokenEst();
+  updateSelectionCount(); updateExportInfo(); updateTokenEst();
 }
 
 function toggleDir(dirPath, checked) {
   treeFlat.filter(n => n.type === 'blob' && n.path.startsWith(dirPath + '/')).forEach(f => {
     if (checked) checkedPaths.add(f.path); else checkedPaths.delete(f.path);
   });
-  renderTree();
-  updateExportInfo();
-  updateTokenEst();
+  renderTree(); updateExportInfo(); updateTokenEst();
 }
 
 function updateSelectionCount() {
   const n = checkedPaths.size;
   document.getElementById('file-count-label').textContent = n + ' selected';
   const badge = document.getElementById('tab-badge-files');
-  if (n > 0) { badge.textContent = n; badge.style.display = 'inline-flex'; }
-  else { badge.style.display = 'none'; }
+  if (n > 0) { badge.textContent = n; badge.style.display = 'inline-flex'; } else { badge.style.display = 'none'; }
 }
 
-// =================== FILTER BUTTONS ===================
+// =================== FILTERS ===================
 function resetFilterButtons() {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   updateFilterSummaryBar();
@@ -808,23 +824,16 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const filter = btn.dataset.filter;
     if (filter === 'all') {
-      // All: select every blob, clear individual filters
+      // FIX: select every blob regardless of extension
       treeFlat.filter(n => n.type === 'blob').forEach(f => checkedPaths.add(f.path));
-      activeFilters = new Set(['code','docs','config']);
-      document.querySelectorAll('.filter-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.filter === 'all' || b.dataset.filter !== 'all' && true);
-      });
-      // Mark all filter buttons active
-      document.querySelectorAll('.filter-btn[data-filter!="all"]').forEach(b => b.classList.add('active'));
-      document.getElementById('filter-all-btn').classList.add('active');
+      activeFilters = new Set(['code', 'docs', 'config']);
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('active'));
     } else {
-      // Toggle the specific filter additively
       const wasActive = activeFilters.has(filter);
       if (wasActive) {
         activeFilters.delete(filter);
         btn.classList.remove('active');
         document.getElementById('filter-all-btn').classList.remove('active');
-        // Deselect files that belonged only to this bucket (if no other filter overlaps)
         treeFlat.filter(n => n.type === 'blob').forEach(f => {
           const ext = getExt(f.path);
           const inDeselected = filterMatch(ext, filter);
@@ -834,19 +843,13 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
       } else {
         activeFilters.add(filter);
         btn.classList.add('active');
-        // Select files matching this bucket
         treeFlat.filter(n => n.type === 'blob').forEach(f => {
-          const ext = getExt(f.path);
-          if (filterMatch(ext, filter)) checkedPaths.add(f.path);
+          if (filterMatch(getExt(f.path), filter)) checkedPaths.add(f.path);
         });
-        // Check if all three are now active → also highlight "All"
         if (activeFilters.size === 3) document.getElementById('filter-all-btn').classList.add('active');
       }
     }
-    renderTree();
-    updateExportInfo();
-    updateTokenEst();
-    syncMailboxCheckboxes();
+    renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
   });
 });
 
@@ -859,13 +862,12 @@ function filterMatch(ext, filter) {
 
 document.getElementById('select-all-btn').addEventListener('click', () => {
   treeFlat.filter(n => n.type === 'blob').forEach(f => checkedPaths.add(f.path));
-  activeFilters = new Set(['code','docs','config']);
+  activeFilters = new Set(['code', 'docs', 'config']);
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('active'));
   renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
 });
 document.getElementById('deselect-btn').addEventListener('click', () => {
-  checkedPaths.clear();
-  activeFilters = new Set();
+  checkedPaths.clear(); activeFilters = new Set();
   resetFilterButtons();
   renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
 });
@@ -876,7 +878,6 @@ function updateExportInfo() {
     const node = treeFlat.find(f => f.path === p);
     return acc + (node ? node.size || 0 : 0);
   }, 0);
-  // Build filter label for summary
   let filterLabel = '';
   if (activeFilters.size > 0) {
     const labels = [...activeFilters].map(f => f.charAt(0).toUpperCase() + f.slice(1));
@@ -891,21 +892,27 @@ async function previewFile(path) {
   document.getElementById('preview-title').textContent = path;
   document.getElementById('preview-content').textContent = 'Loading...';
   openSheet();
-
   let content = fileContents[path]?.content;
   if (!content) {
     try {
-      const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`);
+      const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`, { headers: getAuthHeaders() });
+      await updateRateBadge(res);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
-      content = atob(data.content.replace(/\n/g,''));
+      // Binary file detection
+      if (!data.content) { document.getElementById('preview-content').textContent = '[Binary file — cannot preview]'; return; }
+      content = atob(data.content.replace(/\n/g, ''));
       fileContents[path] = { content, size: data.size };
     } catch(e) {
       document.getElementById('preview-content').textContent = 'Error loading file: ' + e.message;
       return;
     }
   }
-  document.getElementById('preview-content').textContent = content;
+  // Truncate very large files
+  const MAX = 100000;
+  document.getElementById('preview-content').textContent = content.length > MAX
+    ? content.slice(0, MAX) + `\n\n... [truncated — ${((content.length - MAX)/1024).toFixed(0)} KB hidden]`
+    : content;
 }
 
 function openSheet() {
@@ -926,7 +933,6 @@ async function fetchSelectedFiles() {
   const paths = [...checkedPaths];
   const toFetch = paths.filter(p => !fileContents[p]);
   if (!toFetch.length) return;
-
   setStatus('fetch-status', 'loading', `Fetching ${toFetch.length} files...`);
   let done = 0;
   const batchSize = 8;
@@ -934,10 +940,11 @@ async function fetchSelectedFiles() {
     const batch = toFetch.slice(i, i + batchSize);
     await Promise.all(batch.map(async path => {
       try {
-        const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`);
+        const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}`, { headers: getAuthHeaders() });
         if (!res.ok) return;
         const data = await res.json();
-        const content = atob(data.content.replace(/\n/g,''));
+        if (!data.content) return; // skip binary
+        const content = atob(data.content.replace(/\n/g, ''));
         fileContents[path] = { content, size: data.size };
         done++;
         setStatus('fetch-status', 'loading', `Fetched ${done}/${toFetch.length}...`);
@@ -948,7 +955,7 @@ async function fetchSelectedFiles() {
   setTimeout(() => setStatus('fetch-status', ''), 2000);
 }
 
-// =================== EXPORT: TXT ===================
+// =================== EXPORT TXT ===================
 document.getElementById('export-txt-btn').addEventListener('click', async () => {
   if (!checkedPaths.size) { alert('No files selected.'); return; }
   await fetchSelectedFiles();
@@ -960,31 +967,20 @@ document.getElementById('export-txt-btn').addEventListener('click', async () => 
     lines.push('');
   });
   const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${repoName}-dump.txt`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${repoName}-dump.txt`; a.click(); URL.revokeObjectURL(a.href);
 });
 
-// =================== EXPORT: ZIP ===================
+// =================== EXPORT ZIP ===================
 document.getElementById('export-zip-btn').addEventListener('click', async () => {
   if (!checkedPaths.size) { alert('No files selected.'); return; }
   await fetchSelectedFiles();
   const zip = new JSZip();
-  [...checkedPaths].sort().forEach(path => {
-    const fc = fileContents[path];
-    if (fc) zip.file(path, fc.content);
-  });
+  [...checkedPaths].sort().forEach(path => { const fc = fileContents[path]; if (fc) zip.file(path, fc.content); });
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${repoName}.zip`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${repoName}.zip`; a.click(); URL.revokeObjectURL(a.href);
 });
 
-// =================== CHAT: PROVIDERS ===================
+// =================== CHAT PROVIDERS ===================
 const PROVIDERS = {
   openai:    { base: 'https://api.openai.com/v1',                        model: 'gpt-4o',                                               compat: true  },
   groq:      { base: 'https://api.groq.com/openai/v1',                   model: 'llama-3.3-70b-versatile',                              compat: true  },
@@ -1002,14 +998,29 @@ document.getElementById('provider-select').addEventListener('change', () => {
 });
 document.getElementById('provider-select').dispatchEvent(new Event('change'));
 
+// Preset select
+const PRESETS = {
+  explain:  'Explain this codebase architecture in detail. Walk me through the key files, how they relate to each other, and the overall design decisions.',
+  debug:    'Find potential bugs in this code. Look for edge cases, null pointer issues, race conditions, and logic errors. List each finding with the file and line context.',
+  summarize: 'Summarize what each file does in 1-2 sentences. Format as a table: File | Purpose.',
+  refactor: 'Suggest refactoring improvements. Focus on code duplication, overly complex functions, naming issues, and areas where readability could improve.',
+  security: 'Review this code for security issues. Look for injection vulnerabilities, insecure data handling, hardcoded secrets, and unsafe API usage.',
+  deps:     'Explain the key dependencies used in this project and why each one is used. Reference the config files and actual usage in code.',
+  onboard:  'Write an onboarding guide for a new developer joining this project. Include: what the project does, how to get started, key concepts to understand, and where to find things.',
+};
+document.getElementById('preset-select').addEventListener('change', () => {
+  const val = document.getElementById('preset-select').value;
+  if (!val) return;
+  document.getElementById('chat-input').value = PRESETS[val] || '';
+  document.getElementById('chat-input').style.height = 'auto';
+  document.getElementById('chat-input').style.height = Math.min(document.getElementById('chat-input').scrollHeight, 120) + 'px';
+  document.getElementById('preset-select').value = '';
+  document.getElementById('chat-input').focus();
+});
+
 const chatInput = document.getElementById('chat-input');
-chatInput.addEventListener('input', () => {
-  chatInput.style.height = 'auto';
-  chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-});
-chatInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
+chatInput.addEventListener('input', () => { chatInput.style.height = 'auto'; chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px'; });
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 document.getElementById('chat-send').addEventListener('click', sendMessage);
 document.getElementById('context-select').addEventListener('change', updateTokenEst);
 
@@ -1023,11 +1034,18 @@ function getContextContent() {
 
 function updateTokenEst() {
   const ctx = getContextContent();
-  const est = Math.round(ctx.length / 4);
-  document.getElementById('token-est').textContent = est.toLocaleString();
+  document.getElementById('token-est').textContent = Math.round(ctx.length / 4).toLocaleString();
 }
 
 let chatHistory = [];
+
+function updateSessionLogUI() {
+  const n = sessionLog.length;
+  const label = document.getElementById('session-log-label');
+  const btn = document.getElementById('export-log-btn');
+  label.textContent = n === 0 ? 'No turns yet' : `${n} turn${n === 1 ? '' : 's'} · ${repoOwner ? repoOwner + '/' + repoName : 'no repo'}`;
+  btn.disabled = n === 0;
+}
 
 async function sendMessage() {
   const text = chatInput.value.trim();
@@ -1035,15 +1053,13 @@ async function sendMessage() {
   const apiKey = document.getElementById('apikey-input').value.trim();
   if (!apiKey) { appendMsg('assistant', 'Enter an API key in the settings above.'); return; }
 
-  chatInput.value = '';
-  chatInput.style.height = '';
+  chatInput.value = ''; chatInput.style.height = '';
   appendMsg('user', text);
   document.getElementById('chat-empty').style.display = 'none';
 
   const provider = document.getElementById('provider-select').value;
   const model = document.getElementById('model-input').value.trim() || PROVIDERS[provider].model;
   const ctx = getContextContent();
-
   const userMsg = ctx ? `<context>\n${ctx}\n</context>\n\n${text}` : text;
   chatHistory.push({ role: 'user', content: userMsg });
 
@@ -1054,31 +1070,43 @@ async function sendMessage() {
   scrollChatBottom();
   document.getElementById('chat-send').disabled = true;
 
+  const turnStart = new Date();
+  let reply = '';
   try {
-    let reply = '';
     if (PROVIDERS[provider].compat) {
       const res = await fetch(`${PROVIDERS[provider].base}/chat/completions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
         body: JSON.stringify({ model, messages: chatHistory, stream: false })
       });
-      if (!res.ok) { const err = await res.text(); throw new Error(`API error ${res.status}: ${err.slice(0,200)}`); }
+      if (!res.ok) { const err = await res.text(); throw new Error(`API error ${res.status}: ${err.slice(0, 200)}`); }
       const data = await res.json();
       reply = data.choices?.[0]?.message?.content || '(empty response)';
     } else {
       const msgs = chatHistory.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
       const res = await fetch(`${PROVIDERS[provider].base}/models/${model}:generateContent?key=${apiKey}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: msgs })
       });
-      if (!res.ok) { const err = await res.text(); throw new Error(`Gemini error ${res.status}: ${err.slice(0,200)}`); }
+      if (!res.ok) { const err = await res.text(); throw new Error(`Gemini error ${res.status}: ${err.slice(0, 200)}`); }
       const data = await res.json();
       reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '(empty response)';
     }
     chatHistory.push({ role: 'assistant', content: reply });
     thinkingEl.remove();
     appendMsg('assistant', reply);
+    // Save turn to session log
+    sessionLog.push({
+      turn: sessionLog.length + 1,
+      timestamp: turnStart.toISOString(),
+      repo: repoOwner ? `${repoOwner}/${repoName}` : 'none',
+      provider, model,
+      filesSelected: checkedPaths.size,
+      filterState: activeFilters.size ? [...activeFilters].join('+') : 'none',
+      prompt: text,
+      response: reply,
+    });
+    updateSessionLogUI();
   } catch(e) {
     thinkingEl.remove();
     appendMsg('assistant', 'Error: ' + e.message);
@@ -1095,14 +1123,47 @@ function appendMsg(role, content) {
   scrollChatBottom();
 }
 
-function scrollChatBottom() {
-  const el = document.getElementById('chat-messages');
-  el.scrollTop = el.scrollHeight;
-}
+function scrollChatBottom() { const el = document.getElementById('chat-messages'); el.scrollTop = el.scrollHeight; }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+// =================== SESSION LOG EXPORT ===================
+document.getElementById('export-log-btn').addEventListener('click', () => {
+  if (!sessionLog.length) return;
+  const now = new Date();
+  const dateStr = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+  const repo = repoOwner ? `${repoOwner}/${repoName}` : 'no repo loaded';
+  const lines = [
+    `# Repo Copilot — Session Log`,
+    `**Repo**: ${repo}`,
+    `**Exported**: ${dateStr}`,
+    `**Turns**: ${sessionLog.length}`,
+    ``,
+    `---`,
+    ``,
+  ];
+  sessionLog.forEach(entry => {
+    const ts = new Date(entry.timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    lines.push(`## Turn ${entry.turn} — ${ts}`);
+    lines.push(`**Provider**: ${entry.provider} / ${entry.model}  `);
+    lines.push(`**Context**: ${entry.filesSelected} files · filters: ${entry.filterState}`);
+    lines.push(``);
+    lines.push(`**You**`);
+    lines.push(entry.prompt);
+    lines.push(``);
+    lines.push(`**Assistant**`);
+    lines.push(entry.response);
+    lines.push(``);
+    lines.push(`---`);
+    lines.push(``);
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  const safeRepo = repo.replace(/\//g, '-');
+  a.href = URL.createObjectURL(blob);
+  a.download = `repo-copilot-session-${safeRepo}-${now.toISOString().slice(0,10)}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
 </script>
 </body>
 </html>
