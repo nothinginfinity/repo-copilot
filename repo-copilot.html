@@ -159,6 +159,12 @@ select.input { cursor: pointer; }
 .btn-sm { padding: var(--space-2) var(--space-3); min-height: 36px; font-size: var(--text-xs); }
 .btn-full { width: 100%; }
 
+/* FILTER BUTTONS — active = teal primary style */
+.filter-btn { padding: var(--space-2) var(--space-3); min-height: 36px; font-size: var(--text-xs); font-weight: 600; border-radius: var(--radius-md); background: var(--color-surface-dynamic); color: var(--color-text-muted); border: 1px solid var(--color-border); transition: background var(--transition-interactive), color var(--transition-interactive), border-color var(--transition-interactive); }
+.filter-btn:hover { background: var(--color-surface-offset-2); color: var(--color-text); }
+.filter-btn.active { background: var(--color-primary); color: var(--color-text-inverse); border-color: var(--color-primary); }
+.filter-btn.active:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+
 /* REPO INFO CARD */
 .repo-card { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-4); }
 .repo-card-name { font-size: var(--text-base); font-weight: 700; color: var(--color-text); margin-bottom: var(--space-1); }
@@ -175,9 +181,29 @@ select.input { cursor: pointer; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* MAILBOX PINNED SECTION */
+.mailbox-section { background: color-mix(in oklch, var(--color-primary) 6%, var(--color-surface)); border-bottom: 1px solid var(--color-divider); flex-shrink: 0; }
+.mailbox-header { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); cursor: pointer; min-height: 40px; }
+.mailbox-header:hover { background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface)); }
+.mailbox-header svg { width: 14px; height: 14px; color: var(--color-primary); flex-shrink: 0; }
+.mailbox-header-label { font-size: var(--text-xs); font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.06em; flex: 1; }
+.mailbox-toggle { width: 16px; height: 16px; color: var(--color-primary); transition: transform 180ms; }
+.mailbox-toggle.open { transform: rotate(90deg); }
+.mailbox-list { padding: 0 var(--space-4) var(--space-3); display: none; flex-direction: column; gap: var(--space-1); }
+.mailbox-list.open { display: flex; }
+.mailbox-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); cursor: pointer; min-height: 36px; }
+.mailbox-item:hover { background: color-mix(in oklch, var(--color-primary) 12%, var(--color-surface)); }
+.mailbox-item svg { width: 14px; height: 14px; color: var(--color-primary); flex-shrink: 0; }
+.mailbox-item-path { flex: 1; font-size: var(--text-xs); color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mailbox-item-size { font-size: 10px; color: var(--color-text-faint); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.mailbox-item-cb { width: 14px; height: 14px; accent-color: var(--color-primary); cursor: pointer; flex-shrink: 0; }
+.mailbox-empty { font-size: var(--text-xs); color: var(--color-text-faint); padding: var(--space-2) var(--space-3); }
+
 /* FILE TREE */
 .file-tree-toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4); background: var(--color-surface); border-bottom: 1px solid var(--color-divider); align-items: center; flex-shrink: 0; }
-.file-tree-toolbar .toolbar-left { display: flex; gap: var(--space-2); flex: 1; flex-wrap: wrap; }
+.file-tree-toolbar .toolbar-left { display: flex; gap: var(--space-2); flex: 1; flex-wrap: wrap; align-items: center; }
+.toolbar-divider { width: 1px; height: 20px; background: var(--color-border); flex-shrink: 0; }
+.filter-summary { font-size: var(--text-xs); color: var(--color-primary); font-weight: 600; padding: var(--space-1) var(--space-2); background: var(--color-primary-highlight); border-radius: var(--radius-sm); display: none; }
 .file-count { font-size: var(--text-xs); color: var(--color-text-muted); align-self: center; flex-shrink: 0; }
 
 .tree-container { flex: 1; overflow-y: auto; padding: var(--space-2); }
@@ -211,7 +237,7 @@ select.input { cursor: pointer; }
 
 /* EXPORT SECTION */
 .export-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
-.export-info { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3); padding: var(--space-3); background: var(--color-surface-offset); border-radius: var(--radius-md); }
+.export-info { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3); padding: var(--space-3); background: var(--color-surface-offset); border-radius: var(--radius-md); line-height: 1.6; }
 .export-info strong { color: var(--color-text); }
 
 /* CHAT PANEL */
@@ -302,16 +328,31 @@ select.input { cursor: pointer; }
         <div id="repo-card" style="display:none;margin-top:var(--space-3)"></div>
       </div>
 
+      <!-- MAILBOX PINNED (hidden until loaded) -->
+      <div id="mailbox-section" class="mailbox-section" style="display:none">
+        <div class="mailbox-header" id="mailbox-header" role="button" aria-expanded="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span class="mailbox-header-label">Mailbox</span>
+          <svg class="mailbox-toggle open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="mailbox-list open" id="mailbox-list"></div>
+      </div>
+
       <!-- FILE TREE (hidden until loaded) -->
       <div id="tree-section" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
         <div class="file-tree-toolbar">
           <div class="toolbar-left">
             <button class="btn btn-secondary btn-sm" id="select-all-btn">Select All</button>
             <button class="btn btn-secondary btn-sm" id="deselect-btn">Deselect All</button>
-            <button class="btn btn-secondary btn-sm" id="select-code-btn">Code Files</button>
+            <div class="toolbar-divider"></div>
+            <button class="filter-btn" id="filter-code-btn" data-filter="code">Code</button>
+            <button class="filter-btn" id="filter-docs-btn" data-filter="docs">Docs</button>
+            <button class="filter-btn" id="filter-config-btn" data-filter="config">Config</button>
+            <button class="filter-btn" id="filter-all-btn" data-filter="all">All</button>
           </div>
           <span class="file-count" id="file-count-label">0 selected</span>
         </div>
+        <div id="filter-summary-bar" style="display:none;padding:var(--space-2) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-divider);font-size:var(--text-xs);color:var(--color-primary);font-weight:600"></div>
         <div class="tree-container" id="tree-container"></div>
       </div>
 
@@ -441,7 +482,23 @@ let treeFlat = [];
 let fileContents = {};
 let checkedPaths = new Set();
 let expandedDirs = new Set();
-const CODE_EXTS = new Set(['.js','.ts','.jsx','.tsx','.py','.md','.json','.html','.css','.yaml','.yml','.sh','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte','.toml','.env','.gitignore','.eslintrc','.prettierrc']);
+let mailboxFiles = [];
+// activeFilters: Set of 'code'|'docs'|'config' — empty means no filter active
+let activeFilters = new Set();
+
+const CODE_EXTS   = new Set(['.js','.ts','.jsx','.tsx','.py','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte']);
+const DOC_EXTS    = new Set(['.md','.txt','.rst','.mdx','.csv','.log','.pdf']);
+const CONFIG_EXTS = new Set(['.json','.yaml','.yml','.toml','.env','.gitignore','.eslintrc','.prettierrc','.editorconfig','.nvmrc','.html','.css','.sh']);
+// Combined set for "any known" extension (used by All button)
+const ALL_KNOWN_EXTS = new Set([...CODE_EXTS, ...DOC_EXTS, ...CONFIG_EXTS]);
+
+function getExt(path) {
+  if (!path.includes('.')) return '';
+  const base = path.split('/').pop();
+  const dotIdx = base.lastIndexOf('.');
+  if (dotIdx === 0) return base.toLowerCase(); // dotfiles like .gitignore
+  return ('.' + base.slice(dotIdx + 1)).toLowerCase();
+}
 
 function parseRepoInput(val) {
   val = val.trim();
@@ -483,7 +540,10 @@ async function loadRepo() {
   document.getElementById('repo-card').style.display = 'none';
   document.getElementById('tree-section').style.display = 'none';
   document.getElementById('export-section').style.display = 'none';
+  document.getElementById('mailbox-section').style.display = 'none';
   treeFlat = []; fileContents = {}; checkedPaths = new Set(); expandedDirs = new Set();
+  mailboxFiles = []; activeFilters = new Set();
+  resetFilterButtons();
 
   try {
     const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`);
@@ -528,6 +588,11 @@ async function loadTree(branch) {
   if (!res.ok) throw new Error(`Tree fetch failed: ${res.status}`);
   const data = await res.json();
   treeFlat = data.tree.filter(n => n.type === 'blob' || n.type === 'tree');
+
+  // Detect mailbox files
+  mailboxFiles = treeFlat.filter(n => n.type === 'blob' && (n.path.endsWith('/inbox.md') || n.path.endsWith('/outbox.md') || n.path === 'inbox.md' || n.path === 'outbox.md'));
+  renderMailbox();
+
   setStatus('repo-status', '');
   renderTree();
   const ts = document.getElementById('tree-section');
@@ -535,6 +600,42 @@ async function loadTree(branch) {
   document.getElementById('export-section').style.display = 'block';
   updateExportInfo();
 }
+
+// =================== MAILBOX ===================
+function renderMailbox() {
+  const section = document.getElementById('mailbox-section');
+  const list = document.getElementById('mailbox-list');
+  if (!mailboxFiles.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = '';
+  mailboxFiles.forEach(f => {
+    const item = document.createElement('div');
+    item.className = 'mailbox-item';
+    item.innerHTML = `
+      <input type="checkbox" class="mailbox-item-cb" aria-label="Select ${f.path}" ${checkedPaths.has(f.path) ? 'checked' : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <span class="mailbox-item-path">${f.path}</span>
+      ${f.size ? `<span class="mailbox-item-size">${fmtSize(f.size)}</span>` : ''}`;
+    const cb = item.querySelector('.mailbox-item-cb');
+    cb.addEventListener('change', e => { e.stopPropagation(); toggleFile(f.path, cb.checked); syncMailboxCheckboxes(); });
+    item.addEventListener('click', e => { if (e.target === cb) return; previewFile(f.path); });
+    list.appendChild(item);
+  });
+}
+
+function syncMailboxCheckboxes() {
+  document.querySelectorAll('.mailbox-item-cb').forEach((cb, i) => {
+    if (mailboxFiles[i]) cb.checked = checkedPaths.has(mailboxFiles[i].path);
+  });
+}
+
+document.getElementById('mailbox-header').addEventListener('click', () => {
+  const list = document.getElementById('mailbox-list');
+  const toggle = document.querySelector('.mailbox-toggle');
+  const open = list.classList.contains('open');
+  if (open) { list.classList.remove('open'); toggle.classList.remove('open'); document.getElementById('mailbox-header').setAttribute('aria-expanded','false'); }
+  else { list.classList.add('open'); toggle.classList.add('open'); document.getElementById('mailbox-header').setAttribute('aria-expanded','true'); }
+});
 
 // =================== FILE TREE RENDER ===================
 function buildTreeHierarchy(flat) {
@@ -556,6 +657,7 @@ function renderTree() {
   container.innerHTML = '';
   container.appendChild(renderNode(hierarchy, 0));
   updateSelectionCount();
+  updateFilterSummaryBar();
 }
 
 function renderNode(node, depth) {
@@ -621,7 +723,7 @@ function renderNode(node, depth) {
 
       const icon = document.createElement('span');
       icon.className = 'tree-icon';
-      const ext = child.path.includes('.') ? '.' + child.path.split('.').pop().toLowerCase() : '';
+      const ext = getExt(child.path);
       const isCode = CODE_EXTS.has(ext);
       icon.innerHTML = isCode
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
@@ -683,20 +785,89 @@ function updateSelectionCount() {
   else { badge.style.display = 'none'; }
 }
 
+// =================== FILTER BUTTONS ===================
+function resetFilterButtons() {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  updateFilterSummaryBar();
+}
+
+function updateFilterSummaryBar() {
+  const bar = document.getElementById('filter-summary-bar');
+  if (!activeFilters.size) { bar.style.display = 'none'; return; }
+  const n = checkedPaths.size;
+  const totalSize = [...checkedPaths].reduce((acc, p) => {
+    const node = treeFlat.find(f => f.path === p);
+    return acc + (node ? node.size || 0 : 0);
+  }, 0);
+  const labels = [...activeFilters].map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(' · ');
+  bar.style.display = 'block';
+  bar.textContent = `${n} selected · ~${fmtSize(totalSize)} · ${labels}`;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const filter = btn.dataset.filter;
+    if (filter === 'all') {
+      // All: select every blob, clear individual filters
+      treeFlat.filter(n => n.type === 'blob').forEach(f => checkedPaths.add(f.path));
+      activeFilters = new Set(['code','docs','config']);
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === 'all' || b.dataset.filter !== 'all' && true);
+      });
+      // Mark all filter buttons active
+      document.querySelectorAll('.filter-btn[data-filter!="all"]').forEach(b => b.classList.add('active'));
+      document.getElementById('filter-all-btn').classList.add('active');
+    } else {
+      // Toggle the specific filter additively
+      const wasActive = activeFilters.has(filter);
+      if (wasActive) {
+        activeFilters.delete(filter);
+        btn.classList.remove('active');
+        document.getElementById('filter-all-btn').classList.remove('active');
+        // Deselect files that belonged only to this bucket (if no other filter overlaps)
+        treeFlat.filter(n => n.type === 'blob').forEach(f => {
+          const ext = getExt(f.path);
+          const inDeselected = filterMatch(ext, filter);
+          const inOtherActive = [...activeFilters].some(af => filterMatch(ext, af));
+          if (inDeselected && !inOtherActive) checkedPaths.delete(f.path);
+        });
+      } else {
+        activeFilters.add(filter);
+        btn.classList.add('active');
+        // Select files matching this bucket
+        treeFlat.filter(n => n.type === 'blob').forEach(f => {
+          const ext = getExt(f.path);
+          if (filterMatch(ext, filter)) checkedPaths.add(f.path);
+        });
+        // Check if all three are now active → also highlight "All"
+        if (activeFilters.size === 3) document.getElementById('filter-all-btn').classList.add('active');
+      }
+    }
+    renderTree();
+    updateExportInfo();
+    updateTokenEst();
+    syncMailboxCheckboxes();
+  });
+});
+
+function filterMatch(ext, filter) {
+  if (filter === 'code')   return CODE_EXTS.has(ext);
+  if (filter === 'docs')   return DOC_EXTS.has(ext);
+  if (filter === 'config') return CONFIG_EXTS.has(ext);
+  return false;
+}
+
 document.getElementById('select-all-btn').addEventListener('click', () => {
   treeFlat.filter(n => n.type === 'blob').forEach(f => checkedPaths.add(f.path));
-  renderTree(); updateExportInfo(); updateTokenEst();
+  activeFilters = new Set(['code','docs','config']);
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('active'));
+  renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
 });
 document.getElementById('deselect-btn').addEventListener('click', () => {
   checkedPaths.clear();
-  renderTree(); updateExportInfo(); updateTokenEst();
-});
-document.getElementById('select-code-btn').addEventListener('click', () => {
-  treeFlat.filter(n => n.type === 'blob').forEach(f => {
-    const ext = f.path.includes('.') ? '.' + f.path.split('.').pop().toLowerCase() : '';
-    if (CODE_EXTS.has(ext)) checkedPaths.add(f.path); else checkedPaths.delete(f.path);
-  });
-  renderTree(); updateExportInfo(); updateTokenEst();
+  activeFilters = new Set();
+  resetFilterButtons();
+  renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
 });
 
 function updateExportInfo() {
@@ -705,8 +876,14 @@ function updateExportInfo() {
     const node = treeFlat.find(f => f.path === p);
     return acc + (node ? node.size || 0 : 0);
   }, 0);
+  // Build filter label for summary
+  let filterLabel = '';
+  if (activeFilters.size > 0) {
+    const labels = [...activeFilters].map(f => f.charAt(0).toUpperCase() + f.slice(1));
+    filterLabel = ' &nbsp;&middot;&nbsp; <strong>' + labels.join(' + ') + '</strong>';
+  }
   document.getElementById('export-info').innerHTML =
-    `<strong>${n}</strong> files selected &nbsp;&middot;&nbsp; ~<strong>${fmtSize(totalSize)}</strong> total`;
+    `<strong>${n}</strong> files selected &nbsp;&middot;&nbsp; ~<strong>${fmtSize(totalSize)}</strong> total${filterLabel}`;
 }
 
 // =================== FILE PREVIEW ===================
@@ -889,7 +1066,6 @@ async function sendMessage() {
       const data = await res.json();
       reply = data.choices?.[0]?.message?.content || '(empty response)';
     } else {
-      // Gemini adapter
       const msgs = chatHistory.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
       const res = await fetch(`${PROVIDERS[provider].base}/models/${model}:generateContent?key=${apiKey}`, {
         method: 'POST',
