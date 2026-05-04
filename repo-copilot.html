@@ -12,7 +12,7 @@
 /* === ART DIRECTION ===
    Concept: developer tool, mobile-first, dense
    Palette: Nexus dark surfaces, Hydra Teal accent
-   Typography: Satoshi body only — no display font needed
+   Typography: Satoshi body only
    Density: maximum, compact, thumb-optimized */
 
 :root, [data-theme="light"] {
@@ -159,7 +159,7 @@ select.input { cursor: pointer; }
 .btn-sm { padding: var(--space-2) var(--space-3); min-height: 36px; font-size: var(--text-xs); }
 .btn-full { width: 100%; }
 
-/* FILTER BUTTONS — active = teal primary style */
+/* FILTER BUTTONS */
 .filter-btn { padding: var(--space-2) var(--space-3); min-height: 36px; font-size: var(--text-xs); font-weight: 600; border-radius: var(--radius-md); background: var(--color-surface-dynamic); color: var(--color-text-muted); border: 1px solid var(--color-border); transition: background var(--transition-interactive), color var(--transition-interactive), border-color var(--transition-interactive); }
 .filter-btn:hover { background: var(--color-surface-offset-2); color: var(--color-text); }
 .filter-btn.active { background: var(--color-primary); color: var(--color-text-inverse); border-color: var(--color-primary); }
@@ -240,16 +240,103 @@ select.input { cursor: pointer; }
 .export-info { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--space-3); padding: var(--space-3); background: var(--color-surface-offset); border-radius: var(--radius-md); line-height: 1.6; }
 .export-info strong { color: var(--color-text); }
 
-/* CHAT PANEL */
-.chat-wrap { display: flex; flex-direction: column; height: 100%; }
-.chat-config { padding: var(--space-4); border-bottom: 1px solid var(--color-divider); display: flex; flex-direction: column; gap: var(--space-3); flex-shrink: 0; }
+/* =====================================================
+   CHAT PANEL — Phase 3 layout (fixed height columns)
+   Key: min-height:0 on .chat-messages prevents flex
+   children from overflowing their parent container.
+   ===================================================== */
+.chat-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* STATUS BAR — always 44px, never collapses */
+.chat-config-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  height: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  user-select: none;
+}
+.chat-config-bar:hover { background: var(--color-surface-dynamic); }
+.chat-config-bar:active { background: var(--color-surface-offset-2); }
+
+.config-bar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-faint);
+  flex-shrink: 0;
+  transition: background var(--transition-interactive);
+}
+.config-bar-dot.ready { background: var(--color-success); }
+
+.config-bar-label {
+  flex: 1;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.config-bar-tokens {
+  font-size: var(--text-xs);
+  color: var(--color-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.config-bar-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.config-bar-chevron.open { transform: rotate(180deg); }
+
+/* CONFIG PANEL — animates with max-height, never display:none */
+.chat-config-panel {
+  flex-shrink: 0;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-divider);
+}
+.chat-config-panel.open { max-height: 400px; }
+
+.chat-config-inner {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .form-row { display: flex; flex-direction: column; gap: var(--space-1); }
 .form-label { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .form-row-inline { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
-.token-est { font-size: var(--text-xs); color: var(--color-text-faint); text-align: right; margin-top: var(--space-1); }
-.token-est span { color: var(--color-primary); font-weight: 600; }
 
-.chat-messages { flex: 1; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+/* MESSAGES — min-height:0 is the critical fix */
+.chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
 .chat-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-3); color: var(--color-text-faint); padding: var(--space-8); text-align: center; }
 .chat-empty svg { width: 40px; height: 40px; opacity: 0.4; }
 .chat-empty p { font-size: var(--text-sm); max-width: 28ch; }
@@ -260,6 +347,111 @@ select.input { cursor: pointer; }
 .msg.user .msg-bubble { background: var(--color-primary-highlight); }
 .msg.assistant .msg-role { color: var(--color-primary); }
 
+/* CODE FENCE with Stage button */
+.msg-bubble .fence-wrap { position: relative; margin: var(--space-2) 0; }
+.msg-bubble .fence-filename {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: color-mix(in oklch, var(--color-primary) 10%, var(--color-surface));
+  padding: 3px var(--space-3);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.msg-bubble .fence-code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: var(--space-3);
+  margin: 0;
+}
+.btn-stage {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  min-height: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-stage:hover { background: var(--color-primary-hover); }
+.btn-stage.staged { background: var(--color-success); cursor: default; }
+
+/* STAGED FILES TRAY — animates with max-height above input */
+.staged-tray {
+  flex-shrink: 0;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: color-mix(in oklch, var(--color-primary) 6%, var(--color-surface));
+  border-top: 1px solid var(--color-border);
+}
+.staged-tray.open { max-height: 300px; }
+
+.staged-tray-inner { padding: var(--space-3) var(--space-4); display: flex; flex-direction: column; gap: var(--space-2); }
+.staged-tray-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+.staged-tray-title { font-size: var(--text-xs); font-weight: 700; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.06em; flex: 1; }
+.staged-file-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.staged-file-name { flex: 1; font-size: var(--text-xs); color: var(--color-text); font-family: 'SF Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-unstage { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--color-text-faint); border-radius: var(--radius-sm); flex-shrink: 0; }
+.btn-unstage:hover { color: var(--color-error); background: color-mix(in oklch, var(--color-error) 10%, var(--color-surface)); }
+
+.push-controls {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-divider);
+}
+.push-controls .input { min-height: 36px; font-size: var(--text-xs); }
+select.push-branch { min-height: 36px; font-size: var(--text-xs); max-width: 160px; }
+.push-commit-input { flex: 1; min-width: 0; }
+.btn-push {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: var(--space-2) var(--space-4);
+  min-height: 36px;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-push:hover { background: var(--color-primary-hover); }
+.btn-push:active { background: var(--color-primary-active); }
+.btn-push:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* PUSH STATUS */
+#push-status { font-size: var(--text-xs); color: var(--color-text-muted); width: 100%; }
+
+/* INPUT ROW */
 .chat-input-row { display: flex; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-border); background: var(--color-surface); flex-shrink: 0; }
 .chat-input { flex: 1; background: var(--color-surface-offset); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); font-size: var(--text-sm); color: var(--color-text); resize: none; overflow-y: hidden; max-height: 120px; min-height: 44px; }
 .chat-input:focus { outline: none; border-color: var(--color-primary); }
@@ -328,7 +520,7 @@ select.input { cursor: pointer; }
         <div id="repo-card" style="display:none;margin-top:var(--space-3)"></div>
       </div>
 
-      <!-- MAILBOX PINNED (hidden until loaded) -->
+      <!-- MAILBOX PINNED -->
       <div id="mailbox-section" class="mailbox-section" style="display:none">
         <div class="mailbox-header" id="mailbox-header" role="button" aria-expanded="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -338,7 +530,7 @@ select.input { cursor: pointer; }
         <div class="mailbox-list open" id="mailbox-list"></div>
       </div>
 
-      <!-- FILE TREE (hidden until loaded) -->
+      <!-- FILE TREE -->
       <div id="tree-section" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
         <div class="file-tree-toolbar">
           <div class="toolbar-left">
@@ -356,7 +548,7 @@ select.input { cursor: pointer; }
         <div class="tree-container" id="tree-container"></div>
       </div>
 
-      <!-- EXPORT (hidden until files loaded) -->
+      <!-- EXPORT -->
       <div id="export-section" style="display:none" class="section">
         <div class="section-label">Export</div>
         <div class="export-info" id="export-info"></div>
@@ -378,41 +570,53 @@ select.input { cursor: pointer; }
     <!-- CHAT PANEL -->
     <div class="panel" id="panel-chat" role="tabpanel">
       <div class="chat-wrap">
-        <div class="chat-config">
-          <div class="form-row-inline">
-            <div class="form-row">
-              <label class="form-label" for="provider-select">Provider</label>
-              <select class="input" id="provider-select">
-                <option value="openai">OpenAI</option>
-                <option value="groq">Groq</option>
-                <option value="xai">xAI (Grok)</option>
-                <option value="cerebras">Cerebras</option>
-                <option value="fireworks">Fireworks</option>
-                <option value="mistral">Mistral</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="gemini">Gemini</option>
-              </select>
-            </div>
-            <div class="form-row">
-              <label class="form-label" for="model-input">Model</label>
-              <input class="input" id="model-input" type="text" placeholder="gpt-4o" autocomplete="off" autocapitalize="none" spellcheck="false">
-            </div>
-          </div>
-          <div class="form-row">
-            <label class="form-label" for="apikey-input">API Key</label>
-            <input class="input" id="apikey-input" type="password" placeholder="sk-..." autocomplete="off">
-          </div>
-          <div class="form-row">
-            <label class="form-label" for="context-select">Context</label>
-            <select class="input" id="context-select">
-              <option value="selected">Selected files</option>
-              <option value="all">All loaded files</option>
-              <option value="none">No file context</option>
-            </select>
-          </div>
-          <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
+
+        <!-- STATUS BAR (always visible 44px) -->
+        <div class="chat-config-bar" id="chat-config-bar" role="button" aria-expanded="false" aria-controls="chat-config-panel" tabindex="0">
+          <span class="config-bar-dot" id="config-bar-dot"></span>
+          <span class="config-bar-label" id="config-bar-label">Configure provider · model · API key</span>
+          <span class="config-bar-tokens" id="config-bar-tokens" style="display:none"></span>
+          <svg class="config-bar-chevron" id="config-bar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
 
+        <!-- CONFIG PANEL (max-height animated) -->
+        <div class="chat-config-panel" id="chat-config-panel">
+          <div class="chat-config-inner">
+            <div class="form-row-inline">
+              <div class="form-row">
+                <label class="form-label" for="provider-select">Provider</label>
+                <select class="input" id="provider-select">
+                  <option value="openai">OpenAI</option>
+                  <option value="groq">Groq</option>
+                  <option value="xai">xAI (Grok)</option>
+                  <option value="cerebras">Cerebras</option>
+                  <option value="fireworks">Fireworks</option>
+                  <option value="mistral">Mistral</option>
+                  <option value="deepseek">DeepSeek</option>
+                  <option value="gemini">Gemini</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label class="form-label" for="model-input">Model</label>
+                <input class="input" id="model-input" type="text" placeholder="gpt-4o" autocomplete="off" autocapitalize="none" spellcheck="false">
+              </div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="apikey-input">API Key / PAT</label>
+              <input class="input" id="apikey-input" type="password" placeholder="sk-... or ghp_..." autocomplete="off">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="context-select">Context</label>
+              <select class="input" id="context-select">
+                <option value="selected">Selected files</option>
+                <option value="all">All loaded files</option>
+                <option value="none">No file context</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- MESSAGES -->
         <div class="chat-messages" id="chat-messages">
           <div class="chat-empty" id="chat-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -420,12 +624,36 @@ select.input { cursor: pointer; }
           </div>
         </div>
 
+        <!-- STAGED FILES TRAY -->
+        <div class="staged-tray" id="staged-tray">
+          <div class="staged-tray-inner">
+            <div class="staged-tray-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" color="var(--color-primary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span class="staged-tray-title">Staged for push</span>
+              <button class="btn-ghost btn-sm" id="clear-staged-btn" style="min-height:24px;padding:2px 8px;font-size:10px">Clear all</button>
+            </div>
+            <div id="staged-files-list"></div>
+            <div class="push-controls">
+              <input class="input push-commit-input" id="push-commit-msg" type="text" placeholder="Commit message..." autocomplete="off" spellcheck="false">
+              <select class="input push-branch" id="push-branch-select">
+                <option value="">Loading branches…</option>
+              </select>
+              <button class="btn-push" id="push-btn" disabled>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Push
+              </button>
+              <div id="push-status"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INPUT ROW -->
         <div class="chat-input-row">
-          <textarea class="chat-input" id="chat-input" placeholder="Ask about the code..." rows="1"></textarea>
+          <textarea class="chat-input" id="chat-input" placeholder="Ask about the code…" rows="1"></textarea>
           <button class="chat-send" id="chat-send" aria-label="Send message">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
+
       </div>
     </div>
 
@@ -472,7 +700,7 @@ document.querySelectorAll('[data-tab]').forEach(tab => {
     tab.classList.add('active');
     tab.setAttribute('aria-selected','true');
     document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'chat') updateTokenEst();
+    if (tab.dataset.tab === 'chat') updateConfigBar();
   });
 });
 
@@ -484,6 +712,11 @@ let checkedPaths = new Set();
 let expandedDirs = new Set();
 let mailboxFiles = [];
 let activeFilters = new Set();
+
+// Phase 3 state
+let stagedFiles = {}; // { path: content }
+let repoBranches = [];
+let configPanelOpen = false;
 
 const CODE_EXTS   = new Set(['.js','.ts','.jsx','.tsx','.py','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte']);
 const DOC_EXTS    = new Set(['.md','.txt','.rst','.mdx','.csv','.log','.pdf']);
@@ -524,6 +757,83 @@ function setStatus(elId, type, msg) {
   el.innerHTML = `<div class="status status-${type}">${icons[type]||''}<span>${msg}</span></div>`;
 }
 
+// =================== CONFIG BAR ===================
+function updateConfigBar() {
+  const provider = document.getElementById('provider-select').value;
+  const model = document.getElementById('model-input').value.trim();
+  const key = document.getElementById('apikey-input').value.trim();
+  const ready = provider && model && key;
+
+  const dot = document.getElementById('config-bar-dot');
+  const label = document.getElementById('config-bar-label');
+  const tokens = document.getElementById('config-bar-tokens');
+
+  dot.classList.toggle('ready', ready);
+
+  if (ready) {
+    label.textContent = `${provider} · ${model}`;
+    const ctx = getContextContent();
+    const est = Math.round(ctx.length / 4);
+    tokens.textContent = est.toLocaleString() + ' tok';
+    tokens.style.display = 'block';
+  } else {
+    label.textContent = 'Configure provider · model · API key';
+    tokens.style.display = 'none';
+  }
+}
+
+function openConfigPanel() {
+  configPanelOpen = true;
+  document.getElementById('chat-config-panel').classList.add('open');
+  document.getElementById('config-bar-chevron').classList.add('open');
+  document.getElementById('chat-config-bar').setAttribute('aria-expanded','true');
+}
+
+function closeConfigPanel() {
+  configPanelOpen = false;
+  document.getElementById('chat-config-panel').classList.remove('open');
+  document.getElementById('config-bar-chevron').classList.remove('open');
+  document.getElementById('chat-config-bar').setAttribute('aria-expanded','false');
+}
+
+function toggleConfigPanel() {
+  if (configPanelOpen) closeConfigPanel(); else openConfigPanel();
+}
+
+document.getElementById('chat-config-bar').addEventListener('click', toggleConfigPanel);
+document.getElementById('chat-config-bar').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleConfigPanel(); }
+});
+
+// Auto-collapse when all three fields filled and focus leaves panel
+function maybeAutoCollapse() {
+  const provider = document.getElementById('provider-select').value;
+  const model = document.getElementById('model-input').value.trim();
+  const key = document.getElementById('apikey-input').value.trim();
+  if (provider && model && key) {
+    setTimeout(() => {
+      if (!document.getElementById('chat-config-panel').contains(document.activeElement)) {
+        closeConfigPanel();
+      }
+    }, 120);
+  }
+  updateConfigBar();
+}
+
+document.getElementById('provider-select').addEventListener('change', maybeAutoCollapse);
+document.getElementById('model-input').addEventListener('input', maybeAutoCollapse);
+document.getElementById('apikey-input').addEventListener('input', maybeAutoCollapse);
+document.getElementById('context-select').addEventListener('change', updateConfigBar);
+
+// Open config on first visit to chat tab if not ready
+document.querySelector('[data-tab="chat"]').addEventListener('click', () => {
+  const provider = document.getElementById('provider-select').value;
+  const model = document.getElementById('model-input').value.trim();
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!provider || !model || !key) openConfigPanel();
+  updateConfigBar();
+});
+
 // =================== REPO LOADER ===================
 document.getElementById('load-btn').addEventListener('click', loadRepo);
 document.getElementById('repo-input').addEventListener('keydown', e => { if (e.key === 'Enter') loadRepo(); });
@@ -539,7 +849,7 @@ async function loadRepo() {
   document.getElementById('export-section').style.display = 'none';
   document.getElementById('mailbox-section').style.display = 'none';
   treeFlat = []; fileContents = {}; checkedPaths = new Set(); expandedDirs = new Set();
-  mailboxFiles = []; activeFilters = new Set();
+  mailboxFiles = []; activeFilters = new Set(); repoBranches = [];
   resetFilterButtons();
 
   try {
@@ -549,6 +859,7 @@ async function loadRepo() {
     renderRepoCard(repoMeta);
     setStatus('repo-status', '');
     await loadTree(repoMeta.default_branch);
+    loadBranches();
   } catch(e) {
     setStatus('repo-status', 'error', e.message);
   }
@@ -596,6 +907,42 @@ async function loadTree(branch) {
   document.getElementById('export-section').style.display = 'block';
   updateExportInfo();
 }
+
+// =================== BRANCH LOADER ===================
+async function loadBranches() {
+  const key = document.getElementById('apikey-input').value.trim();
+  const headers = key ? { 'Authorization': `token ${key}` } : {};
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/branches?per_page=100`, { headers });
+    if (!res.ok) return;
+    const data = await res.json();
+    repoBranches = data.map(b => b.name);
+    renderBranchSelect();
+  } catch(e) {}
+}
+
+function renderBranchSelect() {
+  const sel = document.getElementById('push-branch-select');
+  const current = sel.value;
+  sel.innerHTML = repoBranches.map(b => `<option value="${b}"${b === (repoMeta && repoMeta.default_branch) ? ' selected' : ''}>${b}</option>`).join('');
+  sel.innerHTML += `<option value="__new__">+ New branch…</option>`;
+  if (current && repoBranches.includes(current)) sel.value = current;
+}
+
+document.getElementById('push-branch-select').addEventListener('change', function() {
+  if (this.value === '__new__') {
+    const name = prompt('New branch name:');
+    if (name && name.trim()) {
+      const opt = document.createElement('option');
+      opt.value = name.trim();
+      opt.textContent = name.trim();
+      this.insertBefore(opt, this.querySelector('[value="__new__"]'));
+      this.value = name.trim();
+    } else {
+      this.value = repoBranches[0] || '';
+    }
+  }
+});
 
 // =================== MAILBOX ===================
 function renderMailbox() {
@@ -761,7 +1108,7 @@ function toggleFile(path, checked) {
   if (checked) checkedPaths.add(path); else checkedPaths.delete(path);
   updateSelectionCount();
   updateExportInfo();
-  updateTokenEst();
+  updateConfigBar();
 }
 
 function toggleDir(dirPath, checked) {
@@ -770,7 +1117,7 @@ function toggleDir(dirPath, checked) {
   });
   renderTree();
   updateExportInfo();
-  updateTokenEst();
+  updateConfigBar();
 }
 
 function updateSelectionCount() {
@@ -831,7 +1178,7 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     }
     renderTree();
     updateExportInfo();
-    updateTokenEst();
+    updateConfigBar();
     syncMailboxCheckboxes();
   });
 });
@@ -847,13 +1194,13 @@ document.getElementById('select-all-btn').addEventListener('click', () => {
   treeFlat.filter(n => n.type === 'blob').forEach(f => checkedPaths.add(f.path));
   activeFilters = new Set(['code','docs','config']);
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('active'));
-  renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
+  renderTree(); updateExportInfo(); updateConfigBar(); syncMailboxCheckboxes();
 });
 document.getElementById('deselect-btn').addEventListener('click', () => {
   checkedPaths.clear();
   activeFilters = new Set();
   resetFilterButtons();
-  renderTree(); updateExportInfo(); updateTokenEst(); syncMailboxCheckboxes();
+  renderTree(); updateExportInfo(); updateConfigBar(); syncMailboxCheckboxes();
 });
 
 function updateExportInfo() {
@@ -984,6 +1331,7 @@ const PROVIDERS = {
 document.getElementById('provider-select').addEventListener('change', () => {
   const p = PROVIDERS[document.getElementById('provider-select').value];
   document.getElementById('model-input').value = p.model;
+  maybeAutoCollapse();
 });
 document.getElementById('provider-select').dispatchEvent(new Event('change'));
 
@@ -996,7 +1344,6 @@ chatInput.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 document.getElementById('chat-send').addEventListener('click', sendMessage);
-document.getElementById('context-select').addEventListener('change', updateTokenEst);
 
 function getContextContent() {
   const sel = document.getElementById('context-select').value;
@@ -1006,19 +1353,220 @@ function getContextContent() {
   return paths.sort().map(p => `===== FILE: ${p} =====\n${fileContents[p].content}`).join('\n\n');
 }
 
-function updateTokenEst() {
-  const ctx = getContextContent();
-  const est = Math.round(ctx.length / 4);
-  document.getElementById('token-est').textContent = est.toLocaleString();
+// =================== CODE FENCE PARSER ===================
+// Detects ```filename.ext fences in assistant replies
+// Returns array of { filename, content } objects
+function parseFences(text) {
+  const results = [];
+  // Match ```filename.ext (must have a dot in the name portion)
+  const fenceRe = /^```([^\s`]+\.[^\s`]+)\n([\s\S]*?)^```/gm;
+  let m;
+  while ((m = fenceRe.exec(text)) !== null) {
+    results.push({ filename: m[1], content: m[2] });
+  }
+  return results;
 }
 
+// Render assistant message with fence highlighting + Stage buttons
+function renderAssistantContent(text) {
+  const fenceRe = /^```([^\s`]+\.[^\s`]+)\n([\s\S]*?)^```/gm;
+  let last = 0;
+  let html = '';
+  let m;
+  while ((m = fenceRe.exec(text)) !== null) {
+    // text before this fence
+    const before = text.slice(last, m.index);
+    if (before) html += escHtml(before);
+    const filename = escHtml(m[1]);
+    const code = escHtml(m[2]);
+    const alreadyStaged = stagedFiles.hasOwnProperty(m[1]);
+    html += `<div class="fence-wrap" data-fence-file="${filename}">
+      <div class="fence-filename">
+        <span>${filename}</span>
+        <button class="btn-stage${alreadyStaged ? ' staged' : ''}" data-file="${filename}" data-raw-idx="${m.index}">${alreadyStaged ? '✓ Staged' : 'Stage'}</button>
+      </div>
+      <pre class="fence-code">${code}</pre>
+    </div>`;
+    last = m.index + m[0].length;
+  }
+  const tail = text.slice(last);
+  if (tail) html += escHtml(tail);
+  return html;
+}
+
+// =================== STAGED FILES ===================
+function stageFile(filename, content) {
+  stagedFiles[filename] = content;
+  renderStagedTray();
+  updateStageBtns();
+}
+
+function unstageFile(filename) {
+  delete stagedFiles[filename];
+  renderStagedTray();
+  updateStageBtns();
+}
+
+function renderStagedTray() {
+  const tray = document.getElementById('staged-tray');
+  const list = document.getElementById('staged-files-list');
+  const count = Object.keys(stagedFiles).length;
+
+  if (count === 0) {
+    tray.classList.remove('open');
+    list.innerHTML = '';
+    return;
+  }
+
+  tray.classList.add('open');
+  list.innerHTML = '';
+  Object.keys(stagedFiles).forEach(filename => {
+    const row = document.createElement('div');
+    row.className = 'staged-file-row';
+    row.innerHTML = `
+      <span class="staged-file-name">${escHtml(filename)}</span>
+      <button class="btn-unstage" data-file="${escHtml(filename)}" aria-label="Remove ${escHtml(filename)} from staged files">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>`;
+    row.querySelector('.btn-unstage').addEventListener('click', () => unstageFile(filename));
+    list.appendChild(row);
+  });
+
+  // Enable push button if we have a commit message
+  validatePushBtn();
+
+  // Reload branches if we have a repo and haven't loaded yet
+  if (repoOwner && repoName && repoBranches.length === 0) loadBranches();
+}
+
+function updateStageBtns() {
+  document.querySelectorAll('.btn-stage').forEach(btn => {
+    const file = btn.dataset.file;
+    if (stagedFiles.hasOwnProperty(file)) {
+      btn.textContent = '✓ Staged';
+      btn.classList.add('staged');
+    } else {
+      btn.textContent = 'Stage';
+      btn.classList.remove('staged');
+    }
+  });
+}
+
+document.getElementById('clear-staged-btn').addEventListener('click', () => {
+  stagedFiles = {};
+  renderStagedTray();
+  updateStageBtns();
+});
+
+document.getElementById('push-commit-msg').addEventListener('input', validatePushBtn);
+document.getElementById('push-branch-select').addEventListener('change', validatePushBtn);
+
+function validatePushBtn() {
+  const hasFiles = Object.keys(stagedFiles).length > 0;
+  const hasMsg = document.getElementById('push-commit-msg').value.trim().length > 0;
+  const hasBranch = document.getElementById('push-branch-select').value && document.getElementById('push-branch-select').value !== '__new__';
+  document.getElementById('push-btn').disabled = !(hasFiles && hasMsg && hasBranch);
+}
+
+// =================== GITHUB PUSH ===================
+document.getElementById('push-btn').addEventListener('click', pushFiles);
+
+async function pushFiles() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key) { setPushStatus('error', 'API Key / PAT required in chat config'); return; }
+  if (!repoOwner || !repoName) { setPushStatus('error', 'Load a repository first'); return; }
+
+  const commitMsg = document.getElementById('push-commit-msg').value.trim();
+  const branch = document.getElementById('push-branch-select').value;
+  const files = Object.entries(stagedFiles);
+  if (!files.length) return;
+
+  document.getElementById('push-btn').disabled = true;
+  setPushStatus('loading', `Pushing ${files.length} file${files.length > 1 ? 's' : ''}…`);
+
+  const headers = {
+    'Authorization': `token ${key}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/vnd.github+json'
+  };
+
+  let pushed = 0;
+  let errors = [];
+
+  for (const [filePath, content] of files) {
+    try {
+      // Get current SHA if file exists (needed for update vs create)
+      let sha = undefined;
+      const checkRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}?ref=${encodeURIComponent(branch)}`, { headers });
+      if (checkRes.ok) {
+        const existing = await checkRes.json();
+        sha = existing.sha;
+      }
+
+      // base64-encode content
+      const b64 = btoa(unescape(encodeURIComponent(content)));
+
+      const body = {
+        message: commitMsg,
+        content: b64,
+        branch: branch,
+      };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) {
+        const err = await putRes.text();
+        errors.push(`${filePath}: ${putRes.status}`);
+        console.error('Push error', filePath, err);
+      } else {
+        pushed++;
+      }
+    } catch(e) {
+      errors.push(`${filePath}: ${e.message}`);
+    }
+  }
+
+  if (errors.length === 0) {
+    setPushStatus('success', `✓ Pushed ${pushed} file${pushed > 1 ? 's' : ''} to ${branch}`);
+    stagedFiles = {};
+    renderStagedTray();
+    updateStageBtns();
+    document.getElementById('push-commit-msg').value = '';
+  } else if (pushed > 0) {
+    setPushStatus('error', `${pushed} pushed, ${errors.length} failed: ${errors[0]}`);
+  } else {
+    setPushStatus('error', `Push failed: ${errors[0]}`);
+    validatePushBtn();
+  }
+
+  setTimeout(() => setPushStatus('', ''), 4000);
+}
+
+function setPushStatus(type, msg) {
+  const el = document.getElementById('push-status');
+  if (!type) { el.textContent = ''; return; }
+  const colors = { loading: 'var(--color-primary)', error: 'var(--color-error)', success: 'var(--color-success)' };
+  el.style.color = colors[type] || 'var(--color-text-muted)';
+  el.textContent = msg;
+}
+
+// =================== CHAT ===================
 let chatHistory = [];
 
 async function sendMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
   const apiKey = document.getElementById('apikey-input').value.trim();
-  if (!apiKey) { appendMsg('assistant', 'Enter an API key in the settings above.'); return; }
+  if (!apiKey) {
+    openConfigPanel();
+    document.getElementById('apikey-input').focus();
+    return;
+  }
 
   chatInput.value = '';
   chatInput.style.height = '';
@@ -1063,7 +1611,7 @@ async function sendMessage() {
     }
     chatHistory.push({ role: 'assistant', content: reply });
     thinkingEl.remove();
-    appendMsg('assistant', reply);
+    appendAssistantMsg(reply);
   } catch(e) {
     thinkingEl.remove();
     appendMsg('assistant', 'Error: ' + e.message);
@@ -1080,6 +1628,35 @@ function appendMsg(role, content) {
   scrollChatBottom();
 }
 
+function appendAssistantMsg(content) {
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.innerHTML = renderAssistantContent(content);
+  div.innerHTML = '<div class="msg-role">Assistant</div>';
+  div.appendChild(bubble);
+
+  // Wire up Stage buttons
+  bubble.querySelectorAll('.btn-stage').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filename = btn.dataset.file;
+      // Find content from the fence-wrap
+      const wrap = btn.closest('.fence-wrap');
+      const codeEl = wrap && wrap.querySelector('.fence-code');
+      const rawContent = codeEl ? codeEl.textContent : '';
+      if (stagedFiles.hasOwnProperty(filename)) {
+        unstageFile(filename);
+      } else {
+        stageFile(filename, rawContent);
+      }
+    });
+  });
+
+  document.getElementById('chat-messages').appendChild(div);
+  scrollChatBottom();
+}
+
 function scrollChatBottom() {
   const el = document.getElementById('chat-messages');
   el.scrollTop = el.scrollHeight;
@@ -1088,6 +1665,9 @@ function scrollChatBottom() {
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// Initial config bar state
+updateConfigBar();
 </script>
 </body>
 </html>
