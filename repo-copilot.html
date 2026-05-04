@@ -9,88 +9,87 @@
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-/* ...BASE STYLES FROM d2a3fd2cb...*/
-/* All styles remain unchanged except for additions for Phase 3 features */
-/* ...
-...snip: see full block in repo at d2a3fd2cb2f1c7ee62a8bc0272686bbcf166568f
-... */
-/* --- PHASE 3 ADDITIONS BELOW --- */
+/* ...other base styles... */
 
-/* Phase 3 Collapsible Config Bar */
-.chat-config-bar { display: flex; flex-direction: column; }
-.chat-config-header { display: flex; align-items: center; gap: var(--space-3); height: 44px; background: var(--color-surface); border-bottom: 1px solid var(--color-divider); cursor: pointer; padding: 0 var(--space-4); user-select: none; }
-.chat-config-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--color-text-faint); transition: background 180ms; }
+.chat-config-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  height: 44px;
+  min-height: 44px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-divider);
+  background: var(--color-surface);
+  flex-shrink: 0;
+  user-select: none;
+}
+.chat-config-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-text-faint); flex-shrink: 0;
+  transition: background 200ms;
+}
 .chat-config-dot.ready { background: var(--color-success); }
-.chat-config-summary { flex: 1; color: var(--color-text-muted); font-size: var(--text-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chat-config-tokens { font-size: var(--text-xs); color: var(--color-primary); font-weight: 600; }
-.chat-config-chevron { margin-left: var(--space-2); transition: transform 180ms; display: flex; align-items: center; }
-.chat-config-chevron svg { width: 18px; height: 18px; display: block; }
+.chat-config-summary {
+  flex: 1; font-size: 0.875rem; color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chat-config-summary strong { color: var(--color-text); font-weight: 600; }
+.chat-config-tokens { font-size: 0.75rem; color: var(--color-text-faint); flex-shrink: 0; }
+.chat-config-chevron { flex-shrink: 0; color: var(--color-text-faint); transition: transform 200ms; }
 .chat-config-chevron.open { transform: rotate(180deg); }
+.chat-config-body[hidden] { display: none !important; }
 
-#config-body[hidden] { display: none !important; }
-
-/* ...END PHASE 3 ADDITIONS ... */
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- ...header, tabs, main, files panel, as in Phase 2... -->
+  <!-- ...header, tabs, main... -->
   <main class="main">
     <!-- ...files panel... -->
     <div class="panel" id="panel-chat" role="tabpanel">
       <div class="chat-wrap">
-        <!-- PHASE 3: Collapsible Config Bar -->
-        <div class="chat-config-bar">
-          <div class="chat-config-header" id="chat-config-header" role="button" tabindex="0" aria-expanded="true">
-            <span class="chat-config-dot" id="config-dot"></span>
-            <span class="chat-config-summary" id="config-summary">Configure provider to start</span>
-            <span class="chat-config-tokens" id="config-tokens">0 tokens</span>
-            <span class="chat-config-chevron" id="config-chevron">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-            </span>
-          </div>
-          <div class="chat-config" id="config-body" style="gap:var(--space-3)">
-            <!-- Original .chat-config fields go here (provider, model, apikey, context, tokens, etc.) -->
-            <div class="form-row-inline">
-              <div class="form-row">
-                <label class="form-label" for="provider-select">Provider</label>
-                <select class="input" id="provider-select">
-                  <option value="openai">OpenAI</option>
-                  <option value="groq">Groq</option>
-                  <option value="xai">xAI (Grok)</option>
-                  <option value="cerebras">Cerebras</option>
-                  <option value="fireworks">Fireworks</option>
-                  <option value="mistral">Mistral</option>
-                  <option value="deepseek">DeepSeek</option>
-                  <option value="gemini">Gemini</option>
-                </select>
-              </div>
-              <div class="form-row">
-                <label class="form-label" for="model-input">Model</label>
-                <input class="input" id="model-input" type="text" placeholder="gpt-4o" autocomplete="off" autocapitalize="none" spellcheck="false">
-              </div>
-            </div>
+        <div class="chat-config-header" id="config-header" role="button" tabindex="0" aria-expanded="true" aria-controls="config-body">
+          <span class="chat-config-dot" id="config-dot"></span>
+          <span class="chat-config-summary" id="config-summary">Configure provider to start</span>
+          <span class="chat-config-tokens" id="config-tokens-bar"></span>
+          <svg class="chat-config-chevron" id="config-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+        </div>
+        <div class="chat-config chat-config-body" id="config-body">
+          <div class="form-row-inline">
             <div class="form-row">
-              <label class="form-label" for="apikey-input">API Key</label>
-              <input class="input" id="apikey-input" type="password" placeholder="sk-..." autocomplete="off">
-            </div>
-            <div class="form-row">
-              <label class="form-label" for="context-select">Context</label>
-              <select class="input" id="context-select">
-                <option value="selected">Selected files</option>
-                <option value="all">All loaded files</option>
-                <option value="none">No file context</option>
+              <label class="form-label" for="provider-select">Provider</label>
+              <select class="input" id="provider-select">
+                <option value="openai">OpenAI</option>
+                <option value="groq">Groq</option>
+                <option value="xai">xAI (Grok)</option>
+                <option value="cerebras">Cerebras</option>
+                <option value="fireworks">Fireworks</option>
+                <option value="mistral">Mistral</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="gemini">Gemini</option>
               </select>
             </div>
-            <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
+            <div class="form-row">
+              <label class="form-label" for="model-input">Model</label>
+              <input class="input" id="model-input" type="text" placeholder="gpt-4o" autocomplete="off" autocapitalize="none" spellcheck="false">
+            </div>
           </div>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-          <div class="chat-empty" id="chat-empty">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <p>Load a repo and select files, then ask anything about the code.</p>
+          <div class="form-row">
+            <label class="form-label" for="apikey-input">API Key</label>
+            <input class="input" id="apikey-input" type="password" placeholder="sk-..." autocomplete="off">
           </div>
+          <div class="form-row">
+            <label class="form-label" for="context-select">Context</label>
+            <select class="input" id="context-select">
+              <option value="selected">Selected files</option>
+              <option value="all">All loaded files</option>
+              <option value="none">No file context</option>
+            </select>
+          </div>
+          <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
         </div>
+        <div class="chat-messages" id="chat-messages"><div class="chat-empty" id="chat-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Load a repo and select files, then ask anything about the code.</p></div></div>
         <div class="chat-input-row">
           <textarea class="chat-input" id="chat-input" placeholder="Ask about the code..." rows="1"></textarea>
           <button class="chat-send" id="chat-send" aria-label="Send message">
@@ -101,70 +100,56 @@
     </div>
   </main>
 </div>
-<!-- ...file preview sheet and scripts below... -->
+<!-- ...file preview sheet and other existing scripts... -->
 <script>
-// =================== PHASE 3 Collapsible Config Bar Script ===================
-let autoCollapsed = false;
+const header  = document.getElementById('config-header');
+const body    = document.getElementById('config-body');
+const dot     = document.getElementById('config-dot');
+const summary = document.getElementById('config-summary');
+const tokBar  = document.getElementById('config-tokens-bar');
+const chevron = document.getElementById('config-chevron');
+let collapsed = false, autoCollapsed = false;
+
+function setCollapsed(val) {
+  collapsed = val;
+  body.hidden = val;
+  chevron.classList.toggle('open', !val);
+  header.setAttribute('aria-expanded', String(!val));
+}
+setCollapsed(false); // start expanded
+
+header.addEventListener('click', () => setCollapsed(!collapsed));
+header.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCollapsed(!collapsed); }
+});
+
 function updateConfigBar() {
-  const dot = document.getElementById('config-dot');
-  const summary = document.getElementById('config-summary');
-  const tokens = document.getElementById('config-tokens');
-  const provider = document.getElementById('provider-select').value.trim();
-  const model = document.getElementById('model-input').value.trim();
-  const apikey = document.getElementById('apikey-input').value.trim();
-  // green dot if all 3 are non-empty
-  const ready = provider && model && apikey;
-  dot.classList.toggle('ready', ready);
-  dot.setAttribute('aria-label', ready ? 'Ready' : 'Not ready');
-  summary.textContent = ready ? `${provider} / ${model}` : 'Configure provider to start';
-  const t = document.getElementById('token-est');
-  tokens.textContent = t ? `${t.textContent} tokens` : '0 tokens';
-  // first time all fields are filled, collapse
-  if (!autoCollapsed && ready) {
-    setTimeout(() => {
-      document.getElementById('config-body').setAttribute('hidden','');
-      document.getElementById('chat-config-header').setAttribute('aria-expanded','false');
-      document.getElementById('config-chevron').classList.remove('open');
-      autoCollapsed = true;
-    }, 350);
-  }
-}
-// Toggle config panel
-function toggleConfigBody() {
-  const body = document.getElementById('config-body');
-  const chevron = document.getElementById('config-chevron');
-  const expanded = body.hasAttribute('hidden');
-  if (expanded) {
-    body.removeAttribute('hidden');
-    document.getElementById('chat-config-header').setAttribute('aria-expanded','true');
-    chevron.classList.add('open');
+  const provider = document.getElementById('provider-select');
+  const model    = document.getElementById('model-input').value.trim();
+  const apikey   = document.getElementById('apikey-input').value.trim();
+  const tokens   = document.getElementById('token-est').textContent;
+  const ready    = provider.value && model && apikey;
+  dot.classList.toggle('ready', !!ready);
+  if (ready) {
+    const label = provider.options[provider.selectedIndex].text;
+    summary.innerHTML = '<strong>' + label + '</strong> / ' + model;
+    tokBar.textContent = 'Tokens: ' + parseInt(tokens||'0').toLocaleString();
   } else {
-    body.setAttribute('hidden','');
-    document.getElementById('chat-config-header').setAttribute('aria-expanded','false');
-    chevron.classList.remove('open');
+    summary.textContent = 'Configure provider to start';
+    tokBar.textContent = '';
+  }
+  if (ready && !autoCollapsed && !collapsed) {
+    autoCollapsed = true;
+    setCollapsed(true);
   }
 }
-['click', 'keydown'].forEach(evt => {
-  document.getElementById('chat-config-header').addEventListener(evt, e => {
-    if (evt === 'keydown' && !(e.key === 'Enter' || e.key === ' ')) return;
-    e.preventDefault();
-    toggleConfigBody();
-  });
-});
-// Watch config fields
-['provider-select','model-input','apikey-input'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateConfigBar);
-});
-// Start live tokens mutation observer
-const tokenEl = document.getElementById('token-est');
-if (window.MutationObserver && tokenEl) {
-  const mo = new MutationObserver(updateConfigBar);
-  mo.observe(tokenEl, { childList: true, subtree: true });
-}
+
+['provider-select','model-input','apikey-input'].forEach(id =>
+  document.getElementById(id).addEventListener('input', updateConfigBar)
+);
+new MutationObserver(updateConfigBar)
+  .observe(document.getElementById('token-est'), {childList:true, subtree:true, characterData:true});
 updateConfigBar();
-// =================== END PHASE 3 Collapsible Config Bar ===================
-// ...other scripts continue below, not removed...
 </script>
-<!-- ...other scripts including phase 3 GitHub push tool go here ... -->
 </body>
 </html>
