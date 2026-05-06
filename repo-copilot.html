@@ -1,1 +1,783 @@
-FULL_CONTENT_PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>repo-copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+/* === ART DIRECTION ===
+   Concept: developer tool, mobile-first, dense
+   Palette: Nexus dark surfaces, Hydra Teal accent
+   Typography: Satoshi body only
+   Density: maximum, compact, thumb-optimized */
+
+:root, [data-theme="light"] {
+  --color-bg: #f7f6f2;
+  --color-surface: #f9f8f5;
+  --color-surface-2: #fbfbf9;
+  --color-surface-offset: #f3f0ec;
+  --color-surface-offset-2: #edeae5;
+  --color-surface-dynamic: #e6e4df;
+  --color-divider: #dcd9d5;
+  --color-border: #d4d1ca;
+  --color-text: #28251d;
+  --color-text-muted: #7a7974;
+  --color-text-faint: #bab9b4;
+  --color-text-inverse: #f9f8f4;
+  --color-primary: #01696f;
+  --color-primary-hover: #0c4e54;
+  --color-primary-active: #0f3638;
+  --color-primary-highlight: #cedcd8;
+  --color-error: #a12c7b;
+  --color-success: #437a22;
+  --color-warning: #964219;
+  --shadow-sm: 0 1px 2px oklch(0.2 0.01 80 / 0.06);
+  --shadow-md: 0 4px 12px oklch(0.2 0.01 80 / 0.08);
+  --shadow-lg: 0 12px 32px oklch(0.2 0.01 80 / 0.12);
+  --radius-sm: 0.375rem; --radius-md: 0.5rem; --radius-lg: 0.75rem;
+  --radius-xl: 1rem; --radius-full: 9999px;
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+  --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+  --space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;
+  --space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;
+  --space-12:3rem;--space-16:4rem;
+  --transition-interactive: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --font-body: 'Satoshi', 'Inter', sans-serif;
+}
+[data-theme="dark"] {
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-surface-offset-2:#22211f;
+  --color-surface-dynamic:#2d2c2a;--color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-text-inverse:#2b2a28;--color-primary:#4f98a3;
+  --color-primary-hover:#227f8b;--color-primary-active:#1a626b;
+  --color-primary-highlight:#313b3b;--color-error:#d163a7;
+  --color-success:#6daa45;--color-warning:#bb653b;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
+  --shadow-md:0 4px 12px oklch(0 0 0/.3);
+  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme]){
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-surface-offset-2:#22211f;
+  --color-surface-dynamic:#2d2c2a;--color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-text-inverse:#2b2a28;--color-primary:#4f98a3;
+  --color-primary-hover:#227f8b;--color-primary-active:#1a626b;
+  --color-primary-highlight:#313b3b;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.2);
+  --shadow-md:0 4px 12px oklch(0 0 0/.3);
+  --shadow-lg:0 12px 32px oklch(0 0 0/.4);
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:none;text-size-adjust:none;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
+body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-sm);color:var(--color-text);background:var(--color-bg);overflow-x:hidden;}
+img,svg{display:block;max-width:100%;}
+input,button,textarea,select{font:inherit;color:inherit;}
+button{cursor:pointer;background:none;border:none;}
+a,button,[role="button"]{transition:color var(--transition-interactive),background var(--transition-interactive),border-color var(--transition-interactive),box-shadow var(--transition-interactive),opacity var(--transition-interactive);}
+:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px;border-radius:var(--radius-sm);}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0;}
+.app{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
+.header{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;min-height:52px;}
+.header-logo{display:flex;align-items:center;gap:var(--space-2);flex-shrink:0;}
+.header-logo svg{width:24px;height:24px;color:var(--color-primary);}
+.header-title{font-size:var(--text-sm);font-weight:700;color:var(--color-text);letter-spacing:-0.01em;}
+.header-spacer{flex:1;}
+.theme-toggle{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);border-radius:var(--radius-md);}
+.theme-toggle:hover{color:var(--color-text);background:var(--color-surface-dynamic);}
+.tabs{display:flex;background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;}
+.tab{flex:1;padding:var(--space-3) var(--space-2);font-size:var(--text-sm);font-weight:500;color:var(--color-text-muted);border-bottom:2px solid transparent;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center;gap:var(--space-2);}
+.tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);}
+.tab:hover:not(.active){color:var(--color-text);background:var(--color-surface-dynamic);}
+.tab-badge{background:var(--color-primary);color:var(--color-text-inverse);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:var(--radius-full);display:inline-flex;align-items:center;justify-content:center;padding:0 5px;}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.panel{display:none;flex:1;overflow-y:auto;overflow-x:hidden;flex-direction:column;}
+.panel.active{display:flex;}
+.section{padding:var(--space-4);border-bottom:1px solid var(--color-divider);}
+.section:last-child{border-bottom:none;}
+.section-label{font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-3);}
+.input-row{display:flex;gap:var(--space-2);}
+.input{flex:1;background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);font-size:var(--text-sm);color:var(--color-text);min-height:44px;transition:border-color var(--transition-interactive),box-shadow var(--transition-interactive);}
+.input::placeholder{color:var(--color-text-faint);}
+.input:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 2px var(--color-primary-highlight);}
+.input-full{width:100%;}
+textarea.input{min-height:80px;resize:vertical;}
+select.input{cursor:pointer;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);font-weight:600;border-radius:var(--radius-md);min-height:44px;white-space:nowrap;}
+.btn-primary{background:var(--color-primary);color:var(--color-text-inverse);}
+.btn-primary:hover{background:var(--color-primary-hover);}
+.btn-primary:active{background:var(--color-primary-active);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-secondary{background:var(--color-surface-dynamic);color:var(--color-text);border:1px solid var(--color-border);}
+.btn-secondary:hover{background:var(--color-surface-offset-2);}
+.btn-ghost{color:var(--color-text-muted);padding:var(--space-2) var(--space-3);min-height:36px;border-radius:var(--radius-md);}
+.btn-ghost:hover{color:var(--color-text);background:var(--color-surface-dynamic);}
+.btn-icon{width:44px;height:44px;padding:0;border-radius:var(--radius-md);flex-shrink:0;}
+.btn-sm{padding:var(--space-2) var(--space-3);min-height:36px;font-size:var(--text-xs);}
+.btn-full{width:100%;}
+.filter-btn{padding:var(--space-2) var(--space-3);min-height:36px;font-size:var(--text-xs);font-weight:600;border-radius:var(--radius-md);background:var(--color-surface-dynamic);color:var(--color-text-muted);border:1px solid var(--color-border);transition:background var(--transition-interactive),color var(--transition-interactive),border-color var(--transition-interactive);}
+.filter-btn:hover{background:var(--color-surface-offset-2);color:var(--color-text);}
+.filter-btn.active{background:var(--color-primary);color:var(--color-text-inverse);border-color:var(--color-primary);}
+.repo-card{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-4);}
+.repo-card-name{font-size:var(--text-base);font-weight:700;color:var(--color-text);margin-bottom:var(--space-1);}
+.repo-card-desc{font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-3);line-height:1.5;}
+.repo-meta{display:flex;flex-wrap:wrap;gap:var(--space-3);}
+.repo-meta-item{display:flex;align-items:center;gap:var(--space-1);font-size:var(--text-xs);color:var(--color-text-muted);}
+.repo-meta-item svg{width:14px;height:14px;flex-shrink:0;}
+.status{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3);border-radius:var(--radius-md);font-size:var(--text-xs);}
+.status-loading{background:color-mix(in oklch,var(--color-primary) 10%,var(--color-surface));color:var(--color-primary);}
+.status-error{background:color-mix(in oklch,var(--color-error) 10%,var(--color-surface));color:var(--color-error);}
+.status-success{background:color-mix(in oklch,var(--color-success) 10%,var(--color-surface));color:var(--color-success);}
+.spin{animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.mailbox-section{background:color-mix(in oklch,var(--color-primary) 6%,var(--color-surface));border-bottom:1px solid var(--color-divider);flex-shrink:0;}
+.mailbox-header{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);cursor:pointer;min-height:40px;}
+.mailbox-header:hover{background:color-mix(in oklch,var(--color-primary) 10%,var(--color-surface));}
+.mailbox-header svg{width:14px;height:14px;color:var(--color-primary);flex-shrink:0;}
+.mailbox-header-label{font-size:var(--text-xs);font-weight:700;color:var(--color-primary);text-transform:uppercase;letter-spacing:0.06em;flex:1;}
+.mailbox-toggle{width:16px;height:16px;color:var(--color-primary);transition:transform 180ms;}
+.mailbox-toggle.open{transform:rotate(90deg);}
+.mailbox-list{padding:0 var(--space-4) var(--space-3);display:none;flex-direction:column;gap:var(--space-1);}
+.mailbox-list.open{display:flex;}
+.mailbox-item{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-radius:var(--radius-sm);cursor:pointer;min-height:36px;}
+.mailbox-item:hover{background:color-mix(in oklch,var(--color-primary) 12%,var(--color-surface));}
+.mailbox-item svg{width:14px;height:14px;color:var(--color-primary);flex-shrink:0;}
+.mailbox-item-path{flex:1;font-size:var(--text-xs);color:var(--color-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mailbox-item-size{font-size:10px;color:var(--color-text-faint);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.mailbox-item-cb{width:14px;height:14px;accent-color:var(--color-primary);cursor:pointer;flex-shrink:0;}
+.mailbox-empty{font-size:var(--text-xs);color:var(--color-text-faint);padding:var(--space-2) var(--space-3);}
+.file-tree-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-2);padding:var(--space-3) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-divider);align-items:center;flex-shrink:0;}
+.file-tree-toolbar .toolbar-left{display:flex;gap:var(--space-2);flex:1;flex-wrap:wrap;align-items:center;}
+.toolbar-divider{width:1px;height:20px;background:var(--color-border);flex-shrink:0;}
+.file-count{font-size:var(--text-xs);color:var(--color-text-muted);align-self:center;flex-shrink:0;}
+.tree-container{flex:1;overflow-y:auto;padding:var(--space-2);}
+.tree-node{user-select:none;}
+.tree-item{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);border-radius:var(--radius-sm);min-height:36px;cursor:pointer;}
+.tree-item:hover{background:var(--color-surface-dynamic);}
+.tree-toggle{width:16px;height:16px;flex-shrink:0;color:var(--color-text-faint);display:flex;align-items:center;justify-content:center;transition:transform 180ms;}
+.tree-toggle.open{transform:rotate(90deg);}
+.tree-toggle-spacer{width:16px;flex-shrink:0;}
+.tree-checkbox{width:16px;height:16px;flex-shrink:0;accent-color:var(--color-primary);cursor:pointer;}
+.tree-icon{width:16px;height:16px;flex-shrink:0;}
+.tree-name{flex:1;font-size:var(--text-sm);color:var(--color-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tree-name.dir{color:var(--color-text-muted);font-weight:500;}
+.tree-size{font-size:10px;color:var(--color-text-faint);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.tree-children{padding-left:var(--space-5);display:none;}
+.tree-children.open{display:block;}
+.sheet-backdrop{position:fixed;inset:0;background:oklch(0.1 0 0/.6);z-index:100;display:none;backdrop-filter:blur(2px);}
+.sheet-backdrop.open{display:block;}
+.sheet{position:fixed;bottom:0;left:0;right:0;max-height:85dvh;background:var(--color-surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;z-index:101;display:flex;flex-direction:column;transform:translateY(100%);transition:transform 300ms cubic-bezier(0.16,1,0.3,1);box-shadow:var(--shadow-lg);}
+.sheet.open{transform:translateY(0);}
+.sheet-header{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border-bottom:1px solid var(--color-border);flex-shrink:0;}
+.sheet-title{flex:1;font-size:var(--text-sm);font-weight:600;color:var(--color-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sheet-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);border-radius:var(--radius-full);flex-shrink:0;}
+.sheet-close:hover{background:var(--color-surface-dynamic);color:var(--color-text);}
+.sheet-body{flex:1;overflow-y:auto;padding:var(--space-4);}
+.code-block{font-family:'SF Mono','Fira Code','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:var(--color-text);white-space:pre-wrap;word-break:break-word;background:var(--color-surface-offset);padding:var(--space-4);border-radius:var(--radius-md);border:1px solid var(--color-border);}
+.export-buttons{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
+.export-info{font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3);padding:var(--space-3);background:var(--color-surface-offset);border-radius:var(--radius-md);line-height:1.6;}
+.export-info strong{color:var(--color-text);}
+.chat-wrap{display:flex;flex-direction:column;height:100%;}
+.chat-config{padding:var(--space-4);border-bottom:1px solid var(--color-divider);display:flex;flex-direction:column;gap:var(--space-3);flex-shrink:0;}
+.form-row{display:flex;flex-direction:column;gap:var(--space-1);}
+.form-label{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;}
+.form-row-inline{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
+.token-est{font-size:var(--text-xs);color:var(--color-text-faint);text-align:right;margin-top:var(--space-1);}
+.token-est span{color:var(--color-primary);font-weight:600;}
+.chat-messages{flex:1;overflow-y:auto;padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);}
+.chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);color:var(--color-text-faint);padding:var(--space-8);text-align:center;}
+.chat-empty svg{width:40px;height:40px;opacity:.4;}
+.chat-empty p{font-size:var(--text-sm);max-width:28ch;}
+.msg{display:flex;flex-direction:column;gap:var(--space-2);}
+.msg-role{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-text-faint);}
+.msg-bubble{background:var(--color-surface-offset);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);line-height:1.6;color:var(--color-text);white-space:pre-wrap;word-break:break-word;}
+.msg.user .msg-bubble{background:var(--color-primary-highlight);}
+.msg.assistant .msg-role{color:var(--color-primary);}
+.chat-input-row{display:flex;gap:var(--space-2);padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);background:var(--color-surface);flex-shrink:0;}
+.chat-input{flex:1;background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);color:var(--color-text);resize:none;overflow-y:hidden;max-height:120px;min-height:44px;}
+.chat-input:focus{outline:none;border-color:var(--color-primary);}
+.chat-send{width:44px;height:44px;background:var(--color-primary);color:var(--color-text-inverse);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.chat-send:hover{background:var(--color-primary-hover);}
+.chat-send:disabled{opacity:.4;cursor:not-allowed;}
+@keyframes loading-dots{0%,80%,100%{opacity:0}40%{opacity:1}}
+.loading-dots span{animation:loading-dots 1.4s ease-in-out infinite;display:inline-block;}
+.loading-dots span:nth-child(2){animation-delay:.2s;}
+.loading-dots span:nth-child(3){animation-delay:.4s;}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;}
+.badge-teal{background:var(--color-primary-highlight);color:var(--color-primary);}
+/* PUSH SELF */
+.push-section{border-top:1px solid var(--color-divider);padding-top:var(--space-3);margin-top:var(--space-3);}
+.push-label{font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-2);}
+.push-badge{font-size:9px;font-weight:700;background:var(--color-primary);color:var(--color-text-inverse);padding:2px 6px;border-radius:var(--radius-full);}
+.push-status{font-size:var(--text-xs);color:var(--color-text-muted);min-height:18px;padding:var(--space-1) 0;line-height:1.4;}
+.push-status.ok{color:var(--color-success);}
+.push-status.err{color:var(--color-error);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="repo-copilot logo"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      <span class="header-title">repo-copilot</span>
+    </div>
+    <div class="header-spacer"></div>
+    <button class="theme-toggle" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </header>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" role="tab" data-tab="files" aria-selected="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+      Files
+      <span class="tab-badge" id="tab-badge-files" style="display:none">0</span>
+    </button>
+    <button class="tab" role="tab" data-tab="chat" aria-selected="false">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Chat
+    </button>
+  </nav>
+  <main class="main">
+    <div class="panel active" id="panel-files" role="tabpanel">
+      <div class="section">
+        <div class="section-label">Repository</div>
+        <div class="input-row" style="margin-bottom:var(--space-2)">
+          <input class="input" id="repo-input" type="text" placeholder="github.com/owner/repo" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+          <button class="btn btn-primary btn-icon" id="load-btn" aria-label="Load repository">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div id="repo-status"></div>
+        <div id="repo-card" style="display:none;margin-top:var(--space-3)"></div>
+      </div>
+      <div id="mailbox-section" class="mailbox-section" style="display:none">
+        <div class="mailbox-header" id="mailbox-header" role="button" aria-expanded="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span class="mailbox-header-label">Mailbox</span>
+          <svg class="mailbox-toggle open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="mailbox-list open" id="mailbox-list"></div>
+      </div>
+      <div id="tree-section" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+        <div class="file-tree-toolbar">
+          <div class="toolbar-left">
+            <button class="btn btn-secondary btn-sm" id="select-all-btn">Select All</button>
+            <button class="btn btn-secondary btn-sm" id="deselect-btn">Deselect All</button>
+            <div class="toolbar-divider"></div>
+            <button class="filter-btn" id="filter-code-btn" data-filter="code">Code</button>
+            <button class="filter-btn" id="filter-docs-btn" data-filter="docs">Docs</button>
+            <button class="filter-btn" id="filter-config-btn" data-filter="config">Config</button>
+            <button class="filter-btn" id="filter-all-btn" data-filter="all">All</button>
+          </div>
+          <span class="file-count" id="file-count-label">0 selected</span>
+        </div>
+        <div id="filter-summary-bar" style="display:none;padding:var(--space-2) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-divider);font-size:var(--text-xs);color:var(--color-primary);font-weight:600"></div>
+        <div class="tree-container" id="tree-container"></div>
+      </div>
+      <div id="export-section" style="display:none" class="section">
+        <div class="section-label">Export</div>
+        <div class="export-info" id="export-info"></div>
+        <div class="export-buttons">
+          <button class="btn btn-secondary" id="export-txt-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            REPO_DUMP.txt
+          </button>
+          <button class="btn btn-secondary" id="export-zip-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download ZIP
+          </button>
+        </div>
+        <div class="push-section">
+          <div class="push-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Push Self to GitHub
+            <span class="push-badge">NEW</span>
+          </div>
+          <div class="form-row" style="margin-bottom:var(--space-2)">
+            <label class="form-label" for="push-token">GitHub Token (contents:write)</label>
+            <input class="input" id="push-token" type="password" placeholder="ghp_..." autocomplete="off">
+          </div>
+          <div class="form-row" style="margin-bottom:var(--space-2)">
+            <label class="form-label" for="push-path">File path in repo</label>
+            <input class="input" id="push-path" type="text" value="repo-copilot.html" autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+          <div class="push-status" id="push-status"></div>
+          <button class="btn btn-primary btn-full" id="push-self-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Push This App to GitHub
+          </button>
+        </div>
+        <div id="fetch-status" style="margin-top:var(--space-3)"></div>
+      </div>
+    </div>
+    <div class="panel" id="panel-chat" role="tabpanel">
+      <div class="chat-wrap">
+        <div class="chat-config">
+          <div class="form-row-inline">
+            <div class="form-row">
+              <label class="form-label" for="provider-select">Provider</label>
+              <select class="input" id="provider-select">
+                <option value="openai">OpenAI</option>
+                <option value="groq">Groq</option>
+                <option value="xai">xAI (Grok)</option>
+                <option value="cerebras">Cerebras</option>
+                <option value="fireworks">Fireworks</option>
+                <option value="mistral">Mistral</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="gemini">Gemini</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="model-input">Model</label>
+              <input class="input" id="model-input" type="text" placeholder="gpt-4o" autocomplete="off" autocapitalize="none" spellcheck="false">
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="apikey-input">API Key</label>
+            <input class="input" id="apikey-input" type="password" placeholder="sk-..." autocomplete="off">
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="context-select">Context</label>
+            <select class="input" id="context-select">
+              <option value="selected">Selected files</option>
+              <option value="all">All loaded files</option>
+              <option value="none">No file context</option>
+            </select>
+          </div>
+          <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-empty" id="chat-empty">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <p>Load a repo and select files, then ask anything about the code.</p>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" placeholder="Ask about the code..." rows="1"></textarea>
+          <button class="chat-send" id="chat-send" aria-label="Send message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="preview-sheet" role="dialog" aria-modal="true" aria-label="File preview">
+  <div class="sheet-header">
+    <span class="sheet-title" id="preview-title"></span>
+    <button class="sheet-close" id="preview-close" aria-label="Close preview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="sheet-body"><pre class="code-block" id="preview-content"></pre></div>
+</div>
+<script>
+(function(){
+  const t=document.querySelector('[data-theme-toggle]');
+  const r=document.documentElement;
+  let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+  r.setAttribute('data-theme',d);
+  const sun='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+  const moon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  function upd(){t.innerHTML=d==='dark'?sun:moon;}
+  upd();
+  t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);upd();});
+})();
+document.querySelectorAll('[data-tab]').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('[data-tab]').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false');});
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');tab.setAttribute('aria-selected','true');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    if(tab.dataset.tab==='chat')updateTokenEst();
+  });
+});
+let repoOwner='',repoName='',repoMeta=null;
+let treeFlat=[],fileContents={},checkedPaths=new Set(),expandedDirs=new Set();
+let mailboxFiles=[],activeFilters=new Set();
+const CODE_EXTS=new Set(['.js','.ts','.jsx','.tsx','.py','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte']);
+const DOC_EXTS=new Set(['.md','.txt','.rst','.mdx','.csv','.log']);
+const CONFIG_EXTS=new Set(['.json','.yaml','.yml','.toml','.env','.gitignore','.eslintrc','.prettierrc','.editorconfig','.html','.css','.sh']);
+function getExt(p){if(!p.includes('.'))return'';const b=p.split('/').pop();const i=b.lastIndexOf('.');if(i===0)return b.toLowerCase();return('.'+b.slice(i+1)).toLowerCase();}
+function parseRepoInput(v){v=v.trim().replace(/^https?:\/\/(www\.)?github\.com\//,'').replace(/\.git$/,'');const p=v.split('/').filter(Boolean);if(p.length>=2)return{owner:p[0],repo:p[1]};if(p.length===1)return{owner:'nothinginfinity',repo:p[0]};return null;}
+function fmtSize(b){if(!b)return'';if(b<1024)return b+' B';return(b/1024).toFixed(1)+' KB';}
+function setStatus(id,type,msg){const el=document.getElementById(id);if(!msg){el.innerHTML='';return;}const icons={loading:'<svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',error:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',success:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'};el.innerHTML=`<div class="status status-${type}">${icons[type]||''}<span>${msg}</span></div>`;}
+document.getElementById('load-btn').addEventListener('click',loadRepo);
+document.getElementById('repo-input').addEventListener('keydown',e=>{if(e.key==='Enter')loadRepo();});
+async function loadRepo(){
+  const raw=document.getElementById('repo-input').value;
+  const parsed=parseRepoInput(raw);
+  if(!parsed){setStatus('repo-status','error','Enter a valid GitHub URL or owner/repo');return;}
+  repoOwner=parsed.owner;repoName=parsed.repo;
+  setStatus('repo-status','loading',`Loading ${repoOwner}/${repoName}...`);
+  document.getElementById('repo-card').style.display='none';
+  document.getElementById('tree-section').style.display='none';
+  document.getElementById('export-section').style.display='none';
+  document.getElementById('mailbox-section').style.display='none';
+  treeFlat=[];fileContents={};checkedPaths=new Set();expandedDirs=new Set();
+  mailboxFiles=[];activeFilters=new Set();resetFilterButtons();
+  try{
+    const res=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`);
+    if(!res.ok)throw new Error(res.status===404?'Repository not found':`GitHub API error ${res.status}`);
+    repoMeta=await res.json();
+    renderRepoCard(repoMeta);
+    setStatus('repo-status','');
+    await loadTree(repoMeta.default_branch);
+  }catch(e){setStatus('repo-status','error',e.message);}
+}
+function renderRepoCard(meta){
+  const upd=new Date(meta.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('repo-card').innerHTML=`<div class="repo-card"><div class="repo-card-name">${meta.full_name}</div>${meta.description?`<div class="repo-card-desc">${meta.description}</div>`:''}<div class="repo-meta"><div class="repo-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${meta.stargazers_count.toLocaleString()}</div><div class="repo-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>${meta.default_branch}</div><div class="repo-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${upd}</div>${meta.language?`<div class="repo-meta-item"><span class="badge badge-teal">${meta.language}</span></div>`:''}</div></div>`;
+  document.getElementById('repo-card').style.display='block';
+}
+async function loadTree(branch){
+  setStatus('repo-status','loading','Fetching file tree...');
+  const res=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`);
+  if(!res.ok)throw new Error(`Tree fetch failed: ${res.status}`);
+  const data=await res.json();
+  treeFlat=data.tree.filter(n=>n.type==='blob'||n.type==='tree');
+  mailboxFiles=treeFlat.filter(n=>n.type==='blob'&&(n.path.endsWith('/inbox.md')||n.path.endsWith('/outbox.md')||n.path==='inbox.md'||n.path==='outbox.md'));
+  renderMailbox();
+  setStatus('repo-status','');
+  renderTree();
+  const ts=document.getElementById('tree-section');
+  ts.style.display='flex';
+  document.getElementById('export-section').style.display='block';
+  updateExportInfo();
+}
+function renderMailbox(){
+  const section=document.getElementById('mailbox-section');
+  const list=document.getElementById('mailbox-list');
+  if(!mailboxFiles.length){section.style.display='none';return;}
+  section.style.display='block';list.innerHTML='';
+  mailboxFiles.forEach(f=>{
+    const item=document.createElement('div');item.className='mailbox-item';
+    item.innerHTML=`<input type="checkbox" class="mailbox-item-cb" aria-label="Select ${f.path}" ${checkedPaths.has(f.path)?'checked':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><span class="mailbox-item-path">${f.path}</span>${f.size?`<span class="mailbox-item-size">${fmtSize(f.size)}</span>`:''}` ;
+    const cb=item.querySelector('.mailbox-item-cb');
+    cb.addEventListener('change',e=>{e.stopPropagation();toggleFile(f.path,cb.checked);syncMailboxCheckboxes();});
+    item.addEventListener('click',e=>{if(e.target===cb)return;previewFile(f.path);});
+    list.appendChild(item);
+  });
+}
+function syncMailboxCheckboxes(){
+  document.querySelectorAll('.mailbox-item-cb').forEach((cb,i)=>{if(mailboxFiles[i])cb.checked=checkedPaths.has(mailboxFiles[i].path);});
+}
+document.getElementById('mailbox-header').addEventListener('click',()=>{
+  const list=document.getElementById('mailbox-list');
+  const toggle=document.querySelector('.mailbox-toggle');
+  const open=list.classList.contains('open');
+  if(open){list.classList.remove('open');toggle.classList.remove('open');document.getElementById('mailbox-header').setAttribute('aria-expanded','false');}
+  else{list.classList.add('open');toggle.classList.add('open');document.getElementById('mailbox-header').setAttribute('aria-expanded','true');}
+});
+function buildTreeHierarchy(flat){
+  const root={children:{},type:'tree',path:''};
+  flat.forEach(node=>{
+    const parts=node.path.split('/');
+    let cur=root;
+    parts.forEach((part,i)=>{
+      if(!cur.children[part])cur.children[part]={children:{},type:i===parts.length-1?node.type:'tree',path:parts.slice(0,i+1).join('/'),sha:node.sha,size:node.size};
+      cur=cur.children[part];
+    });
+  });
+  return root;
+}
+function renderTree(){
+  const hierarchy=buildTreeHierarchy(treeFlat);
+  const container=document.getElementById('tree-container');
+  container.innerHTML='';
+  container.appendChild(renderNode(hierarchy,0));
+  updateSelectionCount();
+}
+function renderNode(node,depth){
+  const frag=document.createDocumentFragment();
+  const sorted=Object.entries(node.children).sort(([an,a],[bn,b])=>{
+    if(a.type!==b.type)return a.type==='tree'?-1:1;
+    return an.localeCompare(bn);
+  });
+  sorted.forEach(([name,child])=>{
+    const div=document.createElement('div');div.className='tree-node';
+    const item=document.createElement('div');item.className='tree-item';
+    item.style.paddingLeft=`calc(var(--space-2) + ${depth*16}px)`;
+    if(child.type==='tree'){
+      const toggle=document.createElement('span');toggle.className='tree-toggle';
+      toggle.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>';
+      if(expandedDirs.has(child.path))toggle.classList.add('open');
+      item.appendChild(toggle);
+      const cb=document.createElement('input');cb.type='checkbox';cb.className='tree-checkbox';
+      cb.checked=isDirChecked(child.path);
+      cb.addEventListener('change',e=>{e.stopPropagation();toggleDir(child.path,cb.checked);});
+      item.appendChild(cb);
+      const icon=document.createElement('span');icon.className='tree-icon';
+      icon.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>';
+      item.appendChild(icon);
+      const label=document.createElement('span');label.className='tree-name dir';label.textContent=name;
+      item.appendChild(label);
+      const childrenDiv=document.createElement('div');
+      childrenDiv.className='tree-children'+(expandedDirs.has(child.path)?' open':'');
+      childrenDiv.appendChild(renderNode(child,depth+1));
+      item.addEventListener('click',e=>{
+        if(e.target===cb)return;
+        const open=expandedDirs.has(child.path);
+        if(open){expandedDirs.delete(child.path);toggle.classList.remove('open');childrenDiv.classList.remove('open');}
+        else{expandedDirs.add(child.path);toggle.classList.add('open');childrenDiv.classList.add('open');}
+      });
+      div.appendChild(item);div.appendChild(childrenDiv);
+    }else{
+      const spacer=document.createElement('span');spacer.className='tree-toggle-spacer';item.appendChild(spacer);
+      const cb=document.createElement('input');cb.type='checkbox';cb.className='tree-checkbox';
+      cb.dataset.path=child.path;cb.checked=checkedPaths.has(child.path);
+      cb.addEventListener('change',e=>{e.stopPropagation();toggleFile(child.path,cb.checked);});
+      item.appendChild(cb);
+      const icon=document.createElement('span');icon.className='tree-icon';
+      const ext=getExt(child.path);
+      icon.innerHTML=CODE_EXTS.has(ext)?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+      item.appendChild(icon);
+      const label=document.createElement('span');label.className='tree-name';label.textContent=name;item.appendChild(label);
+      if(child.size){const sz=document.createElement('span');sz.className='tree-size';sz.textContent=fmtSize(child.size);item.appendChild(sz);}
+      item.addEventListener('click',e=>{if(e.target===cb)return;previewFile(child.path);});
+      div.appendChild(item);
+    }
+    frag.appendChild(div);
+  });
+  return frag;
+}
+function isDirChecked(dirPath){
+  const files=treeFlat.filter(n=>n.type==='blob'&&n.path.startsWith(dirPath+'/'));
+  return files.length>0&&files.every(f=>checkedPaths.has(f.path));
+}
+function toggleFile(path,checked){
+  if(checked)checkedPaths.add(path);else checkedPaths.delete(path);
+  updateSelectionCount();updateExportInfo();
+  document.querySelectorAll(`.tree-checkbox[data-path="${CSS.escape(path)}"]`).forEach(cb=>cb.checked=checked);
+}
+function toggleDir(dirPath,checked){
+  treeFlat.filter(n=>n.type==='blob'&&n.path.startsWith(dirPath+'/')).forEach(f=>{
+    if(checked)checkedPaths.add(f.path);else checkedPaths.delete(f.path);
+  });
+  renderTree();syncMailboxCheckboxes();updateExportInfo();
+}
+function updateSelectionCount(){
+  const n=checkedPaths.size;
+  document.getElementById('file-count-label').textContent=n===0?'0 selected':`${n} selected`;
+  const badge=document.getElementById('tab-badge-files');
+  if(n>0){badge.textContent=n;badge.style.display='inline-flex';}else badge.style.display='none';
+}
+function resetFilterButtons(){activeFilters=new Set();document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));}
+function updateFilterSummaryBar(){}
+function applyFilter(filter){
+  if(activeFilters.has(filter)){activeFilters.delete(filter);}else{activeFilters.add(filter);}
+  document.querySelectorAll('.filter-btn').forEach(b=>{
+    if(b.dataset.filter==='all'){b.classList.toggle('active',activeFilters.size===0);}
+    else b.classList.toggle('active',activeFilters.has(b.dataset.filter));
+  });
+  if(filter==='all'){activeFilters=new Set();document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));}
+  let toCheck=[];
+  if(activeFilters.size===0){toCheck=treeFlat.filter(n=>n.type==='blob').map(n=>n.path);}
+  else{
+    treeFlat.filter(n=>n.type==='blob').forEach(n=>{
+      const ext=getExt(n.path);
+      if(activeFilters.has('code')&&CODE_EXTS.has(ext))toCheck.push(n.path);
+      if(activeFilters.has('docs')&&DOC_EXTS.has(ext))toCheck.push(n.path);
+      if(activeFilters.has('config')&&CONFIG_EXTS.has(ext))toCheck.push(n.path);
+    });
+  }
+  checkedPaths=new Set(toCheck);
+  renderTree();syncMailboxCheckboxes();updateExportInfo();
+}
+document.getElementById('filter-code-btn').addEventListener('click',()=>applyFilter('code'));
+document.getElementById('filter-docs-btn').addEventListener('click',()=>applyFilter('docs'));
+document.getElementById('filter-config-btn').addEventListener('click',()=>applyFilter('config'));
+document.getElementById('filter-all-btn').addEventListener('click',()=>applyFilter('all'));
+document.getElementById('select-all-btn').addEventListener('click',()=>{
+  treeFlat.filter(n=>n.type==='blob').forEach(n=>checkedPaths.add(n.path));
+  renderTree();syncMailboxCheckboxes();updateExportInfo();
+});
+document.getElementById('deselect-btn').addEventListener('click',()=>{
+  checkedPaths=new Set();renderTree();syncMailboxCheckboxes();updateExportInfo();
+});
+function updateExportInfo(){
+  const total=treeFlat.filter(n=>n.type==='blob').length;
+  const sel=checkedPaths.size;
+  const selSize=treeFlat.filter(n=>checkedPaths.has(n.path)).reduce((s,n)=>s+(n.size||0),0);
+  document.getElementById('export-info').innerHTML=`<strong>${sel}</strong> of ${total} files selected &mdash; ~${fmtSize(selSize)} raw`;
+}
+async function previewFile(path){
+  document.getElementById('preview-title').textContent=path;
+  document.getElementById('preview-content').textContent='Loading...';
+  document.getElementById('sheet-backdrop').classList.add('open');
+  document.getElementById('preview-sheet').classList.add('open');
+  try{
+    let content=fileContents[path];
+    if(!content){
+      const res=await fetch(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/${repoMeta.default_branch}/${path}`);
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      content=await res.text();
+      fileContents[path]=content;
+    }
+    document.getElementById('preview-content').textContent=content;
+  }catch(e){document.getElementById('preview-content').textContent='Error loading file: '+e.message;}
+}
+document.getElementById('preview-close').addEventListener('click',closeSheet);
+document.getElementById('sheet-backdrop').addEventListener('click',closeSheet);
+function closeSheet(){
+  document.getElementById('sheet-backdrop').classList.remove('open');
+  document.getElementById('preview-sheet').classList.remove('open');
+}
+async function fetchSelectedContents(){
+  const paths=[...checkedPaths];
+  setStatus('fetch-status','loading',`Fetching ${paths.length} files...`);
+  let done=0;
+  await Promise.all(paths.map(async p=>{
+    if(fileContents[p])return;
+    try{
+      const r=await fetch(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/${repoMeta.default_branch}/${p}`);
+      if(r.ok)fileContents[p]=await r.text();
+    }catch(e){}
+    done++;setStatus('fetch-status','loading',`Fetching files... ${done}/${paths.length}`);
+  }));
+  setStatus('fetch-status','success',`Fetched ${done} files`);
+  return paths.map(p=>fileContents[p]?`=== ${p} ===\n${fileContents[p]}`:`=== ${p} ===\n[failed to fetch]`).join('\n\n');
+}
+document.getElementById('export-txt-btn').addEventListener('click',async()=>{
+  if(!checkedPaths.size){setStatus('fetch-status','error','No files selected');return;}
+  const dump=await fetchSelectedContents();
+  const blob=new Blob([dump],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`${repoName}_REPO_DUMP.txt`;a.click();
+});
+document.getElementById('export-zip-btn').addEventListener('click',async()=>{
+  if(!checkedPaths.size){setStatus('fetch-status','error','No files selected');return;}
+  await fetchSelectedContents();
+  const zip=new JSZip();
+  [...checkedPaths].forEach(p=>{if(fileContents[p])zip.file(p,fileContents[p]);});
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`${repoName}.zip`;a.click();
+});
+// PUSH SELF
+document.getElementById('push-self-btn').addEventListener('click',async()=>{
+  const token=document.getElementById('push-token').value.trim();
+  const filePath=document.getElementById('push-path').value.trim();
+  const statusEl=document.getElementById('push-status');
+  if(!token){statusEl.textContent='GitHub token required.';statusEl.className='push-status err';return;}
+  if(!filePath){statusEl.textContent='File path required.';statusEl.className='push-status err';return;}
+  if(!repoOwner||!repoName){statusEl.textContent='Load a repo first.';statusEl.className='push-status err';return;}
+  const btn=document.getElementById('push-self-btn');btn.disabled=true;
+  statusEl.className='push-status';statusEl.textContent='Reading page...';
+  try{
+    const html=document.documentElement.outerHTML;
+    const encoded=btoa(unescape(encodeURIComponent(html)));
+    statusEl.textContent='Checking current SHA...';
+    let sha=null;
+    const check=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`,{
+      headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json'}
+    });
+    if(check.ok){const d=await check.json();sha=d.sha;}
+    statusEl.textContent='Pushing...';
+    const body={message:`self-push: update ${filePath} from app`,content:encoded};
+    if(sha)body.sha=sha;
+    const put=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`,{
+      method:'PUT',
+      headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json','Accept':'application/vnd.github+json'},
+      body:JSON.stringify(body)
+    });
+    if(!put.ok){const e=await put.text();throw new Error(`GitHub ${put.status}: ${e.slice(0,200)}`);}
+    const result=await put.json();
+    const commitSha=result.commit?.sha?.slice(0,7)||'?';
+    statusEl.textContent=`✓ Pushed ${fmtSize(html.length)} → commit ${commitSha}`;
+    statusEl.className='push-status ok';
+  }catch(e){
+    statusEl.textContent='Error: '+e.message;
+    statusEl.className='push-status err';
+  }finally{btn.disabled=false;}
+});
+// CHAT
+let chatHistory=[];
+const PROVIDERS={
+  openai:{url:'https://api.openai.com/v1/chat/completions',defaultModel:'gpt-4o'},
+  groq:{url:'https://api.groq.com/openai/v1/chat/completions',defaultModel:'llama-3.3-70b-versatile'},
+  xai:{url:'https://api.x.ai/v1/chat/completions',defaultModel:'grok-3-mini'},
+  cerebras:{url:'https://api.cerebras.ai/v1/chat/completions',defaultModel:'llama-3.3-70b'},
+  fireworks:{url:'https://api.fireworks.ai/inference/v1/chat/completions',defaultModel:'accounts/fireworks/models/llama-v3p3-70b-instruct'},
+  mistral:{url:'https://api.mistral.ai/v1/chat/completions',defaultModel:'mistral-large-latest'},
+  deepseek:{url:'https://api.deepseek.com/chat/completions',defaultModel:'deepseek-chat'},
+  gemini:{url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',defaultModel:'gemini-2.0-flash'}
+};
+document.getElementById('provider-select').addEventListener('change',function(){
+  const p=PROVIDERS[this.value];
+  if(p)document.getElementById('model-input').placeholder=p.defaultModel;
+});
+function getContext(){
+  const mode=document.getElementById('context-select').value;
+  if(mode==='none')return'';
+  const paths=mode==='all'?treeFlat.filter(n=>n.type==='blob').map(n=>n.path):[...checkedPaths];
+  if(!paths.length)return'';
+  return paths.map(p=>fileContents[p]?`=== ${p} ===\n${fileContents[p]}`:`=== ${p} ===\n[not fetched]`).join('\n\n');
+}
+function updateTokenEst(){
+  const ctx=getContext();
+  const est=Math.round(ctx.length/4);
+  document.getElementById('token-est').textContent=est.toLocaleString();
+}
+const chatInput=document.getElementById('chat-input');
+chatInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
+chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
+document.getElementById('chat-send').addEventListener('click',sendMessage);
+function addMessage(role,content){
+  const empty=document.getElementById('chat-empty');
+  if(empty)empty.style.display='none';
+  const msg=document.createElement('div');msg.className=`msg ${role}`;
+  const roleEl=document.createElement('div');roleEl.className='msg-role';roleEl.textContent=role==='user'?'You':'Assistant';
+  const bubble=document.createElement('div');bubble.className='msg-bubble';bubble.textContent=content;
+  msg.appendChild(roleEl);msg.appendChild(bubble);
+  document.getElementById('chat-messages').appendChild(msg);
+  msg.scrollIntoView({behavior:'smooth',block:'end'});
+  return bubble;
+}
+async function sendMessage(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();if(!text)return;
+  const apiKey=document.getElementById('apikey-input').value.trim();
+  if(!apiKey){addMessage('assistant','Please enter an API key in the config above.');return;}
+  input.value='';input.style.height='';
+  addMessage('user',text);
+  const provider=document.getElementById('provider-select').value;
+  const modelInput=document.getElementById('model-input').value.trim();
+  const model=modelInput||PROVIDERS[provider]?.defaultModel||'gpt-4o';
+  const ctx=getContext();
+  const systemMsg=ctx?`You are a helpful code assistant. Here is the repository context:\n\n${ctx}`:'You are a helpful code assistant.';
+  chatHistory.push({role:'user',content:text});
+  const bubble=addMessage('assistant','');
+  bubble.innerHTML='<span class="loading-dots"><span>•</span><span>•</span><span>•</span></span>';
+  document.getElementById('chat-send').disabled=true;
+  try{
+    const messages=[{role:'system',content:systemMsg},...chatHistory];
+    const res=await fetch(PROVIDERS[provider].url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+      body:JSON.stringify({model,messages,max_tokens:4096})
+    });
+    if(!res.ok){const e=await res.text();throw new Error(`API ${res.status}: ${e.slice(0,200)}`);}
+    const data=await res.json();
+    const reply=data.choices?.[0]?.message?.content||'No response';
+    bubble.textContent=reply;
+    chatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    bubble.textContent='Error: '+e.message;
+    chatHistory.pop();
+  }finally{
+    document.getElementById('chat-send').disabled=false;
+  }
+}
+</script>
+</body>
+</html>
