@@ -22,8 +22,7 @@ a,button,[role="button"]{transition:color var(--transition-interactive),backgrou
 :focus-visible{outline:2px solid var(--color-primary);outline-offset:2px;border-radius:var(--radius-sm);}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0;}
 
-/* ─── SHELL ─────────────────────────────────────────────────────────────── */
-/* App is a full-viewport flex column: header → tabs → main */
+/* LAYOUT */
 .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden;}
 .header{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;min-height:52px;}
 .header-logo{display:flex;align-items:center;gap:var(--space-2);flex-shrink:0;}
@@ -32,74 +31,39 @@ a,button,[role="button"]{transition:color var(--transition-interactive),backgrou
 .header-spacer{flex:1;}
 .theme-toggle{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);border-radius:var(--radius-md);}
 .theme-toggle:hover{color:var(--color-text);background:var(--color-surface-dynamic);}
-
-/* Tabs: sticky, never scrolls away */
 .tabs{display:flex;background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;}
 .tab{flex:1;padding:var(--space-3) var(--space-2);font-size:var(--text-sm);font-weight:500;color:var(--color-text-muted);border-bottom:2px solid transparent;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center;gap:var(--space-2);}
 .tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);}
 .tab:hover:not(.active){color:var(--color-text);background:var(--color-surface-dynamic);}
 .tab-badge{background:var(--color-primary);color:var(--color-text-inverse);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:var(--radius-full);display:inline-flex;align-items:center;justify-content:center;padding:0 5px;}
 
-/* Main: fills remaining height, never overflows shell */
+/* MAIN: flex col, overflow hidden */
 .main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
 
-/* ─── PANEL SYSTEM ───────────────────────────────────────────────────────── */
-/* Every panel fills .main exactly — no panel introduces its own outer scroll */
+/* PANEL SYSTEM */
 .panel{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;}
 .panel.active{display:flex;}
 
-/* ─── FILES PANEL ────────────────────────────────────────────────────────── */
-/*
-  Layout (top→bottom, all within 100% of .main height):
-    1. .files-top      — repo input + mailbox accordion — shrinks to content, max 30vh, own scroll
-    2. .file-tree-toolbar — filter/select bar — fixed height, never shrinks
-    3. #tree-container — file tree — GROWS to fill all remaining space, scrolls
-    4. #export-wrap    — export + push-self — shrinks to content, never clips
+/* FILES PANEL
+   Zone 1: .files-top      — repo+mailbox — shrinks to content, max 30vh, own scroll
+   Zone 2: .file-tree-toolbar — filter bar — fixed, no shrink
+   Zone 3: #tree-container — tree — GROWS, scrolls
+   Zone 4: #export-section — export+push — shrinks to content, own scroll cap
 */
 #panel-files{flex-direction:column;}
 
-.files-top{
-  flex-shrink:0;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  max-height:30vh;
-  border-bottom:1px solid var(--color-divider);
-}
+.files-top{flex-shrink:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:30vh;border-bottom:1px solid var(--color-divider);}
 
-.file-tree-toolbar{
-  display:flex;
-  flex-wrap:wrap;
-  gap:var(--space-2);
-  padding:var(--space-3) var(--space-4);
-  background:var(--color-surface);
-  border-bottom:1px solid var(--color-divider);
-  align-items:center;
-  flex-shrink:0;
-}
+.file-tree-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-2);padding:var(--space-3) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-divider);align-items:center;flex-shrink:0;}
 .toolbar-left{display:flex;gap:var(--space-2);flex:1;flex-wrap:wrap;align-items:center;}
 .toolbar-divider{width:1px;height:20px;background:var(--color-border);flex-shrink:0;}
 .file-count{font-size:var(--text-xs);color:var(--color-text-muted);align-self:center;flex-shrink:0;}
 
-/* Tree: the only growing + scrolling region in the files panel */
-#tree-container{
-  flex:1;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  padding:var(--space-2);
-  min-height:0;          /* critical for flex shrink to work */
-}
+#tree-container{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-2);min-height:0;}
 
-/* Export: pinned to bottom, never clipped */
-#export-wrap{
-  flex-shrink:0;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  max-height:40vh;       /* prevents export from eating the whole panel on short viewports */
-  border-top:1px solid var(--color-divider);
-  background:var(--color-surface);
-}
+#export-section{flex-shrink:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:40vh;border-top:1px solid var(--color-divider);background:var(--color-surface);}
 
-/* ─── SHARED COMPONENTS ──────────────────────────────────────────────────── */
+/* SHARED COMPONENTS */
 .section{padding:var(--space-4);border-bottom:1px solid var(--color-divider);}
 .section-label{font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-3);}
 .input-row{display:flex;gap:var(--space-2);}
@@ -184,18 +148,8 @@ select.input{cursor:pointer;}
 .form-row{display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-2);}
 .form-label{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;}
 
-/* ─── CHAT PANEL ─────────────────────────────────────────────────────────── */
-/*
-  Layout (top→bottom):
-    1. .chat-config-bar   — collapsed status bar — fixed, flex-shrink:0
-    2. .chat-config-panel — expandable config — flex-shrink:0, no scroll needed
-    3. .chat-messages     — message list — GROWS, scrolls independently
-    4. #staged-tray       — staged files — flex-shrink:0, own inner scroll
-    5. .chat-input-row    — send bar — flex-shrink:0, always visible
-*/
+/* CHAT PANEL */
 .chat-wrap{display:flex;flex-direction:column;height:100%;min-height:0;}
-
-/* Config bar (collapsed) */
 .chat-config-bar{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);cursor:pointer;flex-shrink:0;min-height:44px;background:var(--color-surface);user-select:none;}
 .chat-config-bar:hover{background:var(--color-surface-dynamic);}
 .config-bar-dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--color-text-faint);flex-shrink:0;transition:background var(--transition-interactive);}
@@ -204,26 +158,12 @@ select.input{cursor:pointer;}
 .config-bar-tokens{font-size:10px;color:var(--color-text-faint);flex-shrink:0;}
 .config-bar-chevron{width:16px;height:16px;color:var(--color-text-faint);flex-shrink:0;transition:transform 180ms;}
 .config-bar-chevron.open{transform:rotate(180deg);}
-
-/* Config panel (expanded) */
 .chat-config-panel{padding:var(--space-4);border-bottom:1px solid var(--color-divider);display:none;flex-direction:column;gap:var(--space-3);flex-shrink:0;background:var(--color-surface);}
 .chat-config-panel.open{display:flex;}
 .form-row-inline{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
 .token-est{font-size:var(--text-xs);color:var(--color-text-faint);text-align:right;margin-top:var(--space-1);}
 .token-est span{color:var(--color-primary);font-weight:600;}
-
-/* Messages: the only growing + scrolling region in chat */
-.chat-messages{
-  flex:1;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  padding:var(--space-4);
-  display:flex;
-  flex-direction:column;
-  gap:var(--space-4);
-  min-height:0;
-  scroll-behavior:smooth;
-}
+.chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);min-height:0;scroll-behavior:smooth;}
 .chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);color:var(--color-text-faint);padding:var(--space-8);text-align:center;}
 .chat-empty svg{width:40px;height:40px;opacity:.4;}
 .chat-empty p{font-size:var(--text-sm);max-width:28ch;}
@@ -232,20 +172,15 @@ select.input{cursor:pointer;}
 .msg-bubble{background:var(--color-surface-offset);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);line-height:1.6;color:var(--color-text);white-space:pre-wrap;word-break:break-word;}
 .msg.user .msg-bubble{background:var(--color-primary-highlight);}
 .msg.assistant .msg-role{color:var(--color-primary);}
-
-/* Send bar: always pinned to bottom */
 .chat-input-row{display:flex;gap:var(--space-2);padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-border);background:var(--color-surface);flex-shrink:0;}
 .chat-input{flex:1;background:var(--color-surface-offset);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);font-size:var(--text-sm);color:var(--color-text);resize:none;overflow-y:hidden;max-height:120px;min-height:44px;}
 .chat-input:focus{outline:none;border-color:var(--color-primary);}
 .chat-send{width:44px;height:44px;background:var(--color-primary);color:var(--color-text-inverse);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .chat-send:hover{background:var(--color-primary-hover);}
 .chat-send:disabled{opacity:.4;cursor:not-allowed;}
-
-/* Scroll-to-bottom fab */
 .chat-scroll-bottom{position:absolute;right:var(--space-4);bottom:calc(56px + var(--space-4));width:40px;height:40px;border-radius:var(--radius-full);display:none;align-items:center;justify-content:center;background:var(--color-surface);color:var(--color-text);border:1px solid var(--color-border);box-shadow:var(--shadow-md);z-index:2;}
 .chat-scroll-bottom.show{display:flex;}
 .chat-scroll-bottom:hover{background:var(--color-surface-dynamic);}
-
 @keyframes loading-dots{0%,80%,100%{opacity:0}40%{opacity:1}}
 .loading-dots span{animation:loading-dots 1.4s ease-in-out infinite;display:inline-block;}
 .loading-dots span:nth-child(2){animation-delay:.2s;}
@@ -313,10 +248,7 @@ select.input{cursor:pointer;}
   </nav>
   <main class="main">
 
-    <!-- FILES PANEL -->
     <div class="panel active" id="panel-files" role="tabpanel">
-
-      <!-- Zone 1: repo input + mailbox — shrinks, max 30vh, scrollable -->
       <div class="files-top">
         <div class="section">
           <div class="section-label">Repository</div>
@@ -334,4 +266,158 @@ select.input{cursor:pointer;}
           <div class="mailbox-header" id="mailbox-header" role="button" aria-expanded="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             <span class="mailbox-header-label">Mailbox</span>
-            <svg class="mailbox-toggle open" viewBox="0 0 24 24" fill="none" stroke="currentColor" st
+            <svg class="mailbox-toggle open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <div class="mailbox-list open" id="mailbox-list"></div>
+        </div>
+      </div>
+
+      <div id="tree-toolbar" style="display:none" class="file-tree-toolbar">
+        <div class="toolbar-left">
+          <button class="btn btn-secondary btn-sm" id="select-all-btn">All</button>
+          <button class="btn btn-secondary btn-sm" id="deselect-btn">None</button>
+          <div class="toolbar-divider"></div>
+          <button class="filter-btn" id="filter-code-btn" data-filter="code">Code</button>
+          <button class="filter-btn" id="filter-docs-btn" data-filter="docs">Docs</button>
+          <button class="filter-btn" id="filter-config-btn" data-filter="config">Config</button>
+        </div>
+        <span class="file-count" id="file-count-label">0 selected</span>
+      </div>
+
+      <div id="tree-container" style="display:none"></div>
+
+      <div id="export-section" style="display:none">
+        <div class="export-section-inner">
+          <div class="export-section-label">Export</div>
+          <div class="export-info" id="export-info"></div>
+          <div class="export-buttons">
+            <button class="btn btn-secondary" id="export-txt-btn">REPO_DUMP.txt</button>
+            <button class="btn btn-secondary" id="export-zip-btn">Download ZIP</button>
+          </div>
+          <div class="push-section">
+            <div class="push-label">Push Self to GitHub <span class="push-badge">NEW</span></div>
+            <div class="form-row">
+              <label class="form-label" for="push-token">GitHub Token (contents:write)</label>
+              <input class="input" id="push-token" type="password" placeholder="ghp_..." autocomplete="off">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="push-path">File path in repo</label>
+              <input class="input" id="push-path" type="text" value="repo-copilot.html" autocomplete="off" autocapitalize="none" spellcheck="false">
+            </div>
+            <div class="push-status" id="push-status"></div>
+            <button class="btn btn-primary btn-full" id="push-self-btn">Push This App to GitHub</button>
+          </div>
+          <div id="fetch-status" style="margin-top:var(--space-3)"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-chat" role="tabpanel">
+      <div class="chat-wrap">
+        <div class="chat-config-bar" id="chat-config-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="chat-config-panel">
+          <div class="config-bar-dot" id="config-bar-dot"></div>
+          <span class="config-bar-label" id="config-bar-label">Configure API</span>
+          <span class="config-bar-tokens" id="config-bar-tokens"></span>
+          <svg class="config-bar-chevron" id="config-bar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="chat-config-panel" id="chat-config-panel">
+          <div class="form-row-inline">
+            <div class="form-row" style="margin-bottom:0">
+              <label class="form-label" for="provider-select">Provider</label>
+              <select class="input" id="provider-select"><option value="openai">OpenAI</option><option value="groq">Groq</option><option value="xai">xAI (Grok)</option><option value="cerebras">Cerebras</option><option value="fireworks">Fireworks</option><option value="mistral">Mistral</option><option value="deepseek">DeepSeek</option><option value="gemini">Gemini</option></select>
+            </div>
+            <div class="form-row" style="margin-bottom:0">
+              <label class="form-label" for="model-input">Model</label>
+              <input class="input" id="model-input" type="text" placeholder="gpt-4o" autocomplete="off" autocapitalize="none" spellcheck="false">
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:0">
+            <label class="form-label" for="apikey-input">API Key</label>
+            <input class="input" id="apikey-input" type="password" placeholder="sk-..." autocomplete="off">
+          </div>
+          <div class="form-row" style="margin-bottom:0">
+            <label class="form-label" for="context-select">Context</label>
+            <select class="input" id="context-select"><option value="selected">Selected files</option><option value="all">All loaded files</option><option value="none">No file context</option></select>
+          </div>
+          <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-empty" id="chat-empty"><p>Load a repo and select files, then ask anything about the code.</p></div>
+        </div>
+        <button class="chat-scroll-bottom" id="chat-scroll-bottom" aria-label="Scroll to latest">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="7 13 12 18 17 13"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+        </button>
+
+        <div id="staged-tray">
+          <div class="staged-tray-header"><span class="staged-tray-title">Staged Files</span><button class="btn-ghost btn-sm" id="clear-staged-btn">Clear</button></div>
+          <div class="staged-files-list" id="staged-files-list"></div>
+          <div class="staged-tray-actions">
+            <select class="input" id="push-branch-select" style="width:140px;flex:none;"></select>
+            <input class="input" id="push-commit-msg" type="text" placeholder="Commit message..." autocomplete="off">
+            <button class="btn btn-primary btn-sm" id="push-btn" disabled>Push</button>
+          </div>
+          <div style="padding:0 var(--space-4) var(--space-2);"><div id="push-status-chat"></div></div>
+        </div>
+
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="chat-input" placeholder="Ask about the code..." rows="1"></textarea>
+          <button class="chat-send" id="chat-send" aria-label="Send">→</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="sheet-backdrop" id="sheet-backdrop"></div>
+<div class="sheet" id="preview-sheet" role="dialog" aria-modal="true" aria-label="File preview">
+  <div class="sheet-header"><span class="sheet-title" id="preview-title"></span><button class="sheet-close" id="preview-close" aria-label="Close">✕</button></div>
+  <div class="sheet-body"><pre class="code-block" id="preview-content"></pre></div>
+</div>
+
+<script>
+(function(){const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';r.setAttribute('data-theme',d);const sun='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';const moon='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';function upd(){t.innerHTML=d==='dark'?sun:moon;}upd();t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);upd();});})();
+document.querySelectorAll('[data-tab]').forEach(tab=>{tab.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(t=>{t.classList.remove('active');t.setAttribute('aria-selected','false');});document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));tab.classList.add('active');tab.setAttribute('aria-selected','true');document.getElementById('panel-'+tab.dataset.tab).classList.add('active');if(tab.dataset.tab==='chat'){updateTokenEst();if(!isConfigReady())openConfigPanel();}});});
+let repoOwner='',repoName='',repoMeta=null;let treeFlat=[],fileContents={},checkedPaths=new Set(),expandedDirs=new Set();let mailboxFiles=[],activeFilters=new Set();let stagedFiles={};
+const CODE_EXTS=new Set(['.js','.ts','.jsx','.tsx','.py','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte']);const DOC_EXTS=new Set(['.md','.txt','.rst','.mdx','.csv','.log']);const CONFIG_EXTS=new Set(['.json','.yaml','.yml','.toml','.env','.gitignore','.eslintrc','.prettierrc','.editorconfig','.html','.css','.sh']);
+function getExt(p){if(!p.includes('.'))return'';const b=p.split('/').pop();const i=b.lastIndexOf('.');if(i===0)return b.toLowerCase();return('.'+b.slice(i+1)).toLowerCase();}
+function parseRepoInput(v){v=v.trim().replace(/^https?:\/\/(www\.)?github\.com\//,'').replace(/\.git$/,'');const p=v.split('/').filter(Boolean);if(p.length>=2)return{owner:p[0],repo:p[1]};if(p.length===1)return{owner:'nothinginfinity',repo:p[0]};return null;}
+function fmtSize(b){if(!b)return'';if(b<1024)return b+' B';return(b/1024).toFixed(1)+' KB';}
+function setStatus(id,type,msg){const el=document.getElementById(id);if(!msg){el.innerHTML='';return;}const icons={loading:'<svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>',error:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',success:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'};el.innerHTML=`<div class="status status-${type}">${icons[type]||''}<span>${msg}</span></div>`;}
+const chatMessagesEl=document.getElementById('chat-messages');const chatScrollBtn=document.getElementById('chat-scroll-bottom');function updateChatScrollBtn(){if(!chatMessagesEl||!chatScrollBtn)return;const threshold=80;const distance=chatMessagesEl.scrollHeight-chatMessagesEl.scrollTop-chatMessagesEl.clientHeight;chatScrollBtn.classList.toggle('show',distance>threshold);}if(chatMessagesEl&&chatScrollBtn){chatMessagesEl.addEventListener('scroll',updateChatScrollBtn);chatScrollBtn.addEventListener('click',()=>{chatMessagesEl.scrollTo({top:chatMessagesEl.scrollHeight,behavior:'smooth'});});}
+
+document.getElementById('load-btn').addEventListener('click',loadRepo);document.getElementById('repo-input').addEventListener('keydown',e=>{if(e.key==='Enter')loadRepo();});
+async function loadRepo(){const raw=document.getElementById('repo-input').value;const parsed=parseRepoInput(raw);if(!parsed){setStatus('repo-status','error','Enter owner/repo or full GitHub URL');return;}repoOwner=parsed.owner;repoName=parsed.repo;setStatus('repo-status','loading',`Loading ${repoOwner}/${repoName}...`);document.getElementById('repo-card').style.display='none';document.getElementById('tree-toolbar').style.display='none';document.getElementById('tree-container').style.display='none';document.getElementById('export-section').style.display='none';document.getElementById('mailbox-section').style.display='none';treeFlat=[];fileContents={};checkedPaths=new Set();expandedDirs=new Set();mailboxFiles=[];activeFilters=new Set();document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));try{const res=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}`);if(!res.ok)throw new Error(res.status===404?'Repository not found':`GitHub API error ${res.status}`);repoMeta=await res.json();renderRepoCard(repoMeta);setStatus('repo-status','');await loadTree(repoMeta.default_branch);loadBranches();}catch(e){setStatus('repo-status','error',e.message);}}
+function renderRepoCard(meta){const upd=new Date(meta.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});document.getElementById('repo-card').innerHTML=`<div class="repo-card"><div class="repo-card-name">${meta.full_name}</div>${meta.description?`<div class="repo-card-desc">${meta.description}</div>`:''}<div class="repo-meta"><div class="repo-meta-item">${meta.stargazers_count.toLocaleString()}</div><div class="repo-meta-item">${meta.default_branch}</div><div class="repo-meta-item">${upd}</div>${meta.language?`<div class="repo-meta-item"><span class="badge badge-teal">${meta.language}</span></div>`:''}</div></div>`;document.getElementById('repo-card').style.display='block';}
+async function loadTree(branch){setStatus('repo-status','loading','Fetching file tree...');const res=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/git/trees/${branch}?recursive=1`);if(!res.ok)throw new Error(`Tree fetch failed: ${res.status}`);const data=await res.json();treeFlat=data.tree.filter(n=>n.type==='blob'||n.type==='tree');mailboxFiles=treeFlat.filter(n=>n.type==='blob'&&(n.path.endsWith('/inbox.md')||n.path.endsWith('/outbox.md')||n.path==='inbox.md'||n.path==='outbox.md'));renderMailbox();setStatus('repo-status','');document.getElementById('tree-toolbar').style.display='flex';document.getElementById('tree-container').style.display='flex';document.getElementById('tree-container').style.flexDirection='column';document.getElementById('export-section').style.display='block';renderTree();updateExportInfo();}
+function renderMailbox(){const section=document.getElementById('mailbox-section');const list=document.getElementById('mailbox-list');if(!mailboxFiles.length){section.style.display='none';return;}section.style.display='block';list.innerHTML='';mailboxFiles.forEach(f=>{const item=document.createElement('div');item.className='mailbox-item';item.innerHTML=`<input type="checkbox" class="mailbox-item-cb" aria-label="${f.path}" ${checkedPaths.has(f.path)?'checked':''}><span class="mailbox-item-path">${f.path}</span>${f.size?`<span class="mailbox-item-size">${fmtSize(f.size)}</span>`:''}`;const cb=item.querySelector('.mailbox-item-cb');cb.addEventListener('change',e=>{e.stopPropagation();toggleFile(f.path,cb.checked);syncMailboxCbs();});item.addEventListener('click',e=>{if(e.target===cb)return;previewFile(f.path);});list.appendChild(item);});}
+function syncMailboxCbs(){document.querySelectorAll('.mailbox-item-cb').forEach((cb,i)=>{if(mailboxFiles[i])cb.checked=checkedPaths.has(mailboxFiles[i].path);});}document.getElementById('mailbox-header').addEventListener('click',()=>{const list=document.getElementById('mailbox-list'),toggle=document.querySelector('.mailbox-toggle');const open=list.classList.contains('open');list.classList.toggle('open',!open);toggle.classList.toggle('open',!open);document.getElementById('mailbox-header').setAttribute('aria-expanded',String(!open));});
+function buildHierarchy(flat){const root={children:{},type:'tree',path:''};flat.forEach(node=>{const parts=node.path.split('/');let cur=root;parts.forEach((part,i)=>{if(!cur.children[part])cur.children[part]={children:{},type:i===parts.length-1?node.type:'tree',path:parts.slice(0,i+1).join('/'),sha:node.sha,size:node.size};cur=cur.children[part];});});return root;}
+function renderTree(){const container=document.getElementById('tree-container');container.innerHTML='';const frag=renderNode(buildHierarchy(treeFlat),0);container.appendChild(frag);updateSelectionCount();}
+function renderNode(node,depth){const frag=document.createDocumentFragment();const sorted=Object.entries(node.children).sort(([an,a],[bn,b])=>{if(a.type!==b.type)return a.type==='tree'?-1:1;return an.localeCompare(bn);});sorted.forEach(([name,child])=>{const div=document.createElement('div');div.className='tree-node';const item=document.createElement('div');item.className='tree-item';item.style.paddingLeft=`calc(var(--space-2) + ${depth*18}px)`;if(child.type==='tree'){const toggle=document.createElement('span');toggle.className='tree-toggle';toggle.textContent='›';if(expandedDirs.has(child.path))toggle.classList.add('open');item.appendChild(toggle);const cb=document.createElement('input');cb.type='checkbox';cb.className='tree-checkbox';cb.checked=isDirChecked(child.path);cb.addEventListener('change',e=>{e.stopPropagation();toggleDir(child.path,cb.checked);});item.appendChild(cb);const label=document.createElement('span');label.className='tree-name dir';label.textContent=name;item.appendChild(label);const childrenDiv=document.createElement('div');childrenDiv.className='tree-children'+(expandedDirs.has(child.path)?' open':'');childrenDiv.appendChild(renderNode(child,depth+1));item.addEventListener('click',e=>{if(e.target===cb)return;const isOpen=expandedDirs.has(child.path);if(isOpen){expandedDirs.delete(child.path);toggle.classList.remove('open');childrenDiv.classList.remove('open');}else{expandedDirs.add(child.path);toggle.classList.add('open');childrenDiv.classList.add('open');}});div.appendChild(item);div.appendChild(childrenDiv);}else{item.appendChild(Object.assign(document.createElement('span'),{className:'tree-toggle-spacer'}));const cb=document.createElement('input');cb.type='checkbox';cb.className='tree-checkbox';cb.dataset.path=child.path;cb.checked=checkedPaths.has(child.path);cb.addEventListener('change',e=>{e.stopPropagation();toggleFile(child.path,cb.checked);});item.appendChild(cb);const label=document.createElement('span');label.className='tree-name';label.textContent=name;item.appendChild(label);if(child.size){const sz=document.createElement('span');sz.className='tree-size';sz.textContent=fmtSize(child.size);item.appendChild(sz);}item.addEventListener('click',e=>{if(e.target===cb)return;previewFile(child.path);});div.appendChild(item);}frag.appendChild(div);});return frag;}
+function isDirChecked(dirPath){const files=treeFlat.filter(n=>n.type==='blob'&&n.path.startsWith(dirPath+'/'));return files.length>0&&files.every(f=>checkedPaths.has(f.path));}
+function toggleFile(path,checked){if(checked)checkedPaths.add(path);else checkedPaths.delete(path);updateSelectionCount();updateExportInfo();document.querySelectorAll(`.tree-checkbox[data-path="${CSS.escape(path)}"]`).forEach(cb=>cb.checked=checked);}
+function toggleDir(dirPath,checked){treeFlat.filter(n=>n.type==='blob'&&n.path.startsWith(dirPath+'/')).forEach(f=>{if(checked)checkedPaths.add(f.path);else checkedPaths.delete(f.path);});renderTree();syncMailboxCbs();updateExportInfo();}
+function updateSelectionCount(){const n=checkedPaths.size;document.getElementById('file-count-label').textContent=n===0?'0 selected':`${n} selected`;const badge=document.getElementById('tab-badge-files');if(n>0){badge.textContent=n;badge.style.display='inline-flex';}else badge.style.display='none';updateConfigBar();}
+function updateExportInfo(){const total=treeFlat.filter(n=>n.type==='blob').length;const sel=checkedPaths.size;const selSize=treeFlat.filter(n=>checkedPaths.has(n.path)).reduce((s,n)=>s+(n.size||0),0);document.getElementById('export-info').innerHTML=`<strong>${sel}</strong> of ${total} files selected &mdash; ~${fmtSize(selSize)} raw`;}
+document.getElementById('select-all-btn').addEventListener('click',()=>{treeFlat.filter(n=>n.type==='blob').forEach(n=>checkedPaths.add(n.path));renderTree();syncMailboxCbs();updateExportInfo();});document.getElementById('deselect-btn').addEventListener('click',()=>{checkedPaths=new Set();renderTree();syncMailboxCbs();updateExportInfo();});function applyFilter(filter){if(filter==='code'||filter==='docs'||filter==='config'){if(activeFilters.has(filter))activeFilters.delete(filter);else activeFilters.add(filter);}document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',activeFilters.has(b.dataset.filter)));let toCheck=[];if(activeFilters.size===0){toCheck=treeFlat.filter(n=>n.type==='blob').map(n=>n.path);}else{treeFlat.filter(n=>n.type==='blob').forEach(n=>{const ext=getExt(n.path);if(activeFilters.has('code')&&CODE_EXTS.has(ext))toCheck.push(n.path);if(activeFilters.has('docs')&&DOC_EXTS.has(ext))toCheck.push(n.path);if(activeFilters.has('config')&&CONFIG_EXTS.has(ext))toCheck.push(n.path);});}checkedPaths=new Set(toCheck);renderTree();syncMailboxCbs();updateExportInfo();}document.getElementById('filter-code-btn').addEventListener('click',()=>applyFilter('code'));document.getElementById('filter-docs-btn').addEventListener('click',()=>applyFilter('docs'));document.getElementById('filter-config-btn').addEventListener('click',()=>applyFilter('config'));
+async function previewFile(path){document.getElementById('preview-title').textContent=path;document.getElementById('preview-content').textContent='Loading...';document.getElementById('sheet-backdrop').classList.add('open');document.getElementById('preview-sheet').classList.add('open');try{if(!fileContents[path]){const res=await fetch(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/${repoMeta.default_branch}/${path}`);if(!res.ok)throw new Error(`HTTP ${res.status}`);fileContents[path]=await res.text();}document.getElementById('preview-content').textContent=fileContents[path];}catch(e){document.getElementById('preview-content').textContent='Error: '+e.message;}}document.getElementById('preview-close').addEventListener('click',closeSheet);document.getElementById('sheet-backdrop').addEventListener('click',closeSheet);function closeSheet(){document.getElementById('sheet-backdrop').classList.remove('open');document.getElementById('preview-sheet').classList.remove('open');}
+async function fetchSelected(){const paths=[...checkedPaths];setStatus('fetch-status','loading',`Fetching ${paths.length} files...`);let done=0;await Promise.all(paths.map(async p=>{if(fileContents[p])return;try{const r=await fetch(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/${repoMeta.default_branch}/${p}`);if(r.ok)fileContents[p]=await r.text();}catch(e){}done++;setStatus('fetch-status','loading',`Fetching... ${done}/${paths.length}`);}));setStatus('fetch-status','success',`Fetched ${done} files`);return paths.map(p=>fileContents[p]?`=== ${p} ===\n${fileContents[p]}`:`=== ${p} ===\n[failed]`).join('\n\n');}
+document.getElementById('export-txt-btn').addEventListener('click',async()=>{if(!checkedPaths.size){setStatus('fetch-status','error','No files selected');return;}const dump=await fetchSelected();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([dump],{type:'text/plain'}));a.download=`${repoName}_REPO_DUMP.txt`;a.click();});document.getElementById('export-zip-btn').addEventListener('click',async()=>{if(!checkedPaths.size){setStatus('fetch-status','error','No files selected');return;}await fetchSelected();const zip=new JSZip();[...checkedPaths].forEach(p=>{if(fileContents[p])zip.file(p,fileContents[p]);});const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${repoName}.zip`;a.click();});
+document.getElementById('push-self-btn').addEventListener('click',async()=>{const token=document.getElementById('push-token').value.trim();const filePath=document.getElementById('push-path').value.trim();const statusEl=document.getElementById('push-status');if(!token){statusEl.textContent='GitHub token required.';statusEl.className='push-status err';return;}if(!repoOwner||!repoName){statusEl.textContent='Load a repo first.';statusEl.className='push-status err';return;}const btn=document.getElementById('push-self-btn');btn.disabled=true;statusEl.className='push-status';statusEl.textContent='Reading page...';try{const html=document.documentElement.outerHTML;const encoded=btoa(unescape(encodeURIComponent(html)));statusEl.textContent='Checking SHA...';let sha=null;const check=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`,{headers:{'Authorization':`Bearer ${token}`,'Accept':'application/vnd.github+json'}});if(check.ok){const d=await check.json();sha=d.sha;}statusEl.textContent='Pushing...';const body={message:`self-push: update ${filePath} from app`,content:encoded};if(sha)body.sha=sha;const put=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`,{method:'PUT',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json','Accept':'application/vnd.github+json'},body:JSON.stringify(body)});if(!put.ok){const e=await put.text();throw new Error(`GitHub ${put.status}: ${e.slice(0,200)}`);}const result=await put.json();statusEl.textContent=`✓ Pushed → commit ${result.commit?.sha?.slice(0,7)||'?'}`;statusEl.className='push-status ok';}catch(e){statusEl.textContent='Error: '+e.message;statusEl.className='push-status err';}finally{btn.disabled=false;}});
+let chatHistory=[];const PROVIDERS={openai:{url:'https://api.openai.com/v1/chat/completions',defaultModel:'gpt-4o'},groq:{url:'https://api.groq.com/openai/v1/chat/completions',defaultModel:'llama-3.3-70b-versatile'},xai:{url:'https://api.x.ai/v1/chat/completions',defaultModel:'grok-3-mini'},cerebras:{url:'https://api.cerebras.ai/v1/chat/completions',defaultModel:'llama-3.3-70b'},fireworks:{url:'https://api.fireworks.ai/inference/v1/chat/completions',defaultModel:'accounts/fireworks/models/llama-v3p3-70b-instruct'},mistral:{url:'https://api.mistral.ai/v1/chat/completions',defaultModel:'mistral-large-latest'},deepseek:{url:'https://api.deepseek.com/chat/completions',defaultModel:'deepseek-chat'},gemini:{url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',defaultModel:'gemini-2.0-flash'}};document.getElementById('provider-select').addEventListener('change',function(){const p=PROVIDERS[this.value];if(p)document.getElementById('model-input').placeholder=p.defaultModel;updateConfigBar();});function getContext(){const mode=document.getElementById('context-select').value;if(mode==='none')return'';const paths=mode==='all'?treeFlat.filter(n=>n.type==='blob').map(n=>n.path):[...checkedPaths];if(!paths.length)return'';return paths.map(p=>fileContents[p]?`=== ${p} ===\n${fileContents[p]}`:`=== ${p} ===\n[not fetched]`).join('\n\n');}function getContextContent(){return getContext();}function updateTokenEst(){const n=Math.round(getContext().length/4);document.getElementById('token-est').textContent=n.toLocaleString();document.getElementById('config-bar-tokens').textContent=n>0?`~${n.toLocaleString()} tokens`:'';updateChatScrollBtn();}const chatInput=document.getElementById('chat-input');chatInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});document.getElementById('chat-send').addEventListener('click',sendMessage);
+function addMessage(role,content){const empty=document.getElementById('chat-empty');if(empty)empty.style.display='none';const msg=document.createElement('div');msg.className=`msg ${role}`;const roleEl=document.createElement('div');roleEl.className='msg-role';roleEl.textContent=role==='user'?'You':'Assistant';const bubble=document.createElement('div');bubble.className='msg-bubble';bubble.textContent=content;msg.appendChild(roleEl);msg.appendChild(bubble);chatMessagesEl.appendChild(msg);requestAnimationFrame(()=>{chatMessagesEl.scrollTo({top:chatMessagesEl.scrollHeight,behavior:'smooth'});updateChatScrollBtn();});return bubble;}
+async function sendMessage(){const input=document.getElementById('chat-input');const text=input.value.trim();if(!text)return;const apiKey=document.getElementById('apikey-input').value.trim();if(!apiKey){addMessage('assistant','Please enter an API key.');return;}input.value='';input.style.height='';addMessage('user',text);const provider=document.getElementById('provider-select').value;const model=document.getElementById('model-input').value.trim()||PROVIDERS[provider]?.defaultModel||'gpt-4o';const ctx=getContext();const systemMsg=ctx?`You are a helpful code assistant. Repository context:\n\n${ctx}`:'You are a helpful code assistant.';chatHistory.push({role:'user',content:text});const bubble=addMessage('assistant','');bubble.innerHTML='<span class="loading-dots"><span>•</span><span>•</span><span>•</span></span>';document.getElementById('chat-send').disabled=true;try{const res=await fetch(PROVIDERS[provider].url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify({model,messages:[{role:'system',content:systemMsg},...chatHistory],max_tokens:4096})});if(!res.ok){const e=await res.text();throw new Error(`API ${res.status}: ${e.slice(0,200)}`);}const data=await res.json();const reply=data.choices?.[0]?.message?.content||'No response';bubble.textContent=reply;chatHistory.push({role:'assistant',content:reply});scanFences(bubble);requestAnimationFrame(updateChatScrollBtn);}catch(e){bubble.textContent='Error: '+e.message;chatHistory.pop();}finally{document.getElementById('chat-send').disabled=false;requestAnimationFrame(updateChatScrollBtn);}}
+function isConfigReady(){return document.getElementById('provider-select').value&&document.getElementById('model-input').value.trim()&&document.getElementById('apikey-input').value.trim();}
+function updateConfigBar(){const provider=document.getElementById('provider-select').value;const model=document.getElementById('model-input').value.trim();const key=document.getElementById('apikey-input').value.trim();const dot=document.getElementById('config-bar-dot');const label=document.getElementById('config-bar-label');const tokensEl=document.getElementById('config-bar-tokens');const ready=!!(provider&&model&&key);dot.classList.toggle('ready',ready);label.textContent=ready?`${provider} · ${model}`:'Configure API';const ctx=getContextContent();tokensEl.textContent=ctx.length>0?`~${Math.round(ctx.length/4).toLocaleString()} tokens`:'no context';}
+function openConfigPanel(){document.getElementById('chat-config-panel').classList.add('open');document.getElementById('chat-config-bar').setAttribute('aria-expanded','true');document.getElementById('config-bar-chevron').classList.add('open');}
+function closeConfigPanel(){document.getElementById('chat-config-panel').classList.remove('open');document.getElementById('chat-config-bar').setAttribute('aria-expanded','false');document.getElementById('config-bar-chevron').classList.remove('open');}
+function toggleConfigPanel(){const open=document.getElementById('chat-config-panel').classList.contains('open');open?closeConfigPanel():openConfigPanel();}
+function maybeAutoCollapse(){if(!isConfigReady())return;setTimeout(()=>{if(!document.getElementById('chat-config-panel').contains(document.activeElement)){closeConfigPanel();}},120);}const configBar=document.getElementById('chat-config-bar');configBar.addEventListener('click',toggleConfigPanel);configBar.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleConfigPanel();}});['provider-select','model-input','apikey-input'].forEach(id=>{const el=document.getElementById(id);el.addEventListener('change',()=>{updateConfigBar();maybeAutoCollapse();});el.addEventListener('input',()=>{updateConfigBar();maybeAutoCollapse();});});updateConfigBar();
+function scanFences(bubble){const raw=bubble.textContent||'';const re=/```(\S+\.\S+)\n([\s\S]*?)```/g;let m;while((m=re.exec(raw))!==null){const filename=m[1],code=m[2];const wrap=document.createElement('div');wrap.className='fence-wrap';const header=document.createElement('div');header.className='fence-filename';const nameSpan=document.createElement('span');nameSpan.textContent=filename;const stageBtn=document.createElement('button');stageBtn.className='btn-stage';stageBtn.textContent='Stage';if(stagedFiles[filename])stageBtn.classList.add('staged');stageBtn.addEventListener('click',()=>{stagedFiles[filename]=code;stageBtn.classList.add('staged');stageBtn.textContent='Staged ✓';renderStagedTray();});header.appendChild(nameSpan);header.appendChild(stageBtn);const pre=document.createElement('pre');pre.className='fence-code';pre.textContent=code;wrap.appendChild(header);wrap.appendChild(pre);bubble.textContent=raw.replace(m[0],'');bubble.parentNode.insertBefore(wrap,bubble);}}
+function renderStagedTray(){const tray=document.getElementById('staged-tray');const list=document.getElementById('staged-files-list');const keys=Object.keys(stagedFiles);tray.classList.toggle('open',keys.length>0);list.innerHTML='';keys.forEach(name=>{const row=document.createElement('div');row.className='staged-file-row';const nameEl=document.createElement('span');nameEl.className='staged-file-name';nameEl.textContent=name;const unstageBtn=document.createElement('button');unstageBtn.className='btn-ghost btn-sm';unstageBtn.textContent='✕';unstageBtn.addEventListener('click',()=>{delete stagedFiles[name];renderStagedTray();});row.appendChild(nameEl);row.appendChild(unstageBtn);list.appendChild(row);});updatePushBtn();requestAnimationFrame(updateChatScrollBtn);}function updatePushBtn(){const hasFiles=Object.keys(stagedFiles).length>0;const hasMsg=document.getElementById('push-commit-msg').value.trim().length>0;document.getElementById('push-btn').disabled=!(hasFiles&&hasMsg);}
+async function loadBranches(){const apikey=document.getElementById('apikey-input').value.trim();if(!repoOwner||!repoName)return;const headers=apikey?{'Authorization':`token ${apikey}`}:{};try{const res=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/branches?per_page=100`,{headers});if(!res.ok)return;const branches=await res.json();const sel=document.getElementById('push-branch-select');sel.innerHTML='';branches.forEach(b=>{const opt=document.createElement('option');opt.value=b.name;opt.textContent=b.name;if(repoMeta&&b.name===repoMeta.default_branch)opt.selected=true;sel.appendChild(opt);});const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='+ New branch…';sel.appendChild(newOpt);}catch(e){}}
+document.getElementById('push-branch-select').addEventListener('change',function(){if(this.value==='__new__'){const name=prompt('New branch name:');if(name&&name.trim()){const opt=document.createElement('option');opt.value=name.trim();opt.textContent=name.trim();this.insertBefore(opt,this.querySelector('[value="__new__"]'));this.value=name.trim();}else{this.value=this.options[0]?.value||';'}}});document.getElementById('clear-staged-btn').addEventListener('click',()=>{stagedFiles={};renderStagedTray();});document.getElementById('push-commit-msg').addEventListener('input',updatePushBtn);document.getElementById('push-btn').addEventListener('click',async()=>{const apikey=document.getElementById('apikey-input').value.trim();const branch=document.getElementById('push-branch-select').value;const msg=document.getElementById('push-commit-msg').value.trim();const statusEl=document.getElementById('push-status-chat');if(!apikey){statusEl.textContent='API key required (used as GitHub PAT).';statusEl.className='err';return;}if(!repoOwner||!repoName){statusEl.textContent='Load a repo first.';statusEl.className='err';return;}const btn=document.getElementById('push-btn');btn.disabled=true;statusEl.textContent='Pushing…';statusEl.className='';const files=Object.entries(stagedFiles);let pushed=0;try{for(const [filename,content] of files){let sha=null;const check=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filename}?ref=${branch}`,{headers:{'Authorization':`token ${apikey}`,'Accept':'application/vnd.github+json'}});if(check.ok){const d=await check.json();sha=d.sha;}const encoded=btoa(unescape(encodeURIComponent(content)));const body={message:msg,content:encoded,branch};if(sha)body.sha=sha;const put=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filename}`,{method:'PUT',headers:{'Authorization':`token ${apikey}`,'Content-Type':'application/json','Accept':'application/vnd.github+json'},body:JSON.stringify(body)});if(!put.ok){const e=await put.text();throw new Error(`${filename}: GitHub ${put.status}: ${e.slice(0,120)}`);}pushed++;}statusEl.textContent=`✓ Pushed ${pushed} file${pushed!==1?'s':''} to ${branch}`;statusEl.className='ok';stagedFiles={};renderStagedTray();document.getElementById('push-commit-msg').value='';}catch(e){statusEl.textContent='Error: '+e.message;statusEl.className='err';}finally{btn.disabled=false;updatePushBtn();}});
+</script>
+</body>
+</html>
