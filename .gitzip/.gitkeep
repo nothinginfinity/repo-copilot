@@ -1,0 +1,3 @@
+# This folder is managed by the gitzip protocol.
+# Agents push compressed files here; the gitzip-unpack Action expands them automatically.
+# See: .github/workflows/gitzip-unpack.yml
