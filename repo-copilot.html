@@ -157,10 +157,24 @@ select.input{cursor:pointer;}
 
 /* CHAT */
 .chat-wrap{display:flex;flex-direction:column;height:100%;min-height:0;}
-.chat-config{padding:var(--space-4);border-bottom:1px solid var(--color-divider);display:flex;flex-direction:column;gap:var(--space-3);flex-shrink:0;}
+
+/* CONFIG BAR (collapsed) */
+.chat-config-bar{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);cursor:pointer;flex-shrink:0;min-height:44px;background:var(--color-surface);user-select:none;}
+.chat-config-bar:hover{background:var(--color-surface-dynamic);}
+.config-bar-dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--color-text-faint);flex-shrink:0;transition:background var(--transition-interactive);}
+.config-bar-dot.ready{background:var(--color-success);}
+.config-bar-label{flex:1;font-size:var(--text-xs);color:var(--color-text-muted);font-weight:500;}
+.config-bar-tokens{font-size:10px;color:var(--color-text-faint);flex-shrink:0;}
+.config-bar-chevron{width:16px;height:16px;color:var(--color-text-faint);flex-shrink:0;transition:transform 180ms;}
+.config-bar-chevron.open{transform:rotate(180deg);}
+
+/* CONFIG PANEL (expanded) */
+.chat-config-panel{padding:var(--space-4);border-bottom:1px solid var(--color-divider);display:none;flex-direction:column;gap:var(--space-3);flex-shrink:0;background:var(--color-surface);}
+.chat-config-panel.open{display:flex;}
 .form-row-inline{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
 .token-est{font-size:var(--text-xs);color:var(--color-text-faint);text-align:right;margin-top:var(--space-1);}
 .token-est span{color:var(--color-primary);font-weight:600;}
+
 .chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);min-height:0;}
 .chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);color:var(--color-text-faint);padding:var(--space-8);text-align:center;}
 .chat-empty svg{width:40px;height:40px;opacity:.4;}
@@ -182,6 +196,28 @@ select.input{cursor:pointer;}
 .loading-dots span:nth-child(3){animation-delay:.4s;}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;}
 .badge-teal{background:var(--color-primary-highlight);color:var(--color-primary);}
+
+/* FENCE WRAP — code blocks with stage button */
+.fence-wrap{position:relative;margin:var(--space-2) 0;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border);}
+.fence-filename{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-3);background:var(--color-surface-offset-2);font-size:10px;font-weight:700;color:var(--color-text-muted);letter-spacing:0.04em;border-bottom:1px solid var(--color-border);}
+.fence-filename .btn-stage{font-size:10px;font-weight:700;padding:2px 8px;min-height:24px;border-radius:var(--radius-full);background:var(--color-primary-highlight);color:var(--color-primary);border:none;cursor:pointer;}
+.fence-filename .btn-stage.staged{background:var(--color-success);color:#fff;}
+.fence-code{font-family:'SF Mono','Fira Code',monospace;font-size:12px;line-height:1.6;color:var(--color-text);white-space:pre-wrap;word-break:break-word;background:var(--color-surface-offset);padding:var(--space-3) var(--space-4);margin:0;}
+
+/* STAGED TRAY */
+#staged-tray{display:none;flex-direction:column;border-top:1px solid var(--color-border);background:var(--color-surface);flex-shrink:0;}
+#staged-tray.open{display:flex;}
+.staged-tray-header{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-4);border-bottom:1px solid var(--color-divider);}
+.staged-tray-title{flex:1;font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;}
+.staged-files-list{display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-2) var(--space-4);max-height:120px;overflow-y:auto;}
+.staged-file-row{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) 0;}
+.staged-file-name{flex:1;font-size:var(--text-xs);color:var(--color-text);}
+.staged-tray-actions{display:flex;gap:var(--space-2);padding:var(--space-2) var(--space-4) var(--space-3);align-items:center;flex-wrap:wrap;}
+.staged-tray-actions select.input{min-height:36px;font-size:var(--text-xs);}
+.staged-tray-actions input.input{min-height:36px;font-size:var(--text-xs);flex:1;}
+#push-status-chat{font-size:var(--text-xs);color:var(--color-text-muted);min-height:16px;}
+#push-status-chat.ok{color:var(--color-success);}
+#push-status-chat.err{color:var(--color-error);}
 </style>
 </head>
 <body>
@@ -295,7 +331,17 @@ select.input{cursor:pointer;}
     <!-- CHAT PANEL -->
     <div class="panel" id="panel-chat" role="tabpanel">
       <div class="chat-wrap">
-        <div class="chat-config">
+
+        <!-- CONFIG BAR (collapsed summary) -->
+        <div class="chat-config-bar" id="chat-config-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="chat-config-panel">
+          <div class="config-bar-dot" id="config-bar-dot"></div>
+          <span class="config-bar-label" id="config-bar-label">Configure API</span>
+          <span class="config-bar-tokens" id="config-bar-tokens"></span>
+          <svg class="config-bar-chevron" id="config-bar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+
+        <!-- CONFIG PANEL (expanded) -->
+        <div class="chat-config-panel" id="chat-config-panel">
           <div class="form-row-inline">
             <div class="form-row" style="margin-bottom:0">
               <label class="form-label" for="provider-select">Provider</label>
@@ -329,12 +375,32 @@ select.input{cursor:pointer;}
           </div>
           <div class="token-est">Est. context tokens: <span id="token-est">0</span></div>
         </div>
+
         <div class="chat-messages" id="chat-messages">
           <div class="chat-empty" id="chat-empty">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <p>Load a repo and select files, then ask anything about the code.</p>
           </div>
         </div>
+
+        <!-- STAGED TRAY -->
+        <div id="staged-tray">
+          <div class="staged-tray-header">
+            <span class="staged-tray-title">Staged Files</span>
+            <button class="btn-ghost btn-sm" id="clear-staged-btn">Clear</button>
+          </div>
+          <div class="staged-files-list" id="staged-files-list"></div>
+          <div class="staged-tray-actions">
+            <select class="input" id="push-branch-select" style="width:140px;flex:none;"></select>
+            <input class="input" id="push-commit-msg" type="text" placeholder="Commit message..." autocomplete="off">
+            <button class="btn btn-primary btn-sm" id="push-btn" disabled>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Push
+            </button>
+          </div>
+          <div style="padding:0 var(--space-4) var(--space-2);"><div id="push-status-chat"></div></div>
+        </div>
+
         <div class="chat-input-row">
           <textarea class="chat-input" id="chat-input" placeholder="Ask about the code..." rows="1"></textarea>
           <button class="chat-send" id="chat-send" aria-label="Send">
@@ -377,7 +443,7 @@ document.querySelectorAll('[data-tab]').forEach(tab=>{
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     tab.classList.add('active');tab.setAttribute('aria-selected','true');
     document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
-    if(tab.dataset.tab==='chat')updateTokenEst();
+    if(tab.dataset.tab==='chat'){updateTokenEst();if(!isConfigReady())openConfigPanel();}
   });
 });
 
@@ -385,6 +451,7 @@ document.querySelectorAll('[data-tab]').forEach(tab=>{
 let repoOwner='',repoName='',repoMeta=null;
 let treeFlat=[],fileContents={},checkedPaths=new Set(),expandedDirs=new Set();
 let mailboxFiles=[],activeFilters=new Set();
+let stagedFiles={};
 const CODE_EXTS=new Set(['.js','.ts','.jsx','.tsx','.py','.go','.rs','.java','.c','.cpp','.h','.rb','.php','.swift','.kt','.vue','.svelte']);
 const DOC_EXTS=new Set(['.md','.txt','.rst','.mdx','.csv','.log']);
 const CONFIG_EXTS=new Set(['.json','.yaml','.yml','.toml','.env','.gitignore','.eslintrc','.prettierrc','.editorconfig','.html','.css','.sh']);
@@ -422,6 +489,7 @@ async function loadRepo(){
     renderRepoCard(repoMeta);
     setStatus('repo-status','');
     await loadTree(repoMeta.default_branch);
+    loadBranches();
   }catch(e){setStatus('repo-status','error',e.message);}
 }
 
@@ -441,7 +509,6 @@ async function loadTree(branch){
   renderMailbox();
   setStatus('repo-status','');
   document.getElementById('tree-toolbar').style.display='flex';
-  // KEY: use flex so tree-container (flex:1) can fill remaining space
   document.getElementById('tree-container').style.display='flex';
   document.getElementById('tree-container').style.flexDirection='column';
   document.getElementById('export-section').style.display='block';
@@ -687,7 +754,8 @@ let chatHistory=[];
 const PROVIDERS={openai:{url:'https://api.openai.com/v1/chat/completions',defaultModel:'gpt-4o'},groq:{url:'https://api.groq.com/openai/v1/chat/completions',defaultModel:'llama-3.3-70b-versatile'},xai:{url:'https://api.x.ai/v1/chat/completions',defaultModel:'grok-3-mini'},cerebras:{url:'https://api.cerebras.ai/v1/chat/completions',defaultModel:'llama-3.3-70b'},fireworks:{url:'https://api.fireworks.ai/inference/v1/chat/completions',defaultModel:'accounts/fireworks/models/llama-v3p3-70b-instruct'},mistral:{url:'https://api.mistral.ai/v1/chat/completions',defaultModel:'mistral-large-latest'},deepseek:{url:'https://api.deepseek.com/chat/completions',defaultModel:'deepseek-chat'},gemini:{url:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',defaultModel:'gemini-2.0-flash'}};
 document.getElementById('provider-select').addEventListener('change',function(){const p=PROVIDERS[this.value];if(p)document.getElementById('model-input').placeholder=p.defaultModel;});
 function getContext(){const mode=document.getElementById('context-select').value;if(mode==='none')return'';const paths=mode==='all'?treeFlat.filter(n=>n.type==='blob').map(n=>n.path):[...checkedPaths];if(!paths.length)return'';return paths.map(p=>fileContents[p]?`=== ${p} ===\n${fileContents[p]}`:`=== ${p} ===\n[not fetched]`).join('\n\n');}
-function updateTokenEst(){document.getElementById('token-est').textContent=Math.round(getContext().length/4).toLocaleString();}
+function getContextContent(){return getContext();}
+function updateTokenEst(){const n=Math.round(getContext().length/4);document.getElementById('token-est').textContent=n.toLocaleString();document.getElementById('config-bar-tokens').textContent=n>0?`~${n.toLocaleString()} tokens`:'';}
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px';});
 chatInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}});
@@ -723,9 +791,172 @@ async function sendMessage(){
     const reply=data.choices?.[0]?.message?.content||'No response';
     bubble.textContent=reply;
     chatHistory.push({role:'assistant',content:reply});
+    scanFences(bubble);
   }catch(e){bubble.textContent='Error: '+e.message;chatHistory.pop();}
   finally{document.getElementById('chat-send').disabled=false;}
 }
+
+// ── PHASE 3A: COLLAPSIBLE CONFIG BAR ──────────────────────────────────────────
+function isConfigReady(){
+  return document.getElementById('provider-select').value&&
+    document.getElementById('model-input').value.trim()&&
+    document.getElementById('apikey-input').value.trim();
+}
+function updateConfigBar(){
+  const provider=document.getElementById('provider-select').value;
+  const model=document.getElementById('model-input').value.trim();
+  const key=document.getElementById('apikey-input').value.trim();
+  const dot=document.getElementById('config-bar-dot');
+  const label=document.getElementById('config-bar-label');
+  const tokensEl=document.getElementById('config-bar-tokens');
+  const ready=!!(provider&&model&&key);
+  dot.classList.toggle('ready',ready);
+  label.textContent=ready?`${provider} · ${model}`:'Configure API';
+  const ctx=getContextContent();
+  tokensEl.textContent=ctx.length>0?`~${Math.round(ctx.length/4).toLocaleString()} tokens`:'no context';
+}
+function openConfigPanel(){
+  document.getElementById('chat-config-panel').classList.add('open');
+  document.getElementById('chat-config-bar').setAttribute('aria-expanded','true');
+  document.getElementById('config-bar-chevron').classList.add('open');
+}
+function closeConfigPanel(){
+  document.getElementById('chat-config-panel').classList.remove('open');
+  document.getElementById('chat-config-bar').setAttribute('aria-expanded','false');
+  document.getElementById('config-bar-chevron').classList.remove('open');
+}
+function toggleConfigPanel(){
+  const open=document.getElementById('chat-config-panel').classList.contains('open');
+  open?closeConfigPanel():openConfigPanel();
+}
+function maybeAutoCollapse(){
+  if(!isConfigReady())return;
+  setTimeout(()=>{
+    if(!document.getElementById('chat-config-panel').contains(document.activeElement)){
+      closeConfigPanel();
+    }
+  },120);
+}
+const configBar=document.getElementById('chat-config-bar');
+configBar.addEventListener('click',toggleConfigPanel);
+configBar.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleConfigPanel();}});
+['provider-select','model-input','apikey-input'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('change',()=>{updateConfigBar();maybeAutoCollapse();});
+  el.addEventListener('input',()=>{updateConfigBar();maybeAutoCollapse();});
+});
+updateConfigBar();
+
+// ── PHASE 3B: GITHUB PUSH TOOL ────────────────────────────────────────────────
+function scanFences(bubble){
+  const raw=bubble.textContent||'';
+  const re=/```(\S+\.\S+)\n([\s\S]*?)```/g;
+  let m;
+  while((m=re.exec(raw))!==null){
+    const filename=m[1],code=m[2];
+    const wrap=document.createElement('div');wrap.className='fence-wrap';
+    const header=document.createElement('div');header.className='fence-filename';
+    const nameSpan=document.createElement('span');nameSpan.textContent=filename;
+    const stageBtn=document.createElement('button');stageBtn.className='btn-stage';stageBtn.textContent='Stage';
+    if(stagedFiles[filename])stageBtn.classList.add('staged');
+    stageBtn.addEventListener('click',()=>{
+      stagedFiles[filename]=code;
+      stageBtn.classList.add('staged');stageBtn.textContent='Staged ✓';
+      renderStagedTray();
+    });
+    header.appendChild(nameSpan);header.appendChild(stageBtn);
+    const pre=document.createElement('pre');pre.className='fence-code';pre.textContent=code;
+    wrap.appendChild(header);wrap.appendChild(pre);
+    // Replace original text with rendered wrap
+    bubble.textContent=raw.replace(m[0],'');
+    bubble.parentNode.insertBefore(wrap,bubble);
+  }
+}
+function renderStagedTray(){
+  const tray=document.getElementById('staged-tray');
+  const list=document.getElementById('staged-files-list');
+  const keys=Object.keys(stagedFiles);
+  tray.classList.toggle('open',keys.length>0);
+  list.innerHTML='';
+  keys.forEach(name=>{
+    const row=document.createElement('div');row.className='staged-file-row';
+    const nameEl=document.createElement('span');nameEl.className='staged-file-name';nameEl.textContent=name;
+    const unstageBtn=document.createElement('button');unstageBtn.className='btn-ghost btn-sm';unstageBtn.textContent='✕';
+    unstageBtn.addEventListener('click',()=>{delete stagedFiles[name];renderStagedTray();});
+    row.appendChild(nameEl);row.appendChild(unstageBtn);
+    list.appendChild(row);
+  });
+  updatePushBtn();
+}
+function updatePushBtn(){
+  const hasFiles=Object.keys(stagedFiles).length>0;
+  const hasMsg=document.getElementById('push-commit-msg').value.trim().length>0;
+  document.getElementById('push-btn').disabled=!(hasFiles&&hasMsg);
+}
+async function loadBranches(){
+  const apikey=document.getElementById('apikey-input').value.trim();
+  if(!repoOwner||!repoName)return;
+  const headers=apikey?{'Authorization':`token ${apikey}`}:{};
+  try{
+    const res=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/branches?per_page=100`,{headers});
+    if(!res.ok)return;
+    const branches=await res.json();
+    const sel=document.getElementById('push-branch-select');
+    sel.innerHTML='';
+    branches.forEach(b=>{
+      const opt=document.createElement('option');opt.value=b.name;opt.textContent=b.name;
+      if(repoMeta&&b.name===repoMeta.default_branch)opt.selected=true;
+      sel.appendChild(opt);
+    });
+    const newOpt=document.createElement('option');newOpt.value='__new__';newOpt.textContent='+ New branch…';
+    sel.appendChild(newOpt);
+  }catch(e){}
+}
+document.getElementById('push-branch-select').addEventListener('change',function(){
+  if(this.value==='__new__'){
+    const name=prompt('New branch name:');
+    if(name&&name.trim()){
+      const opt=document.createElement('option');opt.value=name.trim();opt.textContent=name.trim();
+      this.insertBefore(opt,this.querySelector('[value="__new__"]'));
+      this.value=name.trim();
+    }else{
+      this.value=this.options[0]?.value||'';
+    }
+  }
+});
+document.getElementById('clear-staged-btn').addEventListener('click',()=>{
+  stagedFiles={};renderStagedTray();
+});
+document.getElementById('push-commit-msg').addEventListener('input',updatePushBtn);
+document.getElementById('push-btn').addEventListener('click',async()=>{
+  const apikey=document.getElementById('apikey-input').value.trim();
+  const branch=document.getElementById('push-branch-select').value;
+  const msg=document.getElementById('push-commit-msg').value.trim();
+  const statusEl=document.getElementById('push-status-chat');
+  if(!apikey){statusEl.textContent='API key required (used as GitHub PAT).';statusEl.className='err';return;}
+  if(!repoOwner||!repoName){statusEl.textContent='Load a repo first.';statusEl.className='err';return;}
+  const btn=document.getElementById('push-btn');btn.disabled=true;
+  statusEl.textContent='Pushing…';statusEl.className='';
+  const files=Object.entries(stagedFiles);
+  let pushed=0;
+  try{
+    for(const [filename,content] of files){
+      let sha=null;
+      const check=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filename}?ref=${branch}`,{headers:{'Authorization':`token ${apikey}`,'Accept':'application/vnd.github+json'}});
+      if(check.ok){const d=await check.json();sha=d.sha;}
+      const encoded=btoa(unescape(encodeURIComponent(content)));
+      const body={message:msg,content:encoded,branch};
+      if(sha)body.sha=sha;
+      const put=await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filename}`,{method:'PUT',headers:{'Authorization':`token ${apikey}`,'Content-Type':'application/json','Accept':'application/vnd.github+json'},body:JSON.stringify(body)});
+      if(!put.ok){const e=await put.text();throw new Error(`${filename}: GitHub ${put.status}: ${e.slice(0,120)}`);}
+      pushed++;
+    }
+    statusEl.textContent=`✓ Pushed ${pushed} file${pushed!==1?'s':''} to ${branch}`;statusEl.className='ok';
+    stagedFiles={};renderStagedTray();
+    document.getElementById('push-commit-msg').value='';
+  }catch(e){statusEl.textContent='Error: '+e.message;statusEl.className='err';}
+  finally{btn.disabled=false;updatePushBtn();}
+});
 </script>
 </body>
 </html>
