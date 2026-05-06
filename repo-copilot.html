@@ -31,7 +31,9 @@ a,button,[role="button"]{transition:color var(--transition-interactive),backgrou
 .header-spacer{flex:1;}
 .theme-toggle{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);border-radius:var(--radius-md);}
 .theme-toggle:hover{color:var(--color-text);background:var(--color-surface-dynamic);}
-.tabs{display:flex;background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;}
+
+/* STICKY TABS — never scroll off screen */
+.tabs{display:flex;background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;position:sticky;top:0;z-index:10;}
 .tab{flex:1;padding:var(--space-3) var(--space-2);font-size:var(--text-sm);font-weight:500;color:var(--color-text-muted);border-bottom:2px solid transparent;text-align:center;min-height:44px;display:flex;align-items:center;justify-content:center;gap:var(--space-2);}
 .tab.active{color:var(--color-primary);border-bottom-color:var(--color-primary);}
 .tab:hover:not(.active){color:var(--color-text);background:var(--color-surface-dynamic);}
@@ -40,12 +42,11 @@ a,button,[role="button"]{transition:color var(--transition-interactive),backgrou
 /* MAIN: flex col, overflow hidden — panels fill this */
 .main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;}
 
-/* UNIFIED PANEL SYSTEM — both panels use the same pattern */
+/* UNIFIED PANEL SYSTEM */
 .panel{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0;}
 .panel.active{display:flex;}
 
 /* FILES PANEL internals */
-.files-scroll-top{flex-shrink:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .section{padding:var(--space-4);border-bottom:1px solid var(--color-divider);}
 .section-label{font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-3);}
 .input-row{display:flex;gap:var(--space-2);}
@@ -98,7 +99,7 @@ select.input{cursor:pointer;}
 .mailbox-item-size{font-size:10px;color:var(--color-text-faint);flex-shrink:0;}
 .mailbox-item-cb{width:16px;height:16px;accent-color:var(--color-primary);cursor:pointer;flex-shrink:0;}
 
-/* FILE TREE TOOLBAR — fixed height, no shrink */
+/* FILE TREE TOOLBAR — fixed, no shrink */
 .file-tree-toolbar{display:flex;flex-wrap:wrap;gap:var(--space-2);padding:var(--space-3) var(--space-4);background:var(--color-surface);border-bottom:1px solid var(--color-divider);align-items:center;flex-shrink:0;}
 .toolbar-left{display:flex;gap:var(--space-2);flex:1;flex-wrap:wrap;align-items:center;}
 .toolbar-divider{width:1px;height:20px;background:var(--color-border);flex-shrink:0;}
@@ -121,7 +122,7 @@ select.input{cursor:pointer;}
 .tree-children{padding-left:20px;display:none;}
 .tree-children.open{display:block;}
 
-/* EXPORT — pinned to bottom, shrinks to content */
+/* EXPORT — pinned to bottom */
 .export-section-inner{padding:var(--space-4);flex-shrink:0;border-top:1px solid var(--color-divider);background:var(--color-surface);}
 .export-section-label{font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:var(--space-3);}
 .export-info{font-size:var(--text-xs);color:var(--color-text-muted);margin-bottom:var(--space-3);padding:var(--space-3);background:var(--color-surface-offset);border-radius:var(--radius-md);line-height:1.6;}
@@ -137,9 +138,19 @@ select.input{cursor:pointer;}
 .form-row{display:flex;flex-direction:column;gap:var(--space-1);margin-bottom:var(--space-2);}
 .form-label{font-size:var(--text-xs);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;}
 
-/* FILES PANEL: fixed top area (repo+mailbox) + flex tree + fixed export */
+/* FILES PANEL layout:
+   files-top = scrollable region capped at ~40dvh (repo card + mailbox)
+   toolbar = fixed
+   tree = fills remaining flex space, scrolls
+   export = pinned to bottom
+*/
 #panel-files{flex-direction:column;}
-.files-top{flex-shrink:0;overflow-y:visible;}
+.files-top{
+  flex-shrink:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  max-height:40dvh;
+}
 #tree-toolbar-wrap{flex-shrink:0;}
 #export-wrap{flex-shrink:0;}
 
@@ -158,7 +169,7 @@ select.input{cursor:pointer;}
 /* CHAT */
 .chat-wrap{display:flex;flex-direction:column;height:100%;min-height:0;}
 
-/* CONFIG BAR (collapsed) */
+/* CONFIG BAR */
 .chat-config-bar{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-divider);cursor:pointer;flex-shrink:0;min-height:44px;background:var(--color-surface);user-select:none;}
 .chat-config-bar:hover{background:var(--color-surface-dynamic);}
 .config-bar-dot{width:8px;height:8px;border-radius:var(--radius-full);background:var(--color-text-faint);flex-shrink:0;transition:background var(--transition-interactive);}
@@ -168,13 +179,14 @@ select.input{cursor:pointer;}
 .config-bar-chevron{width:16px;height:16px;color:var(--color-text-faint);flex-shrink:0;transition:transform 180ms;}
 .config-bar-chevron.open{transform:rotate(180deg);}
 
-/* CONFIG PANEL (expanded) */
+/* CONFIG PANEL */
 .chat-config-panel{padding:var(--space-4);border-bottom:1px solid var(--color-divider);display:none;flex-direction:column;gap:var(--space-3);flex-shrink:0;background:var(--color-surface);}
 .chat-config-panel.open{display:flex;}
 .form-row-inline{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
 .token-est{font-size:var(--text-xs);color:var(--color-text-faint);text-align:right;margin-top:var(--space-1);}
 .token-est span{color:var(--color-primary);font-weight:600;}
 
+/* CHAT MESSAGES — fills flex, scrolls */
 .chat-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-4);min-height:0;}
 .chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);color:var(--color-text-faint);padding:var(--space-8);text-align:center;}
 .chat-empty svg{width:40px;height:40px;opacity:.4;}
@@ -197,7 +209,27 @@ select.input{cursor:pointer;}
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--radius-full);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;}
 .badge-teal{background:var(--color-primary-highlight);color:var(--color-primary);}
 
-/* FENCE WRAP — code blocks with stage button */
+/* SCROLL TO BOTTOM BUTTON */
+#scroll-bottom-btn{
+  position:absolute;
+  bottom:calc(var(--space-4) + 52px); /* above input row */
+  right:var(--space-4);
+  width:36px;height:36px;
+  border-radius:var(--radius-full);
+  background:var(--color-surface);
+  border:1px solid var(--color-border);
+  color:var(--color-text-muted);
+  display:none;
+  align-items:center;justify-content:center;
+  box-shadow:var(--shadow-md);
+  cursor:pointer;
+  z-index:5;
+  transition:opacity 150ms;
+}
+#scroll-bottom-btn.show{display:flex;}
+#scroll-bottom-btn:hover{color:var(--color-text);background:var(--color-surface-dynamic);}
+
+/* FENCE WRAP */
 .fence-wrap{position:relative;margin:var(--space-2) 0;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--color-border);}
 .fence-filename{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-3);background:var(--color-surface-offset-2);font-size:10px;font-weight:700;color:var(--color-text-muted);letter-spacing:0.04em;border-bottom:1px solid var(--color-border);}
 .fence-filename .btn-stage{font-size:10px;font-weight:700;padding:2px 8px;min-height:24px;border-radius:var(--radius-full);background:var(--color-primary-highlight);color:var(--color-primary);border:none;cursor:pointer;}
@@ -248,7 +280,7 @@ select.input{cursor:pointer;}
     <!-- FILES PANEL -->
     <div class="panel active" id="panel-files" role="tabpanel">
 
-      <!-- TOP: repo loader + repo card (shrinks to content) -->
+      <!-- TOP: capped + scrollable (repo loader, repo card, mailbox) -->
       <div class="files-top">
         <div class="section">
           <div class="section-label">Repository</div>
@@ -261,8 +293,6 @@ select.input{cursor:pointer;}
           <div id="repo-status"></div>
           <div id="repo-card" style="display:none;margin-top:var(--space-3)"></div>
         </div>
-
-        <!-- mailbox -->
         <div id="mailbox-section" class="mailbox-section" style="display:none">
           <div class="mailbox-header" id="mailbox-header" role="button" aria-expanded="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -271,25 +301,25 @@ select.input{cursor:pointer;}
           </div>
           <div class="mailbox-list open" id="mailbox-list"></div>
         </div>
-
-        <!-- toolbar -->
-        <div id="tree-toolbar" style="display:none" class="file-tree-toolbar">
-          <div class="toolbar-left">
-            <button class="btn btn-secondary btn-sm" id="select-all-btn">All</button>
-            <button class="btn btn-secondary btn-sm" id="deselect-btn">None</button>
-            <div class="toolbar-divider"></div>
-            <button class="filter-btn" id="filter-code-btn" data-filter="code">Code</button>
-            <button class="filter-btn" id="filter-docs-btn" data-filter="docs">Docs</button>
-            <button class="filter-btn" id="filter-config-btn" data-filter="config">Config</button>
-          </div>
-          <span class="file-count" id="file-count-label">0 selected</span>
-        </div>
       </div>
 
-      <!-- MIDDLE: file tree — this fills all remaining space and scrolls -->
+      <!-- TOOLBAR: pinned, no shrink -->
+      <div id="tree-toolbar" style="display:none" class="file-tree-toolbar">
+        <div class="toolbar-left">
+          <button class="btn btn-secondary btn-sm" id="select-all-btn">All</button>
+          <button class="btn btn-secondary btn-sm" id="deselect-btn">None</button>
+          <div class="toolbar-divider"></div>
+          <button class="filter-btn" id="filter-code-btn" data-filter="code">Code</button>
+          <button class="filter-btn" id="filter-docs-btn" data-filter="docs">Docs</button>
+          <button class="filter-btn" id="filter-config-btn" data-filter="config">Config</button>
+        </div>
+        <span class="file-count" id="file-count-label">0 selected</span>
+      </div>
+
+      <!-- TREE: fills remaining space, scrolls -->
       <div id="tree-container" style="display:none"></div>
 
-      <!-- BOTTOM: export (pinned to bottom) -->
+      <!-- EXPORT: pinned to bottom -->
       <div id="export-section" style="display:none" class="export-section-inner">
         <div class="export-section-label">Export</div>
         <div class="export-info" id="export-info"></div>
@@ -330,9 +360,9 @@ select.input{cursor:pointer;}
 
     <!-- CHAT PANEL -->
     <div class="panel" id="panel-chat" role="tabpanel">
-      <div class="chat-wrap">
+      <div class="chat-wrap" style="position:relative">
 
-        <!-- CONFIG BAR (collapsed summary) -->
+        <!-- CONFIG BAR -->
         <div class="chat-config-bar" id="chat-config-bar" role="button" tabindex="0" aria-expanded="false" aria-controls="chat-config-panel">
           <div class="config-bar-dot" id="config-bar-dot"></div>
           <span class="config-bar-label" id="config-bar-label">Configure API</span>
@@ -340,7 +370,7 @@ select.input{cursor:pointer;}
           <svg class="config-bar-chevron" id="config-bar-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
 
-        <!-- CONFIG PANEL (expanded) -->
+        <!-- CONFIG PANEL -->
         <div class="chat-config-panel" id="chat-config-panel">
           <div class="form-row-inline">
             <div class="form-row" style="margin-bottom:0">
@@ -382,6 +412,11 @@ select.input{cursor:pointer;}
             <p>Load a repo and select files, then ask anything about the code.</p>
           </div>
         </div>
+
+        <!-- SCROLL TO BOTTOM -->
+        <button id="scroll-bottom-btn" aria-label="Scroll to bottom" title="Scroll to bottom">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
 
         <!-- STAGED TRAY -->
         <div id="staged-tray">
@@ -796,6 +831,17 @@ async function sendMessage(){
   finally{document.getElementById('chat-send').disabled=false;}
 }
 
+// SCROLL TO BOTTOM
+(function(){
+  const msgs=document.getElementById('chat-messages');
+  const btn=document.getElementById('scroll-bottom-btn');
+  msgs.addEventListener('scroll',()=>{
+    const atBottom=msgs.scrollHeight-msgs.scrollTop-msgs.clientHeight<80;
+    btn.classList.toggle('show',!atBottom);
+  });
+  btn.addEventListener('click',()=>msgs.scrollTo({top:msgs.scrollHeight,behavior:'smooth'}));
+})();
+
 // ── PHASE 3A: COLLAPSIBLE CONFIG BAR ──────────────────────────────────────────
 function isConfigReady(){
   return document.getElementById('provider-select').value&&
@@ -867,7 +913,6 @@ function scanFences(bubble){
     header.appendChild(nameSpan);header.appendChild(stageBtn);
     const pre=document.createElement('pre');pre.className='fence-code';pre.textContent=code;
     wrap.appendChild(header);wrap.appendChild(pre);
-    // Replace original text with rendered wrap
     bubble.textContent=raw.replace(m[0],'');
     bubble.parentNode.insertBefore(wrap,bubble);
   }
