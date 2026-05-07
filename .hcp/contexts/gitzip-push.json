@@ -1,0 +1,19 @@
+{
+  "hcp_version": "0.1.0",
+  "repo": "nothinginfinity/repo-copilot",
+  "context_id": "gitzip-push",
+  "role_in_network": "deployment_rail",
+  "artifact_format": "gitzip_bundle",
+  "trust_model": "agent-authored, PAT-scoped, path-sanitized",
+  "security_notes": [
+    "DEST fields in manifest must be path-sanitized (no .., no absolute paths)",
+    "Block writes to .git/**, .github/workflows/** unless allow_workflows: true",
+    "PAT must be fine-grained, repo-scoped, contents:write only",
+    "SHA-256 + size validation required per file before commit"
+  ],
+  "depends_on": [
+    "nothinginfinity/repo-copilot"
+  ],
+  "status": "active",
+  "hardening_commit": "commit-2"
+}

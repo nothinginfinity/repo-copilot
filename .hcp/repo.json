@@ -1,0 +1,19 @@
+{
+  "hcp_version": "0.1.0",
+  "repo": "nothinginfinity/repo-copilot",
+  "role_in_network": "orchestrator",
+  "artifact_format": "html",
+  "trust_model": "agent-authored, human-approved",
+  "created": "2026-05-07",
+  "updated": "2026-05-07",
+  "contacts": {
+    "bob": "spaces/bob/inbox.md",
+    "alice": "spaces/alice/inbox.md"
+  },
+  "links": {
+    "roadmap": "ROADMAP.md",
+    "gitzip_spec": ".gitzip/README.md",
+    "hcp_purpose": ".hcp/purpose.md",
+    "hcp_capabilities": ".hcp/capabilities.json"
+  }
+}

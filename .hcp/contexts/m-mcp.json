@@ -1,0 +1,19 @@
+{
+  "hcp_version": "0.1.0",
+  "context_id": "m-mcp-rooms",
+  "role_in_network": "multiplayer_runtime",
+  "artifact_format": "html",
+  "trust_model": "room-scoped, participant-verified",
+  "status": "planned",
+  "description": "Multiplayer runtime where HyperFrames and ContextFrames artifacts are used collaboratively by agents and humans in shared rooms.",
+  "dependencies": [
+    "gitzip-push (deployment rail)",
+    "context-frames-runtime (artifact standard)",
+    "hcp (identity and capability discovery)"
+  ],
+  "open_questions": [
+    "Room persistence: ephemeral vs. repo-backed state?",
+    "Participant identity: GitHub user vs. MCP agent vs. anonymous?",
+    "Conflict resolution: last-write-wins vs. CRDT?"
+  ]
+}

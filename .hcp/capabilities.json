@@ -1,0 +1,43 @@
+{
+  "hcp_version": "0.1.0",
+  "repo": "nothinginfinity/repo-copilot",
+  "capabilities": [
+    {
+      "id": "gitzip-pack",
+      "status": "active",
+      "description": "Pack files into a .gitzip bundle (manifest + base64 payloads) for mobile/browser deployment",
+      "spec": ".gitzip/README.md"
+    },
+    {
+      "id": "gitzip-unpack",
+      "status": "active",
+      "description": "Unpack a .gitzip bundle and commit files to a target repo via GitHub Actions",
+      "spec": ".github/workflows/gitzip-unpack.yml"
+    },
+    {
+      "id": "context-frames-runtime",
+      "status": "planned",
+      "description": "HTML-native Context App composition runtime for agents",
+      "spec": "runtime/context-frame-player.js",
+      "eta": "commit-5"
+    },
+    {
+      "id": "hcp-protocol",
+      "status": "active",
+      "description": "Memory/protocol layer — .hcp/ directory standard for repo identity and capability declaration",
+      "spec": ".hcp/repo.json"
+    },
+    {
+      "id": "spaces-messaging",
+      "status": "active",
+      "description": "Agent-to-agent async messaging via spaces/[agent]/inbox.md and outbox.md",
+      "spec": "spaces/"
+    },
+    {
+      "id": "m-mcp-rooms",
+      "status": "planned",
+      "description": "Multiplayer runtime where agent-generated HTML artifacts are used collaboratively",
+      "eta": "post-commit-5"
+    }
+  ]
+}

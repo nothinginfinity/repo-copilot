@@ -1,0 +1,36 @@
+{
+  "hcp_version": "0.1.0",
+  "description": "Known repos participating in the HCP network",
+  "members": [
+    {
+      "repo": "nothinginfinity/repo-copilot",
+      "role": "orchestrator",
+      "hcp_path": ".hcp/repo.json",
+      "status": "active"
+    },
+    {
+      "repo": "nothinginfinity/gitzip-push",
+      "role": "deployment_rail",
+      "hcp_path": ".hcp/repo.json",
+      "status": "pending — needs .hcp/ seed"
+    },
+    {
+      "repo": "nothinginfinity/hyperframes",
+      "role": "html_video_composition",
+      "hcp_path": ".hcp/repo.json",
+      "status": "pending — needs .hcp/ seed"
+    },
+    {
+      "repo": "nothinginfinity/context-frames",
+      "role": "html_context_composition",
+      "hcp_path": ".hcp/repo.json",
+      "status": "pending — repo may not exist yet"
+    },
+    {
+      "repo": "nothinginfinity/m-mcp",
+      "role": "multiplayer_runtime",
+      "hcp_path": ".hcp/repo.json",
+      "status": "planned"
+    }
+  ]
+}
