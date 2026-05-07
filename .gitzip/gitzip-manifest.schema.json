@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/nothinginfinity/repo-copilot/blob/main/.gitzip/gitzip-manifest.schema.json",
+  "title": "gitzip Manifest v2",
+  "description": "Manifest file that must be included inside every .gitzip drop-*.zip envelope. Defines which files to deploy, where they go, and optional integrity checks.",
+  "type": "object",
+  "required": ["version", "files"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 2,
+      "description": "Manifest format version. Must be 2."
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this envelope was created."
+    },
+    "target_branch": {
+      "type": "string",
+      "description": "Target branch to deploy files into. Informational — the Action deploys to the branch the zip was pushed to.",
+      "default": "main"
+    },
+    "commit_message": {
+      "type": "string",
+      "description": "Human-readable commit message describing what this drop deploys.",
+      "maxLength": 200
+    },
+    "artifact_type": {
+      "type": "string",
+      "description": "Optional type hint for the artifact payload.",
+      "examples": ["html_app", "context_frame_app", "static_site", "repo_update"]
+    },
+    "dry_run": {
+      "type": "boolean",
+      "description": "If true, the unpack action validates and logs but does not write files or commit. Useful for testing manifests.",
+      "default": false
+    },
+    "allow_workflow_writes": {
+      "type": "boolean",
+      "description": "If true, allows writing to .github/workflows/**. Requires explicit opt-in because workflow files can execute arbitrary code. Default false.",
+      "default": false
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "description": "List of files to deploy from the zip into the repo.",
+      "items": {
+        "type": "object",
+        "required": ["src", "dest"],
+        "additionalProperties": false,
+        "properties": {
+          "src": {
+            "type": "string",
+            "description": "Path to the file inside the zip archive (relative to zip root)."
+          },
+          "dest": {
+            "type": "string",
+            "description": "Destination path inside the repo (relative to repo root). Must not be absolute, contain .., start with .git/, .gitzip/, or _gitzip/."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "Optional SHA-256 hex digest of the source file. If provided, the unpack step verifies integrity before deploying."
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Optional byte size of the source file. If provided, the unpack step verifies size before deploying."
+          }
+        }
+      }
+    }
+  }
+}

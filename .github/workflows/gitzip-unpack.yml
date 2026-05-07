@@ -1,9 +1,13 @@
 name: gitzip unpack
 
+# Triggered when a .zip is pushed into the .gitzip/ maildrop folder.
+# Validates the gitzip-manifest.json inside each zip before committing any files.
+# Security: rejects path traversal, absolute paths, .git/**, and workflow overwrites.
+
 on:
   push:
     paths:
-      - '.gitzip/**'
+      - '.gitzip/drop-*.zip'
 
 jobs:
   unpack:
@@ -17,31 +21,57 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Unpack all .zip files in .gitzip/
+      - name: Detect new zip drops
+        id: detect
         run: |
           set -e
           shopt -s nullglob
-          zips=(.gitzip/*.zip)
+          zips=(.gitzip/drop-*.zip)
           if [ ${#zips[@]} -eq 0 ]; then
-            echo "No zip files found in .gitzip/ — nothing to do."
+            echo "No gitzip drops found — nothing to do."
+            echo "zips=" >> $GITHUB_OUTPUT
             exit 0
           fi
-          for zipfile in "${zips[@]}"; do
-            echo "Unpacking $zipfile..."
-            # Unzip into repo root, overwriting existing files
-            unzip -o "$zipfile" -d .
-            echo "Done: $zipfile"
-          done
+          # Write newline-delimited list to a temp file to avoid multi-line output issues
+          printf '%s\n' "${zips[@]}" > /tmp/zips.txt
+          echo "Found ${#zips[@]} zip(s):"
+          cat /tmp/zips.txt
+          echo "zips_found=true" >> $GITHUB_OUTPUT
+
+      - name: Validate and unpack each drop
+        if: steps.detect.outputs.zips_found == 'true'
+        run: |
+          set -e
+          node .gitzip/validate-and-unpack.js
+
+      - name: Remove processed zip drops
+        if: steps.detect.outputs.zips_found == 'true'
+        run: |
+          set -e
+          rm -f .gitzip/drop-*.zip
+          echo "Cleaned up zip drops."
 
       - name: Commit unpacked files
+        if: steps.detect.outputs.zips_found == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          # Only commit if there are actual changes
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "gitzip: auto-unpack from .gitzip/ [skip ci]"
+            # Build a summary of what was deployed
+            SUMMARY=$(node .gitzip/validate-and-unpack.js --summary 2>/dev/null || echo "gitzip drop")
+            git commit -m "gitzip: unpack drop — $SUMMARY [skip ci]"
             git push
+          fi
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## gitzip-unpack results" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/gitzip-summary.md ]; then
+            cat /tmp/gitzip-summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No summary generated." >> $GITHUB_STEP_SUMMARY
           fi
