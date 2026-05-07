@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "commit_message": "gitzip-deploy: update repo-copilot.html",
+  "allow_workflow_writes": false,
+  "dry_run": false,
+  "files": [
+    {
+      "src": "repo-copilot.html",
+      "dest": "repo-copilot.html",
+      "sha256": "<replace-with-actual-sha256-of-your-file>",
+      "size": 0
+    }
+  ]
+}

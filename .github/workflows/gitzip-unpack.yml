@@ -1,153 +1,99 @@
-# gitzip-unpack.yml
-# Triggered by pushing a .gitzip bundle to the repo.
-# Validates manifest, enforces path-safety rules, then writes each file.
-# Required secret: GITZIP_DEPLOY_TOKEN (fine-grained PAT, contents:write, this repo only)
+name: gitzip-unpack
 
-name: gitzip unpack
+# Triggers whenever a drop-*.zip is pushed to .gitzip/ on any branch.
+# This is the self-deploy rail: agents (or humans) push a .zip bundle
+# and this workflow validates, unpacks, commits, and cleans up.
 
 on:
   push:
     paths:
-      - '**.gitzip'
-  workflow_dispatch:
-    inputs:
-      bundle_path:
-        description: 'Path to .gitzip bundle in the repo'
-        required: true
-        default: 'dist/repo-copilot.gitzip'
+      - '.gitzip/drop-*.zip'
 
-permissions:
-  contents: write
+# Only one unpack run at a time per branch — prevent race conditions.
+concurrency:
+  group: gitzip-unpack-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   unpack:
+    name: Validate & Unpack gitzip bundle
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit deployed files back
+
     steps:
+      # ── 1. Checkout full history so we can commit back ──────────────────────
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITZIP_DEPLOY_TOKEN }}
-          fetch-depth: 1
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Find bundle
-        id: find
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "bundle=${{ inputs.bundle_path }}" >> $GITHUB_OUTPUT
-          else
-            # Find the most-recently changed .gitzip file in this push
-            BUNDLE=$(git diff --name-only HEAD~1 HEAD | grep '\.gitzip$' | head -n1)
-            if [ -z "$BUNDLE" ]; then
-              echo "No .gitzip file found in push. Exiting."
-              exit 0
-            fi
-            echo "bundle=$BUNDLE" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Install Node
+      # ── 2. Setup Node (matches validate-and-unpack.js shebang) ───────────────
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Validate & unpack
-        env:
-          BUNDLE: ${{ steps.find.outputs.bundle }}
+      # ── 3. Validate & unpack all drop-*.zip files ───────────────────────────
+      - name: Run gitzip validate-and-unpack
+        id: unpack
         run: |
-          node - <<'EOF'
-          const fs = require('fs');
-          const path = require('path');
-          const crypto = require('crypto');
+          node .gitzip/validate-and-unpack.js --summary
+          echo "summary_written=true" >> $GITHUB_OUTPUT
 
-          const BUNDLE_PATH = process.env.BUNDLE;
-          if (!BUNDLE_PATH) { console.log('No bundle path — skipping.'); process.exit(0); }
+      # ── 4. Write step summary to GitHub Actions UI ──────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          if [ -f /tmp/gitzip-summary.md ]; then
+            cat /tmp/gitzip-summary.md >> $GITHUB_STEP_SUMMARY
+          fi
 
-          // ── Security constants ──────────────────────────────────────────────
-          const MAX_FILE_SIZE   = 5 * 1024 * 1024;  // 5 MB per file
-          const MAX_BUNDLE_SIZE = 20 * 1024 * 1024; // 20 MB total bundle
-          const BLOCKED_PATHS   = ['.git/', '.github/workflows/'];
-          const ALLOW_WORKFLOWS = process.env.ALLOW_WORKFLOWS === 'true'; // override if needed
-
-          // ── Load bundle ─────────────────────────────────────────────────────
-          const raw = fs.readFileSync(BUNDLE_PATH, 'utf8');
-          let bundle;
-          try { bundle = JSON.parse(raw); } catch (e) {
-            console.error('Invalid JSON bundle:', e.message); process.exit(1);
-          }
-
-          const { manifest, files } = bundle;
-          if (!manifest || !files) {
-            console.error('Bundle missing manifest or files field.'); process.exit(1);
-          }
-
-          console.log(`Bundle: ${manifest.name || 'unnamed'} v${manifest.version || '?'} (${manifest.created || 'unknown date'})`);
-          console.log(`Files: ${Object.keys(files).length}`);
-
-          let totalSize = 0;
-          const written = [];
-
-          for (const [dest, entry] of Object.entries(files)) {
-            // ── Path safety checks ──────────────────────────────────────────
-            if (path.isAbsolute(dest)) {
-              console.error(`BLOCKED absolute path: ${dest}`); process.exit(1);
-            }
-            const normalized = path.normalize(dest);
-            if (normalized.startsWith('..')) {
-              console.error(`BLOCKED path traversal: ${dest}`); process.exit(1);
-            }
-            const isWorkflowPath = normalized.startsWith('.github/workflows/');
-            if (isWorkflowPath && !ALLOW_WORKFLOWS) {
-              console.error(`BLOCKED workflow path (set ALLOW_WORKFLOWS=true to permit): ${dest}`);
-              process.exit(1);
-            }
-            for (const blocked of BLOCKED_PATHS) {
-              if (!isWorkflowPath && normalized.startsWith(blocked)) {
-                console.error(`BLOCKED protected path: ${dest}`); process.exit(1);
-              }
-            }
-
-            // ── Decode content ──────────────────────────────────────────────
-            const content = Buffer.from(entry.content, 'base64');
-
-            // ── Size guard ──────────────────────────────────────────────────
-            if (content.length > MAX_FILE_SIZE) {
-              console.error(`BLOCKED oversized file (${content.length} bytes): ${dest}`); process.exit(1);
-            }
-            totalSize += content.length;
-            if (totalSize > MAX_BUNDLE_SIZE) {
-              console.error(`BLOCKED bundle exceeds max size (${MAX_BUNDLE_SIZE} bytes total).`); process.exit(1);
-            }
-
-            // ── SHA-256 integrity check ─────────────────────────────────────
-            if (entry.sha256) {
-              const actual = crypto.createHash('sha256').update(content).digest('hex');
-              if (actual !== entry.sha256) {
-                console.error(`INTEGRITY FAIL — sha256 mismatch for ${dest}`);
-                console.error(`  expected: ${entry.sha256}`);
-                console.error(`  actual:   ${actual}`);
-                process.exit(1);
-              }
-            }
-
-            // ── Write file ──────────────────────────────────────────────────
-            const dir = path.dirname(normalized);
-            if (dir && dir !== '.') fs.mkdirSync(dir, { recursive: true });
-            fs.writeFileSync(normalized, content);
-            written.push(dest);
-            console.log(`  ✓ ${dest} (${content.length} bytes)`);
-          }
-
-          console.log(`\nUnpacked ${written.length} file(s) successfully.`);
-          EOF
-
-      - name: Commit unpacked files
+      # ── 5. Commit deployed files back to branch ─────────────────────────────
+      #    Excludes .gitzip/drop-*.zip so processed zips aren't re-committed.
+      - name: Commit deployed files
         run: |
           git config user.name  "gitzip-bot"
-          git config user.email "gitzip-bot@noreply.github.com"
-          git add -A
+          git config user.email "gitzip-bot@nothinginfinity"
+
+          # Stage everything except the zip files themselves
+          git add --all
+          git reset -- '.gitzip/drop-*.zip' 2>/dev/null || true
+
+          # Only commit if there are staged changes
           if git diff --cached --quiet; then
-            echo "Nothing to commit — bundle produced no file changes."
+            echo "No file changes to commit — nothing deployed."
           else
-            BUNDLE_NAME=$(basename "${{ steps.find.outputs.bundle }}")
-            git commit -m "gitzip-unpack: deploy from $BUNDLE_NAME [skip ci]"
+            COMMIT_MSG=$(node -e "
+              const fs = require('fs');
+              const drops = fs.readdirSync('.gitzip').filter(f => f.startsWith('drop-') && f.endsWith('.zip'));
+              const label = drops.length > 0 ? drops.join(', ') : 'gitzip drop';
+              console.log('gitzip-deploy: ' + label);
+            ")
+            git commit -m "$COMMIT_MSG"
             git push
+            echo "✅ Committed and pushed deployed files."
           fi
+
+      # ── 6. Remove processed zip files ───────────────────────────────────────
+      #    Zips are ephemeral — they trigger the deploy but don't live in history.
+      - name: Clean up processed zips
+        run: |
+          git config user.name  "gitzip-bot"
+          git config user.email "gitzip-bot@nothinginfinity"
+
+          ZIPS=$(find .gitzip -name 'drop-*.zip' 2>/dev/null)
+          if [ -z "$ZIPS" ]; then
+            echo "No zips to clean up."
+            exit 0
+          fi
+
+          for zip in $ZIPS; do
+            git rm -f "$zip"
+            echo "  Removed: $zip"
+          done
+
+          git commit -m "gitzip-cleanup: remove processed drop zips"
+          git push
+          echo "✅ Cleanup complete."
