@@ -16,10 +16,14 @@
     },
     {
       "id": "context-frames-runtime",
-      "status": "planned",
+      "status": "experimental",
       "description": "HTML-native Context App composition runtime for agents",
       "spec": "runtime/context-frame-player.js",
-      "eta": "commit-5"
+      "version": "0.1.0",
+      "examples": [
+        "examples/repo-match-card.html",
+        "examples/context-frames-host.html"
+      ]
     },
     {
       "id": "hcp-protocol",

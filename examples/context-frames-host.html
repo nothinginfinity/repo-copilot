@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ContextFrames Host — Composition Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:         #171614;
+      --surface:    #1c1b19;
+      --surface-2:  #252422;
+      --border:     #393836;
+      --text:       #cdccca;
+      --text-muted: #797876;
+      --accent:     #4f98a3;
+      --font-body:  system-ui, -apple-system, sans-serif;
+      --font-mono:  'Fira Code', 'Cascadia Code', monospace;
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      min-height: 100dvh;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-muted); font-size: 0.8125rem; margin-bottom: 2rem; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .frame-slot {
+      height: 140px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .frame-slot iframe {
+      width: 100%; height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      padding: 0.4375rem 0.875rem;
+      border-radius: 0.5rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      transition: border-color 150ms, background 150ms;
+    }
+    .btn:hover { border-color: var(--accent); background: #313b3b; color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #0f3638; font-weight: 600; }
+    .btn.primary:hover { background: #3d8490; }
+
+    /* Event log */
+    .log-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; }
+    .log {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      min-height: 120px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .log-entry { color: var(--text); }
+    .log-entry .ts { color: var(--text-muted); margin-right: 0.5rem; }
+    .log-entry .type { color: var(--accent); margin-right: 0.375rem; }
+    .log-empty { color: var(--text-muted); font-style: italic; }
+  </style>
+</head>
+<body>
+
+  <h1>ContextFrames Host</h1>
+  <p class="subtitle">HTML-native Context App composition — ContextFrames runtime v0.1.0</p>
+
+  <div class="controls">
+    <button class="btn primary" id="btn-add">+ Add Frame</button>
+    <button class="btn" id="btn-update">Send Update</button>
+    <button class="btn" id="btn-cycle">Cycle Repos</button>
+    <button class="btn" id="btn-clear-log">Clear Log</button>
+  </div>
+
+  <div class="layout" id="frame-grid"></div>
+
+  <div class="log-label">Event log</div>
+  <div class="log" id="log"><span class="log-empty">No events yet — add a frame to get started.</span></div>
+
+<script src="../runtime/context-frame-player.js"></script>
+<script>
+  const grid    = document.getElementById('frame-grid');
+  const logEl   = document.getElementById('log');
+  const bridges = [];
+
+  const REPOS = [
+    { repo: 'nothinginfinity/repo-copilot',  description: 'Orchestration layer for the multi-agent HTML-native deployment system.',   role: 'orchestrator',    language: 'HTML',       status: 'active' },
+    { repo: 'nothinginfinity/gitzip-push',   description: 'Mobile/browser deployment rail for agent-generated HTML artifacts.',       role: 'deployment_rail', language: 'JavaScript', status: 'active' },
+    { repo: 'nothinginfinity/hyperframes',   description: 'HTML-native video composition engine for AI agents.',                       role: 'video_composer',  language: 'HTML',       status: 'active' },
+    { repo: 'nothinginfinity/context-frames',description: 'HTML-native Context App composition runtime for agents.',                   role: 'context_runtime', language: 'JavaScript', status: 'experimental' },
+    { repo: 'nothinginfinity/m-mcp',         description: 'Multiplayer runtime where agent HTML artifacts are used collaboratively.',  role: 'multiplayer',     language: 'TypeScript', status: 'planned' },
+  ];
+
+  let repoIndex = 0;
+
+  function logEvent(type, payload) {
+    const empty = logEl.querySelector('.log-empty');
+    if (empty) empty.remove();
+    const ts   = new Date().toLocaleTimeString('en', { hour12: false });
+    const line = document.createElement('div');
+    line.className = 'log-entry';
+    line.innerHTML = `<span class="ts">${ts}</span><span class="type">${type}</span>${JSON.stringify(payload)}`;
+    logEl.prepend(line);
+  }
+
+  function addFrame() {
+    const data = REPOS[bridges.length % REPOS.length];
+
+    const slot = document.createElement('div');
+    slot.className = 'frame-slot';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = 'repo-match-card.html';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+    iframe.setAttribute('title', `ContextFrame: ${data.repo}`);
+    slot.appendChild(iframe);
+    grid.appendChild(slot);
+
+    const bridge = ContextFrameHost.mount(iframe);
+    bridges.push({ bridge, data });
+
+    // Send initial data once frame is ready
+    bridge.on('ready', () => {
+      bridge.send('update', data);
+      logEvent('ready', { frame: bridges.length, repo: data.repo });
+    });
+
+    bridge.on('action', (payload) => {
+      logEvent('action', payload);
+    });
+
+    bridge.on('*', (payload, envelope) => {
+      if (envelope.type !== 'ready' && envelope.type !== 'action') {
+        logEvent(envelope.type, payload);
+      }
+    });
+  }
+
+  function updateAllFrames() {
+    bridges.forEach(({ bridge, data }) => bridge.send('update', data));
+    logEvent('host:update-all', { count: bridges.length });
+  }
+
+  function cycleRepos() {
+    repoIndex = (repoIndex + 1) % REPOS.length;
+    bridges.forEach(({ bridge }, i) => {
+      const data = REPOS[(repoIndex + i) % REPOS.length];
+      bridge.send('update', data);
+    });
+    logEvent('host:cycle', { startIndex: repoIndex });
+  }
+
+  document.getElementById('btn-add').addEventListener('click', addFrame);
+  document.getElementById('btn-update').addEventListener('click', updateAllFrames);
+  document.getElementById('btn-cycle').addEventListener('click', cycleRepos);
+  document.getElementById('btn-clear-log').addEventListener('click', () => {
+    logEl.innerHTML = '<span class="log-empty">Log cleared.</span>';
+  });
+
+  // Seed with two frames on load
+  addFrame();
+  addFrame();
+</script>
+</body>
+</html>
