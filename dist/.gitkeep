@@ -1,0 +1,2 @@
+# dist/ — gitzip bundles land here before the unpack workflow fires
+# Do not commit large binary files here; .gitzip bundles only.
