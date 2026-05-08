@@ -42,6 +42,7 @@ Every agent should load relevant gists at session start before reading messages.
 | G-004 | `CHECKLIST` | both | Pre-Push Gate Checklist | `spaces/gists/G-004-checklist.md` | 2026-05-07 |
 | G-005 | `HANDOFF` | both | Active Handoff State | `spaces/gists/G-005-handoff.md` | 2026-05-07 |
 | G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | `spaces/gists/G-006-vocab.md` | 2026-05-07 |
+| G-007 | `CONTEXT` | both | Conversation Identity (CID) Registry | `spaces/gists/G-007-cid-registry.md` | 2026-05-07 |
 
 > **Note:** Gists hosted in this repo use repo-relative paths until mirrored to github.com/gists.
 > When a public Gist URL is created, replace the path with the full `https://gist.github.com/...` URL.
@@ -52,11 +53,12 @@ Every agent should load relevant gists at session start before reading messages.
 
 ```
 ---
-from: <agent>
-to: <agent>
-date: YYYY-MM-DD HH:MM UTC
+from:    <agent>
+to:      <agent>
+date:    YYYY-MM-DD HH:MM UTC
 subject: <imperative verb phrase>
-context: <gist-path-or-url>   ← include when a gist is relevant
+context: <gist-path-or-url>                    ← optional
+cid:     <agent>/<conv-index>/<human-token>    ← required
 ---
 <body>
 ---

@@ -19,6 +19,8 @@
 | `inbox` | `spaces/<agent>/inbox.md` — where others write TO an agent |
 | `outbox` | `spaces/<agent>/outbox.md` — where an agent writes FROM itself |
 | `handoff` | transferring active task ownership between agents via G-005 |
+| `CID` | Conversation Identity token — `<agent>/<conv-index>/<human-token>` (see G-007) |
+| `human token` | short identifier for the human author in a CID (e.g. `jared`, or `auto`) |
 
 ---
 
@@ -27,25 +29,31 @@
 | Type | Pattern | Example |
 |------|---------|----------|
 | Gist source files | `G-NNN-slug.md` | `G-004-checklist.md` |
-| Commit messages | `type(scope): description` | `feat(spaces): add G-004` |
+| Commit messages | `type(scope): description` | `feat(spaces): add G-007` |
 | Gist IDs | `G-` + zero-padded 3-digit number | `G-007` |
-| Message subjects | imperative verb phrase | `add checklist gist` |
+| Message subjects | imperative verb phrase | `add CID registry` |
+| CID tokens | `<agent>/c<N>/<human-token>` | `bob/c2/jared` |
 
 ---
 
-## 📨 Message Block Format
+## 📨 Message Block Format (canonical — with CID)
 
 ```
 ---
-from: <agent>
-to: <agent>
-date: YYYY-MM-DD HH:MM UTC
+from:    <agent>
+to:      <agent>
+date:    YYYY-MM-DD HH:MM UTC
 subject: <imperative verb phrase>
-context: <gist-path-or-url>   ← optional; include when a gist is relevant
+context: <gist-path-or-url>          ← optional; include when a gist is relevant
+cid:     <agent>/<conv-index>/<human-token>   ← required on every message
 ---
 <body>
 ---
 ```
+
+**CID examples:**
+- `cid: bob/c2/jared` — Bob space, conversation 2, Jared present
+- `cid: alice/c1/auto` — Alice space, conversation 1, autonomous
 
 ---
 
@@ -76,3 +84,4 @@ Every agent must output this after every push:
 | Date | Change | By |
 |------|--------|----|
 | 2026-05-07 | Initial creation | Bob |
+| 2026-05-07 | Added CID token, human token, CID message format | Bob (bob/c2/jared) |
