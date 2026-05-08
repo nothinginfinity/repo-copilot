@@ -1,0 +1,149 @@
+name: Gist Ops
+
+on:
+  push:
+    paths:
+      - 'spaces/gist-ops/queue.json'
+
+jobs:
+  run-gist-op:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run gist operation
+        uses: actions/github-script@v7
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        with:
+          script: |
+            const fs = require('fs');
+            const https = require('https');
+
+            const queue = JSON.parse(fs.readFileSync('spaces/gist-ops/queue.json', 'utf8'));
+            const token = process.env.GIST_TOKEN;
+
+            if (!token) {
+              throw new Error('GIST_TOKEN secret is not set. Add it in repo Settings → Secrets → Actions.');
+            }
+
+            function gistRequest(method, path, body) {
+              return new Promise((resolve, reject) => {
+                const data = body ? JSON.stringify(body) : null;
+                const options = {
+                  hostname: 'api.github.com',
+                  path,
+                  method,
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github+json',
+                    'User-Agent': 'gist-mcp-server/1.0',
+                    'X-GitHub-Api-Version': '2022-11-28',
+                    ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {})
+                  }
+                };
+                const req = https.request(options, (res) => {
+                  let body = '';
+                  res.on('data', chunk => body += chunk);
+                  res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(body) }));
+                });
+                req.on('error', reject);
+                if (data) req.write(data);
+                req.end();
+              });
+            }
+
+            let result = {
+              op: queue.op,
+              requested_by: queue.requested_by || 'unknown',
+              completed_at: new Date().toISOString(),
+              status: 'error',
+              error: null
+            };
+
+            try {
+              if (queue.op === 'create_gist') {
+                const res = await gistRequest('POST', '/gists', {
+                  description: queue.description || '',
+                  public: queue.public === true,
+                  files: queue.files
+                });
+                if (res.status === 201) {
+                  const firstFile = Object.keys(res.body.files)[0];
+                  result.status = 'success';
+                  result.gist_id = res.body.id;
+                  result.html_url = res.body.html_url;
+                  result.raw_url = res.body.files[firstFile].raw_url;
+                  result.all_files = Object.fromEntries(
+                    Object.entries(res.body.files).map(([k, v]) => [k, v.raw_url])
+                  );
+                } else {
+                  result.error = res.body.message || `HTTP ${res.status}`;
+                }
+
+              } else if (queue.op === 'update_gist') {
+                const res = await gistRequest('PATCH', `/gists/${queue.gist_id}`, {
+                  description: queue.description,
+                  files: queue.files
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.gist_id = res.body.id;
+                  result.html_url = res.body.html_url;
+                  result.updated_at = res.body.updated_at;
+                } else {
+                  result.error = res.body.message || `HTTP ${res.status}`;
+                }
+
+              } else if (queue.op === 'get_gist') {
+                const res = await gistRequest('GET', `/gists/${queue.gist_id}`);
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.gist_id = res.body.id;
+                  result.html_url = res.body.html_url;
+                  result.description = res.body.description;
+                  result.updated_at = res.body.updated_at;
+                  result.all_files = Object.fromEntries(
+                    Object.entries(res.body.files).map(([k, v]) => [k, v.raw_url])
+                  );
+                } else {
+                  result.error = res.body.message || `HTTP ${res.status}`;
+                }
+
+              } else if (queue.op === 'list_gists') {
+                const res = await gistRequest('GET', '/gists?per_page=30');
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.gists = res.body.map(g => ({
+                    gist_id: g.id,
+                    description: g.description,
+                    html_url: g.html_url,
+                    public: g.public,
+                    updated_at: g.updated_at,
+                    files: Object.keys(g.files)
+                  }));
+                } else {
+                  result.error = res.body.message || `HTTP ${res.status}`;
+                }
+
+              } else {
+                result.error = `Unknown op: "${queue.op}". Valid ops: create_gist, update_gist, get_gist, list_gists`;
+              }
+            } catch (err) {
+              result.error = err.message;
+            }
+
+            fs.writeFileSync('spaces/gist-ops/result.json', JSON.stringify(result, null, 2));
+            console.log('Result:', JSON.stringify(result, null, 2));
+
+      - name: Commit result
+        run: |
+          git config user.name "gist-mcp-server[bot]"
+          git config user.email "gist-mcp-server@nothinginfinity.bot"
+          git add spaces/gist-ops/result.json
+          git diff --cached --quiet || git commit -m "chore(gist-ops): write result for op $(jq -r .op spaces/gist-ops/queue.json) [skip ci]"
+          git push
