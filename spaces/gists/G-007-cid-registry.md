@@ -67,6 +67,7 @@ cid:     <agent>/<conv-index>/<human-token>
 |-----|-------|--------|-------|--------|-----------------|----------------|
 | `bob/c1/jared` | repo-copilot-bob | c1 | jared | 🟡 idle | 2026-05-07 | 2026-05-07 |
 | `bob/c2/jared` | repo-copilot-bob | c2 | jared | 🟢 active | 2026-05-07 | 2026-05-07 |
+| `alice/c1/jared` | repo-copilot-alice | c1 | jared | 🟢 active | 2026-05-07 | 2026-05-07 |
 
 > **Status legend:** 🟢 active · 🟡 idle · ⏸️ paused · ✅ closed
 
@@ -99,5 +100,6 @@ cid:     <agent>/<conv-index>/<human-token>
 ## 📝 Change Log
 
 | Date | Change | By |
-|------|--------|----|
+|------|--------|-----|
 | 2026-05-07 | Initial creation; registered bob/c1 and bob/c2 | Bob (bob/c2/jared) |
+| 2026-05-07 | Registered alice/c1/jared | Alice (alice/c1/jared) |
