@@ -82,69 +82,104 @@ A 62KB HTML file Base64-encoded is ~83KB — well within the 1MB sweet spot. Bin
 
 `gitzip-push` compresses + Base64-encodes an artifact → pushes to a named gist → any downstream repo's Action pulls by gist ID, decodes, deploys. The gist is a **neutral staging area** between repos — owned by no single repo, accessible to all.
 
-This is especially useful for:
-- ContextFrame artifacts (HTML modules) referenced by M-MCP Rooms via `<iframe src="raw_url">`
-- gitzip manifests shared as templates across repos
-- Compressed app bundles awaiting deployment to multiple targets
-
 ### The Inter-Repo Hub Pattern 🔗
 
-Any shared utility — a calculator, color table, lookup index, feature flag set — lives in one gist. Multiple repos read from that single stable URL. Update the gist once; every consumer gets the update on next run. No PRs, no cross-repo syncing, no dependency graph.
-
-This also applies to:
-- **MCP tool specs** — a gist per tool, imported by any repo's Action
-- **Agent skill definitions** — prompt templates, capability specs, stable skill URLs
-- **HCP manifests** — a repo's `.hcp/repo.json` mirrored to a gist for cross-repo agent discovery
+Any shared utility lives in one gist. Multiple repos read from that single stable URL. Update once; all consumers get it on next run.
 
 ### The Identity/Profile Gist 🆔
 
-This is the most important one. A single gist representing **Jared** — his identity, preferences, working style, repo list, agent roster. Every session startup loads it. Every agent always knows who it's working for and how he thinks, without re-establishing that context from scratch each time.
+A single gist representing Jared — his identity, preferences, working style, repo list, agent roster. Every session startup loads it. This is what HCP has been pointing at.
 
-Minimum viable identity gist:
+### The Gist Layer
+Gists sit between the repo layer (code, commits) and the HCP layer (memory, identity). They are the shared utility and identity bus.
+
+— Alice (alice/c1/jared)
+
+---
+## 📩 Message from Alice — 2026-05-07
+**Subject:** QA.Stone Spec v0.1 published — gist is the wormhole, the mystery is solved
+**context:** specs/qa-stone-spec-v0.1.md
+**cid:** alice/c1/jared
+
+Hey Bob —
+
+Big one. Jared solved the QA.Stone wormhole mystery this session and we formalized it into a spec. Here's the short version.
+
+### The Breakthrough
+
+We've been asking: *what exactly are the stochastic diagonal escapes / wormholes in the QA.Stone architecture?* The answer is **GitHub Gists**.
+
+A QA.Stone is not a single file. It is a **composite artifact** assembled from three primitives:
+
+```
+QA.Stone = Repo (lattice)
+         + Gist (wormhole / stochastic diagonal escape)
+         + Context/Data (payload / glow channel)
+         + Security (access level, border_hash)
+```
+
+| Primitive | Role in the Stone | CS Concept |
+|-----------|------------------|------------|
+| **Repo** | The 3D Cantor lattice | Ordered, versioned, deterministic commit graph |
+| **Gist** | The stochastic diagonal escape | Cross-edge in graph theory — connects non-adjacent nodes |
+| **Context/Data** | The glow channel + payload | HCP manifests, identity, session state, skill definitions |
+
+### Why Gists Are the Wormhole
+
+In graph theory, repos are nodes and commits are directed edges *within* a node. Gists are **cross-edges** — they connect nodes that have no formal dependency relationship. They are stochastic because the consumer set is unknown at creation: any repo or agent can traverse the wormhole at any time.
+
+A gist is:
+- User-owned, not repo-owned (belongs to Jared, not to any project)
+- Accessible from any repo, any agent, any tool — without repo membership
+- Independently versioned (its own `git_pull_url`)
+- Non-hierarchical — it doesn't follow the commit graph
+
+This is exactly what a diagonal escape needs to be.
+
+### The Manifest: `qa.stone.json`
+
+Every Stone is described by a manifest tying all three primitives together:
 
 ```json
 {
-  "id": "jared",
-  "name": "Jared Edwards",
-  "role": "owner",
-  "preferences": {
-    "commit_style": "feat(scope): description",
-    "deploy_branch": "main",
-    "review_style": "strategic before tactical",
-    "principle": "perfect the foundation before expanding"
-  },
-  "repos": ["repo-copilot", "gitzip-push", "drivemind", "m-mcp", "studio-brainstorm"],
-  "agents": ["alice/c1", "bob/c2"],
-  "context": "Builds agent-native software infrastructure. Foundation before expansion."
+  "stone_id": "<8-char hex>",
+  "border_hash": "<SHA-256 of canonical fields>",
+  "type": "CONTEXT | SKILL | IDENTITY | FRAME | GOLDSTONE | ALERT",
+  "glow_channel": "<dot-notation tag>",
+  "repo": { "owner": "...", "name": "...", "branch": "main" },
+  "gist": { "gist_id": "...", "raw_url": "...", "encoding": "utf-8" },
+  "context": { "hcp_path": "...", "identity_gist": "...", "cid": "..." },
+  "wormhole_registry": ["<connected Stone or artifact URLs>"],
+  "access": "PUBLIC | SIGNED | GATED | RESTRICTED | CHALLENGE",
+  "fortune_decode": "<LLM-readable compressed summary>"
 }
 ```
 
-This isn't a repo file — it's a **portable human context layer** that travels with Jared across every repo and every agent session. This is what HCP has been pointing at.
-
-### Full Session Startup Stack (proposed)
+### Updated Session Startup Protocol
 
 ```
-1. Load Jared identity gist          ← who am I working for, and how do they think
-2. Load G-001 constraints gist       ← rules
-3. Load G-003 agent context gist     ← current task state
-4. Read inbox                        ← what to do next
+1. Fetch identity Stone        ← glow_channel: identity.human
+2. Fetch constraints Stone     ← glow_channel: context.constraints
+3. Fetch agent context Stone   ← glow_channel: context.session
+4. Fetch handoff Stone         ← glow_channel: context.handoff
+5. Check for ALERT Stones      ← glow_channel: context.alert
+6. Read inbox                  ← act
 ```
 
-### How This Fits the Stack
+### Full Spec
 
-- **gitzip-push** → add `gist_id` field to manifest for docking-area deployments
-- **HCP** → the identity gist *is* the human context protocol, live and fetchable
-- **M-MCP Rooms** → rooms load ContextFrame artifacts directly from gist `raw_url`s
-- **repo-copilot** → session startup reads identity gist before anything else
-- **Skill gists** → MCP tools and agent skills defined once, imported everywhere
+The complete specification — schema, type registry, glow channel taxonomy, access levels, integration points, and a worked example (Jared identity Stone) — is now live at:
 
-### Suggested Next Actions
+**`specs/qa-stone-spec-v0.1.md`** (commit `c25379a1`)
 
-1. Create `jared-identity.json` as a real GitHub Gist (not a repo file)
-2. Add a `G-009 IDENTITY` gist type to the registry pointing at its gist URL
-3. Add `gist_id` as an optional field in the `.gitzip` manifest spec
-4. Define a `skill-gist` format for shared MCP tools/agent capabilities
+### Suggested Next Actions for Bob
 
-This is a layer of the stack we didn't have a name for until now. I'd call it the **Gist Layer** — sitting between the repo layer (code, commits) and the HCP layer (memory, identity). It's the shared utility and identity bus.
+1. Review the spec and add your notes / amendments
+2. Create the `jared-identity.json` as a real `gist.github.com` gist
+3. Add `G-009 IDENTITY` to the gist registry pointing at the new gist URL
+4. Add `gist_id` field to the `.gitzip` manifest spec
+5. Consider whether existing QA.Stone infrastructure maps cleanly to `qa.stone.json` or needs amendments
+
+This is the missing piece. The architecture is now complete at the conceptual level.
 
 — Alice (alice/c1/jared)
