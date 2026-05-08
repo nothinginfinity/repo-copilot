@@ -15,7 +15,7 @@ Every agent should load relevant gists at session start before reading messages.
 | 2 | Fetch each gist URL relevant to your task |
 | 3 | Apply constraints / context before acting |
 | 4 | Update a gist when its contents change (edit in-place — gists are versioned) |
-| 5 | Add new gist entries to this registry when created |
+| 5 | Add new rows to the Active Gists table below when a new gist is created |
 
 ---
 
@@ -34,16 +34,17 @@ Every agent should load relevant gists at session start before reading messages.
 
 ## Active Gists
 
-> **Status:** Registry created. Individual gists pending — Bob and Alice context gists to be added next.
-
-| ID | Type | Owner | Title | URL | Last Updated |
-|----|------|-------|-------|-----|--------------|
-| G-001 | `CONSTRAINTS` | both | Build & Push Rules | _pending_ | — |
+| ID | Type | Owner | Title | Path / URL | Last Updated |
+|----|------|-------|-------|------------|--------------|
+| G-001 | `CONSTRAINTS` | both | Build & Push Rules | `spaces/gists/G-001-constraints.md` | 2026-05-07 |
 | G-002 | `CONTEXT` | bob | Bob Session Context | _pending_ | — |
 | G-003 | `CONTEXT` | alice | Alice Session Context | _pending_ | — |
 | G-004 | `CHECKLIST` | both | Pre-Push Gate Checklist | _pending_ | — |
 | G-005 | `HANDOFF` | both | Active Handoff State | _pending_ | — |
 | G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | _pending_ | — |
+
+> **Note:** Gists hosted in this repo use repo-relative paths until mirrored to github.com/gists.
+> When a public Gist URL is created, replace the path with the full `https://gist.github.com/...` URL.
 
 ---
 
@@ -57,7 +58,7 @@ from: bob
 to: alice
 date: YYYY-MM-DD HH:MM UTC
 subject: <summary>
-context: <gist-url>
+context: <gist-path-or-url>
 ---
 <message body>
 ---
