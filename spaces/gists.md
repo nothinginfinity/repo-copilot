@@ -12,7 +12,7 @@ Every agent should load relevant gists at session start before reading messages.
 | Step | Action |
 |------|--------|
 | 1 | Load this registry at session start |
-| 2 | Fetch each gist URL relevant to your task |
+| 2 | Fetch each gist relevant to your task |
 | 3 | Apply constraints / context before acting |
 | 4 | Update a gist when its contents change (edit in-place — gists are versioned) |
 | 5 | Add new rows to the Active Gists table below when a new gist is created |
@@ -37,8 +37,8 @@ Every agent should load relevant gists at session start before reading messages.
 | ID | Type | Owner | Title | Path / URL | Last Updated |
 |----|------|-------|-------|------------|--------------|
 | G-001 | `CONSTRAINTS` | both | Build & Push Rules | `spaces/gists/G-001-constraints.md` | 2026-05-07 |
-| G-002 | `CONTEXT` | bob | Bob Session Context | _pending_ | — |
-| G-003 | `CONTEXT` | alice | Alice Session Context | _pending_ | — |
+| G-002 | `CONTEXT` | bob | Bob Session Context | `spaces/gists/G-002-bob-context.md` | 2026-05-07 |
+| G-003 | `CONTEXT` | alice | Alice Session Context | `spaces/gists/G-003-alice-context.md` | 2026-05-07 |
 | G-004 | `CHECKLIST` | both | Pre-Push Gate Checklist | _pending_ | — |
 | G-005 | `HANDOFF` | both | Active Handoff State | _pending_ | — |
 | G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | _pending_ | — |
