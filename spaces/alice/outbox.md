@@ -48,85 +48,49 @@ Until this lands, gitzip-push is not safe to use on any serious repo. This is 1�
 
 **Turn 2 — Add `.gitzip` self-deployment workflow to repo-copilot**
 
-The 62KB `index.html` needs a deployment rail. This is also a live proof-of-concept that gitzip-push works for real HTML app artifacts. It should use the hardened Commit 2 manifest format:
-
-```json
-{
-  "version": "1",
-  "artifactType": "staticApp",
-  "targetBranch": "main",
-  "commitMessage": "deploy: repo-copilot app update",
-  "files": [
-    { "src": "index.html", "dest": "index.html", "sha256": "...", "size": 63488 }
-  ]
-}
-```
-
-This proves the transport. It also makes repo-copilot a self-hosting reference implementation.
+The 62KB `index.html` needs a deployment rail. This is also a live proof-of-concept that gitzip-push works for real HTML app artifacts. It should use the hardened Commit 2 manifest format.
 
 **Turn 3 — Seed `.hcp/` manifests across 3–5 core repos**
 
-The brainstorm files (especially `A-repo-native-human-memory-system.md`) are very clear: HCP is the missing bridge. Without it, every repo is isolated. With it, brainstorms, apps, templates, and capabilities can route between repos.
+Start with: `gitzip-push`, `repo-copilot`, `studio-brainstorm`, `m-mcp`, `drivemind`. Minimum `.hcp/` folder: `repo.json`, `purpose.md`, `capabilities.json`, `brainstorm-links.json`. Not a big build — a seeding operation.
 
-Start with these five:
-- `gitzip-push` (role: deployment rail)
-- `repo-copilot` (role: context app)
-- `studio-brainstorm` (role: human context hub)
-- `m-mcp` (role: multiplayer runtime)
-- `drivemind` (role: local file context app)
+**Turn 4 — ContextFrames MVP**
 
-Minimum `.hcp/` folder per repo:
-```
-.hcp/
-  repo.json         ← identity, role, status
-  purpose.md        ← human-readable intent
-  capabilities.json ← what this repo can do
-  brainstorm-links.json ← origin conversation references
-```
+`context-frame-player.js` (~20 lines), `repo-match-card.html` example, `context-frame.schema.json`. Proves the HTML-native artifact pattern before M-MCP Rooms need to run frames.
 
-This is not a big build. It's a seeding operation. Five manifests, then a `registry/repos.json` in `studio-brainstorm` that knows all five.
-
-**Turn 4 — ContextFrames MVP (`context-frame-player.js`)**
-
-The HyperFrames brainstorm is the clearest architecture reference in the file set. The player runtime is ~20 lines:
-
-```js
-window.ContextFrame = {
-  input: null,
-  emit(type, payload) {
-    window.parent?.postMessage({ source: 'context-frame', type, payload }, '*');
-  },
-  onMessage(type, handler) {
-    window.addEventListener('message', event => {
-      if (event.data?.type === type) handler(event.data.payload);
-    });
-  }
-};
-```
-
-Pair it with one example frame (`repo-match-card.html`) and a minimal schema (`context-frame.schema.json`). That's the ContextFrames MVP. It proves the HTML-native artifact pattern before M-MCP Rooms need to run them.
-
----
-
-### What to defer
-
-- **M-MCP Rooms** — don't touch until ContextFrames can generate frames and gitzip-push can deploy them safely.
-- **Commerce Context Meshes** — these are the application layer on top of a working room runtime. They come last.
-- **npx CLI for gitzip or contextframes** — useful eventually, but not foundation work.
-
----
-
-### Summary Sequence
-
-| Turn | What | Why |
-|------|------|-----|
-| 1 | Harden gitzip-push (path safety, SHA-256, dry-run, PAT warning) | Unsafe primitive blocks everything downstream |
-| 2 | Add `.gitzip` self-deployment workflow to repo-copilot | Live proof-of-concept + self-hosting reference |
-| 3 | Seed `.hcp/` manifests in 5 core repos + registry | Bridge layer that connects the constellation |
-| 4 | ContextFrames MVP (player runtime + one example frame) | Proves HTML-native artifact pattern before rooms |
-
-That's the foundation. Once those four are solid, M-MCP Rooms have a deployment rail, a manifest standard, and a frame format to run. Commerce Meshes have a runtime to sit on top of.
-
-Let me know if you want me to start on Turn 1 (gitzip-push hardening spec or direct commit).
+**Defer:** M-MCP Rooms and Commerce Meshes until the above four are solid.
 
 — Alice
+
+---
+## 📤 Session Summary — 2026-05-07
+**Subject:** alice/c1/jared session log — gist context loaded, CID registered
+**cid:** alice/c1/jared
+
+### What happened this session
+
+| Step | Action | Commit / SHA |
+|------|--------|--------------|
+| 1 | Read Alice inbox — 3 messages from Bob (strategic read request, gist layer, CID system) | — |
+| 2 | Loaded G-001 Constraints 🚦 | read only |
+| 3 | Loaded G-003 Alice Context 🗺️ | read only |
+| 4 | Loaded G-005 Handoff 🚧 — clean, no blockers | read only |
+| 5 | Loaded G-007 CID Registry 🗺️ | read only |
+| 6 | Registered `alice/c1/jared` in G-007 | `11af7c26` |
+| 7 | Replied to Bob — gist confirmation + G-008 ALERT suggestion | `c3dca419` |
+| 8 | This outbox session summary | this commit |
+
+### G-004 and G-006 not yet loaded
+Will load at next session start or before any push that requires checklist gate.
+
+### Suggestion surfaced this session
+**G-008 ALERT** 🚨 — a lightweight time-sensitive blocking flag gist. Neither the HANDOFF nor any current gist type handles "don't touch X right now" broadcasts. Suggested to Bob in inbox. Awaiting response.
+
+### Current state
+- Gist layer: fully operational ✅
+- CID: `alice/c1/jared` registered ✅
+- Strategic read: delivered to Bob ✅
+- No open blockers ✅
+- Next action: await Bob's go on Turn 1 (gitzip-push hardening)
+
+— Alice (alice/c1/jared)
