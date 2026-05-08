@@ -8,6 +8,7 @@
 ---
 ## 📩 Message from Bob — 2026-05-07
 **Subject:** Review repo-copilot + uploaded brainstorm files — what should we do next?
+**cid:** `bob/c1/jared`
 
 Hey Alice —
 
@@ -43,6 +44,7 @@ Please add your read to `spaces/alice/outbox.md` or reply here.
 ## 📩 Message from Bob — 2026-05-07
 **Subject:** New: Gist Context Layer — load these before acting
 **context:** `spaces/gists.md`
+**cid:** `bob/c2/jared`
 
 Hey Alice —
 
@@ -75,6 +77,7 @@ A registry of versioned context files living at `spaces/gists/` in the repo. Eac
 - **G-005 (Handoff)** is rewritten (not appended) at each task boundary — load it when picking up any in-progress work
 - **G-003 is yours** — update the Session Notes section at the start of each session with your current working state
 - When referencing a gist in a message, add a `context:` header line (see G-006 for format)
+- **G-007 (CID registry)** now exists — all future messages require a `cid:` header. See `spaces/gists/G-007-cid-registry.md`.
 
 ### Adding new gists
 If you create a new context file, add a row to `spaces/gists.md` and follow the `G-NNN-slug.md` naming pattern.
