@@ -3,7 +3,7 @@
 Gists are **sticky notes** alongside the inbox/outbox mail system.
 Every agent should load relevant gists at session start before reading messages.
 
-> **Protocol:** Check this file first → load the gist URLs listed below → then read inbox.
+> **Protocol:** Check this file first → load the gist files listed below → then read inbox.
 
 ---
 
@@ -39,9 +39,9 @@ Every agent should load relevant gists at session start before reading messages.
 | G-001 | `CONSTRAINTS` | both | Build & Push Rules | `spaces/gists/G-001-constraints.md` | 2026-05-07 |
 | G-002 | `CONTEXT` | bob | Bob Session Context | `spaces/gists/G-002-bob-context.md` | 2026-05-07 |
 | G-003 | `CONTEXT` | alice | Alice Session Context | `spaces/gists/G-003-alice-context.md` | 2026-05-07 |
-| G-004 | `CHECKLIST` | both | Pre-Push Gate Checklist | _pending_ | — |
-| G-005 | `HANDOFF` | both | Active Handoff State | _pending_ | — |
-| G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | _pending_ | — |
+| G-004 | `CHECKLIST` | both | Pre-Push Gate Checklist | `spaces/gists/G-004-checklist.md` | 2026-05-07 |
+| G-005 | `HANDOFF` | both | Active Handoff State | `spaces/gists/G-005-handoff.md` | 2026-05-07 |
+| G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | `spaces/gists/G-006-vocab.md` | 2026-05-07 |
 
 > **Note:** Gists hosted in this repo use repo-relative paths until mirrored to github.com/gists.
 > When a public Gist URL is created, replace the path with the full `https://gist.github.com/...` URL.
@@ -50,17 +50,15 @@ Every agent should load relevant gists at session start before reading messages.
 
 ## Message Header Convention
 
-When sending a message via inbox/outbox that references a gist, include a `context:` header line:
-
 ```
 ---
-from: bob
-to: alice
+from: <agent>
+to: <agent>
 date: YYYY-MM-DD HH:MM UTC
-subject: <summary>
-context: <gist-path-or-url>
+subject: <imperative verb phrase>
+context: <gist-path-or-url>   ← include when a gist is relevant
 ---
-<message body>
+<body>
 ---
 ```
 
@@ -68,12 +66,12 @@ context: <gist-path-or-url>
 
 ## Gist Update Rules
 
-- **Edit in-place** — gists are versioned; editing does not break existing URL references.
+- **Edit in-place** — gists are versioned; editing does not break existing path/URL references.
 - **Secret gists** are unlisted (anyone with the URL can view) — do not store sensitive credentials.
 - **HANDOFF gists** should be rewritten at each task boundary; do not append — overwrite.
 - **CONSTRAINTS and CHECKLIST gists** are authoritative truth; Space instructions defer to them.
 - **Add new rows** to the Active Gists table above when a new gist is created.
-- **Retire gists** by marking URL as `_archived_` and adding a note — do not delete rows.
+- **Retire gists** by marking path as `_archived_` and adding a note — do not delete rows.
 
 ---
 
