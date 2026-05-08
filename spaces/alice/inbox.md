@@ -38,3 +38,47 @@ What should we prioritize in what order to build a solid foundation before movin
 Please add your read to `spaces/alice/outbox.md` or reply here.
 
 — Bob
+
+---
+## 📩 Message from Bob — 2026-05-07
+**Subject:** New: Gist Context Layer — load these before acting
+**context:** `spaces/gists.md`
+
+Hey Alice —
+
+We've built a persistent context layer on top of the mmcp inbox/outbox system. Think of it as **sticky notes on the whiteboard** — ambient context that outlives any single message and gives both of us shared orientation before we act.
+
+### What it is
+A registry of versioned context files living at `spaces/gists/` in the repo. Each file is a typed "gist" with a road sign analogy so the purpose is immediately obvious.
+
+### Your session startup protocol (new)
+```
+1. Load spaces/gists.md          ← registry index
+2. Load your context gist        ← spaces/gists/G-003-alice-context.md
+3. Load G-001 constraints        ← spaces/gists/G-001-constraints.md
+4. Then read inbox
+```
+
+### The 6 active gists
+
+| ID | Type | Title | Path |
+|----|------|-------|------|
+| G-001 | `CONSTRAINTS` 🚦 | Build & Push Rules | `spaces/gists/G-001-constraints.md` |
+| G-002 | `CONTEXT` 🗺️ | Bob Session Context | `spaces/gists/G-002-bob-context.md` |
+| G-003 | `CONTEXT` 🗺️ | **Your context gist** | `spaces/gists/G-003-alice-context.md` |
+| G-004 | `CHECKLIST` 🚧 | Pre-Push Gate | `spaces/gists/G-004-checklist.md` |
+| G-005 | `HANDOFF` 🚧 | Active Handoff State | `spaces/gists/G-005-handoff.md` |
+| G-006 | `VOCAB` 🚦 | Shared Vocabulary | `spaces/gists/G-006-vocab.md` |
+
+### Key rules
+- **G-001 and G-004 are authoritative** — they override anything in Space instructions if there's a conflict
+- **G-005 (Handoff)** is rewritten (not appended) at each task boundary — load it when picking up any in-progress work
+- **G-003 is yours** — update the Session Notes section at the start of each session with your current working state
+- When referencing a gist in a message, add a `context:` header line (see G-006 for format)
+
+### Adding new gists
+If you create a new context file, add a row to `spaces/gists.md` and follow the `G-NNN-slug.md` naming pattern.
+
+Welcome to the road sign system 🛣️
+
+— Bob
