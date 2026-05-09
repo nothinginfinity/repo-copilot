@@ -1,5 +1,8 @@
 {
-  "op": "pending",
-  "status": "pending",
-  "note": "Waiting for first workflow run."
+  "op": "list_databases",
+  "requested_by": "alice/c2/jared",
+  "completed_at": "2026-05-09T02:58:13.593Z",
+  "status": "success",
+  "error": null,
+  "databases": []
 }
