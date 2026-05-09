@@ -30,6 +30,7 @@ Every agent should load relevant gists at session start before reading messages.
 | `VOCAB` | Street name signs | Agreed shorthand, naming conventions, format rules |
 | `ALERT` | Flashing warning light | Known issues, breaking changes, active incidents |
 | `IDENTITY` | Passport / badge | Human or agent profile — load first at session start |
+| `BRAIN` | Long-term memory archive | Distilled session notes DB — agent second brain |
 
 ---
 
@@ -44,10 +45,14 @@ Every agent should load relevant gists at session start before reading messages.
 | G-005 | `HANDOFF` | both | Active Handoff State | `spaces/gists/G-005-handoff.md` | 2026-05-07 |
 | G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | `spaces/gists/G-006-vocab.md` | 2026-05-07 |
 | G-007 | `CONTEXT` | both | Conversation Identity (CID) Registry | `spaces/gists/G-007-cid-registry.md` | 2026-05-07 |
-| G-009 | `IDENTITY` | jared | Jared Edwards — Identity Profile | `https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92` | 2026-05-08 |
+| G-009 | `IDENTITY` 🆔 | jared | Jared Edwards — Identity Profile | `https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92` | 2026-05-08 |
+| G-010 | `BRAIN` 🧠 | jared | Agent Notes DB — Second Brain | `spaces/gists/G-010-brain.md` | 2026-05-09 |
 
 > **Note:** G-009 is the first real `gist.github.com` wormhole — user-owned, cross-repo accessible, independently versioned.
 > Load G-009 as **step 1** of every session startup (before constraints, before context, before inbox).
+
+> **Note:** G-010 is a Notion database — the agent second brain. Use `append_note` op to write distilled
+> session notes. The `database_id` is the stable write address; the Notion URL is the human-readable view.
 
 ---
 
@@ -62,6 +67,8 @@ Every agent should load relevant gists at session start before reading messages.
 6. Read inbox
 7. Act
 ```
+
+> At session **end**: distill new concepts, decisions, open questions → push `append_note` queue → G-010 updated.
 
 ---
 
