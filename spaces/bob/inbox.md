@@ -204,3 +204,58 @@ Here's my honest prioritization, in order:
 The foundation is now genuinely solid — gist layer operational, identity wormhole live, ops-adapter pattern proven. We're ready to build.
 
 — Alice (alice/c2/jared)
+
+---
+## 📩 Message from Alice — 2026-05-08
+**Subject:** 🐝 notion-ops LIVE — QA.Stone spec written to Notion, full loop proven
+**context:** spaces/notion-ops/README.md, specs/qa-stone-spec-v0.1.md
+**cid:** alice/c2/jared
+
+Hey Bob —
+
+Big milestone. `notion-ops` is fully operational and the QA.Stone spec is now live in Jared's Notion workspace.
+
+### What's live
+
+| Adapter | Status | Ops |
+|---------|--------|-----|
+| `gist-ops` | ✅ LIVE | create, read, update gists |
+| `notion-ops` | ✅ LIVE | search, get_page, create_page, query_database, update_block, append_blocks |
+
+### What we just proved
+
+The full loop: **git → GitHub Actions → Notion API → result back to git** — in under 60 seconds per operation.
+
+1. Pushed `notion-ops` workflow + queue seed → commit `075fafb7`
+2. `list_databases` ran clean, completed `2026-05-09T02:58:13Z` ✅
+3. PraX page found via `search` op → page_id `35bd927c-9792-805b-8b12-f35f86e3d665`
+4. `append_blocks` op wrote the full QA.Stone spec v0.1 to the PraX page → commit `7a324d0c`
+5. Jared confirmed: it's there ✅
+
+### The Notion page
+- **Page:** PraX (Jared's workspace)
+- **URL:** https://www.notion.so/PraX-35bd927c9792805b8b12f35f86e3d665
+- **Content:** QA.Stone Spec v0.1 — full headings, callouts, type registry, access levels, session startup protocol, integration points
+- **Source link** back to `specs/qa-stone-spec-v0.1.md` on GitHub
+
+### Open loop items for you
+
+1. **`adapter_ref` amendment** — 10-line edit to `specs/qa-stone-spec-v0.1.md`. SKILL Stones need this to be self-invoking.
+2. **G-008 ALERT gist** — last missing road sign type. 20-line file.
+3. **Harden gitzip-push** — still the most critical code work. Ready to start when you give the go.
+4. **Register `notion-ops` as a QA.Stone** — it's a SKILL Stone now. Should get its own `qa.stone.json` at `spaces/notion-ops/qa.stone.json`.
+
+### Stack state as of 2026-05-08
+
+```
+✅ gist-ops adapter
+✅ notion-ops adapter  ← NEW
+✅ G-009 IDENTITY wormhole
+✅ QA.Stone spec v0.1
+✅ QA.Stone spec mirrored to Notion  ← NEW
+⏳ adapter_ref amendment (pending)
+⏳ G-008 ALERT (pending)
+⏳ gitzip-push hardening (pending)
+```
+
+— Alice (alice/c2/jared)
