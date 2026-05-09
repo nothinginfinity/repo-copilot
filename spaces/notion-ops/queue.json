@@ -1,315 +1,86 @@
 {
   "op": "append_blocks",
   "requested_by": "alice/c2/jared",
-  "timestamp": "2026-05-09T03:30:00Z",
+  "timestamp": "2026-05-09T03:50:00Z",
   "block_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
   "children": [
+    { "object": "block", "type": "divider", "divider": {} },
     {
-      "object": "block",
-      "type": "divider",
-      "divider": {}
+      "object": "block", "type": "heading_1",
+      "heading_1": { "rich_text": [{ "type": "text", "text": { "content": "Three Agents Demo — PRD v0.1" } }] }
     },
     {
-      "object": "block",
-      "type": "heading_1",
-      "heading_1": {
-        "rich_text": [{ "type": "text", "text": { "content": "Three Agents Demo — PRD v0.1" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "callout",
+      "object": "block", "type": "callout",
       "callout": {
-        "rich_text": [{ "type": "text", "text": { "content": "Product Requirements Document · Three Agents Build One App\nAuthor: Jared Edwards · Alice (alice/c2/jared) · 2026-05-08" } }],
-        "icon": { "emoji": "🎬" },
-        "color": "blue_background"
+        "rich_text": [{ "type": "text", "text": { "content": "Product Requirements Document · Three Agents Build One App · Author: Jared Edwards · Alice (alice/c2/jared) · 2026-05-08" } }],
+        "icon": { "emoji": "🎬" }, "color": "blue_background"
       }
     },
     {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "The One-Sentence Brief" } }]
-      }
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "The One-Sentence Brief" } }] }
     },
     {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [{ "type": "text", "text": { "content": "Three AI agents (Perplexity, Claude, ChatGPT) collaborate to build a single living HTML application — each contributing a section — coordinated entirely through GitHub and visible in real-time on Notion, orchestrated from an iPhone with no laptop, no server, and no custom code." } }]
-      }
+      "object": "block", "type": "paragraph",
+      "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Three AI agents (Perplexity, Claude, ChatGPT) collaborate to build a single living HTML application — each contributing a section — coordinated entirely through GitHub and visible in real-time on Notion, orchestrated from an iPhone with no laptop, no server, and no custom code." } }] }
     },
     {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "Why This Demo" } }]
-      }
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "Why This Demo" } }] }
+    },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Provable — every contribution is a timestamped commit with a CID. Exact authorship is traceable." } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Visual — the HTML file renders in a browser. Viewers see the work product, not just logs." } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Mobile-native — the entire orchestration happens from an iPhone via repo pushes." } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "gitzip is the hero — a large rich HTML file is Base64-zipped into a gist. Each agent pulls it, adds their section, pushes back. No context window overflow." } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Notion is the scoreboard — every agent push triggers a Notion update. Viewers watch it build live." } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Self-referential — the demo artifact IS the explanation of QA.Stone. It explains itself while being the proof." } }] } },
+    {
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "The Demo Artifact" } }] }
+    },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "A QA.Stone Project Dashboard — a rich single-page HTML application. Each agent contributes one layer:" } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Alice (Perplexity) — HTML shell + stack diagram. Seeds the file, establishes design system, writes Section 1.", "annotations": {} }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Bob (Claude) — Pulls Alice's file from gist, adds build timeline + agent roster (Section 2)." } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Charlie (ChatGPT) — Pulls Bob's file, adds use cases + CTA (Section 3). Pushes final version." } }] } },
+    {
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "Architecture" } }] }
+    },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "iPhone (Jared) triggers Alice → loads G-009 → writes HTML v1 → gitzip pushes to gist → notion-ops logs → handoff to bob/inbox.md" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Bob (Claude) → reads inbox → gitzip pulls HTML v1 → adds Section 2 → gitzip pushes HTML v2 → notion-ops logs → handoff to charlie/inbox.md" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Charlie (ChatGPT) → reads inbox → gitzip pulls HTML v2 → adds Section 3 → gitzip pushes HTML v3 (final) → notion-ops logs → deploys to GitHub Pages" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Audit trail: 3 agents · 3 commits · 3 CIDs · 1 Notion build log · 1 live URL" } }] } },
+    {
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "Build Order" } }] }
+    },
+    { "object": "block", "type": "numbered_list_item", "numbered_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Harden gitzip-push — path safety, SHA-256 per file, dry-run mode. BLOCKING." } }] } },
+    { "object": "block", "type": "numbered_list_item", "numbered_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Add spaces/charlie/inbox.md — third agent slot for ChatGPT." } }] } },
+    { "object": "block", "type": "numbered_list_item", "numbered_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Build demo HTML seed file — QA.Stone Project Dashboard template." } }] } },
+    { "object": "block", "type": "numbered_list_item", "numbered_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Write demo-run.md — repeatable step-by-step run script." } }] } },
+    { "object": "block", "type": "numbered_list_item", "numbered_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Wire Notion build log — each agent push appends a row to PraX page." } }] } },
+    { "object": "block", "type": "numbered_list_item", "numbered_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Wire GitHub Pages deploy — final gitzip push auto-deploys to a live URL." } }] } },
+    {
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "Success Criteria" } }] }
+    },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "3 distinct agent CIDs visible in git commit log" } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Notion build log shows 3 timestamped rows, one per agent" } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Final HTML renders at a live GitHub Pages URL" } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Entire run orchestrated from iPhone — no laptop touched" } }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Demo is fully repeatable from demo-run.md by anyone" } }] } },
+    {
+      "object": "block", "type": "heading_2",
+      "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "The Pitch Line" } }] }
     },
     {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Provable — every contribution is a timestamped commit with a CID. Exact authorship is traceable." } }]
-      }
+      "object": "block", "type": "quote",
+      "quote": { "rich_text": [{ "type": "text", "text": { "content": "I handed my iPhone to three different AIs. They built an app together in GitHub. You can see every commit. The whole thing deployed itself. None of them were in the same conversation. None of them needed a server." } }] }
     },
+    { "object": "block", "type": "divider", "divider": {} },
     {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Visual — the HTML file renders in a browser. Viewers see the work product, not just logs." } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Mobile-native — the entire orchestration happens from an iPhone via repo pushes." } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "gitzip is the hero — a large rich HTML file is Base64-zipped into a gist. Each agent pulls it, adds their section, pushes back. No context window overflow. No file size problem." } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Notion is the scoreboard — every agent push triggers a Notion update. Viewers watch it build live." } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Self-referential — the demo artifact IS the explanation of QA.Stone. It explains itself while being the proof." } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "The Demo Artifact" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [{ "type": "text", "text": { "content": "A QA.Stone Project Dashboard — a rich single-page HTML application. Each agent contributes one layer:" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Alice (Perplexity)" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — HTML shell + stack diagram section. Seeds the file, establishes the design system, writes Section 1." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Bob (Claude)" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — Pulls Alice's file from gist, adds build timeline + agent roster section (Section 2)." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Charlie (ChatGPT)" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — Pulls Bob's file, adds use cases + call-to-action section (Section 3). Pushes final version." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "Architecture" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "code",
-      "code": {
-        "rich_text": [{ "type": "text", "text": { "content": "iPhone (Jared)
-    ↓ triggers
-Alice (Perplexity)
-    → loads G-009 identity
-    → writes HTML v1 (shell + Section 1)
-    → gitzip pushes to gist
-    → notion-ops appends build log row
-    → writes handoff → spaces/bob/inbox.md
-
-Bob (Claude)
-    → reads inbox
-    → gitzip pulls HTML v1 from gist
-    → adds Section 2
-    → gitzip pushes HTML v2 to gist
-    → notion-ops appends build log row
-    → writes handoff → spaces/charlie/inbox.md
-
-Charlie (ChatGPT)
-    → reads inbox
-    → gitzip pulls HTML v2 from gist
-    → adds Section 3
-    → gitzip pushes HTML v3 (final) to gist
-    → notion-ops appends build log row
-    → gitzip deploys final HTML → GitHub Pages
-
-Audit trail: 3 agents · 3 commits · 3 CIDs · 1 Notion build log · 1 live URL" } }],
-        "language": "plain text"
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "Build Order" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "numbered_list_item",
-      "numbered_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Harden gitzip-push" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — path safety, SHA-256 per file, dry-run mode. BLOCKING — demo depends on reliable gist round-trips." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "numbered_list_item",
-      "numbered_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Add spaces/charlie/inbox.md" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — third agent slot for ChatGPT. 5-minute task." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "numbered_list_item",
-      "numbered_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Build demo HTML seed file" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — QA.Stone Project Dashboard template. Each agent knows exactly where to inject their section without breaking the others." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "numbered_list_item",
-      "numbered_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Write demo-run.md" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — step-by-step repeatable script so demo can be handed to anyone and run cleanly." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "numbered_list_item",
-      "numbered_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Wire Notion build log" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — each agent push appends a timestamped row to PraX page. Live scoreboard." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "numbered_list_item",
-      "numbered_list_item": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Wire GitHub Pages deploy" }, "annotations": { "bold": true } },
-          { "type": "text", "text": { "content": " — final gitzip push auto-deploys to a live URL. The last step of the demo is a working link." } }
-        ]
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "Success Criteria" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "3 distinct agent CIDs visible in git commit log" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Notion build log shows 3 timestamped rows, one per agent" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Final HTML renders at a live GitHub Pages URL" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Entire run orchestrated from iPhone — no laptop touched" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "bulleted_list_item",
-      "bulleted_list_item": {
-        "rich_text": [{ "type": "text", "text": { "content": "Demo is fully repeatable from demo-run.md by anyone" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "The Pitch Line" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "quote",
-      "quote": {
-        "rich_text": [{ "type": "text", "text": { "content": "I handed my iPhone to three different AIs. They built an app together in GitHub. You can see every commit. The whole thing deployed itself. None of them were in the same conversation. None of them needed a server." } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "divider",
-      "divider": {}
-    },
-    {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [
-          { "type": "text", "text": { "content": "Source: " } },
-          { "type": "text", "text": { "content": "specs/three-agents-demo-prd.md", "link": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/specs/three-agents-demo-prd.md" } }, "annotations": { "code": true } },
-          { "type": "text", "text": { "content": " · Written by alice/c2/jared via notion-ops · 2026-05-08" } }
-        ]
-      }
+      "object": "block", "type": "paragraph",
+      "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Source: specs/three-agents-demo-prd.md · Written by alice/c2/jared via notion-ops · 2026-05-08" } }] }
     }
   ]
 }
