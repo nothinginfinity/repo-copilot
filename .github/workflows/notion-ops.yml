@@ -25,7 +25,6 @@ jobs:
         run: npm install @notionhq/client
 
       - name: Run notion-op
-        id: notion_op
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         run: |
@@ -36,15 +35,19 @@ jobs:
           const notion = new Client({ auth: process.env.NOTION_API_KEY });
           const queue = JSON.parse(fs.readFileSync('spaces/notion-ops/queue.json', 'utf8'));
 
-          async function queryRowByUrl(dbId, matchUrl) {
-            const res = await notion.databases.query({
-              database_id: dbId,
-              filter: {
-                property: 'GitHub URL',
-                url: { equals: matchUrl }
-              }
-            });
-            return res.results[0] || null;
+          async function getAllPages(dbId) {
+            let pages = [];
+            let cursor = undefined;
+            do {
+              const res = await notion.databases.query({
+                database_id: dbId,
+                start_cursor: cursor,
+                page_size: 100
+              });
+              pages = pages.concat(res.results);
+              cursor = res.has_more ? res.next_cursor : undefined;
+            } while (cursor);
+            return pages;
           }
 
           async function runBatchRows(queue) {
@@ -53,14 +56,15 @@ jobs:
               try {
                 const properties = {};
                 for (const [key, val] of Object.entries(row)) {
-                  if (key !== 'Name') properties[key] = val;
+                  properties[key] = val;
                 }
                 const res = await notion.pages.create({
                   parent: { database_id: queue.database_id },
-                  properties: { ...{ Name: row.Name }, ...properties }
+                  properties
                 });
-                results.push({ name: row.Name?.title?.[0]?.text?.content, status: 'ok', id: res.id });
-                console.log(`✅ Created: ${row.Name?.title?.[0]?.text?.content}`);
+                const name = row.Name?.title?.[0]?.text?.content;
+                results.push({ name, status: 'ok', id: res.id });
+                console.log(`✅ Created: ${name}`);
               } catch (err) {
                 const name = row.Name?.title?.[0]?.text?.content;
                 results.push({ name, status: 'error', error: err.message });
@@ -71,28 +75,39 @@ jobs:
           }
 
           async function runPatchRows(queue) {
+            console.log('📋 Fetching all DB pages for matching...');
+            const allPages = await getAllPages(queue.database_id);
+            console.log(`   Found ${allPages.length} existing rows`);
+
+            // Build a lookup map: GitHub URL value -> page_id
+            const urlMap = {};
+            for (const page of allPages) {
+              const ghProp = page.properties['GitHub URL'];
+              if (ghProp?.url) {
+                urlMap[ghProp.url] = page.id;
+              }
+            }
+
             const results = [];
             for (const row of queue.rows) {
+              const matchUrl = row.match;
+              const pageId = urlMap[matchUrl];
+              if (!pageId) {
+                console.warn(`⚠️  No match for: ${matchUrl}`);
+                results.push({ match: matchUrl, status: 'not_found' });
+                continue;
+              }
               try {
-                const page = await queryRowByUrl(queue.database_id, row.match);
-                if (!page) {
-                  console.warn(`⚠️ No match for: ${row.match}`);
-                  results.push({ match: row.match, status: 'not_found' });
-                  continue;
-                }
                 const patchProps = {};
                 for (const [key, val] of Object.entries(row)) {
                   if (key !== 'match') patchProps[key] = val;
                 }
-                await notion.pages.update({
-                  page_id: page.id,
-                  properties: patchProps
-                });
-                results.push({ match: row.match, status: 'ok', id: page.id });
-                console.log(`✅ Patched: ${row.match}`);
+                await notion.pages.update({ page_id: pageId, properties: patchProps });
+                results.push({ match: matchUrl, status: 'ok', id: pageId });
+                console.log(`✅ Patched: ${matchUrl}`);
               } catch (err) {
-                results.push({ match: row.match, status: 'error', error: err.message });
-                console.error(`❌ Failed: ${row.match} — ${err.message}`);
+                results.push({ match: matchUrl, status: 'error', error: err.message });
+                console.error(`❌ Failed: ${matchUrl} — ${err.message}`);
               }
             }
             return results;
@@ -129,13 +144,25 @@ jobs:
             console.log(`\n🏁 Done — ✅ ${ok} ok | ❌ ${failed} failed | ⚠️ ${skipped} skipped`);
           }
 
-          main().catch(err => { console.error(err); process.exit(1); });
+          main().catch(err => {
+            const result = {
+              op: queue.op || 'unknown',
+              database_id: queue.database_id || 'unknown',
+              ran_at: new Date().toISOString(),
+              status: 'error',
+              error: err.message
+            };
+            fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
+            console.error(err);
+            process.exit(1);
+          });
           EOF
 
       - name: Commit result.json
         run: |
           git config user.name "notion-ops-runner"
           git config user.email "actions@github.com"
+          git pull --rebase
           git add spaces/notion-ops/result.json
           git diff --cached --quiet || git commit -m "chore(notion-ops): write result.json [skip ci]"
           git push
