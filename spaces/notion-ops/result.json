@@ -1,11 +1,8 @@
 {
-  "op": "create_database",
+  "op": "update_database",
   "requested_by": "bob/c1/jared",
-  "completed_at": "2026-05-09T17:22:12.385Z",
-  "run_id": "25607132893",
-  "status": "success",
-  "error": null,
-  "database_id": "35bd927c-9792-816f-82e6-d22264e3c40c",
-  "database_url": "https://www.notion.so/35bd927c9792816f82e6d22264e3c40c",
-  "title": "PraX Roadmap"
+  "completed_at": "2026-05-09T17:45:12.171Z",
+  "run_id": "25607646014",
+  "status": "error",
+  "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
 }
