@@ -31,6 +31,7 @@ jobs:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NODE_PATH: /tmp/notion-deps/node_modules
         run: node .github/scripts/notion-ops-runner.js
+        continue-on-error: true
 
       - name: Commit result.json
         run: |
@@ -40,3 +41,12 @@ jobs:
           git add spaces/notion-ops/result.json
           git diff --cached --quiet || git commit -m "chore(notion-ops): write result.json [skip ci]"
           git push
+
+      - name: Assert success
+        run: |
+          STATUS=$(node -e "const r=require('./spaces/notion-ops/result.json'); console.log(r.status || 'ok');")
+          echo "Final status: $STATUS"
+          if [ "$STATUS" = "error" ]; then
+            echo "Notion op reported an error — see result.json for details"
+            exit 1
+          fi

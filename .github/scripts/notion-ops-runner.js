@@ -1,8 +1,15 @@
 const { Client } = require('@notionhq/client');
 const fs = require('fs');
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
+console.log('=== notion-ops-runner start ===');
+console.log('NODE_PATH:', process.env.NODE_PATH);
+console.log('API key present:', !!process.env.NOTION_API_KEY);
+console.log('API key length:', (process.env.NOTION_API_KEY || '').length);
+
 const queue = JSON.parse(fs.readFileSync('spaces/notion-ops/queue.json', 'utf8'));
+console.log('op:', queue.op, '| db:', queue.database_id);
+
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
 
 async function getAllPages(dbId) {
   let pages = [];
@@ -20,7 +27,7 @@ async function getAllPages(dbId) {
 }
 
 async function runDiagnose(queue) {
-  console.log('Fetching first 5 pages for diagnosis...');
+  console.log('Fetching first 5 pages...');
   const res = await notion.databases.query({
     database_id: queue.database_id,
     page_size: 5
@@ -71,7 +78,7 @@ async function runPatchRows(queue) {
     }
   }
 
-  console.log('Sample URL keys in map:', Object.keys(urlMap).slice(0, 3));
+  console.log('Sample URL keys:', Object.keys(urlMap).slice(0, 3));
 
   const results = [];
   for (const row of queue.rows) {
@@ -99,17 +106,12 @@ async function runPatchRows(queue) {
 }
 
 async function main() {
-  console.log('Running notion-op:', queue.op);
-  console.log('DB:', queue.database_id);
-
   let results;
   let extra = {};
 
   if (queue.op === 'batch_rows') {
-    console.log('Rows:', queue.rows.length);
     results = await runBatchRows(queue);
   } else if (queue.op === 'patch_rows') {
-    console.log('Rows:', queue.rows.length);
     results = await runPatchRows(queue);
   } else if (queue.op === 'diagnose') {
     const sample = await runDiagnose(queue);
@@ -137,14 +139,18 @@ async function main() {
 }
 
 main().catch(err => {
+  console.error('FATAL ERROR:', err.message);
+  console.error(err.stack);
   const result = {
     op: queue.op || 'unknown',
     database_id: queue.database_id || 'unknown',
     ran_at: new Date().toISOString(),
     status: 'error',
-    error: err.message
+    error: err.message,
+    stack: err.stack
   };
   fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
-  console.error(err);
-  process.exit(1);
+  console.error('Wrote error to result.json — will be committed by next step');
+  // exit 0 so the workflow continues to commit result.json
+  process.exit(0);
 });
