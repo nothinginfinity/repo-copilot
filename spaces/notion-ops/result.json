@@ -1,8 +1,8 @@
 {
-  "op": "list_databases",
+  "op": "search",
   "requested_by": "alice/c2/jared",
-  "completed_at": "2026-05-09T02:58:13.593Z",
+  "completed_at": "2026-05-09T03:05:07.851Z",
   "status": "success",
   "error": null,
-  "databases": []
+  "results": []
 }
