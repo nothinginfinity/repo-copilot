@@ -1,0 +1,122 @@
+const { Client } = require('@notionhq/client');
+const fs = require('fs');
+
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
+const queue = JSON.parse(fs.readFileSync('spaces/notion-ops/queue.json', 'utf8'));
+
+async function getAllPages(dbId) {
+  let pages = [];
+  let cursor = undefined;
+  do {
+    const res = await notion.databases.query({
+      database_id: dbId,
+      start_cursor: cursor,
+      page_size: 100
+    });
+    pages = pages.concat(res.results);
+    cursor = res.has_more ? res.next_cursor : undefined;
+  } while (cursor);
+  return pages;
+}
+
+async function runBatchRows(queue) {
+  const results = [];
+  for (const row of queue.rows) {
+    try {
+      const res = await notion.pages.create({
+        parent: { database_id: queue.database_id },
+        properties: row
+      });
+      const name = row.Name && row.Name.title && row.Name.title[0] && row.Name.title[0].text && row.Name.title[0].text.content;
+      results.push({ name, status: 'ok', id: res.id });
+      console.log('OK created:', name);
+    } catch (err) {
+      const name = row.Name && row.Name.title && row.Name.title[0] && row.Name.title[0].text && row.Name.title[0].text.content;
+      results.push({ name, status: 'error', error: err.message });
+      console.error('FAIL:', name, err.message);
+    }
+  }
+  return results;
+}
+
+async function runPatchRows(queue) {
+  console.log('Fetching all DB pages...');
+  const allPages = await getAllPages(queue.database_id);
+  console.log('Found', allPages.length, 'rows');
+
+  const urlMap = {};
+  for (const page of allPages) {
+    const ghProp = page.properties['GitHub URL'];
+    if (ghProp && ghProp.url) {
+      urlMap[ghProp.url] = page.id;
+    }
+  }
+
+  const results = [];
+  for (const row of queue.rows) {
+    const matchUrl = row.match;
+    const pageId = urlMap[matchUrl];
+    if (!pageId) {
+      console.warn('NO MATCH:', matchUrl);
+      results.push({ match: matchUrl, status: 'not_found' });
+      continue;
+    }
+    try {
+      const patchProps = {};
+      for (const key of Object.keys(row)) {
+        if (key !== 'match') patchProps[key] = row[key];
+      }
+      await notion.pages.update({ page_id: pageId, properties: patchProps });
+      results.push({ match: matchUrl, status: 'ok', id: pageId });
+      console.log('OK patched:', matchUrl);
+    } catch (err) {
+      results.push({ match: matchUrl, status: 'error', error: err.message });
+      console.error('FAIL:', matchUrl, err.message);
+    }
+  }
+  return results;
+}
+
+async function main() {
+  console.log('Running notion-op:', queue.op);
+  console.log('DB:', queue.database_id);
+  console.log('Rows:', queue.rows.length);
+
+  let results;
+  if (queue.op === 'batch_rows') {
+    results = await runBatchRows(queue);
+  } else if (queue.op === 'patch_rows') {
+    results = await runPatchRows(queue);
+  } else {
+    throw new Error('Unknown op: ' + queue.op);
+  }
+
+  const ok = results.filter(r => r.status === 'ok').length;
+  const failed = results.filter(r => r.status === 'error').length;
+  const skipped = results.filter(r => r.status === 'not_found').length;
+
+  const result = {
+    op: queue.op,
+    database_id: queue.database_id,
+    ran_at: new Date().toISOString(),
+    requested_by: queue.requested_by || 'unknown',
+    summary: { total: queue.rows.length, ok, failed, skipped },
+    results
+  };
+
+  fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
+  console.log('Done -', ok, 'ok |', failed, 'failed |', skipped, 'skipped');
+}
+
+main().catch(err => {
+  const result = {
+    op: queue.op || 'unknown',
+    database_id: queue.database_id || 'unknown',
+    ran_at: new Date().toISOString(),
+    status: 'error',
+    error: err.message
+  };
+  fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
+  console.error(err);
+  process.exit(1);
+});
