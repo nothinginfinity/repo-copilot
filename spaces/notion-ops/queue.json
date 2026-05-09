@@ -1,8 +1,68 @@
 {
   "op": "batch_rows",
   "requested_by": "alice/c2/jared",
-  "database_id": "35bd927c-9792-816f-82e6-d22264e3c40c",
+  "database_id": "35bd927c-9792-812f-b728-dc8e1af15615",
   "rows": [
+    {
+      "Title":      { "title": [{ "type": "text", "text": { "content": "Harden gitzip-push" } }] },
+      "Phase":      { "select": { "name": "Phase 0" } },
+      "Status":     { "select": { "name": "✅ Done" } },
+      "Owner":      { "select": { "name": "Bob" } },
+      "Track":      { "select": { "name": "Infrastructure" } },
+      "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "—" } }] },
+      "Commit":     { "rich_text": [{ "type": "text", "text": { "content": "770e5e72, 9f647e83" } }] },
+      "Type":       { "select": { "name": "Task" } }
+    },
+    {
+      "Title":      { "title": [{ "type": "text", "text": { "content": "Add spaces/charlie/inbox.md" } }] },
+      "Phase":      { "select": { "name": "Phase 0" } },
+      "Status":     { "select": { "name": "⏳ Pending" } },
+      "Owner":      { "select": { "name": "Bob" } },
+      "Track":      { "select": { "name": "Infrastructure" } },
+      "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "gitzip-push hardened" } }] },
+      "Commit":     { "rich_text": [{ "type": "text", "text": { "content": "" } }] },
+      "Type":       { "select": { "name": "Task" } }
+    },
+    {
+      "Title":      { "title": [{ "type": "text", "text": { "content": "Build demo HTML seed file" } }] },
+      "Phase":      { "select": { "name": "Phase 2" } },
+      "Status":     { "select": { "name": "⏳ Pending" } },
+      "Owner":      { "select": { "name": "Alice" } },
+      "Track":      { "select": { "name": "Demo" } },
+      "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "Charlie slot confirmed" } }] },
+      "Commit":     { "rich_text": [{ "type": "text", "text": { "content": "" } }] },
+      "Type":       { "select": { "name": "Task" } }
+    },
+    {
+      "Title":      { "title": [{ "type": "text", "text": { "content": "Write demo-run.md" } }] },
+      "Phase":      { "select": { "name": "Phase 2" } },
+      "Status":     { "select": { "name": "⏳ Pending" } },
+      "Owner":      { "select": { "name": "Alice" } },
+      "Track":      { "select": { "name": "Demo" } },
+      "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "Demo HTML seed file" } }] },
+      "Commit":     { "rich_text": [{ "type": "text", "text": { "content": "" } }] },
+      "Type":       { "select": { "name": "Task" } }
+    },
+    {
+      "Title":      { "title": [{ "type": "text", "text": { "content": "Wire Notion build log" } }] },
+      "Phase":      { "select": { "name": "Phase 2" } },
+      "Status":     { "select": { "name": "⏳ Pending" } },
+      "Owner":      { "select": { "name": "Bob" } },
+      "Track":      { "select": { "name": "Integration" } },
+      "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "demo-run.md" } }] },
+      "Commit":     { "rich_text": [{ "type": "text", "text": { "content": "" } }] },
+      "Type":       { "select": { "name": "Task" } }
+    },
+    {
+      "Title":      { "title": [{ "type": "text", "text": { "content": "Wire GitHub Pages deploy" } }] },
+      "Phase":      { "select": { "name": "Phase 2" } },
+      "Status":     { "select": { "name": "⏳ Pending" } },
+      "Owner":      { "select": { "name": "Charlie" } },
+      "Track":      { "select": { "name": "Integration" } },
+      "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "Notion build log" } }] },
+      "Commit":     { "rich_text": [{ "type": "text", "text": { "content": "" } }] },
+      "Type":       { "select": { "name": "Task" } }
+    },
     {
       "Title":      { "title": [{ "type": "text", "text": { "content": "3 distinct agent CIDs visible in git commit log" } }] },
       "Phase":      { "select": { "name": "Phase 2" } },
