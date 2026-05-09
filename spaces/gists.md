@@ -28,9 +28,9 @@ Every agent should load relevant gists at session start before reading messages.
 | `CHECKLIST` | Toll booth | Pre-push gate items every agent must verify |
 | `HANDOFF` | Road construction sign | Partial work state + next steps when switching agents |
 | `VOCAB` | Street name signs | Agreed shorthand, naming conventions, format rules |
-| `ALERT` | Flashing warning light | Known issues, breaking changes, active incidents |
-| `IDENTITY` | Passport / badge | Human or agent profile — load first at session start |
-| `BRAIN` | Long-term memory archive | Distilled session notes DB — agent second brain |
+| `ALERT` 🚨 | Flashing warning light | Time-sensitive blocking flag — load before inbox, after handoff |
+| `IDENTITY` 🆔 | Passport / badge | Human or agent profile — load first at session start |
+| `BRAIN` 🧠 | Long-term memory archive | Distilled session notes DB — agent second brain |
 
 ---
 
@@ -45,6 +45,7 @@ Every agent should load relevant gists at session start before reading messages.
 | G-005 | `HANDOFF` | both | Active Handoff State | `spaces/gists/G-005-handoff.md` | 2026-05-07 |
 | G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | `spaces/gists/G-006-vocab.md` | 2026-05-07 |
 | G-007 | `CONTEXT` | both | Conversation Identity (CID) Registry | `spaces/gists/G-007-cid-registry.md` | 2026-05-07 |
+| G-008 | `ALERT` 🚨 | any | ALERT Type Spec + Lifecycle | `spaces/gists/G-008-alert.md` | 2026-05-09 |
 | G-009 | `IDENTITY` 🆔 | jared | Jared Edwards — Identity Profile | `https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92` | 2026-05-08 |
 | G-010 | `BRAIN` 🧠 | jared | Agent Notes DB — Second Brain | `spaces/gists/G-010-brain.md` | 2026-05-09 |
 
@@ -53,6 +54,9 @@ Every agent should load relevant gists at session start before reading messages.
 
 > **Note:** G-010 is a Notion database — the agent second brain. Use `append_note` op to write distilled
 > session notes. The `database_id` is the stable write address; the Notion URL is the human-readable view.
+
+> **Note:** G-008 is the ALERT **type specification**. Individual active alerts get their own files with a slug
+> suffix (e.g. `G-008-alert-gitzip.md`) and are registered as separate rows. Currently no active alert is raised.
 
 ---
 
@@ -63,7 +67,7 @@ Every agent should load relevant gists at session start before reading messages.
 2. Load G-001 constraints        ← glow_channel: context.constraints
 3. Load agent context gist       ← G-003 (Alice) or G-002 (Bob)
 4. Load G-005 handoff            ← glow_channel: context.handoff
-5. Check for ALERT gists         ← glow_channel: context.alert (G-008 when created)
+5. Check for ALERT gists         ← glow_channel: context.alert — load ALL active G-008* rows
 6. Read inbox
 7. Act
 ```
@@ -97,6 +101,7 @@ cid:     <agent>/<conv-index>/<human-token>    ← required
 - **CONSTRAINTS and CHECKLIST gists** are authoritative truth; Space instructions defer to them.
 - **Add new rows** to the Active Gists table above when a new gist is created.
 - **Retire gists** by marking path as `_archived_` and adding a note — do not delete rows.
+- **ALERT gists** are created on-demand; clear by filling the "Cleared by" block and archiving the row.
 
 ---
 
