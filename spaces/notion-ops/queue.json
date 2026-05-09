@@ -1,18 +1,7 @@
 {
-  "op": "create_database",
-  "requested_by": "alice/c3/jared",
-  "parent_page_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
-  "title": "Repo Registry v2",
-  "properties": {
-    "Name":        { "title": {} },
-    "GitHub URL":  { "url": {} },
-    "Live Site":   { "url": {} },
-    "Language":    { "select": {} },
-    "Status":      { "select": {} },
-    "Track":       { "select": {} },
-    "Agent Owner": { "select": {} },
-    "Description": { "rich_text": {} },
-    "Last Updated":{ "date": {} }
-  },
-  "_bump": 13
+  "op": "diagnose",
+  "requested_by": "bob/c2/jared",
+  "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
+  "description": "Dump first 5 rows raw property values to diagnose GitHub URL format",
+  "_bump": 14
 }
