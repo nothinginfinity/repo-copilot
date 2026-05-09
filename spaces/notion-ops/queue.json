@@ -1,0 +1,13 @@
+{
+  "_instructions": "Write your Notion command here. Pushing this file triggers the notion-ops workflow.",
+  "op": "list_databases",
+  "requested_by": "alice/c2/jared",
+  "timestamp": "2026-05-08T19:57:00Z",
+  "_ops_available": [
+    "list_databases  — no extra fields required",
+    "get_page        — requires: page_id",
+    "create_page     — requires: parent ({ database_id or page_id }), properties, children (optional)",
+    "query_database  — requires: database_id; optional: filter, sorts, page_size",
+    "update_block    — requires: block_id, block (Notion block object)"
+  ]
+}
