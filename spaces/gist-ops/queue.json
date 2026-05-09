@@ -1,12 +1,12 @@
 {
-  "_instructions": "Write your gist command here. Pushing this file triggers the gist-ops workflow.",
-  "op": "list_gists",
-  "requested_by": "bob/c2/jared",
-  "timestamp": "2026-05-08T19:27:00Z",
-  "_ops_available": [
-    "create_gist  — requires: description, public (bool), files ({ filename: { content } })",
-    "update_gist  — requires: gist_id, files ({ filename: { content } })",
-    "get_gist     — requires: gist_id",
-    "list_gists   — no extra fields required"
-  ]
+  "op": "create_gist",
+  "requested_by": "alice/c2/jared",
+  "timestamp": "2026-05-08T19:39:00Z",
+  "description": "Jared Edwards — Identity Profile (QA.Stone IDENTITY / glow_channel: identity.human)",
+  "public": false,
+  "files": {
+    "jared-identity.json": {
+      "content": "{\n  \"version\": \"0.1\",\n  \"type\": \"IDENTITY\",\n  \"glow_channel\": \"identity.human\",\n  \"id\": \"jared\",\n  \"name\": \"Jared Edwards\",\n  \"role\": \"owner\",\n  \"human_token\": \"jared\",\n  \"preferences\": {\n    \"commit_style\": \"feat(scope): description\",\n    \"deploy_branch\": \"main\",\n    \"review_style\": \"strategic before tactical\",\n    \"principle\": \"perfect the foundation before expanding\",\n    \"session_startup\": \"read gists before inbox before acting\",\n    \"tool_budget\": \"3 tool calls per turn — 1 read, 1 write, 1 confirm\",\n    \"chunk_size\": \"~400 lines per commit for files over 400 lines\"\n  },\n  \"repos\": [\n    \"repo-copilot\",\n    \"gitzip-push\",\n    \"drivemind\",\n    \"m-mcp\",\n    \"studio-brainstorm\",\n    \"ops-adapter\"\n  ],\n  \"agents\": [\n    { \"id\": \"alice\", \"space\": \"repo-copilot-alice\", \"inbox\": \"spaces/alice/inbox.md\", \"outbox\": \"spaces/alice/outbox.md\" },\n    { \"id\": \"bob\",   \"space\": \"repo-copilot-bob\",   \"inbox\": \"spaces/bob/inbox.md\",   \"outbox\": \"spaces/bob/outbox.md\" }\n  ],\n  \"stack\": {\n    \"HyperFrames\":   \"HTML-native video composition for agents\",\n    \"ContextFrames\": \"HTML-native Context App composition for agents\",\n    \"gitzip-push\":   \"mobile/browser deployment rail for those artifacts\",\n    \"M-MCP-Rooms\":   \"multiplayer runtime where those artifacts are used\",\n    \"HCP\":           \"memory/protocol layer that stores what they mean\",\n    \"QA.Stone\":      \"composite artifact standard — repo + gist + context\",\n    \"ops-adapter\":   \"Actions-as-MCP pattern for REST API tool access\"\n  },\n  \"build_order\": [\n    \"1. Harden gitzip-push (path safety, SHA-256, dry-run)\",\n    \"2. Add .gitzip self-deployment to repo-copilot\",\n    \"3. Seed .hcp/ manifests in 5 core repos\",\n    \"4. ContextFrames MVP (context-frame-player.js)\",\n    \"5. Defer M-MCP Rooms and Commerce Meshes until above solid\"\n  ],\n  \"session_startup_protocol\": [\n    \"1. Fetch this identity gist\",\n    \"2. Load G-001 constraints (context.constraints)\",\n    \"3. Load agent context gist (context.session)\",\n    \"4. Load G-005 handoff (context.handoff)\",\n    \"5. Check for ALERT gists (context.alert)\",\n    \"6. Read inbox\",\n    \"7. Act\"\n  ],\n  \"context\": \"Builds agent-native software infrastructure. Foundation before expansion. Prefers strategic read before tactical action. Every turn declared before execution.\",\n  \"qa_stone\": {\n    \"type\": \"IDENTITY\",\n    \"glow_channel\": \"identity.human\",\n    \"rarity\": \"RARE\",\n    \"repo\": { \"owner\": \"nothinginfinity\", \"name\": \"repo-copilot\", \"branch\": \"main\" },\n    \"access\": \"SIGNED\",\n    \"fortune_decode\": \"Jared Edwards. Owner. Builds agent-native software infra. Foundation before expansion. Strategic read before tactical action. Active repos: repo-copilot, gitzip-push, drivemind, m-mcp, studio-brainstorm, ops-adapter.\"\n  },\n  \"created\": \"2026-05-08\",\n  \"updated\": \"2026-05-08\"\n}\n"
+    }
+  }
 }
