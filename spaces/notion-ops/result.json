@@ -1,11 +1,23 @@
 {
-  "op": "create_database",
+  "op": "batch_rows",
   "requested_by": "bob/c2/jared",
-  "completed_at": "2026-05-09T19:14:00.739Z",
-  "run_id": "25609538194",
+  "completed_at": "2026-05-09T19:17:18.458Z",
+  "run_id": "25609601736",
   "status": "success",
   "error": null,
-  "database_id": "35bd927c-9792-816a-8cb6-fe4fb52a077c",
-  "database_url": "https://www.notion.so/35bd927c9792816a8cb6fe4fb52a077c",
-  "title": "📋 Gist Registry"
+  "inserted": 11,
+  "inserted_ids": [
+    "35bd927c-9792-81e7-b1f6-ee6abe399cc0",
+    "35bd927c-9792-81d9-9101-c342cee25c75",
+    "35bd927c-9792-810c-8b43-c5d0975dd800",
+    "35bd927c-9792-81db-bf29-fda134def778",
+    "35bd927c-9792-8163-b702-dbb3ef479178",
+    "35bd927c-9792-81d9-b5ac-d47ec71b8a7b",
+    "35bd927c-9792-8184-aff6-f8414d24125c",
+    "35bd927c-9792-81f2-81f1-e1ca6f91aa98",
+    "35bd927c-9792-81bf-8f3a-dc559f8feff9",
+    "35bd927c-9792-815c-b26a-d49773dab5d8",
+    "35bd927c-9792-81ba-834e-dd30a75b74d9"
+  ],
+  "errors": []
 }
