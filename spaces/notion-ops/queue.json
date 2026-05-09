@@ -1,24 +1,24 @@
 {
   "op": "append_note",
-  "requested_by": "bob/c1/jared",
+  "requested_by": "alice/c2/jared",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "gitzip hardening + Path A: Agent Notes DB live",
+  "title": "adapter_ref + G-008 ALERT + Charlie slot + notion-ops SKILL Stone + brain.json read primitive",
   "date": "2026-05-09",
   "source": "Perplexity",
   "project": "repo-copilot",
   "new_concepts": [
-    "normalizeSrc",
-    "execFileSync (no shell surface)",
-    "zip bomb guard (file count + bytes)",
-    "normalizeDest root edge-case",
-    "create_database op",
-    "append_row op",
-    "append_note op",
-    "G-010 BRAIN gist type",
-    "agent second brain pattern"
+    "adapter_ref",
+    "SKILL Stone self-invocation",
+    "G-008 ALERT type",
+    "BLOCKING/WARNING/INFO severity levels",
+    "ALERT lifecycle (raise-load-clear)",
+    "Charlie agent slot",
+    "three-agents demo pattern",
+    "export_brain op",
+    "brain-export workflow",
+    "scheduled brain refresh"
   ],
-  "decisions": "Hardened gitzip-push before Three Agents Demo (blocking cleared). Added create_database, append_row, append_note to notion-ops. Provisioned Agent Notes DB via create_database op. Registered as G-010 BRAIN in gist registry. append_note is the canonical session-end write primitive going forward.",
-  "open_questions": "When to build brain.json read primitive (G-010 gist export Action)? Alice still needs to ship: adapter_ref QA.Stone amendment, G-008 ALERT gist, Charlie agent slot, notion-ops QA.Stone SKILL Stone registration.",
-  "cid": "bob/c1/jared",
-  "gist_snapshot": "https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92"
+  "decisions": "adapter_ref field added to QA.Stone gist block — SKILL Stones now self-invoking via adapter_ref path. G-008 ALERT type formalized as type spec + lifecycle doc. Charlie agent slot seeded with orientation message and full stack state. notion-ops registered as first live SKILL Stone with adapter_ref pointing to queue.json. brain.json read primitive implemented as export_brain op in notion-ops.yml + standalone brain-export.yml workflow with 3 triggers (push, manual, daily 06:00 UTC).",
+  "open_questions": "Three-Agents Demo build not yet started — demo HTML seed, demo-run.md, Notion build log, GitHub Pages deploy all pending. notion-ops SKILL Stone gist_id is null — needs a real gist.github.com wormhole.",
+  "cid": "alice/c2/jared"
 }
