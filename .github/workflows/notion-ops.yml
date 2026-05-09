@@ -157,13 +157,6 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
-              // ── NEW: create_database ────────────────────────────────────────
-              // Creates a new Notion database as a child of a page.
-              // Required queue fields:
-              //   parent_page_id: string  — page ID to nest the DB under
-              //   title: string           — database title
-              //   properties: object      — Notion property schema map
-              // Returns: database_id, database_url
               } else if (queue.op === 'create_database') {
                 const res = await notionRequest('POST', '/databases', {
                   parent: { type: 'page_id', page_id: queue.parent_page_id },
@@ -179,14 +172,6 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
-              // ── NEW: append_row ─────────────────────────────────────────────
-              // Inserts a new row (page) into an existing Notion database.
-              // Required queue fields:
-              //   database_id: string   — target database ID
-              //   properties: object    — property values matching the DB schema
-              // Optional:
-              //   children: array       — block content for the page body
-              // Returns: page_id, page_url
               } else if (queue.op === 'append_row') {
                 const res = await notionRequest('POST', '/pages', {
                   parent: { type: 'database_id', database_id: queue.database_id },
@@ -201,22 +186,6 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
-              // ── NEW: append_note ────────────────────────────────────────────
-              // High-level convenience op for the Agent Notes DB (Path A).
-              // Maps flat note fields directly to the Agent Notes schema.
-              // Required queue fields:
-              //   database_id: string       — Agent Notes database ID
-              //   title: string             — note title / session summary
-              // Optional queue fields:
-              //   date: string              — ISO date (defaults to now)
-              //   source: string            — 'Perplexity' | 'Claude' | 'ChatGPT' | 'Human'
-              //   project: string           — project name
-              //   new_concepts: string[]    — array of concept strings
-              //   decisions: string         — decisions made this session
-              //   open_questions: string    — open questions / next unknowns
-              //   cid: string               — conversation ID (e.g. alice/c2/jared)
-              //   gist_snapshot: string     — URL to a gist snapshot
-              // Returns: page_id, page_url
               } else if (queue.op === 'append_note') {
                 const noteDate = queue.date || new Date().toISOString().split('T')[0];
                 const properties = {
@@ -262,6 +231,72 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
+              // ── NEW: export_brain ───────────────────────────────────────────
+              // Queries the Agent Notes DB and writes brain.json to
+              // spaces/gists/brain.json — the G-010 read primitive.
+              // Required queue fields:
+              //   database_id: string   — Agent Notes database ID
+              // Optional queue fields:
+              //   limit: number         — max rows to fetch (default: 20)
+              //   sorts: array          — Notion sort spec (default: Date desc)
+              // Output file: spaces/gists/brain.json
+              // Returns: note_count, output_path
+              } else if (queue.op === 'export_brain') {
+                const limit = queue.limit || 20;
+                const sorts = queue.sorts || [{ property: 'Date', direction: 'descending' }];
+                const res = await notionRequest('POST', '/databases/' + queue.database_id + '/query', {
+                  sorts,
+                  page_size: limit
+                });
+                if (res.status !== 200) {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                } else {
+                  const rows = res.body.results.map(page => {
+                    const p = page.properties;
+                    const getText = (prop) => prop?.rich_text?.[0]?.plain_text || null;
+                    const getTitle = (prop) => prop?.title?.[0]?.plain_text || null;
+                    const getSelect = (prop) => prop?.select?.name || null;
+                    const getMultiSelect = (prop) => prop?.multi_select?.map(s => s.name) || [];
+                    const getDate = (prop) => prop?.date?.start || null;
+                    const getUrl = (prop) => prop?.url || null;
+                    return {
+                      title:          getTitle(p['Title']),
+                      date:           getDate(p['Date']),
+                      source:         getSelect(p['Source']),
+                      project:        getText(p['Project']),
+                      new_concepts:   getMultiSelect(p['New Concepts']),
+                      decisions:      getText(p['Decisions']),
+                      open_questions: getText(p['Open Questions']),
+                      cid:            getText(p['CID']),
+                      gist_snapshot:  getUrl(p['Gist Snapshot']),
+                      notion_url:     page.url
+                    };
+                  });
+
+                  const brain = {
+                    schema_version: '1.0',
+                    generated_at: new Date().toISOString(),
+                    database_id: queue.database_id,
+                    note_count: rows.length,
+                    has_more: res.body.has_more,
+                    fortune_decode: `Agent second brain. ${rows.length} sessions distilled. Latest: ${
+                      rows[0]?.date || 'unknown'
+                    }. Projects: ${
+                      [...new Set(rows.map(r => r.project).filter(Boolean))].join(', ') || 'none'
+                    }. Top concepts: ${
+                      [...new Set(rows.flatMap(r => r.new_concepts))].slice(0, 10).join(', ') || 'none'
+                    }.`,
+                    notes: rows
+                  };
+
+                  fs.writeFileSync('spaces/gists/brain.json', JSON.stringify(brain, null, 2));
+                  result.status = 'success';
+                  result.note_count = rows.length;
+                  result.output_path = 'spaces/gists/brain.json';
+                  result.has_more = res.body.has_more;
+                  result.generated_at = brain.generated_at;
+                }
+
               } else {
                 result.error = 'Unknown op: ' + queue.op;
               }
@@ -275,6 +310,6 @@ jobs:
         run: |
           git config user.name "notion-ops[bot]"
           git config user.email "notion-ops@nothinginfinity.bot"
-          git add spaces/notion-ops/result.json
+          git add spaces/notion-ops/result.json spaces/gists/brain.json || true
           git diff --cached --quiet || git commit -m "chore(notion-ops): write result [skip ci]"
           git push

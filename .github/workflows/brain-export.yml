@@ -1,0 +1,127 @@
+name: Brain Export
+# Standalone trigger for the G-010 read primitive.
+# Runs export_brain op against the Agent Notes DB and commits brain.json.
+# Triggers:
+#   1. Push to spaces/notion-ops/brain-export-trigger.json  (agent-initiated)
+#   2. workflow_dispatch  (manual run from GitHub UI)
+#   3. schedule: daily at 06:00 UTC
+
+on:
+  push:
+    paths:
+      - 'spaces/notion-ops/brain-export-trigger.json'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max notes to fetch (default: 20)'
+        required: false
+        default: '20'
+  schedule:
+    - cron: '0 6 * * *'
+
+jobs:
+  export-brain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Export brain.json from Agent Notes DB
+        uses: actions/github-script@v7
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        with:
+          script: |
+            const fs = require('fs');
+            const https = require('https');
+
+            const DATABASE_ID = '35bd927c-9792-81b9-816a-e357c9339d2f';
+            const limit = parseInt('${{ github.event.inputs.limit }}' || '20', 10) || 20;
+            const token = process.env.NOTION_TOKEN;
+
+            function notionRequest(method, path, body) {
+              return new Promise((resolve, reject) => {
+                const data = body ? JSON.stringify(body) : null;
+                const options = {
+                  hostname: 'api.notion.com',
+                  path: '/v1' + path,
+                  method,
+                  headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Notion-Version': '2022-06-28',
+                    'Content-Type': 'application/json',
+                    ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+                  }
+                };
+                const req = https.request(options, (res) => {
+                  let raw = '';
+                  res.on('data', chunk => raw += chunk);
+                  res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(raw) }));
+                });
+                req.on('error', reject);
+                if (data) req.write(data);
+                req.end();
+              });
+            }
+
+            const res = await notionRequest('POST', '/databases/' + DATABASE_ID + '/query', {
+              sorts: [{ property: 'Date', direction: 'descending' }],
+              page_size: limit
+            });
+
+            if (res.status !== 200) {
+              core.setFailed('Notion query failed: ' + (res.body.message || JSON.stringify(res.body)));
+              return;
+            }
+
+            const rows = res.body.results.map(page => {
+              const p = page.properties;
+              const getText = (prop) => prop?.rich_text?.[0]?.plain_text || null;
+              const getTitle = (prop) => prop?.title?.[0]?.plain_text || null;
+              const getSelect = (prop) => prop?.select?.name || null;
+              const getMultiSelect = (prop) => prop?.multi_select?.map(s => s.name) || [];
+              const getDate = (prop) => prop?.date?.start || null;
+              const getUrl = (prop) => prop?.url || null;
+              return {
+                title:          getTitle(p['Title']),
+                date:           getDate(p['Date']),
+                source:         getSelect(p['Source']),
+                project:        getText(p['Project']),
+                new_concepts:   getMultiSelect(p['New Concepts']),
+                decisions:      getText(p['Decisions']),
+                open_questions: getText(p['Open Questions']),
+                cid:            getText(p['CID']),
+                gist_snapshot:  getUrl(p['Gist Snapshot']),
+                notion_url:     page.url
+              };
+            });
+
+            const brain = {
+              schema_version: '1.0',
+              generated_at: new Date().toISOString(),
+              database_id: DATABASE_ID,
+              note_count: rows.length,
+              has_more: res.body.has_more,
+              fortune_decode: `Agent second brain. ${rows.length} sessions distilled. Latest: ${
+                rows[0]?.date || 'unknown'
+              }. Projects: ${
+                [...new Set(rows.map(r => r.project).filter(Boolean))].join(', ') || 'none'
+              }. Top concepts: ${
+                [...new Set(rows.flatMap(r => r.new_concepts))].slice(0, 10).join(', ') || 'none'
+              }.`,
+              notes: rows
+            };
+
+            fs.writeFileSync('spaces/gists/brain.json', JSON.stringify(brain, null, 2));
+            console.log(`brain.json written: ${rows.length} notes, has_more=${res.body.has_more}`);
+
+      - name: Commit brain.json
+        run: |
+          git config user.name "brain-export[bot]"
+          git config user.email "brain-export@nothinginfinity.bot"
+          git add spaces/gists/brain.json
+          git diff --cached --quiet || git commit -m "chore(brain): export brain.json from Agent Notes DB [skip ci]"
+          git push
