@@ -1,16 +1,9 @@
 {
-  "op": "search",
+  "op": "append_blocks",
   "requested_by": "alice/c2/jared",
-  "completed_at": "2026-05-09T03:09:23.472Z",
+  "completed_at": "2026-05-09T03:12:52.236Z",
   "status": "success",
   "error": null,
-  "results": [
-    {
-      "id": "35bd927c-9792-805b-8b12-f35f86e3d665",
-      "object": "page",
-      "title": "PraX",
-      "url": "https://www.notion.so/PraX-35bd927c9792805b8b12f35f86e3d665",
-      "last_edited": "2026-05-09T03:07:00.000Z"
-    }
-  ]
+  "block_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
+  "appended": 40
 }
