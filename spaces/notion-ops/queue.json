@@ -28,5 +28,6 @@
     "Depends On":  { "rich_text": {} },
     "Notes":       { "rich_text": {} },
     "Commit":      { "url": {} }
-  }
+  },
+  "_trigger": "retrigger-1"
 }
