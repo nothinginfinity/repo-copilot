@@ -177,6 +177,39 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
+              } else if (queue.op === 'update_database') {
+                const res = await notionRequest('PATCH', '/databases/' + queue.database_id, {
+                  ...(queue.title ? { title: [{ type: 'text', text: { content: queue.title } }] } : {}),
+                  ...(queue.properties ? { properties: queue.properties } : {})
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.database_id = res.body.id;
+                  result.database_url = res.body.url;
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
+              } else if (queue.op === 'batch_rows') {
+                const rows = queue.rows || [];
+                const inserted = [];
+                const errors = [];
+                for (const row of rows) {
+                  const res = await notionRequest('POST', '/pages', {
+                    parent: { type: 'database_id', database_id: queue.database_id },
+                    properties: row
+                  });
+                  if (res.status === 200) {
+                    inserted.push(res.body.id);
+                  } else {
+                    errors.push({ row, error: res.body.message || JSON.stringify(res.body) });
+                  }
+                }
+                result.status = errors.length === 0 ? 'success' : (inserted.length > 0 ? 'partial' : 'error');
+                result.inserted = inserted.length;
+                result.inserted_ids = inserted;
+                result.errors = errors;
+
               } else if (queue.op === 'append_row') {
                 const res = await notionRequest('POST', '/pages', {
                   parent: { type: 'database_id', database_id: queue.database_id },
@@ -194,34 +227,17 @@ jobs:
               } else if (queue.op === 'append_note') {
                 const noteDate = queue.date || new Date().toISOString().split('T')[0];
                 const properties = {
-                  'Title': {
-                    title: [{ type: 'text', text: { content: queue.title || '(untitled note)' } }]
-                  },
-                  'Date': {
-                    date: { start: noteDate }
-                  }
+                  'Title': { title: [{ type: 'text', text: { content: queue.title || '(untitled note)' } }] },
+                  'Date': { date: { start: noteDate } }
                 };
-                if (queue.source) {
-                  properties['Source'] = { select: { name: queue.source } };
-                }
-                if (queue.project) {
-                  properties['Project'] = { rich_text: [{ type: 'text', text: { content: queue.project } }] };
-                }
-                if (Array.isArray(queue.new_concepts) && queue.new_concepts.length > 0) {
+                if (queue.source)         properties['Source']         = { select: { name: queue.source } };
+                if (queue.project)        properties['Project']        = { rich_text: [{ type: 'text', text: { content: queue.project } }] };
+                if (queue.decisions)      properties['Decisions']      = { rich_text: [{ type: 'text', text: { content: queue.decisions } }] };
+                if (queue.open_questions) properties['Open Questions'] = { rich_text: [{ type: 'text', text: { content: queue.open_questions } }] };
+                if (queue.cid)            properties['CID']            = { rich_text: [{ type: 'text', text: { content: queue.cid } }] };
+                if (queue.gist_snapshot)  properties['Gist Snapshot']  = { url: queue.gist_snapshot };
+                if (Array.isArray(queue.new_concepts) && queue.new_concepts.length > 0)
                   properties['New Concepts'] = { multi_select: queue.new_concepts.map(c => ({ name: c })) };
-                }
-                if (queue.decisions) {
-                  properties['Decisions'] = { rich_text: [{ type: 'text', text: { content: queue.decisions } }] };
-                }
-                if (queue.open_questions) {
-                  properties['Open Questions'] = { rich_text: [{ type: 'text', text: { content: queue.open_questions } }] };
-                }
-                if (queue.cid) {
-                  properties['CID'] = { rich_text: [{ type: 'text', text: { content: queue.cid } }] };
-                }
-                if (queue.gist_snapshot) {
-                  properties['Gist Snapshot'] = { url: queue.gist_snapshot };
-                }
                 const res = await notionRequest('POST', '/pages', {
                   parent: { type: 'database_id', database_id: queue.database_id },
                   properties
@@ -240,8 +256,7 @@ jobs:
                 const limit = queue.limit || 20;
                 const sorts = queue.sorts || [{ property: 'Date', direction: 'descending' }];
                 const res = await notionRequest('POST', '/databases/' + queue.database_id + '/query', {
-                  sorts,
-                  page_size: limit
+                  sorts, page_size: limit
                 });
                 if (res.status !== 200) {
                   result.error = res.body.message || JSON.stringify(res.body);
@@ -255,35 +270,21 @@ jobs:
                     const getDate = (prop) => prop?.date?.start || null;
                     const getUrl = (prop) => prop?.url || null;
                     return {
-                      title:          getTitle(p['Title']),
-                      date:           getDate(p['Date']),
-                      source:         getSelect(p['Source']),
-                      project:        getText(p['Project']),
-                      new_concepts:   getMultiSelect(p['New Concepts']),
-                      decisions:      getText(p['Decisions']),
-                      open_questions: getText(p['Open Questions']),
-                      cid:            getText(p['CID']),
-                      gist_snapshot:  getUrl(p['Gist Snapshot']),
-                      notion_url:     page.url
+                      title: getTitle(p['Title']), date: getDate(p['Date']),
+                      source: getSelect(p['Source']), project: getText(p['Project']),
+                      new_concepts: getMultiSelect(p['New Concepts']),
+                      decisions: getText(p['Decisions']), open_questions: getText(p['Open Questions']),
+                      cid: getText(p['CID']), gist_snapshot: getUrl(p['Gist Snapshot']),
+                      notion_url: page.url
                     };
                   });
-
                   const brain = {
-                    schema_version: '1.0',
-                    generated_at: new Date().toISOString(),
-                    database_id: queue.database_id,
-                    note_count: rows.length,
+                    schema_version: '1.0', generated_at: new Date().toISOString(),
+                    database_id: queue.database_id, note_count: rows.length,
                     has_more: res.body.has_more,
-                    fortune_decode: `Agent second brain. ${rows.length} sessions distilled. Latest: ${
-                      rows[0]?.date || 'unknown'
-                    }. Projects: ${
-                      [...new Set(rows.map(r => r.project).filter(Boolean))].join(', ') || 'none'
-                    }. Top concepts: ${
-                      [...new Set(rows.flatMap(r => r.new_concepts))].slice(0, 10).join(', ') || 'none'
-                    }.`,
+                    fortune_decode: `Agent second brain. ${rows.length} sessions distilled. Latest: ${rows[0]?.date || 'unknown'}. Projects: ${[...new Set(rows.map(r => r.project).filter(Boolean))].join(', ') || 'none'}. Top concepts: ${[...new Set(rows.flatMap(r => r.new_concepts))].slice(0, 10).join(', ') || 'none'}.`,
                     notes: rows
                   };
-
                   brainContent = JSON.stringify(brain, null, 2);
                   result.status = 'success';
                   result.note_count = rows.length;
@@ -299,24 +300,18 @@ jobs:
               result.error = e.message;
             }
 
-            // Write result.json via GitHub API (no shell git — avoids push conflicts)
+            // Write result.json via GitHub API
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const resultPath = 'spaces/notion-ops/result.json';
             const resultContent = JSON.stringify(result, null, 2);
-
-            // Get current SHA of result.json
             let currentSha;
             try {
               const { data } = await github.rest.repos.getContent({ owner, repo, path: resultPath });
               currentSha = data.sha;
-            } catch (e) {
-              currentSha = undefined; // file doesn't exist yet
-            }
-
+            } catch (e) { currentSha = undefined; }
             await github.rest.repos.createOrUpdateFileContents({
-              owner, repo,
-              path: resultPath,
+              owner, repo, path: resultPath,
               message: `chore(notion-ops): write result [skip ci] — run ${process.env.GITHUB_RUN_ID}`,
               content: Buffer.from(resultContent).toString('base64'),
               sha: currentSha
@@ -329,12 +324,9 @@ jobs:
               try {
                 const { data } = await github.rest.repos.getContent({ owner, repo, path: brainPath });
                 brainSha = data.sha;
-              } catch (e) {
-                brainSha = undefined;
-              }
+              } catch (e) { brainSha = undefined; }
               await github.rest.repos.createOrUpdateFileContents({
-                owner, repo,
-                path: brainPath,
+                owner, repo, path: brainPath,
                 message: `chore(notion-ops): update brain.json [skip ci] — run ${process.env.GITHUB_RUN_ID}`,
                 content: Buffer.from(brainContent).toString('base64'),
                 sha: brainSha
