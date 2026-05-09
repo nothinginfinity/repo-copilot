@@ -1,7 +1,18 @@
 {
-  "op": "diagnose",
+  "op": "create_database",
   "requested_by": "alice/c3/jared",
-  "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "description": "Confirm native https runner works, sample first 5 rows",
-  "_bump": 12
+  "parent_page_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
+  "title": "Repo Registry v2",
+  "properties": {
+    "Name":        { "title": {} },
+    "GitHub URL":  { "url": {} },
+    "Live Site":   { "url": {} },
+    "Language":    { "select": {} },
+    "Status":      { "select": {} },
+    "Track":       { "select": {} },
+    "Agent Owner": { "select": {} },
+    "Description": { "rich_text": {} },
+    "Last Updated":{ "date": {} }
+  },
+  "_bump": 13
 }

@@ -18,8 +18,8 @@ jobs:
 
       - name: Run notion-op
         env:
-          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-        run: bash .github/scripts/notion-ops-runner.sh
+          NOTION_TOKEN: ${{ secrets.NOTION_API_KEY }}
+        run: node .github/scripts/notion-ops-runner.js
         continue-on-error: true
 
       - name: Commit result.json
