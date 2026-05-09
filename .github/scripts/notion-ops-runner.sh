@@ -53,13 +53,14 @@ open('$RESULT', 'w').write(json.dumps(result, indent=2))
 
 if [ "$OP" = "diagnose" ]; then
   echo "Fetching first 5 pages..."
-  RESPONSE=$(notion_request GET "/databases/${DB}/query" '{"page_size":5}')
+  RESPONSE=$(notion_request POST "/databases/${DB}/query" '{"page_size":5}')
   echo "Raw response (first 500 chars): ${RESPONSE:0:500}"
 
-  # Check for error
-  ERROR=$(python3 -c "import json,sys; r=json.loads(sys.argv[1]); print(r.get('message','')) " "$RESPONSE" 2>/dev/null || echo "")
-  if [ -n "$ERROR" ]; then
-    write_error "Notion API error: $ERROR"
+  # Check for Notion API error (has 'object: error' in response)
+  HAS_ERROR=$(python3 -c "import json,sys; r=json.loads(sys.argv[1]); print('yes' if r.get('object')=='error' else 'no')" "$RESPONSE" 2>/dev/null || echo "no")
+  if [ "$HAS_ERROR" = "yes" ]; then
+    ERROR_MSG=$(python3 -c "import json,sys; r=json.loads(sys.argv[1]); print(r.get('message','unknown error'))" "$RESPONSE")
+    write_error "Notion API error: $ERROR_MSG"
   fi
 
   python3 - "$RESPONSE" "$OP" "$DB" "$RAN_AT" "$REQUESTED_BY" "$RESULT" << 'PYEOF'
@@ -97,7 +98,7 @@ PYEOF
 elif [ "$OP" = "batch_rows" ]; then
   ROWS=$(python3 -c "import json; print(json.dumps(json.load(open('$QUEUE'))['rows']))")
   python3 - "$ROWS" "$DB" "$OP" "$RAN_AT" "$REQUESTED_BY" "$RESULT" << 'PYEOF'
-import json, sys, subprocess
+import json, sys, subprocess, os
 rows_str, db, op, ran_at, requested_by, result_path = sys.argv[1:]
 rows = json.loads(rows_str)
 results = []
@@ -106,7 +107,7 @@ for row in rows:
     payload = json.dumps({'parent': {'database_id': db}, 'properties': row})
     r = subprocess.run([
         'curl', '-s', '-X', 'POST', 'https://api.notion.com/v1/pages',
-        '-H', f'Authorization: Bearer {__import__("os").environ["NOTION_API_KEY"]}',
+        '-H', f'Authorization: Bearer {os.environ["NOTION_API_KEY"]}',
         '-H', 'Notion-Version: 2022-06-28',
         '-H', 'Content-Type: application/json',
         '-d', payload
@@ -117,7 +118,7 @@ for row in rows:
         print(f'OK: {name}')
     else:
         results.append({'name': name, 'status': 'error', 'error': resp.get('message','unknown')})
-        print(f'FAIL: {name} — {resp.get("message")}')
+        print(f'FAIL: {name} - {resp.get("message")}')
 ok = sum(1 for r in results if r['status']=='ok')
 failed = sum(1 for r in results if r['status']=='error')
 result = {
@@ -131,7 +132,6 @@ PYEOF
 
 elif [ "$OP" = "patch_rows" ]; then
   ROWS=$(python3 -c "import json; print(json.dumps(json.load(open('$QUEUE'))['rows']))")
-  # Fetch all pages first
   echo "Fetching all pages for matching..."
   ALL_PAGES='[]'
   CURSOR=""
@@ -186,7 +186,7 @@ for row in rows:
         print(f'OK patched: {match_url}')
     else:
         results.append({'match': match_url, 'status': 'error', 'error': resp.get('message','unknown')})
-        print(f'FAIL: {match_url} — {resp.get("message")}')
+        print(f'FAIL: {match_url} - {resp.get("message")}')
 ok = sum(1 for r in results if r['status']=='ok')
 failed = sum(1 for r in results if r['status']=='error')
 skipped = sum(1 for r in results if r['status']=='not_found')
@@ -221,12 +221,12 @@ print(json.dumps(payload))
 import json, sys
 resp_str, op, db, ran_at, requested_by, result_path = sys.argv[1:]
 resp = json.loads(resp_str)
-if 'results' in resp or 'type' in resp:
-    status = 'ok'
-    results = [{'status': 'ok', 'note': 'block appended'}]
-else:
+if resp.get('object') == 'error':
     status = 'error'
     results = [{'status': 'error', 'error': resp.get('message', 'unknown')}]
+else:
+    status = 'ok'
+    results = [{'status': 'ok', 'note': 'block appended'}]
 result = {
     'op': op, 'database_id': db, 'ran_at': ran_at, 'requested_by': requested_by,
     'status': status,
