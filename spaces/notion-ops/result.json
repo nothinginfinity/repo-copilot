@@ -1,12 +1,12 @@
 {
   "op": "append_note",
   "requested_by": "bob/c2/jared",
-  "completed_at": "2026-05-09T18:51:19.961Z",
-  "run_id": "25609083969",
+  "completed_at": "2026-05-09T18:53:36.046Z",
+  "run_id": "25609131134",
   "status": "success",
   "error": null,
-  "page_id": "35bd927c-9792-8165-acb1-dd409de70aa1",
-  "page_url": "https://www.notion.so/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1",
-  "note_title": "Cleanup audit — 3 Alice items resolved",
+  "page_id": "35bd927c-9792-814c-a1d5-d3153a97af62",
+  "page_url": "https://www.notion.so/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62",
+  "note_title": "archive_block op added to notion-ops",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f"
 }
