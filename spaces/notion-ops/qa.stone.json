@@ -1,0 +1,47 @@
+{
+  "version": "0.1",
+  "stone_id": "c7d8e9f0",
+  "border_hash": "2b3c4d5e6f7a8b9c",
+  "type": "SKILL",
+  "glow_channel": "skill.mcp",
+  "rarity": "UNCOMMON",
+  "depth": 0,
+
+  "repo": {
+    "owner": "nothinginfinity",
+    "name": "repo-copilot",
+    "branch": "main",
+    "path": "spaces/notion-ops"
+  },
+
+  "gist": {
+    "gist_id": null,
+    "raw_url": null,
+    "encoding": "utf-8",
+    "files": [
+      { "filename": "notion-ops-readme.md", "role": "skill" }
+    ],
+    "adapter_ref": "spaces/notion-ops/queue.json"
+  },
+
+  "context": {
+    "hcp_path": null,
+    "session_gists": [],
+    "identity_gist": "fb001a1ece0a750f857c4f90a1130f92",
+    "cid": "alice/c2/jared"
+  },
+
+  "wormhole_registry": [
+    "spaces/gist-ops/queue.json",
+    "spaces/notion-ops/queue.json",
+    "specs/qa-stone-spec-v0.1.md"
+  ],
+
+  "access": "SIGNED",
+
+  "fortune_decode": "notion-ops adapter. Executes Notion API operations via GitHub Actions queue pattern. Ops: search, get_page, create_page, query_database, update_block, append_blocks, create_database, append_row, append_note. Invoke by writing to adapter_ref queue. Result written back to spaces/notion-ops/result.json. Agent Notes DB: 35bd927c-9792-81b9-816a-e357c9339d2f.",
+
+  "created": "2026-05-09",
+  "updated": "2026-05-09",
+  "owner": "jared"
+}
