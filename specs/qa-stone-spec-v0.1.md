@@ -100,7 +100,8 @@ Every QA.Stone is described by a manifest file: `qa.stone.json`. This file ties 
         "filename": "<filename>",
         "role": "payload | index | manifest | skill | identity | archive"
       }
-    ]
+    ],
+    "adapter_ref": "<path to ops adapter queue file — required for SKILL type Stones>"
   },
 
   "context": {
@@ -137,6 +138,7 @@ Every QA.Stone is described by a manifest file: `qa.stone.json`. This file ties 
 | `depth` | ✅ | Nesting level — 0 = root Stone, 1+ = child/embedded |
 | `repo` | ✅ | The lattice — source repository and path |
 | `gist` | ✅ | The wormhole — gist ID, raw_url, file roles |
+| `gist.adapter_ref` | ⬜ SKILL only | Path to the ops adapter queue file that invokes this skill (e.g. `spaces/notion-ops/queue.json`). Makes a SKILL Stone self-invoking — not just what it is, but how to run it. |
 | `context` | ✅ | The payload — HCP path, session gists, identity, CID |
 | `wormhole_registry` | ⬜ | Cross-links to connected Stones or artifacts |
 | `access` | ✅ | Access control level |
@@ -268,6 +270,46 @@ project.brainstorm        ← Brainstorm origin artifact
 }
 ```
 
+### Example: notion-ops SKILL Stone
+
+```json
+{
+  "version": "0.1",
+  "stone_id": "b3c4d5e6",
+  "border_hash": "1a2b3c4d5e6f7890",
+  "type": "SKILL",
+  "glow_channel": "skill.mcp",
+  "rarity": "UNCOMMON",
+  "depth": 0,
+  "repo": {
+    "owner": "nothinginfinity",
+    "name": "repo-copilot",
+    "branch": "main",
+    "path": "spaces/notion-ops"
+  },
+  "gist": {
+    "gist_id": "<notion-ops-gist-id>",
+    "raw_url": "<notion-ops-raw-url>",
+    "encoding": "utf-8",
+    "files": [
+      { "filename": "notion-ops-spec.json", "role": "skill" }
+    ],
+    "adapter_ref": "spaces/notion-ops/queue.json"
+  },
+  "context": {
+    "hcp_path": null,
+    "session_gists": [],
+    "identity_gist": "fb001a1ece0a750f857c4f90a1130f92",
+    "cid": "alice/c2/jared"
+  },
+  "access": "SIGNED",
+  "fortune_decode": "notion-ops adapter. Ops: search, get_page, create_page, query_database, update_block, append_blocks, create_database, append_row, append_note. Invoke via adapter_ref queue.",
+  "created": "2026-05-09",
+  "updated": "2026-05-09",
+  "owner": "jared"
+}
+```
+
 ---
 
 ## Change Log
@@ -275,3 +317,4 @@ project.brainstorm        ← Brainstorm origin artifact
 | Date | Version | Change | By |
 |------|---------|--------|----||
 | 2026-05-07 | 0.1 | Initial specification | Jared Edwards + Alice (alice/c1/jared) |
+| 2026-05-09 | 0.1 | Add `adapter_ref` field to `gist` block — SKILL Stones now self-invoking | Alice (alice/c2/jared) |
