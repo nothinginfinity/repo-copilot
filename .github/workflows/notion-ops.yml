@@ -157,6 +157,111 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
+              // ── NEW: create_database ────────────────────────────────────────
+              // Creates a new Notion database as a child of a page.
+              // Required queue fields:
+              //   parent_page_id: string  — page ID to nest the DB under
+              //   title: string           — database title
+              //   properties: object      — Notion property schema map
+              // Returns: database_id, database_url
+              } else if (queue.op === 'create_database') {
+                const res = await notionRequest('POST', '/databases', {
+                  parent: { type: 'page_id', page_id: queue.parent_page_id },
+                  title: [{ type: 'text', text: { content: queue.title || 'Untitled Database' } }],
+                  properties: queue.properties
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.database_id = res.body.id;
+                  result.database_url = res.body.url;
+                  result.title = queue.title;
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
+              // ── NEW: append_row ─────────────────────────────────────────────
+              // Inserts a new row (page) into an existing Notion database.
+              // Required queue fields:
+              //   database_id: string   — target database ID
+              //   properties: object    — property values matching the DB schema
+              // Optional:
+              //   children: array       — block content for the page body
+              // Returns: page_id, page_url
+              } else if (queue.op === 'append_row') {
+                const res = await notionRequest('POST', '/pages', {
+                  parent: { type: 'database_id', database_id: queue.database_id },
+                  properties: queue.properties,
+                  children: queue.children || []
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.page_id = res.body.id;
+                  result.page_url = res.body.url;
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
+              // ── NEW: append_note ────────────────────────────────────────────
+              // High-level convenience op for the Agent Notes DB (Path A).
+              // Maps flat note fields directly to the Agent Notes schema.
+              // Required queue fields:
+              //   database_id: string       — Agent Notes database ID
+              //   title: string             — note title / session summary
+              // Optional queue fields:
+              //   date: string              — ISO date (defaults to now)
+              //   source: string            — 'Perplexity' | 'Claude' | 'ChatGPT' | 'Human'
+              //   project: string           — project name
+              //   new_concepts: string[]    — array of concept strings
+              //   decisions: string         — decisions made this session
+              //   open_questions: string    — open questions / next unknowns
+              //   cid: string               — conversation ID (e.g. alice/c2/jared)
+              //   gist_snapshot: string     — URL to a gist snapshot
+              // Returns: page_id, page_url
+              } else if (queue.op === 'append_note') {
+                const noteDate = queue.date || new Date().toISOString().split('T')[0];
+                const properties = {
+                  'Title': {
+                    title: [{ type: 'text', text: { content: queue.title || '(untitled note)' } }]
+                  },
+                  'Date': {
+                    date: { start: noteDate }
+                  }
+                };
+                if (queue.source) {
+                  properties['Source'] = { select: { name: queue.source } };
+                }
+                if (queue.project) {
+                  properties['Project'] = { rich_text: [{ type: 'text', text: { content: queue.project } }] };
+                }
+                if (Array.isArray(queue.new_concepts) && queue.new_concepts.length > 0) {
+                  properties['New Concepts'] = { multi_select: queue.new_concepts.map(c => ({ name: c })) };
+                }
+                if (queue.decisions) {
+                  properties['Decisions'] = { rich_text: [{ type: 'text', text: { content: queue.decisions } }] };
+                }
+                if (queue.open_questions) {
+                  properties['Open Questions'] = { rich_text: [{ type: 'text', text: { content: queue.open_questions } }] };
+                }
+                if (queue.cid) {
+                  properties['CID'] = { rich_text: [{ type: 'text', text: { content: queue.cid } }] };
+                }
+                if (queue.gist_snapshot) {
+                  properties['Gist Snapshot'] = { url: queue.gist_snapshot };
+                }
+                const res = await notionRequest('POST', '/pages', {
+                  parent: { type: 'database_id', database_id: queue.database_id },
+                  properties
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.page_id = res.body.id;
+                  result.page_url = res.body.url;
+                  result.note_title = queue.title;
+                  result.database_id = queue.database_id;
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
               } else {
                 result.error = 'Unknown op: ' + queue.op;
               }
