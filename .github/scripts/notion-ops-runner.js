@@ -1,25 +1,51 @@
-const { Client } = require(__dirname + '/node_modules/@notionhq/client');
+const https = require('https');
 const fs = require('fs');
 
 console.log('=== notion-ops-runner start ===');
-console.log('API key present:', !!process.env.NOTION_API_KEY);
-console.log('API key length:', (process.env.NOTION_API_KEY || '').length);
+
+const token = process.env.NOTION_TOKEN;
+console.log('Token present:', !!token, '| length:', (token || '').length);
 
 const queue = JSON.parse(fs.readFileSync('spaces/notion-ops/queue.json', 'utf8'));
 console.log('op:', queue.op, '| db:', queue.database_id);
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-console.log('Notion client created:', typeof notion.databases);
+function notionRequest(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const payload = body ? JSON.stringify(body) : null;
+    const options = {
+      hostname: 'api.notion.com',
+      path: '/v1' + path,
+      method,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json',
+        ...(payload ? { 'Content-Length': Buffer.byteLength(payload) } : {})
+      }
+    };
+    const req = https.request(options, res => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.object === 'error') reject(new Error('Notion API error: ' + parsed.message));
+          else resolve(parsed);
+        } catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
 
 async function getAllPages(dbId) {
   let pages = [];
   let cursor = undefined;
   do {
-    const res = await notion.databases.query({
-      database_id: dbId,
-      start_cursor: cursor,
-      page_size: 100
-    });
+    const body = { page_size: 100, ...(cursor ? { start_cursor: cursor } : {}) };
+    const res = await notionRequest('POST', '/databases/' + dbId + '/query', body);
     pages = pages.concat(res.results);
     cursor = res.has_more ? res.next_cursor : undefined;
   } while (cursor);
@@ -27,11 +53,7 @@ async function getAllPages(dbId) {
 }
 
 async function runDiagnose(queue) {
-  console.log('Fetching first 5 pages...');
-  const res = await notion.databases.query({
-    database_id: queue.database_id,
-    page_size: 5
-  });
+  const res = await notionRequest('POST', '/databases/' + queue.database_id + '/query', { page_size: 5 });
   const sample = res.results.map(page => {
     const props = {};
     for (const [k, v] of Object.entries(page.properties)) {
@@ -49,7 +71,7 @@ async function runBatchRows(queue) {
   const results = [];
   for (const row of queue.rows) {
     try {
-      const res = await notion.pages.create({
+      const res = await notionRequest('POST', '/pages', {
         parent: { database_id: queue.database_id },
         properties: row
       });
@@ -66,20 +88,13 @@ async function runBatchRows(queue) {
 }
 
 async function runPatchRows(queue) {
-  console.log('Fetching all DB pages...');
   const allPages = await getAllPages(queue.database_id);
   console.log('Found', allPages.length, 'rows');
-
   const urlMap = {};
   for (const page of allPages) {
     const ghProp = page.properties['GitHub URL'];
-    if (ghProp && ghProp.url) {
-      urlMap[ghProp.url] = page.id;
-    }
+    if (ghProp && ghProp.url) urlMap[ghProp.url] = page.id;
   }
-
-  console.log('Sample URL keys:', Object.keys(urlMap).slice(0, 3));
-
   const results = [];
   for (const row of queue.rows) {
     const matchUrl = row.match;
@@ -94,7 +109,7 @@ async function runPatchRows(queue) {
       for (const key of Object.keys(row)) {
         if (key !== 'match') patchProps[key] = row[key];
       }
-      await notion.pages.update({ page_id: pageId, properties: patchProps });
+      await notionRequest('PATCH', '/pages/' + pageId, { properties: patchProps });
       results.push({ match: matchUrl, status: 'ok', id: pageId });
       console.log('OK patched:', matchUrl);
     } catch (err) {
@@ -130,6 +145,7 @@ async function main() {
     database_id: queue.database_id,
     ran_at: new Date().toISOString(),
     requested_by: queue.requested_by || 'unknown',
+    status: failed === 0 ? 'ok' : 'partial',
     summary: { total: results.length, ok, failed, skipped },
     results
   }, extra);
@@ -140,14 +156,12 @@ async function main() {
 
 main().catch(err => {
   console.error('FATAL ERROR:', err.message);
-  console.error(err.stack);
   const result = {
-    op: queue.op || 'unknown',
-    database_id: queue.database_id || 'unknown',
+    op: queue && queue.op || 'unknown',
+    database_id: queue && queue.database_id || 'unknown',
     ran_at: new Date().toISOString(),
     status: 'error',
-    error: err.message,
-    stack: err.stack
+    error: err.message
   };
   fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
   process.exit(0);
