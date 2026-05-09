@@ -1,15 +1,15 @@
 {
   "op": "search",
   "requested_by": "alice/c2/jared",
-  "timestamp": "2026-05-08T20:04:00Z",
+  "timestamp": "2026-05-08T20:09:00Z",
   "query": "PraX",
   "_ops_available": [
-    "search          — requires: query (string); optional: filter ({ value: 'page'|'database', property: 'object' }), page_size",
+    "search          — requires: query (string); optional: filter, page_size",
     "list_databases  — no extra fields required",
     "get_page        — requires: page_id",
-    "create_page     — requires: parent ({ database_id or page_id }), properties, children (optional)",
+    "create_page     — requires: parent, properties, children (optional)",
     "query_database  — requires: database_id; optional: filter, sorts, page_size",
-    "update_block    — requires: block_id, block (Notion block object)",
-    "append_blocks   — requires: block_id (parent page id), children (array of Notion block objects)"
+    "update_block    — requires: block_id, block",
+    "append_blocks   — requires: block_id (parent page id), children"
   ]
 }
