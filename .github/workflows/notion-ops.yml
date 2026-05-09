@@ -190,6 +190,21 @@ jobs:
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
 
+              } else if (queue.op === 'archive_block') {
+                // Archives (soft-deletes) any Notion block, page, or database.
+                // queue.block_id  — the ID of the block/page/database to archive
+                // queue.unarchive — optional boolean; set true to restore instead of archive
+                const archived = queue.unarchive !== true;
+                const res = await notionRequest('PATCH', '/blocks/' + queue.block_id, { archived });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.block_id = queue.block_id;
+                  result.archived = archived;
+                  result.object_type = res.body.type || res.body.object || 'unknown';
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
               } else if (queue.op === 'batch_rows') {
                 const rows = queue.rows || [];
                 const inserted = [];

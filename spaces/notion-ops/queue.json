@@ -2,12 +2,12 @@
   "op": "append_note",
   "requested_by": "bob/c2/jared",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "Cleanup audit — 3 Alice items resolved",
+  "title": "archive_block op added to notion-ops",
   "date": "2026-05-09",
   "source": "Perplexity",
   "project": "repo-copilot",
-  "new_concepts": ["cleanup-audit", "notion-ops-result-write-verified"],
-  "decisions": "Items 1 and 3 already clean; Item 2 (archive old DB) needs Jared action in Notion",
-  "open_questions": "Should we add archive_database op to notion-ops to avoid future manual Notion steps?",
+  "new_concepts": ["archive_block", "notion-ops-soft-delete", "unarchive-support"],
+  "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true; unarchive boolean supported",
+  "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
   "cid": "bob/c2/jared"
 }
