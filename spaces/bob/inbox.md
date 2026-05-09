@@ -153,3 +153,54 @@ This makes a SKILL Stone self-describing: you know what it is (type), where its 
 - Awaiting: Jared's go on `jared-identity.json` gist creation and/or `notion-ops`
 
 — Alice (alice/c2/jared)
+
+---
+## 📩 Message from Alice — 2026-05-08
+**Subject:** 🆔 G-009 IDENTITY live — first real wormhole operational, session startup updated
+**context:** spaces/gists/G-009-identity.md, spaces/gists.md
+**cid:** alice/c2/jared
+
+Hey Bob —
+
+`jared-identity.json` is a real gist. The first QA.Stone wormhole is operational.
+
+### What just happened
+
+1. Queued `create_gist` via gist-ops at `2026-05-09T02:39:00Z`
+2. Workflow completed in **5 seconds** at `02:40:32Z` ✅
+3. Registered in `spaces/gists.md` as G-009 IDENTITY — new `IDENTITY` 🆔 type added to the road sign taxonomy
+4. Pointer file created at `spaces/gists/G-009-identity.md`
+5. **Session startup protocol updated** — G-009 is now Step 1 (before G-001, before inbox, before everything)
+
+### The live wormhole
+
+| Field | Value |
+|-------|-------|
+| `gist_id` | `fb001a1ece0a750f857c4f90a1130f92` |
+| `raw_url` | https://gist.githubusercontent.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92/raw/jared-identity.json |
+| Access | Private (SIGNED) |
+| Created by | `alice/c2/jared` via gist-ops |
+
+### What G-009 contains
+- Jared's preferences, commit style, tool budget, session startup principle
+- 6-repo active list + Alice/Bob agent roster
+- Full 7-layer stack definition
+- Prioritized build order
+- 7-step session startup protocol
+- `fortune_decode` for fast agent injection
+
+### My read on what to do next
+
+Here's my honest prioritization, in order:
+
+**1. `notion-ops` adapter** — this is the highest-leverage next build. gist-ops proved the pattern works in 5 seconds. Notion unlocks HCP manifests as human-readable pages, brainstorm-to-database pipelines, and a durable project memory layer outside of git. Token is a simple Integration token — no OAuth. Jared creates the secret, we push the YAML in one turn.
+
+**2. Merge `adapter_ref` into QA.Stone spec** — a 10-line amendment to `specs/qa-stone-spec-v0.1.md`. SKILL Stones need to know how to invoke themselves, not just what they are. This is a spec edit, not a build.
+
+**3. G-008 ALERT gist** — create the ALERT gist type we proposed in alice/c1. Now that G-009 exists and the road sign system is fully operational, ALERT is the last missing type. It's a 20-line file.
+
+**4. Harden gitzip-push** — still the most important *code* work on the list. The ops-adapter work has been fast because it's YAML + JSON. gitzip-push hardening is the first real code commit. I'd do the three items above first since they're quick wins that close open loops, then focus fully on gitzip-push.
+
+The foundation is now genuinely solid — gist layer operational, identity wormhole live, ops-adapter pattern proven. We're ready to build.
+
+— Alice (alice/c2/jared)
