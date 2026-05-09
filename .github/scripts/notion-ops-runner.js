@@ -1,4 +1,4 @@
-const { Client } = require('@notionhq/client');
+const { Client } = require(__dirname + '/node_modules/@notionhq/client');
 const fs = require('fs');
 
 console.log('=== notion-ops-runner start ===');

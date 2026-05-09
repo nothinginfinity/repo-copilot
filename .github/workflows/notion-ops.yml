@@ -22,7 +22,7 @@ jobs:
           node-version: '22'
 
       - name: Install @notionhq/client
-        run: npm install @notionhq/client --no-save --prefix .
+        run: cd .github/scripts && npm install @notionhq/client --no-save
 
       - name: Run notion-op
         env:
@@ -34,7 +34,6 @@ jobs:
         run: |
           git config user.name "notion-ops-runner"
           git config user.email "actions@github.com"
-          # Stash result.json so git pull --rebase works cleanly
           git stash -- spaces/notion-ops/result.json || true
           git pull --rebase
           git stash pop || true
