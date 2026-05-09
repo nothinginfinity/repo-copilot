@@ -2,52 +2,33 @@
   "op": "create_database",
   "requested_by": "bob/c2/jared",
   "parent_page_id": "35bd927c-9792-814c-9281-eee8b4ff62bb",
-  "title": "📦 Repo Registry",
+  "title": "📋 Gist Registry",
   "properties": {
     "Name": { "title": {} },
-    "GitHub URL": { "url": {} },
-    "Language": {
+    "Type": {
       "select": {
         "options": [
-          { "name": "Python", "color": "blue" },
-          { "name": "JavaScript", "color": "yellow" },
-          { "name": "TypeScript", "color": "green" },
-          { "name": "HTML", "color": "orange" },
-          { "name": "Other", "color": "gray" }
+          { "name": "CONTEXT", "color": "blue" },
+          { "name": "SPEC", "color": "green" },
+          { "name": "SCHEMA", "color": "orange" },
+          { "name": "ALERT", "color": "red" },
+          { "name": "IDENTITY", "color": "purple" },
+          { "name": "BRAIN", "color": "pink" }
         ]
       }
     },
-    "Status": {
-      "select": {
-        "options": [
-          { "name": "🟢 Active", "color": "green" },
-          { "name": "🟡 Prototype", "color": "yellow" },
-          { "name": "⚫ Archived", "color": "gray" }
-        ]
-      }
-    },
-    "Track": {
-      "select": {
-        "options": [
-          { "name": "Infrastructure", "color": "brown" },
-          { "name": "AI", "color": "purple" },
-          { "name": "Product", "color": "blue" },
-          { "name": "Demo", "color": "pink" },
-          { "name": "Tools", "color": "orange" }
-        ]
-      }
-    },
-    "Agent Owner": {
+    "Owner": {
       "select": {
         "options": [
           { "name": "Bob", "color": "blue" },
           { "name": "Alice", "color": "pink" },
           { "name": "Charlie", "color": "green" },
-          { "name": "Jared", "color": "purple" }
+          { "name": "Shared", "color": "gray" }
         ]
       }
     },
-    "Description": { "rich_text": {} },
+    "GitHub Path": { "url": {} },
+    "Summary": { "rich_text": {} },
     "Last Updated": { "date": {} }
   }
 }
