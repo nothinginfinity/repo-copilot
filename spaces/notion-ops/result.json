@@ -1,23 +1,12 @@
 {
-  "op": "batch_rows",
-  "requested_by": "alice/c2/jared",
-  "completed_at": "2026-05-09T18:30:15.906Z",
-  "run_id": "25608637936",
+  "op": "append_note",
+  "requested_by": "bob/c2/jared",
+  "completed_at": "2026-05-09T18:51:19.961Z",
+  "run_id": "25609083969",
   "status": "success",
   "error": null,
-  "inserted": 11,
-  "inserted_ids": [
-    "35bd927c-9792-81e0-bf01-c697ab6085f1",
-    "35bd927c-9792-81e9-9406-f02316c5dc00",
-    "35bd927c-9792-81af-8bf0-fe57b5871416",
-    "35bd927c-9792-819d-8540-ee1dddc1eb4f",
-    "35bd927c-9792-8111-a55b-ed5c0ef76c5d",
-    "35bd927c-9792-8148-8bad-c85cc7391d34",
-    "35bd927c-9792-8104-be1e-c2c9fa4405d1",
-    "35bd927c-9792-81e5-9f15-ceb5a1378545",
-    "35bd927c-9792-8186-b33b-cca8ab28d018",
-    "35bd927c-9792-81be-9b1a-d01744cfc12c",
-    "35bd927c-9792-8130-b49a-f6ebd67b5ad0"
-  ],
-  "errors": []
+  "page_id": "35bd927c-9792-8165-acb1-dd409de70aa1",
+  "page_url": "https://www.notion.so/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1",
+  "note_title": "Cleanup audit — 3 Alice items resolved",
+  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f"
 }
