@@ -1,54 +1,32 @@
 {
   "op": "create_database",
-  "requested_by": "alice/c2/jared",
+  "requested_by": "bob/c1/jared",
   "parent_page_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
   "title": "PraX Roadmap",
   "properties": {
-    "Item": { "title": {} },
-    "Phase": {
-      "select": {
-        "options": [
-          { "name": "Phase 0 — Foundation",       "color": "green" },
-          { "name": "Phase 1 — Turn Memory",      "color": "blue" },
-          { "name": "Phase 2 — Three-Agents Demo","color": "purple" },
-          { "name": "Phase 3 — Multi-User",       "color": "orange" },
-          { "name": "Phase 4 — Brain Compression","color": "pink" }
-        ]
-      }
-    },
-    "Status": {
-      "select": {
-        "options": [
-          { "name": "✅ Done",      "color": "green" },
-          { "name": "🔴 Blocked",   "color": "red" },
-          { "name": "🟡 In Progress","color": "yellow" },
-          { "name": "⏳ Pending",   "color": "gray" },
-          { "name": "🔴 Milestone", "color": "red" }
-        ]
-      }
-    },
-    "Priority": {
-      "select": {
-        "options": [
-          { "name": "🔴 Now",     "color": "red" },
-          { "name": "🟡 High",    "color": "yellow" },
-          { "name": "🔵 Medium",  "color": "blue" },
-          { "name": "⚪ Low",     "color": "gray" }
-        ]
-      }
-    },
-    "Owner": {
-      "select": {
-        "options": [
-          { "name": "Alice",   "color": "blue" },
-          { "name": "Bob",     "color": "green" },
-          { "name": "Charlie", "color": "purple" },
-          { "name": "Jared",   "color": "orange" },
-          { "name": "Alice+Bob","color": "pink" }
-        ]
-      }
-    },
-    "Depends On": { "rich_text": {} },
-    "Notes":      { "rich_text": {} }
+    "Title":       { "title": {} },
+    "Phase":       { "select": { "options": [
+                      { "name": "Phase 0", "color": "gray" },
+                      { "name": "Phase 1", "color": "blue" },
+                      { "name": "Phase 2", "color": "green" },
+                      { "name": "Phase 3", "color": "yellow" },
+                      { "name": "Phase 4", "color": "orange" }
+                    ]}},
+    "Status":      { "select": { "options": [
+                      { "name": "✅ Done",     "color": "green" },
+                      { "name": "🔄 Active",   "color": "blue" },
+                      { "name": "⏳ Pending",  "color": "yellow" },
+                      { "name": "🔴 Blocked",  "color": "red" }
+                    ]}},
+    "Owner":       { "select": { "options": [
+                      { "name": "Bob",     "color": "purple" },
+                      { "name": "Alice",   "color": "pink" },
+                      { "name": "Charlie", "color": "brown" },
+                      { "name": "Jared",   "color": "gray" }
+                    ]}},
+    "Track":       { "rich_text": {} },
+    "Depends On":  { "rich_text": {} },
+    "Notes":       { "rich_text": {} },
+    "Commit":      { "url": {} }
   }
 }
