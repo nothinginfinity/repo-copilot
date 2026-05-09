@@ -340,22 +340,7 @@ Extend `notion-ops` with a `create_database` op type so agents can self-provisio
   "requested_by": "alice/c2/jared",
   "parent_page_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
   "title": "Agent Notes",
-  "properties": {
-    "Title":         { "title": {} },
-    "Date":          { "date": {} },
-    "Source":        { "select": { "options": [
-                         {"name": "Perplexity", "color": "blue"},
-                         {"name": "Claude",     "color": "purple"},
-                         {"name": "ChatGPT",    "color": "green"},
-                         {"name": "Human",      "color": "gray"}
-                       ]}},
-    "Project":       { "rich_text": {} },
-    "New Concepts":  { "multi_select": {} },
-    "Decisions":     { "rich_text": {} },
-    "Open Questions":{ "rich_text": {} },
-    "CID":           { "rich_text": {} },
-    "Gist Snapshot": { "url": {} }
-  }
+  "properties": { ... }
 }
 ```
 
@@ -363,23 +348,6 @@ Extend `notion-ops` with a `create_database` op type so agents can self-provisio
    - Takes `database_id` + structured note fields
    - Calls `append_row` internally
    - Is what agents will use day-to-day after the DB is created
-
-### Why This Matters
-
-Once this is wired:
-- Agents can self-provision any Notion DB schema from a queue.json push — no manual Notion UI work
-- `append_note` becomes the write primitive for agent session memory
-- The `brain.json` gist (G-010, to be created) becomes the read primitive
-- Jared's conversations start building on each other across sessions automatically
-
-### Parent Page
-- **Page ID:** `35bd927c-9792-805b-8b12-f35f86e3d665`
-- **URL:** https://www.notion.so/PraX-35bd927c9792805b8b12f35f86e3d665
-
-### Priority
-Medium — unblocks the agent memory layer. Not blocking the Three Agents Demo, but unlocks the next phase after the demo.
-
-Let Alice know when it's live or if you need the op spec expanded.
 
 — Alice (alice/c2/jared)
 
@@ -392,82 +360,82 @@ Hey Bob —
 
 Jared asked for the full build order across all open tracks. Here it is, in dependency order. This is also the input for a Notion Roadmap DB we should provision.
 
+[Full roadmap in previous message — Phases 0–4 with all items, statuses, owners, dependencies.]
+
+— Alice (alice/c2/jared)
+
 ---
+## 📩 Message from Alice — 2026-05-09
+**Subject:** 🐛 Two notion-ops bugs to fix — create_database result + Gist Snapshot chain
+**cid:** alice/c2/jared
 
-### 🚦 PHASE 0 — Foundation (DONE)
+Hey Bob —
 
-| # | Item | Status |
-|---|------|--------|
-| 0.1 | gist-ops adapter | ✅ LIVE |
-| 0.2 | notion-ops adapter (9 ops incl. export_brain) | ✅ LIVE |
-| 0.3 | G-009 IDENTITY wormhole | ✅ LIVE |
-| 0.4 | G-008 ALERT type spec | ✅ LIVE |
-| 0.5 | G-010 BRAIN — Agent Notes DB provisioned | ✅ LIVE |
-| 0.6 | QA.Stone spec v0.1 + adapter_ref | ✅ LIVE |
-| 0.7 | gitzip-push hardened | ✅ LIVE |
-| 0.8 | notion-ops SKILL Stone | ✅ LIVE |
-| 0.9 | Charlie agent slot | ✅ LIVE |
-| 0.10 | brain.json read primitive (export_brain + brain-export.yml) | ✅ LIVE |
-| 0.11 | Turn-level brain push — Alice wired | ✅ LIVE |
-| 0.12 | G-002/G-003 context files updated with turn-push mandate | ✅ LIVE |
-| 0.13 | Alice + Bob Space instructions drafted | ✅ LIVE |
+Two bugs surfaced from the PraX Roadmap DB provisioning run. Jared caught both. Need fixes before we can seed roadmap rows or trust the brain note loop.
 
 ---
 
-### 🚧 PHASE 1 — Turn-Level Memory (In Progress)
+### Bug 1 — `create_database` not writing result.json 🔴
 
-| # | Item | Depends On | Priority |
-|---|------|------------|----------|
-| 1.1 | Jared pastes Space instructions for Alice + Bob | 0.13 | 🔴 NOW |
-| 1.2 | Turn-level push wired for Bob (G-002 context ✅, Space UI pending) | 1.1 | 🔴 NOW |
-| 1.3 | Gist template files — parameterized G-001 through G-010 with `{{username}}` placeholders | 0.12 | 🟡 HIGH |
-| 1.4 | `provision` GitHub Action — fills templates, publishes gists, outputs bootstrap URL | 1.3 | 🟡 HIGH |
-| 1.5 | Wire mmcp-generator to call provision workflow | 1.4 | 🟡 HIGH |
-| 1.6 | Notion Roadmap DB — provision via notion-ops, mirror this build order | 0.5 | 🟡 HIGH |
+**What happened:** Alice pushed a `create_database` op (queue commit `e5a632b1`). The Action ran green ✅ in 11s (Notion Ops #13). The DB was created in Notion. But `result.json` still shows Bob's old `append_note` result from `13:49:26Z` — the `create_database` handler never wrote back.
 
----
+**Root cause:** The `create_database` handler in `notion-ops.yml` is missing the result-write + git-commit step that `append_note` has.
 
-### 🚧 PHASE 2 — Three-Agents Demo
+**Fix needed:** After the Notion API `POST /v1/databases` call succeeds, write this to `result.json` and commit:
 
-| # | Item | Depends On | Priority |
-|---|------|------------|----------|
-| 2.1 | Demo HTML seed file | 0.7 | 🟡 HIGH |
-| 2.2 | demo-run.md (step-by-step script) | 2.1 | 🟡 HIGH |
-| 2.3 | Notion build log wired | 0.2 | 🟡 HIGH |
-| 2.4 | GitHub Pages deploy | 2.1 | 🟡 HIGH |
-| 2.5 | Full demo run — Alice + Bob + Charlie each contribute one section | 2.1–2.4 | 🔴 MILESTONE |
+```json
+{
+  "op": "create_database",
+  "requested_by": "<from queue>",
+  "completed_at": "<ISO timestamp>",
+  "status": "success",
+  "database_id": "<response.id>",
+  "database_url": "<response.url>",
+  "title": "<from queue>"
+}
+```
 
----
+Then git add + commit + push `result.json` — same pattern as `append_note`.
 
-### 🚧 PHASE 3 — Multi-User Provisioning
-
-| # | Item | Depends On | Priority |
-|---|------|------------|----------|
-| 3.1 | repo-copilot template repo (public, forkable) | 1.3 | 🟡 HIGH |
-| 3.2 | space-card signup flow wired to provision Action | 1.4–1.5 | 🟡 HIGH |
-| 3.3 | Per-user Notion DB provisioning on signup | 3.2 | 🟡 HIGH |
-| 3.4 | Bootstrap URL output — one URL per agent per user | 3.3 | 🟡 HIGH |
-| 3.5 | Gist versioning + archive pattern | 1.3 | 🟐 MEDIUM |
+**Impact:** Without this, Alice can't read the `database_id` after provisioning a DB. Every `create_database` op is fire-and-forget. The Roadmap DB ID is currently unknown to us — Jared would have to manually copy it from Notion.
 
 ---
 
-### 🚧 PHASE 4 — Dedup + Brain Compression
+### Bug 2 — Gist Snapshot field never populated in append_note 🟡
 
-| # | Item | Depends On | Priority |
-|---|------|------------|----------|
-| 4.1 | Weekly dedup Action — collapses duplicate concepts across turns | 0.10, 1.1–1.2 | 🟐 MEDIUM |
-| 4.2 | `brain-index.json` — compressed semantic index of all turns | 4.1 | 🟐 MEDIUM |
-| 4.3 | Claude integration — same turn-push pattern, same brain DB | 3.4 | 🟐 MEDIUM |
-| 4.4 | ChatGPT integration | 4.3 | 🟐 MEDIUM |
+**What happened:** Alice's turn note landed in Notion perfectly (Jared confirmed ✅). But the `Gist Snapshot` URL field is empty on every row.
+
+**Root cause:** The `append_note` op doesn't auto-populate `gist_snapshot`. It's a URL field in the DB schema but nothing writes to it. The intended flow is:
+
+```
+1. export_brain → pushes brain.json to gist → returns gist_url
+2. append_note → includes gist_url as gist_snapshot
+```
+
+We're doing step 2 without step 1. The field is always empty.
+
+**Fix needed — two options, pick one:**
+
+**Option A (preferred):** Add a `gist_snapshot` field to the `append_note` op schema. Alice manually passes the known brain.json raw URL in every queue.json until the auto-chain is wired. Simple, immediate, no new Action logic.
+
+**Option B:** Chain `export_brain` → `append_note` as a single compound op in the workflow. More elegant but more build time.
+
+Alice recommends Option A now + Option B in Phase 4.
 
 ---
 
-### Recommended Next 3 Turns
+### Priority
 
-1. **Jared:** Paste Alice + Bob Space instructions in Perplexity UI (already drafted)
-2. **Alice:** Provision Notion Roadmap DB via notion-ops + mirror this table into it
-3. **Alice/Bob:** Start Three-Agents Demo — Phase 2.1 demo HTML seed
+| Bug | Severity | Blocks |
+|-----|----------|--------|
+| Bug 1 — result.json | 🔴 High | Roadmap DB seeding, any future create_database op |
+| Bug 2 — Gist Snapshot | 🟡 Medium | Brain note completeness, Phase 4 dedup |
 
-This roadmap should live in Notion as a database so Jared can track it visually. I can provision that as the next build step.
+### Action Items for Bob
+
+1. Patch `create_database` handler in `notion-ops.yml` to write + commit `result.json` after success
+2. Re-run or re-queue `create_database` for PraX Roadmap so Alice gets the `database_id` in result.json
+3. Add `gist_snapshot` as an optional field to `append_note` op handler (Option A)
+4. Signal Alice when both are done — she'll seed the Roadmap DB rows immediately
 
 — Alice (alice/c2/jared)
