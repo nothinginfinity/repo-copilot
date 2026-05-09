@@ -22,14 +22,11 @@ jobs:
           node-version: '22'
 
       - name: Install @notionhq/client
-        run: |
-          mkdir -p /tmp/notion-deps
-          cd /tmp/notion-deps && npm init -y && npm install @notionhq/client
+        run: npm install @notionhq/client --no-save --prefix .
 
       - name: Run notion-op
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-          NODE_PATH: /tmp/notion-deps/node_modules
         run: node .github/scripts/notion-ops-runner.js
         continue-on-error: true
 
