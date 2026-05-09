@@ -1,0 +1,131 @@
+name: Sync Live Site URLs → Notion
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'   # daily at 6am UTC
+  push:
+    paths:
+      - '.github/workflows/sync-live-sites.yml'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect Pages URLs + patch Notion
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTION_API_KEY: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: 35bd927c-9792-8158-9e5c-e00633385dbe
+          GH_ORG: nothinginfinity
+        run: |
+          python3 - << 'PYEOF'
+          import json, subprocess, os, sys
+
+          GH_TOKEN   = os.environ['GH_TOKEN']
+          NOTION_KEY = os.environ['NOTION_API_KEY']
+          DB_ID      = os.environ['NOTION_DB_ID']
+          ORG        = os.environ['GH_ORG']
+          NOTION_VER = '2022-06-28'
+
+          def gh(path, token=GH_TOKEN):
+              r = subprocess.run([
+                  'curl', '-s',
+                  '-H', f'Authorization: Bearer {token}',
+                  '-H', 'Accept: application/vnd.github+json',
+                  f'https://api.github.com{path}'
+              ], capture_output=True, text=True)
+              return json.loads(r.stdout)
+
+          def notion(method, path, data=None):
+              cmd = ['curl', '-s', '-X', method,
+                  f'https://api.notion.com/v1{path}',
+                  '-H', f'Authorization: Bearer {NOTION_KEY}',
+                  '-H', f'Notion-Version: {NOTION_VER}',
+                  '-H', 'Content-Type: application/json']
+              if data:
+                  cmd += ['-d', json.dumps(data)]
+              r = subprocess.run(cmd, capture_output=True, text=True)
+              return json.loads(r.stdout)
+
+          # ── 1. Fetch all repos for org (paginated) ──────────────────────
+          print('Fetching repos...')
+          repos = []
+          page = 1
+          while True:
+              batch = gh(f'/orgs/{ORG}/repos?per_page=100&page={page}&type=public')
+              if not isinstance(batch, list) or not batch:
+                  break
+              repos.extend(batch)
+              if len(batch) < 100:
+                  break
+              page += 1
+          print(f'Found {len(repos)} repos')
+
+          # ── 2. Build map: github_url → live_site_url ────────────────────
+          live_map = {}  # 'https://github.com/org/repo' -> 'https://org.github.io/repo/'
+          for repo in repos:
+              if repo.get('has_pages'):
+                  gh_url  = repo['html_url']
+                  # Check Pages API for the published URL
+                  pages   = gh(f'/repos/{ORG}/{repo["name"]}/pages')
+                  pub_url = pages.get('html_url') or f'https://{ORG}.github.io/{repo["name"]}/'
+                  live_map[gh_url] = pub_url.rstrip('/') + '/'
+                  print(f'  Pages: {repo["name"]} → {pub_url}')
+
+          print(f'Repos with Pages: {len(live_map)}')
+
+          if not live_map:
+              print('No Pages repos found — nothing to patch.')
+              sys.exit(0)
+
+          # ── 3. Fetch all Notion rows (paginated) ────────────────────────
+          print('Fetching Notion rows...')
+          all_pages = []
+          cursor = None
+          while True:
+              body = {'page_size': 100}
+              if cursor:
+                  body['start_cursor'] = cursor
+              resp = notion('POST', f'/databases/{DB_ID}/query', body)
+              all_pages.extend(resp.get('results', []))
+              if not resp.get('has_more'):
+                  break
+              cursor = resp.get('next_cursor')
+          print(f'Notion rows: {len(all_pages)}')
+
+          # ── 4. Patch matching rows ──────────────────────────────────────
+          ok = failed = skipped = 0
+          for page in all_pages:
+              props   = page.get('properties', {})
+              gh_prop = props.get('GitHub URL', {})
+              gh_url  = gh_prop.get('url')
+              if not gh_url or gh_url not in live_map:
+                  skipped += 1
+                  continue
+              live_url = live_map[gh_url]
+              # Skip if already set to this value
+              current = props.get('Live Site', {}).get('url')
+              if current == live_url:
+                  print(f'  SKIP (no change): {gh_url}')
+                  skipped += 1
+                  continue
+              patch = {'properties': {'Live Site': {'url': live_url}}}
+              result = notion('PATCH', f'/pages/{page["id"]}', patch)
+              if 'id' in result:
+                  print(f'  OK: {gh_url} → {live_url}')
+                  ok += 1
+              else:
+                  print(f'  FAIL: {gh_url} — {result.get("message")}')
+                  failed += 1
+
+          print(f'Done — {ok} patched | {failed} failed | {skipped} skipped')
+          if failed > 0:
+              sys.exit(1)
+          PYEOF
