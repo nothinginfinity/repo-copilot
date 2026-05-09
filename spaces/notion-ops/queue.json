@@ -3,5 +3,5 @@
   "requested_by": "bob/c2/jared",
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
   "description": "Dump first 5 rows raw property values to diagnose GitHub URL format",
-  "_bump": 4
+  "_bump": 5
 }
