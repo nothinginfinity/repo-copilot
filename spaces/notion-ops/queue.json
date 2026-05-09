@@ -13,10 +13,10 @@
                       { "name": "Phase 4", "color": "orange" }
                     ]}},
     "Status":      { "select": { "options": [
-                      { "name": "✅ Done",     "color": "green" },
-                      { "name": "🔄 Active",   "color": "blue" },
-                      { "name": "⏳ Pending",  "color": "yellow" },
-                      { "name": "🔴 Blocked",  "color": "red" }
+                      { "name": "\u2705 Done",     "color": "green" },
+                      { "name": "\ud83d\udd04 Active",   "color": "blue" },
+                      { "name": "\u23f3 Pending",  "color": "yellow" },
+                      { "name": "\ud83d\udd34 Blocked",  "color": "red" }
                     ]}},
     "Owner":       { "select": { "options": [
                       { "name": "Bob",     "color": "purple" },
@@ -29,5 +29,5 @@
     "Notes":       { "rich_text": {} },
     "Commit":      { "url": {} }
   },
-  "_trigger": "retrigger-2"
+  "_trigger": "api-write-test"
 }
