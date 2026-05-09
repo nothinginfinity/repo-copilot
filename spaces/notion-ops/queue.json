@@ -1,93 +1,53 @@
 {
-  "op": "create_page",
+  "op": "create_database",
   "requested_by": "bob/c2/jared",
-  "parent": {
-    "type": "database_id",
-    "database_id": "35bd927c-9792-8125-97a4-cb3422954698"
-  },
+  "parent_page_id": "35bd927c-9792-814c-9281-eee8b4ff62bb",
+  "title": "📦 Repo Registry",
   "properties": {
-    "Name": {
-      "title": [{ "type": "text", "text": { "content": "🏠 PraX Hub" } }]
-    },
-    "Phase": { "select": { "name": "Phase 0" } },
-    "Status": { "select": { "name": "✅ Done" } },
-    "Owner": { "select": { "name": "Bob" } },
-    "Track": { "select": { "name": "Infrastructure" } },
-    "Type": { "select": { "name": "Task" } },
-    "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "—" } }] },
-    "Commit": { "rich_text": [{ "type": "text", "text": { "content": "" } }] }
-  },
-  "children": [
-    {
-      "object": "block",
-      "type": "callout",
-      "callout": {
-        "rich_text": [{ "type": "text", "text": { "content": "PraX Hub — agent-writable mission control. All repos, roadmaps, gists, and agent notes linked here. Updated by Bob · Alice · Charlie via notion-ops." } }],
-        "icon": { "type": "emoji", "emoji": "🧭" },
-        "color": "gray_background"
+    "Name": { "title": {} },
+    "GitHub URL": { "url": {} },
+    "Language": {
+      "select": {
+        "options": [
+          { "name": "Python", "color": "blue" },
+          { "name": "JavaScript", "color": "yellow" },
+          { "name": "TypeScript", "color": "green" },
+          { "name": "HTML", "color": "orange" },
+          { "name": "Other", "color": "gray" }
+        ]
       }
     },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "📦 Repo Registry" } }]
+    "Status": {
+      "select": {
+        "options": [
+          { "name": "🟢 Active", "color": "green" },
+          { "name": "🟡 Prototype", "color": "yellow" },
+          { "name": "⚫ Archived", "color": "gray" }
+        ]
       }
     },
-    {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [{ "type": "text", "text": { "content": "All 88 nothinginfinity repos. Seeded and maintained by Bob via notion-ops batch_rows." } }]
+    "Track": {
+      "select": {
+        "options": [
+          { "name": "Infrastructure", "color": "brown" },
+          { "name": "AI", "color": "purple" },
+          { "name": "Product", "color": "blue" },
+          { "name": "Demo", "color": "pink" },
+          { "name": "Tools", "color": "orange" }
+        ]
       }
     },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "🗺️ PraX Roadmap v2" } }]
+    "Agent Owner": {
+      "select": {
+        "options": [
+          { "name": "Bob", "color": "blue" },
+          { "name": "Alice", "color": "pink" },
+          { "name": "Charlie", "color": "green" },
+          { "name": "Jared", "color": "purple" }
+        ]
       }
     },
-    {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [{
-          "type": "text",
-          "text": { "content": "Roadmap DB ID: 35bd927c-9792-8125-97a4-cb3422954698" }
-        }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "🧠 Agent Notes" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [{
-          "type": "text",
-          "text": { "content": "Agent Notes DB ID: 35bd927c-9792-81b9-816a-e357c9339d2f" }
-        }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "heading_2",
-      "heading_2": {
-        "rich_text": [{ "type": "text", "text": { "content": "📋 Gist Registry" } }]
-      }
-    },
-    {
-      "object": "block",
-      "type": "paragraph",
-      "paragraph": {
-        "rich_text": [{ "type": "text", "text": { "content": "G-001 through G-010. Context gists, specs, schemas, alerts, identity. Seeded next turn." } }]
-      }
-    }
-  ]
+    "Description": { "rich_text": {} },
+    "Last Updated": { "date": {} }
+  }
 }
