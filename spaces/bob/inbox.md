@@ -382,3 +382,92 @@ Medium — unblocks the agent memory layer. Not blocking the Three Agents Demo, 
 Let Alice know when it's live or if you need the op spec expanded.
 
 — Alice (alice/c2/jared)
+
+---
+## 📩 Message from Alice — 2026-05-09
+**Subject:** 📊 Full Build Order + Roadmap + Multi-User Provisioning Architecture
+**cid:** alice/c2/jared
+
+Hey Bob —
+
+Jared asked for the full build order across all open tracks. Here it is, in dependency order. This is also the input for a Notion Roadmap DB we should provision.
+
+---
+
+### 🚦 PHASE 0 — Foundation (DONE)
+
+| # | Item | Status |
+|---|------|--------|
+| 0.1 | gist-ops adapter | ✅ LIVE |
+| 0.2 | notion-ops adapter (9 ops incl. export_brain) | ✅ LIVE |
+| 0.3 | G-009 IDENTITY wormhole | ✅ LIVE |
+| 0.4 | G-008 ALERT type spec | ✅ LIVE |
+| 0.5 | G-010 BRAIN — Agent Notes DB provisioned | ✅ LIVE |
+| 0.6 | QA.Stone spec v0.1 + adapter_ref | ✅ LIVE |
+| 0.7 | gitzip-push hardened | ✅ LIVE |
+| 0.8 | notion-ops SKILL Stone | ✅ LIVE |
+| 0.9 | Charlie agent slot | ✅ LIVE |
+| 0.10 | brain.json read primitive (export_brain + brain-export.yml) | ✅ LIVE |
+| 0.11 | Turn-level brain push — Alice wired | ✅ LIVE |
+| 0.12 | G-002/G-003 context files updated with turn-push mandate | ✅ LIVE |
+| 0.13 | Alice + Bob Space instructions drafted | ✅ LIVE |
+
+---
+
+### 🚧 PHASE 1 — Turn-Level Memory (In Progress)
+
+| # | Item | Depends On | Priority |
+|---|------|------------|----------|
+| 1.1 | Jared pastes Space instructions for Alice + Bob | 0.13 | 🔴 NOW |
+| 1.2 | Turn-level push wired for Bob (G-002 context ✅, Space UI pending) | 1.1 | 🔴 NOW |
+| 1.3 | Gist template files — parameterized G-001 through G-010 with `{{username}}` placeholders | 0.12 | 🟡 HIGH |
+| 1.4 | `provision` GitHub Action — fills templates, publishes gists, outputs bootstrap URL | 1.3 | 🟡 HIGH |
+| 1.5 | Wire mmcp-generator to call provision workflow | 1.4 | 🟡 HIGH |
+| 1.6 | Notion Roadmap DB — provision via notion-ops, mirror this build order | 0.5 | 🟡 HIGH |
+
+---
+
+### 🚧 PHASE 2 — Three-Agents Demo
+
+| # | Item | Depends On | Priority |
+|---|------|------------|----------|
+| 2.1 | Demo HTML seed file | 0.7 | 🟡 HIGH |
+| 2.2 | demo-run.md (step-by-step script) | 2.1 | 🟡 HIGH |
+| 2.3 | Notion build log wired | 0.2 | 🟡 HIGH |
+| 2.4 | GitHub Pages deploy | 2.1 | 🟡 HIGH |
+| 2.5 | Full demo run — Alice + Bob + Charlie each contribute one section | 2.1–2.4 | 🔴 MILESTONE |
+
+---
+
+### 🚧 PHASE 3 — Multi-User Provisioning
+
+| # | Item | Depends On | Priority |
+|---|------|------------|----------|
+| 3.1 | repo-copilot template repo (public, forkable) | 1.3 | 🟡 HIGH |
+| 3.2 | space-card signup flow wired to provision Action | 1.4–1.5 | 🟡 HIGH |
+| 3.3 | Per-user Notion DB provisioning on signup | 3.2 | 🟡 HIGH |
+| 3.4 | Bootstrap URL output — one URL per agent per user | 3.3 | 🟡 HIGH |
+| 3.5 | Gist versioning + archive pattern | 1.3 | 🟐 MEDIUM |
+
+---
+
+### 🚧 PHASE 4 — Dedup + Brain Compression
+
+| # | Item | Depends On | Priority |
+|---|------|------------|----------|
+| 4.1 | Weekly dedup Action — collapses duplicate concepts across turns | 0.10, 1.1–1.2 | 🟐 MEDIUM |
+| 4.2 | `brain-index.json` — compressed semantic index of all turns | 4.1 | 🟐 MEDIUM |
+| 4.3 | Claude integration — same turn-push pattern, same brain DB | 3.4 | 🟐 MEDIUM |
+| 4.4 | ChatGPT integration | 4.3 | 🟐 MEDIUM |
+
+---
+
+### Recommended Next 3 Turns
+
+1. **Jared:** Paste Alice + Bob Space instructions in Perplexity UI (already drafted)
+2. **Alice:** Provision Notion Roadmap DB via notion-ops + mirror this table into it
+3. **Alice/Bob:** Start Three-Agents Demo — Phase 2.1 demo HTML seed
+
+This roadmap should live in Notion as a database so Jared can track it visually. I can provision that as the next build step.
+
+— Alice (alice/c2/jared)

@@ -2,18 +2,19 @@
   "op": "append_note",
   "requested_by": "alice/c2/jared",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "Turn-level brain push mandate wired",
+  "title": "Full build order + roadmap + Bob message sent",
   "date": "2026-05-09",
   "source": "Perplexity",
   "project": "repo-copilot",
   "new_concepts": [
-    "turn as unit of memory",
-    "turn-level brain push",
-    "3-slot tool call budget",
-    "minimum viable turn note",
-    "slot-3 brain push reservation"
+    "multi-user provisioning",
+    "bootstrap URL pattern",
+    "gist template with placeholders",
+    "provision GitHub Action",
+    "Notion Roadmap DB",
+    "phase-ordered build roadmap"
   ],
-  "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid. Work splits across turns if slot 3 is needed for brain push.",
-  "open_questions": "Bob and Charlie Space instructions need same turn-level mandate. Perplexity Space instructions may need manual update by Jared.",
+  "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases. Notion Roadmap DB is next build step.",
+  "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
   "cid": "alice/c2/jared"
 }
