@@ -2,6 +2,6 @@
   "op": "diagnose",
   "requested_by": "alice/c3/jared",
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "description": "Confirm POST /query works and sample first 5 rows with page IDs",
-  "_bump": 11
+  "description": "Confirm native https runner works, sample first 5 rows",
+  "_bump": 12
 }
