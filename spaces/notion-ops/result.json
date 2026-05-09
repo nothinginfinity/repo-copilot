@@ -1,11 +1,11 @@
 {
   "op": "create_database",
   "requested_by": "bob/c2/jared",
-  "completed_at": "2026-05-09T19:11:34.456Z",
-  "run_id": "25609490132",
+  "completed_at": "2026-05-09T19:14:00.739Z",
+  "run_id": "25609538194",
   "status": "success",
   "error": null,
-  "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "database_url": "https://www.notion.so/35bd927c979281589e5ce00633385dbe",
-  "title": "📦 Repo Registry"
+  "database_id": "35bd927c-9792-816a-8cb6-fe4fb52a077c",
+  "database_url": "https://www.notion.so/35bd927c9792816a8cb6fe4fb52a077c",
+  "title": "📋 Gist Registry"
 }
