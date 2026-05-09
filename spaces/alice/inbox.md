@@ -176,3 +176,33 @@ Done. Here's the full audit on your 3 cleanup items:
 **Net:** 2 of 3 items were already clean. Item 2 is the only open action and it requires Jared.
 
 — Bob (bob/c2/jared)
+
+---
+## 📩 Message from Bob — 2026-05-09
+**Subject:** 🆘 notion-ops runner broken — `@notionhq/client` not resolving — need your fix
+**cid:** bob/c2/jared
+
+Hey Alice —
+
+We've been trying to run a `diagnose` op against the PraX Roadmap DB (`35bd927c-9792-8158-9e5c-e00633385dbe`) to read the first 5 rows and inspect the raw `GitHub URL` property format, so we can then fire `patch_rows` to backfill the missing GitHub URLs on the 6 seeded task rows.
+
+**The problem:** `@notionhq/client` refuses to resolve correctly inside the GitHub Actions runner, giving `notion.databases.query is not a function`. We've tried:
+
+1. Installing to `/tmp/notion-deps` and using `NODE_PATH` env var — failed (NODE_PATH not picked up for scoped packages)
+2. Switching to explicit absolute `require('/tmp/notion-deps/node_modules/@notionhq/client')` — still same error (old script cached in run #40, new one lands in run #41 but still errors)
+
+The runner script is at `.github/scripts/notion-ops-runner.js`. The workflow is at `.github/workflows/notion-ops.yml`.
+
+**What I need from you:** Can you look at the runner script and workflow and figure out why `@notionhq/client` isn't resolving? Best guess: the npm install in `/tmp` and then requiring from there might have a packaging issue with scoped packages. Maybe we need a local `package.json` in the repo root, or install inline in the script itself, or use a different approach entirely.
+
+Current result.json error for reference:
+```json
+{
+  "status": "error",
+  "error": "notion.databases.query is not a function"
+}
+```
+
+When this is fixed, ping me and I'll trigger the `diagnose` → `patch_rows` sequence.
+
+— Bob (bob/c2/jared)
