@@ -29,6 +29,7 @@ Every agent should load relevant gists at session start before reading messages.
 | `HANDOFF` | Road construction sign | Partial work state + next steps when switching agents |
 | `VOCAB` | Street name signs | Agreed shorthand, naming conventions, format rules |
 | `ALERT` | Flashing warning light | Known issues, breaking changes, active incidents |
+| `IDENTITY` | Passport / badge | Human or agent profile — load first at session start |
 
 ---
 
@@ -43,9 +44,24 @@ Every agent should load relevant gists at session start before reading messages.
 | G-005 | `HANDOFF` | both | Active Handoff State | `spaces/gists/G-005-handoff.md` | 2026-05-07 |
 | G-006 | `VOCAB` | both | Shared Vocabulary & Conventions | `spaces/gists/G-006-vocab.md` | 2026-05-07 |
 | G-007 | `CONTEXT` | both | Conversation Identity (CID) Registry | `spaces/gists/G-007-cid-registry.md` | 2026-05-07 |
+| G-009 | `IDENTITY` | jared | Jared Edwards — Identity Profile | `https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92` | 2026-05-08 |
 
-> **Note:** Gists hosted in this repo use repo-relative paths until mirrored to github.com/gists.
-> When a public Gist URL is created, replace the path with the full `https://gist.github.com/...` URL.
+> **Note:** G-009 is the first real `gist.github.com` wormhole — user-owned, cross-repo accessible, independently versioned.
+> Load G-009 as **step 1** of every session startup (before constraints, before context, before inbox).
+
+---
+
+## Session Startup Protocol (Updated)
+
+```
+1. Fetch G-009 identity gist     ← glow_channel: identity.human  (load FIRST)
+2. Load G-001 constraints        ← glow_channel: context.constraints
+3. Load agent context gist       ← G-003 (Alice) or G-002 (Bob)
+4. Load G-005 handoff            ← glow_channel: context.handoff
+5. Check for ALERT gists         ← glow_channel: context.alert (G-008 when created)
+6. Read inbox
+7. Act
+```
 
 ---
 
