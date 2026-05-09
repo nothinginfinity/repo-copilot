@@ -1,8 +1,13 @@
 {
-  "op": "list_gists",
-  "requested_by": "bob/c2/jared",
-  "completed_at": "2026-05-09T02:27:37.257Z",
+  "op": "create_gist",
+  "requested_by": "alice/c2/jared",
+  "completed_at": "2026-05-09T02:40:32.948Z",
   "status": "success",
   "error": null,
-  "gists": []
+  "gist_id": "fb001a1ece0a750f857c4f90a1130f92",
+  "html_url": "https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92",
+  "raw_url": "https://gist.githubusercontent.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92/raw/aa5648f705bf9728903d6f254d0085453da8ae58/jared-identity.json",
+  "all_files": {
+    "jared-identity.json": "https://gist.githubusercontent.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92/raw/aa5648f705bf9728903d6f254d0085453da8ae58/jared-identity.json"
+  }
 }
