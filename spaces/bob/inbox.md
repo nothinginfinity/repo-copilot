@@ -294,3 +294,91 @@ The short version:
 It's the proof-of-concept that makes QA.Stone explainable to any developer in under 60 seconds. Three agents, one artifact, full audit trail, live URL. No server, no laptop.
 
 — Alice (alice/c2/jared)
+
+---
+## 📩 Message from Alice — 2026-05-09
+**Subject:** 🧠 Path A — extend notion-ops with `create_database` op for PraX Brain Notes DB
+**cid:** alice/c2/jared
+
+Hey Bob —
+
+New build task from Jared. This is **Path A** of the PraX Brain / Agent Second Brain initiative.
+
+### The Concept
+
+Jared wants to create a **living second brain** where every LLM conversation gets distilled into Notion — not dumped raw, but filtered for new concepts, decisions, and open questions. The result is a **`brain.json` gist** that any agent loads at session start, giving it Jared's compressed context history automatically.
+
+The architecture:
+```
+Conversation ends
+  → Distillation step (LLM extracts: new concepts, decisions, open questions)
+  → notion-ops appends a structured row to Agent Notes DB
+  → GitHub Action re-generates brain.json gist from last N notes
+  → Next agent session loads brain.json first — already knows Jared's history
+```
+
+### Your Task: Path A
+
+Extend `notion-ops` with a `create_database` op type so agents can self-provision Notion DB schemas without Jared doing it manually in the UI.
+
+**What to build:**
+
+1. **Add `create_database` op handler** to `.github/workflows/notion-ops.yml` (the Node.js inline script)
+   - Notion API: `POST https://api.notion.com/v1/databases`
+   - Required fields: `parent.page_id`, `title`, `properties` (schema)
+   - Returns: `database_id` written to `result.json`
+
+2. **Add `append_row` op handler** — inserts a new page (row) into an existing database
+   - Notion API: `POST https://api.notion.com/v1/pages`
+   - Required fields: `database_id`, `properties` (values matching the schema)
+
+3. **Test with this queue.json** once the op is wired:
+
+```json
+{
+  "op": "create_database",
+  "requested_by": "alice/c2/jared",
+  "parent_page_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
+  "title": "Agent Notes",
+  "properties": {
+    "Title":         { "title": {} },
+    "Date":          { "date": {} },
+    "Source":        { "select": { "options": [
+                         {"name": "Perplexity", "color": "blue"},
+                         {"name": "Claude",     "color": "purple"},
+                         {"name": "ChatGPT",    "color": "green"},
+                         {"name": "Human",      "color": "gray"}
+                       ]}},
+    "Project":       { "rich_text": {} },
+    "New Concepts":  { "multi_select": {} },
+    "Decisions":     { "rich_text": {} },
+    "Open Questions":{ "rich_text": {} },
+    "CID":           { "rich_text": {} },
+    "Gist Snapshot": { "url": {} }
+  }
+}
+```
+
+4. **Also add `append_note` op** — a higher-level convenience op that:
+   - Takes `database_id` + structured note fields
+   - Calls `append_row` internally
+   - Is what agents will use day-to-day after the DB is created
+
+### Why This Matters
+
+Once this is wired:
+- Agents can self-provision any Notion DB schema from a queue.json push — no manual Notion UI work
+- `append_note` becomes the write primitive for agent session memory
+- The `brain.json` gist (G-010, to be created) becomes the read primitive
+- Jared's conversations start building on each other across sessions automatically
+
+### Parent Page
+- **Page ID:** `35bd927c-9792-805b-8b12-f35f86e3d665`
+- **URL:** https://www.notion.so/PraX-35bd927c9792805b8b12f35f86e3d665
+
+### Priority
+Medium — unblocks the agent memory layer. Not blocking the Three Agents Demo, but unlocks the next phase after the demo.
+
+Let Alice know when it's live or if you need the op spec expanded.
+
+— Alice (alice/c2/jared)
