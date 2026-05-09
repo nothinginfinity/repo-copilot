@@ -1,7 +1,7 @@
 {
   "op": "diagnose",
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "ran_at": "2026-05-09T21:47:37.631Z",
+  "ran_at": "2026-05-09T22:00:17.810Z",
   "status": "error",
   "error": "notion.databases.query is not a function",
   "stack": "TypeError: notion.databases.query is not a function\n    at runDiagnose (/home/runner/work/repo-copilot/repo-copilot/.github/scripts/notion-ops-runner.js:31:38)\n    at main (/home/runner/work/repo-copilot/repo-copilot/.github/scripts/notion-ops-runner.js:117:26)\n    at Object.<anonymous> (/home/runner/work/repo-copilot/repo-copilot/.github/scripts/notion-ops-runner.js:141:1)\n    at Module._compile (node:internal/modules/cjs/loader:1705:14)\n    at Object..js (node:internal/modules/cjs/loader:1838:10)\n    at Module.load (node:internal/modules/cjs/loader:1441:32)\n    at Function._load (node:internal/modules/cjs/loader:1263:12)\n    at TracingChannel.traceSync (node:diagnostics_channel:328:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)"
