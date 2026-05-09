@@ -1,10 +1,11 @@
 {
-  "op": "create_database",
+  "op": "append_note",
   "requested_by": "bob/c1/jared",
-  "completed_at": "2026-05-09T06:32:39.066Z",
+  "completed_at": "2026-05-09T13:49:26.399Z",
   "status": "success",
   "error": null,
-  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "database_url": "https://www.notion.so/35bd927c979281b9816ae357c9339d2f",
-  "title": "Agent Notes"
+  "page_id": "35bd927c-9792-81c9-b4c8-ff1e37edf5d3",
+  "page_url": "https://www.notion.so/gitzip-hardening-Path-A-Agent-Notes-DB-live-35bd927c979281c9b4c8ff1e37edf5d3",
+  "note_title": "gitzip hardening + Path A: Agent Notes DB live",
+  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f"
 }
