@@ -1,8 +1,7 @@
-const { Client } = require('@notionhq/client');
+const { Client } = require('/tmp/notion-deps/node_modules/@notionhq/client');
 const fs = require('fs');
 
 console.log('=== notion-ops-runner start ===');
-console.log('NODE_PATH:', process.env.NODE_PATH);
 console.log('API key present:', !!process.env.NOTION_API_KEY);
 console.log('API key length:', (process.env.NOTION_API_KEY || '').length);
 
@@ -10,6 +9,7 @@ const queue = JSON.parse(fs.readFileSync('spaces/notion-ops/queue.json', 'utf8')
 console.log('op:', queue.op, '| db:', queue.database_id);
 
 const notion = new Client({ auth: process.env.NOTION_API_KEY });
+console.log('Notion client created:', typeof notion.databases);
 
 async function getAllPages(dbId) {
   let pages = [];
@@ -150,7 +150,5 @@ main().catch(err => {
     stack: err.stack
   };
   fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
-  console.error('Wrote error to result.json — will be committed by next step');
-  // exit 0 so the workflow continues to commit result.json
   process.exit(0);
 });
