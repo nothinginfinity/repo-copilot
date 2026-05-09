@@ -1,8 +1,8 @@
 {
   "op": "diagnose",
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "ran_at": "2026-05-09T22:22:36.000Z",
+  "ran_at": "2026-05-09T22:32:49.000Z",
   "requested_by": "alice/c3/jared",
   "status": "error",
-  "error": "Notion API error: Invalid request URL."
+  "error": "Notion API error: API token is invalid."
 }
