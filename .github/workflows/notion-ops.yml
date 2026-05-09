@@ -53,8 +53,6 @@ jobs:
               });
             }
 
-            // run_id ensures result.json always differs from prior content
-            // so git diff always sees a real change and commits
             let result = {
               op: queue.op,
               requested_by: queue.requested_by,
@@ -304,5 +302,7 @@ jobs:
         run: |
           git config user.name "notion-ops[bot]"
           git config user.email "notion-ops@nothinginfinity.bot"
+          git pull --rebase origin main
           git add spaces/notion-ops/result.json spaces/gists/brain.json || true
-          git diff --cached --quiet && echo "no changes" || git commit -m "chore(notion-ops): write result [skip ci]" && git push
+          git diff --cached --quiet || git commit -m "chore(notion-ops): write result [skip ci]"
+          git push origin main
