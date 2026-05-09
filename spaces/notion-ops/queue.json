@@ -1,13 +1,93 @@
 {
-  "op": "append_note",
+  "op": "create_page",
   "requested_by": "bob/c2/jared",
-  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "archive_block op added to notion-ops",
-  "date": "2026-05-09",
-  "source": "Perplexity",
-  "project": "repo-copilot",
-  "new_concepts": ["archive_block", "notion-ops-soft-delete", "unarchive-support"],
-  "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true; unarchive boolean supported",
-  "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
-  "cid": "bob/c2/jared"
+  "parent": {
+    "type": "database_id",
+    "database_id": "35bd927c-9792-8125-97a4-cb3422954698"
+  },
+  "properties": {
+    "Name": {
+      "title": [{ "type": "text", "text": { "content": "🏠 PraX Hub" } }]
+    },
+    "Phase": { "select": { "name": "Phase 0" } },
+    "Status": { "select": { "name": "✅ Done" } },
+    "Owner": { "select": { "name": "Bob" } },
+    "Track": { "select": { "name": "Infrastructure" } },
+    "Type": { "select": { "name": "Task" } },
+    "Depends On": { "rich_text": [{ "type": "text", "text": { "content": "—" } }] },
+    "Commit": { "rich_text": [{ "type": "text", "text": { "content": "" } }] }
+  },
+  "children": [
+    {
+      "object": "block",
+      "type": "callout",
+      "callout": {
+        "rich_text": [{ "type": "text", "text": { "content": "PraX Hub — agent-writable mission control. All repos, roadmaps, gists, and agent notes linked here. Updated by Bob · Alice · Charlie via notion-ops." } }],
+        "icon": { "type": "emoji", "emoji": "🧭" },
+        "color": "gray_background"
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [{ "type": "text", "text": { "content": "📦 Repo Registry" } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [{ "type": "text", "text": { "content": "All 88 nothinginfinity repos. Seeded and maintained by Bob via notion-ops batch_rows." } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [{ "type": "text", "text": { "content": "🗺️ PraX Roadmap v2" } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [{
+          "type": "text",
+          "text": { "content": "Roadmap DB ID: 35bd927c-9792-8125-97a4-cb3422954698" }
+        }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [{ "type": "text", "text": { "content": "🧠 Agent Notes" } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [{
+          "type": "text",
+          "text": { "content": "Agent Notes DB ID: 35bd927c-9792-81b9-816a-e357c9339d2f" }
+        }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "heading_2",
+      "heading_2": {
+        "rich_text": [{ "type": "text", "text": { "content": "📋 Gist Registry" } }]
+      }
+    },
+    {
+      "object": "block",
+      "type": "paragraph",
+      "paragraph": {
+        "rich_text": [{ "type": "text", "text": { "content": "G-001 through G-010. Context gists, specs, schemas, alerts, identity. Seeded next turn." } }]
+      }
+    }
+  ]
 }
