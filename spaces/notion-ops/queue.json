@@ -4,294 +4,284 @@
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
   "rows": [
     {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-network-manager" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-network-manager" },
-      "Language":    { "select": { "name": "Other" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Mobile PWA for managing the studio-os Space network — one-button GitHub repo creation, mailbox setup, NETWORK.md registry updates, and Perplexity Space instruction generation." } }] },
-      "Last Updated": { "date": { "start": "2026-04-24" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "prax-gpt-specs" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/prax-gpt-specs" },
-      "Language":    { "select": { "name": "Other" } },
-      "Status":      { "select": { "name": "🟡 Prototype" } },
-      "Track":       { "select": { "name": "AI" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "PraX GPT specifications" } }] },
-      "Last Updated": { "date": { "start": "2026-04-04" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "llm-native-inbox-v4z" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/llm-native-inbox-v4z" },
+      "Name":        { "title": [{ "type": "text", "text": { "content": "acp-websocket" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/acp-websocket" },
       "Language":    { "select": { "name": "Python" } },
       "Status":      { "select": { "name": "⚫ Archived" } },
       "Track":       { "select": { "name": "Infrastructure" } },
       "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "LLM-native inbox with V4Z archive compression (cross-file vault deduplication)" } }] },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "WebSocket transport for ACP Protocol - Real-time bidirectional agent communication" } }] },
       "Last Updated": { "date": { "start": "2026-02-03" } }
     },
     {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-os-harness-template" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-os-harness-template" },
-      "Language":    { "select": { "name": "Other" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Studio OS harness template — forkable repo bundling system prompts, tools, skills, webhooks and automations as a complete portable AI harness" } }] },
-      "Last Updated": { "date": { "start": "2026-04-21" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "prax-mesh" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/prax-mesh" },
-      "Language":    { "select": { "name": "Other" } },
+      "Name":        { "title": [{ "type": "text", "text": { "content": "Studio-OS-Chat" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/Studio-OS-Chat" },
+      "Language":    { "select": { "name": "TypeScript" } },
       "Status":      { "select": { "name": "🟢 Active" } },
       "Track":       { "select": { "name": "Product" } },
       "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Federated Agentic Commerce Network — connects niche LLM sales chat rooms, operator forums, and a cross-vertical mesh broker with commission splits" } }] },
-      "Last Updated": { "date": { "start": "2026-04-14" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "phone-studio-game" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/phone-studio-game" },
-      "Language":    { "select": { "name": "Python" } },
-      "Status":      { "select": { "name": "🟡 Prototype" } },
-      "Track":       { "select": { "name": "Demo" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "A mobile-first PWA game for Phone Studio — multi-LLM hat-switching content creation arena" } }] },
-      "Last Updated": { "date": { "start": "2026-04-17" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "ztgi-ui-v4z" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/ztgi-ui-v4z" },
-      "Language":    { "select": { "name": "JavaScript" } },
-      "Status":      { "select": { "name": "⚫ Archived" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "ztgi-ui frontend with V4Z browser compression" } }] },
-      "Last Updated": { "date": { "start": "2026-02-03" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "home-equity-calculator" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/home-equity-calculator" },
-      "Language":    { "select": { "name": "JavaScript" } },
-      "Status":      { "select": { "name": "🟡 Prototype" } },
-      "Track":       { "select": { "name": "Demo" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Interactive dashboard comparing Home Equity Investments (HEI) vs Home Equity Loans vs HELOCs" } }] },
-      "Last Updated": { "date": { "start": "2026-02-05" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "mmcp-api" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/mmcp-api" },
-      "Language":    { "select": { "name": "JavaScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "MMCP API — Cloudflare Worker that gives any LLM direct access to GitHub repos without a connector tool. The kernel of the Mobile Model Context Protocol." } }] },
-      "Last Updated": { "date": { "start": "2026-05-02" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "skill-routing.md" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/skill-routing.md" },
-      "Language":    { "select": { "name": "Other" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "AI" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "A community protocol for skill routing in LLM systems — attention budgeting, progressive disclosure, and decomposition patterns for skills that actually scale." } }] },
-      "Last Updated": { "date": { "start": "2026-04-24" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-os" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-os" },
-      "Language":    { "select": { "name": "HTML" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "The operating system for nothinginfinity's AI studio — master index, repo cards, shared standards, and cross-space context for all Perplexity Spaces." } }] },
-      "Last Updated": { "date": { "start": "2026-04-18" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-os-spaces" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-os-spaces" },
-      "Language":    { "select": { "name": "TypeScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Multi-space coordination layer for Studio-OS — GitHub-backed mailboxes, signed envelopes, and space registry for Perplexity Space orchestration" } }] },
-      "Last Updated": { "date": { "start": "2026-04-23" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "skill-bench.md" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/skill-bench.md" },
-      "Language":    { "select": { "name": "TypeScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "AI" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Routing fidelity benchmark for skill-routing.md compatible systems — 200 nano skills, each emitting a unique token to prove the router selected the right one." } }] },
-      "Last Updated": { "date": { "start": "2026-04-27" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "tigerturf-dataset" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/tigerturf-dataset" },
-      "Language":    { "select": { "name": "Python" } },
-      "Status":      { "select": { "name": "🟡 Prototype" } },
-      "Track":       { "select": { "name": "Demo" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "TigerTurf dataset — satellite capture automation, yard archetypes, sales knowledge base" } }] },
-      "Last Updated": { "date": { "start": "2026-02-15" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "slopcairn" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/slopcairn" },
-      "Language":    { "select": { "name": "Python" } },
-      "Status":      { "select": { "name": "🟡 Prototype" } },
-      "Track":       { "select": { "name": "Tools" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Slopcairn" } }] },
-      "Last Updated": { "date": { "start": "2026-04-04" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "acp-protocol" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/acp-protocol" },
-      "Language":    { "select": { "name": "Python" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Agent Communication Protocol - TCP-like communication for LLM agents using MCP as transport" } }] },
-      "Last Updated": { "date": { "start": "2026-02-03" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "llm-native-inbox-v4" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/llm-native-inbox-v4" },
-      "Language":    { "select": { "name": "Python" } },
-      "Status":      { "select": { "name": "⚫ Archived" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "LLM-native inbox with V4 FSL semantic compression (8-70x token reduction)" } }] },
-      "Last Updated": { "date": { "start": "2026-02-03" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "lawyers_and_dragons-v4z" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/lawyers_and_dragons-v4z" },
-      "Language":    { "select": { "name": "Python" } },
-      "Status":      { "select": { "name": "⚫ Archived" } },
-      "Track":       { "select": { "name": "Demo" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Lawyers & Dragons legal AI platform with V4Z compression" } }] },
-      "Last Updated": { "date": { "start": "2026-02-03" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "infinitypaste-v2" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/infinitypaste-v2" },
-      "Language":    { "select": { "name": "JavaScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Product" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "InfinityPaste v2 — Phone-first PWA with Phase 5 features" } }] },
-      "Last Updated": { "date": { "start": "2026-04-13" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "m-mcp-rss" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/m-mcp-rss" },
-      "Language":    { "select": { "name": "TypeScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "RSS adapter for the m-mcp protocol. Ingests RSS feeds into SignedEnvelopes. Emits agent output as subscribable RSS." } }] },
-      "Last Updated": { "date": { "start": "2026-04-22" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "m-mcp" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/m-mcp" },
-      "Language":    { "select": { "name": "TypeScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Mobile-native capability protocol runtime for workers, tools, envelopes, and bounded orchestration." } }] },
-      "Last Updated": { "date": { "start": "2026-04-21" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "gitzip-push" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/gitzip-push" },
-      "Language":    { "select": { "name": "HTML" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Tools" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Push large files to any GitHub repo via the .gitzip maildrop pattern — pack, push, unpack." } }] },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "React + Vite PWA that talks to Ollama locally — installable PWA shell, streaming chat, local persistence, model selection, and extensible tool layer." } }] },
       "Last Updated": { "date": { "start": "2026-05-06" } }
     },
     {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-os-spec-repo-template" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-os-spec-repo-template" },
-      "Language":    { "select": { "name": "Other" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Template for Studio OS conversation-derived spec repos — structured memory, provenance, prompt lineage, and optional artifact/code generation." } }] },
-      "Last Updated": { "date": { "start": "2026-04-20" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "mmcp-inbox-router" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/mmcp-inbox-router" },
-      "Language":    { "select": { "name": "TypeScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Infrastructure" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "GitHub-native MMCP message router — reads inbox ledgers, classifies envelopes deterministically, and dispatches actions (issues, threads, status, CI triggers). The Phase 1 engine core of pocket-agent-engine." } }] },
-      "Last Updated": { "date": { "start": "2026-04-28" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "git-bridge-agent" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/git-bridge-agent" },
-      "Language":    { "select": { "name": "JavaScript" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "Tools" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "A drop-in commit/push button for any PWA or web app. No server needed — runs entirely from the browser using GitHub API + localStorage PAT. Works from iPhone Safari." } }] },
-      "Last Updated": { "date": { "start": "2026-04-11" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "prompt-sharding" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/prompt-sharding" },
-      "Language":    { "select": { "name": "HTML" } },
-      "Status":      { "select": { "name": "🟢 Active" } },
-      "Track":       { "select": { "name": "AI" } },
-      "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Prompt Sharding — a distributed trust protocol for AI workflows. Segments LLM context across multiple providers so no single model sees the complete picture." } }] },
-      "Last Updated": { "date": { "start": "2026-04-29" } }
-    },
-    {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "llm-native-inbox-v7" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/llm-native-inbox-v7" },
+      "Name":        { "title": [{ "type": "text", "text": { "content": "llm-native-inbox" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/llm-native-inbox" },
       "Language":    { "select": { "name": "Python" } },
       "Status":      { "select": { "name": "⚫ Archived" } },
       "Track":       { "select": { "name": "Infrastructure" } },
       "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "LLM-native inbox with V7 code-optimized compression (3-4x on code content)" } }] },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "High-performance, token-efficient inbox system for LLM agents" } }] },
       "Last Updated": { "date": { "start": "2026-02-03" } }
     },
     {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "pocket-agent-engine" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/pocket-agent-engine" },
-      "Language":    { "select": { "name": "Other" } },
+      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-os-wired" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-os-wired" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Integration layer connecting Studio-OS-Chat with Perplexity Space coordination via GitHub mailbox protocol." } }] },
+      "Last Updated": { "date": { "start": "2026-04-23" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "infinite-long-press" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/infinite-long-press" },
+      "Language":    { "select": { "name": "HTML" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Demo" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Template PWA demonstrating the Infinite Long Press UI pattern — gesture-based depth navigation." } }] },
+      "Last Updated": { "date": { "start": "2026-04-23" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "cairn-intent" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/cairn-intent" },
+      "Language":    { "select": { "name": "Python" } },
       "Status":      { "select": { "name": "🟢 Active" } },
       "Track":       { "select": { "name": "AI" } },
       "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Personal agentic stack spec — phone-first agent engine coordinating MMCP agents, model routing, tool permissions, GitHub ledgers, and RLM runs." } }] },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "CairnIntent - The Post-REST API. Natural language intent to direct action. SHRDLU revival for 2025." } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "cairn-gateway" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/cairn-gateway" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Secure content delivery via QA.Stone - 3D Cantor lattice with stochastic wormholes and φ-equity pricing" } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "Skill-Haystack" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/Skill-Haystack" },
+      "Language":    { "select": { "name": "HTML" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "A focused LLM benchmark: can a model find and execute a single skill buried in a document of noise?" } }] },
       "Last Updated": { "date": { "start": "2026-04-27" } }
     },
     {
-      "Name":        { "title": [{ "type": "text", "text": { "content": "txt-autotitle" } }] },
-      "GitHub URL":  { "url": "https://github.com/nothinginfinity/txt-autotitle" },
+      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-brainstorm" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-brainstorm" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Cross-project idea memory for Studio Spaces. Every Space in every project can write to and read from this repo." } }] },
+      "Last Updated": { "date": { "start": "2026-05-02" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "drivemind" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/drivemind" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Local-first LLM file explorer for external drives connected to iPhone." } }] },
+      "Last Updated": { "date": { "start": "2026-05-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "m-mcp-messenger" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/m-mcp-messenger" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "AI-to-AI email system built on m-mcp. Ethereum-style identity, signed envelopes, Bitcoin Zero cognitive work tokens." } }] },
+      "Last Updated": { "date": { "start": "2026-04-23" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "acp-protocol-v4z" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/acp-protocol-v4z" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "⚫ Archived" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "ACP Protocol with V4Z compression layer for LLM token savings" } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "cairn-browser" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/cairn-browser" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Ephemeral browser staging for CairnIntent - Execute on any web service without APIs" } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "acp-mcp-bridge" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/acp-mcp-bridge" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "⚫ Archived" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Bridge connecting ACP Protocol with MCP-Twin inbox system for LLM agent communication" } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "openclaw-phone-studio" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/openclaw-phone-studio" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Demo" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "OpenClaw backend for Instagram DM sync and Phone Studio integration" } }] },
+      "Last Updated": { "date": { "start": "2026-04-06" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "space-card" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/space-card" },
+      "Language":    { "select": { "name": "HTML" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Kanban board UI for navigating connected Perplexity spaces — cards, columns, long-press actions, and MMCP inbox/outbox threads" } }] },
+      "Last Updated": { "date": { "start": "2026-05-02" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "multi-user-chat" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/multi-user-chat" },
       "Language":    { "select": { "name": "Python" } },
       "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Demo" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Multi-user chat" } }] },
+      "Last Updated": { "date": { "start": "2026-04-14" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "TruBizWallet" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/TruBizWallet" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Demo" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "CreditStack — Business Credit Wallet MVP for TrueBuild customers" } }] },
+      "Last Updated": { "date": { "start": "2026-04-11" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "email-for-ai-v4z" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/email-for-ai-v4z" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "⚫ Archived" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "email-for-ai MCP server with V4Z compression integration" } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "email-for-ai-v2" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/email-for-ai-v2" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "⚫ Archived" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Experimental fork of email-for-ai with cairn-stack integration (ACP, QA.Stone, CairnIntent)" } }] },
+      "Last Updated": { "date": { "start": "2026-02-03" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "ops-adapter" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/ops-adapter" },
+      "Language":    { "select": { "name": "Other" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "GitHub Actions as MCP — extend any AI agent with any REST API from a mobile device. No local runtime required." } }] },
+      "Last Updated": { "date": { "start": "2026-05-08" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "LLM-Launch-Site" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/LLM-Launch-Site" },
+      "Language":    { "select": { "name": "Other" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "One-command deployment pipeline for spinning up niche LLM-powered websites." } }] },
+      "Last Updated": { "date": { "start": "2026-04-18" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "fslcairn" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/fslcairn" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "⚫ Archived" } },
       "Track":       { "select": { "name": "Tools" } },
       "Agent Owner": { "select": { "name": "Jared" } },
-      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Auto-title generator for text files" } }] },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "FSL Cairn" } }] },
       "Last Updated": { "date": { "start": "2026-04-04" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "post-ocr-geometry-engine" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/post-ocr-geometry-engine" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Tools" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Deterministic post-OCR geometry reconstruction engine for markdown and structured JSON output." } }] },
+      "Last Updated": { "date": { "start": "2026-04-21" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "studio-spaces" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/studio-spaces" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "A Spaces-first chat application — custom templates, pre-loaded configs, AI directions, files, and links." } }] },
+      "Last Updated": { "date": { "start": "2026-05-02" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "phone-studio" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/phone-studio" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "AI-powered content studio for iPhone. Screenshot to JSON with local LLM." } }] },
+      "Last Updated": { "date": { "start": "2026-05-09" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "PraxClaude-xvp" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/PraxClaude-xvp" },
+      "Language":    { "select": { "name": "Other" } },
+      "Status":      { "select": { "name": "⚫ Archived" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "the system" } }] },
+      "Last Updated": { "date": { "start": "2025-11-16" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "spec-github-repo-integration" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/spec-github-repo-integration" },
+      "Language":    { "select": { "name": "Other" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Studio OS spec: GitHub repo integration feature — PAT tools, auto-sync, branch-per-idea, repo-as-context" } }] },
+      "Last Updated": { "date": { "start": "2026-04-20" } }
     }
   ]
 }
