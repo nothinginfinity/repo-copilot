@@ -19,6 +19,25 @@ async function getAllPages(dbId) {
   return pages;
 }
 
+async function runDiagnose(queue) {
+  console.log('Fetching first 5 pages for diagnosis...');
+  const res = await notion.databases.query({
+    database_id: queue.database_id,
+    page_size: 5
+  });
+  const sample = res.results.map(page => {
+    const props = {};
+    for (const [k, v] of Object.entries(page.properties)) {
+      if (v.type === 'url') props[k] = { type: 'url', value: v.url };
+      else if (v.type === 'title') props[k] = { type: 'title', value: v.title.map(t => t.plain_text).join('') };
+      else if (v.type === 'select') props[k] = { type: 'select', value: v.select && v.select.name };
+      else props[k] = { type: v.type };
+    }
+    return { page_id: page.id, properties: props };
+  });
+  return sample;
+}
+
 async function runBatchRows(queue) {
   const results = [];
   for (const row of queue.rows) {
@@ -52,6 +71,8 @@ async function runPatchRows(queue) {
     }
   }
 
+  console.log('Sample URL keys in map:', Object.keys(urlMap).slice(0, 3));
+
   const results = [];
   for (const row of queue.rows) {
     const matchUrl = row.match;
@@ -80,13 +101,20 @@ async function runPatchRows(queue) {
 async function main() {
   console.log('Running notion-op:', queue.op);
   console.log('DB:', queue.database_id);
-  console.log('Rows:', queue.rows.length);
 
   let results;
+  let extra = {};
+
   if (queue.op === 'batch_rows') {
+    console.log('Rows:', queue.rows.length);
     results = await runBatchRows(queue);
   } else if (queue.op === 'patch_rows') {
+    console.log('Rows:', queue.rows.length);
     results = await runPatchRows(queue);
+  } else if (queue.op === 'diagnose') {
+    const sample = await runDiagnose(queue);
+    extra = { sample };
+    results = [{ status: 'ok', note: 'diagnosis complete' }];
   } else {
     throw new Error('Unknown op: ' + queue.op);
   }
@@ -95,14 +123,14 @@ async function main() {
   const failed = results.filter(r => r.status === 'error').length;
   const skipped = results.filter(r => r.status === 'not_found').length;
 
-  const result = {
+  const result = Object.assign({
     op: queue.op,
     database_id: queue.database_id,
     ran_at: new Date().toISOString(),
     requested_by: queue.requested_by || 'unknown',
-    summary: { total: queue.rows.length, ok, failed, skipped },
+    summary: { total: results.length, ok, failed, skipped },
     results
-  };
+  }, extra);
 
   fs.writeFileSync('spaces/notion-ops/result.json', JSON.stringify(result, null, 2));
   console.log('Done -', ok, 'ok |', failed, 'failed |', skipped, 'skipped');
