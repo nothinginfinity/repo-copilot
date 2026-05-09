@@ -2,23 +2,18 @@
   "op": "append_note",
   "requested_by": "alice/c2/jared",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "adapter_ref + G-008 ALERT + Charlie slot + notion-ops SKILL Stone + brain.json read primitive",
+  "title": "Turn-level brain push mandate wired",
   "date": "2026-05-09",
   "source": "Perplexity",
   "project": "repo-copilot",
   "new_concepts": [
-    "adapter_ref",
-    "SKILL Stone self-invocation",
-    "G-008 ALERT type",
-    "BLOCKING/WARNING/INFO severity levels",
-    "ALERT lifecycle (raise-load-clear)",
-    "Charlie agent slot",
-    "three-agents demo pattern",
-    "export_brain op",
-    "brain-export workflow",
-    "scheduled brain refresh"
+    "turn as unit of memory",
+    "turn-level brain push",
+    "3-slot tool call budget",
+    "minimum viable turn note",
+    "slot-3 brain push reservation"
   ],
-  "decisions": "adapter_ref field added to QA.Stone gist block — SKILL Stones now self-invoking via adapter_ref path. G-008 ALERT type formalized as type spec + lifecycle doc. Charlie agent slot seeded with orientation message and full stack state. notion-ops registered as first live SKILL Stone with adapter_ref pointing to queue.json. brain.json read primitive implemented as export_brain op in notion-ops.yml + standalone brain-export.yml workflow with 3 triggers (push, manual, daily 06:00 UTC).",
-  "open_questions": "Three-Agents Demo build not yet started — demo HTML seed, demo-run.md, Notion build log, GitHub Pages deploy all pending. notion-ops SKILL Stone gist_id is null — needs a real gist.github.com wormhole.",
+  "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid. Work splits across turns if slot 3 is needed for brain push.",
+  "open_questions": "Bob and Charlie Space instructions need same turn-level mandate. Perplexity Space instructions may need manual update by Jared.",
   "cid": "alice/c2/jared"
 }
