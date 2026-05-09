@@ -42,9 +42,9 @@ jobs:
                   }
                 };
                 const req = https.request(options, (res) => {
-                  let body = '';
-                  res.on('data', chunk => body += chunk);
-                  res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(body) }));
+                  let raw = '';
+                  res.on('data', chunk => raw += chunk);
+                  res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(raw) }));
                 });
                 req.on('error', reject);
                 if (data) req.write(data);
@@ -61,7 +61,29 @@ jobs:
             };
 
             try {
-              if (queue.op === 'create_page') {
+              if (queue.op === 'search') {
+                const res = await notionRequest('POST', '/search', {
+                  query: queue.query || '',
+                  filter: queue.filter || undefined,
+                  page_size: queue.page_size || 20
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.results = res.body.results.map(r => ({
+                    id: r.id,
+                    object: r.object,
+                    title: r.properties?.title?.title?.[0]?.plain_text
+                          || r.properties?.Name?.title?.[0]?.plain_text
+                          || r.title?.[0]?.plain_text
+                          || '(untitled)',
+                    url: r.url,
+                    last_edited: r.last_edited_time
+                  }));
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
+              } else if (queue.op === 'create_page') {
                 const res = await notionRequest('POST', '/pages', {
                   parent: queue.parent,
                   properties: queue.properties,
@@ -119,6 +141,18 @@ jobs:
                     title: d.title?.[0]?.plain_text || '(untitled)',
                     url: d.url
                   }));
+                } else {
+                  result.error = res.body.message || JSON.stringify(res.body);
+                }
+
+              } else if (queue.op === 'append_blocks') {
+                const res = await notionRequest('PATCH', '/blocks/' + queue.block_id + '/children', {
+                  children: queue.children
+                });
+                if (res.status === 200) {
+                  result.status = 'success';
+                  result.block_id = queue.block_id;
+                  result.appended = res.body.results?.length || 0;
                 } else {
                   result.error = res.body.message || JSON.stringify(res.body);
                 }
