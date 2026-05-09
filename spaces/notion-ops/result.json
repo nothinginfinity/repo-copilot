@@ -1,7 +1,8 @@
 {
-  "op": "create_database",
-  "database_id": "unknown",
-  "ran_at": "2026-05-09T23:11:49.694Z",
+  "op": "diagnose",
+  "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
+  "ran_at": "2026-05-09T23:29:52.000Z",
+  "requested_by": "bob/c2/jared",
   "status": "error",
-  "error": "Unknown op: create_database"
+  "error": "Notion API error: API token is invalid."
 }
