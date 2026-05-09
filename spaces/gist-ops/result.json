@@ -1,3 +1,8 @@
 {
-  "_status": "No operation run yet. Push a command to spaces/gist-ops/queue.json to trigger the workflow."
+  "op": "list_gists",
+  "requested_by": "bob/c2/jared",
+  "completed_at": "2026-05-09T02:27:37.257Z",
+  "status": "success",
+  "error": null,
+  "gists": []
 }
