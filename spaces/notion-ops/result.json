@@ -1,8 +1,372 @@
 {
-  "op": "update_database",
+  "op": "batch_rows",
   "requested_by": "bob/c1/jared",
-  "completed_at": "2026-05-09T17:45:12.171Z",
-  "run_id": "25607646014",
+  "completed_at": "2026-05-09T17:47:21.317Z",
+  "run_id": "25607697335",
   "status": "error",
-  "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+  "error": null,
+  "inserted": 0,
+  "inserted_ids": [],
+  "errors": [
+    {
+      "row": {
+        "Title": {
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Harden gitzip-push"
+              }
+            }
+          ]
+        },
+        "Phase": {
+          "select": {
+            "name": "Phase 0"
+          }
+        },
+        "Status": {
+          "select": {
+            "name": "✅ Done"
+          }
+        },
+        "Owner": {
+          "select": {
+            "name": "Bob"
+          }
+        },
+        "Track": {
+          "select": {
+            "name": "Infrastructure"
+          }
+        },
+        "Depends On": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "—"
+              }
+            }
+          ]
+        },
+        "Commit": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "770e5e72, 9f647e83"
+              }
+            }
+          ]
+        },
+        "Type": {
+          "select": {
+            "name": "Task"
+          }
+        }
+      },
+      "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+    },
+    {
+      "row": {
+        "Title": {
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Add spaces/charlie/inbox.md"
+              }
+            }
+          ]
+        },
+        "Phase": {
+          "select": {
+            "name": "Phase 0"
+          }
+        },
+        "Status": {
+          "select": {
+            "name": "⏳ Pending"
+          }
+        },
+        "Owner": {
+          "select": {
+            "name": "Bob"
+          }
+        },
+        "Track": {
+          "select": {
+            "name": "Infrastructure"
+          }
+        },
+        "Depends On": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "gitzip-push hardened"
+              }
+            }
+          ]
+        },
+        "Commit": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": ""
+              }
+            }
+          ]
+        },
+        "Type": {
+          "select": {
+            "name": "Task"
+          }
+        }
+      },
+      "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+    },
+    {
+      "row": {
+        "Title": {
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Build demo HTML seed file"
+              }
+            }
+          ]
+        },
+        "Phase": {
+          "select": {
+            "name": "Phase 2"
+          }
+        },
+        "Status": {
+          "select": {
+            "name": "⏳ Pending"
+          }
+        },
+        "Owner": {
+          "select": {
+            "name": "Alice"
+          }
+        },
+        "Track": {
+          "select": {
+            "name": "Demo"
+          }
+        },
+        "Depends On": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Charlie slot confirmed"
+              }
+            }
+          ]
+        },
+        "Commit": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": ""
+              }
+            }
+          ]
+        },
+        "Type": {
+          "select": {
+            "name": "Task"
+          }
+        }
+      },
+      "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+    },
+    {
+      "row": {
+        "Title": {
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Write demo-run.md"
+              }
+            }
+          ]
+        },
+        "Phase": {
+          "select": {
+            "name": "Phase 2"
+          }
+        },
+        "Status": {
+          "select": {
+            "name": "⏳ Pending"
+          }
+        },
+        "Owner": {
+          "select": {
+            "name": "Alice"
+          }
+        },
+        "Track": {
+          "select": {
+            "name": "Demo"
+          }
+        },
+        "Depends On": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Demo HTML seed file"
+              }
+            }
+          ]
+        },
+        "Commit": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": ""
+              }
+            }
+          ]
+        },
+        "Type": {
+          "select": {
+            "name": "Task"
+          }
+        }
+      },
+      "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+    },
+    {
+      "row": {
+        "Title": {
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Wire Notion build log"
+              }
+            }
+          ]
+        },
+        "Phase": {
+          "select": {
+            "name": "Phase 2"
+          }
+        },
+        "Status": {
+          "select": {
+            "name": "⏳ Pending"
+          }
+        },
+        "Owner": {
+          "select": {
+            "name": "Bob"
+          }
+        },
+        "Track": {
+          "select": {
+            "name": "Integration"
+          }
+        },
+        "Depends On": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "demo-run.md"
+              }
+            }
+          ]
+        },
+        "Commit": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": ""
+              }
+            }
+          ]
+        },
+        "Type": {
+          "select": {
+            "name": "Task"
+          }
+        }
+      },
+      "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+    },
+    {
+      "row": {
+        "Title": {
+          "title": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Wire GitHub Pages deploy"
+              }
+            }
+          ]
+        },
+        "Phase": {
+          "select": {
+            "name": "Phase 2"
+          }
+        },
+        "Status": {
+          "select": {
+            "name": "⏳ Pending"
+          }
+        },
+        "Owner": {
+          "select": {
+            "name": "Charlie"
+          }
+        },
+        "Track": {
+          "select": {
+            "name": "Integration"
+          }
+        },
+        "Depends On": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": "Notion build log"
+              }
+            }
+          ]
+        },
+        "Commit": {
+          "rich_text": [
+            {
+              "type": "text",
+              "text": {
+                "content": ""
+              }
+            }
+          ]
+        },
+        "Type": {
+          "select": {
+            "name": "Task"
+          }
+        }
+      },
+      "error": "Could not find database with ID: 35bd927c-9792-816f-82e6-d22264e3c40c. Make sure the relevant pages and databases are shared with your integration \"Prax\"."
+    }
+  ]
 }
