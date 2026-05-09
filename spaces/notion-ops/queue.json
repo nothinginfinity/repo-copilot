@@ -1,20 +1,54 @@
 {
-  "op": "append_note",
+  "op": "create_database",
   "requested_by": "alice/c2/jared",
-  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "Full build order + roadmap + Bob message sent",
-  "date": "2026-05-09",
-  "source": "Perplexity",
-  "project": "repo-copilot",
-  "new_concepts": [
-    "multi-user provisioning",
-    "bootstrap URL pattern",
-    "gist template with placeholders",
-    "provision GitHub Action",
-    "Notion Roadmap DB",
-    "phase-ordered build roadmap"
-  ],
-  "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases. Notion Roadmap DB is next build step.",
-  "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
-  "cid": "alice/c2/jared"
+  "parent_page_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
+  "title": "PraX Roadmap",
+  "properties": {
+    "Item": { "title": {} },
+    "Phase": {
+      "select": {
+        "options": [
+          { "name": "Phase 0 — Foundation",       "color": "green" },
+          { "name": "Phase 1 — Turn Memory",      "color": "blue" },
+          { "name": "Phase 2 — Three-Agents Demo","color": "purple" },
+          { "name": "Phase 3 — Multi-User",       "color": "orange" },
+          { "name": "Phase 4 — Brain Compression","color": "pink" }
+        ]
+      }
+    },
+    "Status": {
+      "select": {
+        "options": [
+          { "name": "✅ Done",      "color": "green" },
+          { "name": "🔴 Blocked",   "color": "red" },
+          { "name": "🟡 In Progress","color": "yellow" },
+          { "name": "⏳ Pending",   "color": "gray" },
+          { "name": "🔴 Milestone", "color": "red" }
+        ]
+      }
+    },
+    "Priority": {
+      "select": {
+        "options": [
+          { "name": "🔴 Now",     "color": "red" },
+          { "name": "🟡 High",    "color": "yellow" },
+          { "name": "🔵 Medium",  "color": "blue" },
+          { "name": "⚪ Low",     "color": "gray" }
+        ]
+      }
+    },
+    "Owner": {
+      "select": {
+        "options": [
+          { "name": "Alice",   "color": "blue" },
+          { "name": "Bob",     "color": "green" },
+          { "name": "Charlie", "color": "purple" },
+          { "name": "Jared",   "color": "orange" },
+          { "name": "Alice+Bob","color": "pink" }
+        ]
+      }
+    },
+    "Depends On": { "rich_text": {} },
+    "Notes":      { "rich_text": {} }
+  }
 }
