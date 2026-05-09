@@ -16,18 +16,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install @notionhq/client
-        run: cd .github/scripts && npm install @notionhq/client --no-save
-
       - name: Run notion-op
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-        run: node .github/scripts/notion-ops-runner.js
+        run: bash .github/scripts/notion-ops-runner.sh
         continue-on-error: true
 
       - name: Commit result.json
@@ -43,7 +35,7 @@ jobs:
 
       - name: Assert success
         run: |
-          STATUS=$(node -e "const r=require('./spaces/notion-ops/result.json'); console.log(r.status || 'ok');")
+          STATUS=$(python3 -c "import json; r=json.load(open('spaces/notion-ops/result.json')); print(r.get('status','ok'))")
           echo "Final status: $STATUS"
           if [ "$STATUS" = "error" ]; then
             echo "Notion op reported an error - see result.json for details"
