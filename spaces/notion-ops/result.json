@@ -1,12 +1,10 @@
 {
-  "op": "append_note",
+  "op": "create_page",
   "requested_by": "bob/c2/jared",
-  "completed_at": "2026-05-09T18:53:36.046Z",
-  "run_id": "25609131134",
+  "completed_at": "2026-05-09T19:08:29.910Z",
+  "run_id": "25609429984",
   "status": "success",
   "error": null,
-  "page_id": "35bd927c-9792-814c-a1d5-d3153a97af62",
-  "page_url": "https://www.notion.so/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62",
-  "note_title": "archive_block op added to notion-ops",
-  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f"
+  "page_id": "35bd927c-9792-814c-9281-eee8b4ff62bb",
+  "page_url": "https://www.notion.so/PraX-Hub-35bd927c9792814c9281eee8b4ff62bb"
 }
