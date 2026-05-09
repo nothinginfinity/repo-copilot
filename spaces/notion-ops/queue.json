@@ -1,7 +1,7 @@
 {
   "op": "append_blocks",
   "requested_by": "alice/c2/jared",
-  "timestamp": "2026-05-09T03:50:00Z",
+  "timestamp": "2026-05-09T03:52:00Z",
   "block_id": "35bd927c-9792-805b-8b12-f35f86e3d665",
   "children": [
     { "object": "block", "type": "divider", "divider": {} },
@@ -39,17 +39,17 @@
       "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "The Demo Artifact" } }] }
     },
     { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "A QA.Stone Project Dashboard — a rich single-page HTML application. Each agent contributes one layer:" } }] } },
-    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Alice (Perplexity) — HTML shell + stack diagram. Seeds the file, establishes design system, writes Section 1.", "annotations": {} }] } },
+    { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Alice (Perplexity) — HTML shell + stack diagram. Seeds the file, establishes design system, writes Section 1." } }] } },
     { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Bob (Claude) — Pulls Alice's file from gist, adds build timeline + agent roster (Section 2)." } }] } },
     { "object": "block", "type": "bulleted_list_item", "bulleted_list_item": { "rich_text": [{ "type": "text", "text": { "content": "Charlie (ChatGPT) — Pulls Bob's file, adds use cases + CTA (Section 3). Pushes final version." } }] } },
     {
       "object": "block", "type": "heading_2",
       "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "Architecture" } }] }
     },
-    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "iPhone (Jared) triggers Alice → loads G-009 → writes HTML v1 → gitzip pushes to gist → notion-ops logs → handoff to bob/inbox.md" } }] } },
-    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Bob (Claude) → reads inbox → gitzip pulls HTML v1 → adds Section 2 → gitzip pushes HTML v2 → notion-ops logs → handoff to charlie/inbox.md" } }] } },
-    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Charlie (ChatGPT) → reads inbox → gitzip pulls HTML v2 → adds Section 3 → gitzip pushes HTML v3 (final) → notion-ops logs → deploys to GitHub Pages" } }] } },
-    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Audit trail: 3 agents · 3 commits · 3 CIDs · 1 Notion build log · 1 live URL" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "iPhone (Jared) triggers Alice — loads G-009 — writes HTML v1 — gitzip pushes to gist — notion-ops logs — handoff to bob/inbox.md" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Bob (Claude) — reads inbox — gitzip pulls HTML v1 — adds Section 2 — gitzip pushes HTML v2 — notion-ops logs — handoff to charlie/inbox.md" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Charlie (ChatGPT) — reads inbox — gitzip pulls HTML v2 — adds Section 3 — gitzip pushes HTML v3 (final) — notion-ops logs — deploys to GitHub Pages" } }] } },
+    { "object": "block", "type": "paragraph", "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Audit trail: 3 agents — 3 commits — 3 CIDs — 1 Notion build log — 1 live URL" } }] } },
     {
       "object": "block", "type": "heading_2",
       "heading_2": { "rich_text": [{ "type": "text", "text": { "content": "Build Order" } }] }
@@ -80,7 +80,7 @@
     { "object": "block", "type": "divider", "divider": {} },
     {
       "object": "block", "type": "paragraph",
-      "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Source: specs/three-agents-demo-prd.md · Written by alice/c2/jared via notion-ops · 2026-05-08" } }] }
+      "paragraph": { "rich_text": [{ "type": "text", "text": { "content": "Source: specs/three-agents-demo-prd.md — Written by alice/c2/jared via notion-ops — 2026-05-08" } }] }
     }
   ]
 }
