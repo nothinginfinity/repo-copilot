@@ -1,34 +1,95 @@
 {
-  "op": "create_database",
+  "op": "batch_rows",
   "requested_by": "bob/c2/jared",
-  "parent_page_id": "35bd927c-9792-814c-9281-eee8b4ff62bb",
-  "title": "📋 Gist Registry",
-  "properties": {
-    "Name": { "title": {} },
-    "Type": {
-      "select": {
-        "options": [
-          { "name": "CONTEXT", "color": "blue" },
-          { "name": "SPEC", "color": "green" },
-          { "name": "SCHEMA", "color": "orange" },
-          { "name": "ALERT", "color": "red" },
-          { "name": "IDENTITY", "color": "purple" },
-          { "name": "BRAIN", "color": "pink" }
-        ]
-      }
+  "database_id": "35bd927c-9792-816a-8cb6-fe4fb52a077c",
+  "rows": [
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-001 — Constraints" } }] },
+      "Type":        { "select": { "name": "CONTEXT" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-001-constraints.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Hard build/push rules for all agents" } }] },
+      "Last Updated": { "date": { "start": "2026-05-07" } }
     },
-    "Owner": {
-      "select": {
-        "options": [
-          { "name": "Bob", "color": "blue" },
-          { "name": "Alice", "color": "pink" },
-          { "name": "Charlie", "color": "green" },
-          { "name": "Shared", "color": "gray" }
-        ]
-      }
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-002 — Bob Context" } }] },
+      "Type":        { "select": { "name": "CONTEXT" } },
+      "Owner":       { "select": { "name": "Bob" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-002-bob-context.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Who Bob is, current phase, turn-push mandate" } }] },
+      "Last Updated": { "date": { "start": "2026-05-09" } }
     },
-    "GitHub Path": { "url": {} },
-    "Summary": { "rich_text": {} },
-    "Last Updated": { "date": {} }
-  }
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-003 — Alice Context" } }] },
+      "Type":        { "select": { "name": "CONTEXT" } },
+      "Owner":       { "select": { "name": "Alice" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-003-alice-context.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Who Alice is, current phase, responsibilities" } }] },
+      "Last Updated": { "date": { "start": "2026-05-09" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-004 — Checklist" } }] },
+      "Type":        { "select": { "name": "SCHEMA" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-004-checklist.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Session startup and turn checklist" } }] },
+      "Last Updated": { "date": { "start": "2026-05-07" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-005 — Handoff" } }] },
+      "Type":        { "select": { "name": "SCHEMA" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-005-handoff.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Agent-to-agent handoff protocol" } }] },
+      "Last Updated": { "date": { "start": "2026-05-07" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-006 — Vocab" } }] },
+      "Type":        { "select": { "name": "CONTEXT" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-006-vocab.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Shared vocabulary and terminology for PraX system" } }] },
+      "Last Updated": { "date": { "start": "2026-05-07" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-007 — CID Registry" } }] },
+      "Type":        { "select": { "name": "SCHEMA" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-007-cid-registry.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Conversation ID registry for all agents" } }] },
+      "Last Updated": { "date": { "start": "2026-05-07" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-008 — Alert" } }] },
+      "Type":        { "select": { "name": "ALERT" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-008-alert.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "System-wide alert and escalation protocol" } }] },
+      "Last Updated": { "date": { "start": "2026-05-07" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-009 — Identity" } }] },
+      "Type":        { "select": { "name": "IDENTITY" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-009-identity.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Jared identity profile — gist wormhole fb001a1ece0a750f857c4f90a1130f92" } }] },
+      "Last Updated": { "date": { "start": "2026-05-08" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-010 — Brain" } }] },
+      "Type":        { "select": { "name": "BRAIN" } },
+      "Owner":       { "select": { "name": "Shared" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-010-brain.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "Agent Notes DB schema and turn note template" } }] },
+      "Last Updated": { "date": { "start": "2026-05-09" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "G-011 — Hub" } }] },
+      "Type":        { "select": { "name": "SCHEMA" } },
+      "Owner":       { "select": { "name": "Bob" } },
+      "GitHub Path": { "url": "https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-011-hub.md" },
+      "Summary":     { "rich_text": [{ "type": "text", "text": { "content": "PraX Hub Notion IDs — Hub page, Repo Registry, Gist Registry, Roadmap, Agent Notes" } }] },
+      "Last Updated": { "date": { "start": "2026-05-09" } }
+    }
+  ]
 }
