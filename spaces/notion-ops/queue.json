@@ -1,7 +1,250 @@
 {
-  "op": "diagnose",
+  "op": "delete_all_then_batch",
   "requested_by": "alice/c3/jared",
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "description": "Dump first 5 rows raw property values to diagnose GitHub URL format",
-  "_bump": 10
+  "description": "Nuke all rows, then re-seed batch 1/4 with Live Site URL included",
+  "rows": [
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "qastone" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/qastone" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/qastone/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Email for AI: Progressive context loading for LLMs with cryptographic provenance" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "stone-vault" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/stone-vault" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/stone-vault/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Production-grade secrets management with QA.Stones - context-bound secrets, shard encryption, LOD-gated access, audit chain" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "qastone_vend_v1" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/qastone_vend_v1" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/qastone_vend_v1/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "QA.Stone vending machine v1" } }] },
+      "Last Updated": { "date": { "start": "2026-01-16" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "qastone-vending-machine" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/qastone-vending-machine" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/qastone-vending-machine/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "QA.Stone vending machine" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "qastone-mcp-twin" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/qastone-mcp-twin" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/qastone-mcp-twin/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Zero-downtime MCP server for QA.Stone demo with twin A/B hot-swap capability" } }] },
+      "Last Updated": { "date": { "start": "2026-01-18" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "simple-stone" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/simple-stone" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/simple-stone/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "LLM-Executable Security Infrastructure - Give your AI agents production access with full provenance" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "mcp-twin" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/mcp-twin" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/mcp-twin/" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Tools" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Zero-downtime MCP server updates for Claude Code. Hot-reload your MCP servers without restarting." } }] },
+      "Last Updated": { "date": { "start": "2026-01-08" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "ZTPchat" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/ZTPchat" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/ZTPchat/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Zero Trust Protocol chat" } }] },
+      "Last Updated": { "date": { "start": "2026-01-09" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "DragonPy" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/DragonPy" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/DragonPy/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Open Framework for Orchestrator Interfaces and Multi-Directionally Linked Command Lines (OI-MDLCLs)" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "prax-chat" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/prax-chat" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/prax-chat/" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Prax Chat - Multi-LLM chat interface with search modes, collaboration, and agent olympics" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "prax-proxy" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/prax-proxy" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/prax-proxy/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "PHI Agent Proxy - Twincode Operational Modes for Claude Code" } }] },
+      "Last Updated": { "date": { "start": "2026-02-06" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "prax-command-center" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/prax-command-center" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/prax-command-center/" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Prax Command Center - Comprehensive desktop control system with LLM orchestration, terminal management, and parallel internet builder" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "email-for-ai" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/email-for-ai" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/email-for-ai/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Communication infrastructure for LLM agents - email, calendar, and todo capabilities" } }] },
+      "Last Updated": { "date": { "start": "2026-03-16" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "agentic-chat-rooms" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/agentic-chat-rooms" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/agentic-chat-rooms/" },
+      "Language":    { "select": { "name": "TypeScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Real-time AI-powered chat rooms microservice with Email-for-AI integration" } }] },
+      "Last Updated": { "date": { "start": "2026-01-23" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "llm-app-template" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/llm-app-template" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/llm-app-template/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Template architecture for LLM-first applications with persistent memory, chat interface, and marketplace" } }] },
+      "Last Updated": { "date": { "start": "2026-01-21" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "llm_sales_template" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/llm_sales_template" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/llm_sales_template/" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "AI-powered sales and booking agent template for any service business" } }] },
+      "Last Updated": { "date": { "start": "2026-01-22" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "lashfit" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/lashfit" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/lashfit/" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Demo" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "AI-powered lash extension recommendations based on facial analysis" } }] },
+      "Last Updated": { "date": { "start": "2026-01-22" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "bedrosians_agentic_sales" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/bedrosians_agentic_sales" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/bedrosians_agentic_sales/" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Demo" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Agentic sales demo for Bedrosians" } }] },
+      "Last Updated": { "date": { "start": "2026-01-23" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "ralph-service" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/ralph-service" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/ralph-service/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "AI" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "DeepSeek Ralph - Autonomous AI Code Agent as a Service" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "parallel-internet" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/parallel-internet" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/parallel-internet/" },
+      "Language":    { "select": { "name": "JavaScript" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Product" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "3D globe dashboard for visualizing global data with AI-powered chat" } }] },
+      "Last Updated": { "date": { "start": "2026-01-15" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "golden_library" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/golden_library" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/golden_library/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟢 Active" } },
+      "Track":       { "select": { "name": "Infrastructure" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Schema-once compression for AI conversation archives. Turn massive Claude Code logs into portable QA.Stones with 50-90% compression." } }] },
+      "Last Updated": { "date": { "start": "2026-01-20" } }
+    },
+    {
+      "Name":        { "title": [{ "type": "text", "text": { "content": "terminal_library" } }] },
+      "GitHub URL":  { "url": "https://github.com/nothinginfinity/terminal_library" },
+      "Live Site":   { "url": "https://nothinginfinity.github.io/terminal_library/" },
+      "Language":    { "select": { "name": "Python" } },
+      "Status":      { "select": { "name": "🟡 Prototype" } },
+      "Track":       { "select": { "name": "Tools" } },
+      "Agent Owner": { "select": { "name": "Jared" } },
+      "Description": { "rich_text": [{ "type": "text", "text": { "content": "Terminal library utilities" } }] },
+      "Last Updated": { "date": { "start": "2026-01-11" } }
+    }
+  ]
 }
