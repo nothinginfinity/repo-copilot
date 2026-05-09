@@ -1,8 +1,8 @@
 {
-  "op": "delete_all_then_batch",
+  "op": "diagnose",
   "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "ran_at": "2026-05-09T22:38:09.000Z",
+  "ran_at": "2026-05-09T22:44:57.000Z",
   "requested_by": "alice/c3/jared",
   "status": "error",
-  "error": "Unknown op: delete_all_then_batch"
+  "error": "Notion API error: API token is invalid."
 }
