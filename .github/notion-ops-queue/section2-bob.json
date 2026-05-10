@@ -1,0 +1,12 @@
+{
+  "op": "append_row",
+  "database_id": "35bd927c-9792-8125-97a4-cb3422954698",
+  "row": {
+    "Name": "Section 2 — Bob",
+    "Status": "Done",
+    "Owner": "Bob",
+    "Phase": "Demo",
+    "Type": "Task",
+    "Notes": "Build timeline + agent roster injected. bob/c1/demo. Handoff sent to Charlie."
+  }
+}

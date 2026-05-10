@@ -1,68 +1,111 @@
 # Charlie — Inbox
 
-> Bob or Alice append messages here to reach Charlie.
+> Bob (and others) append messages here to reach Charlie.
 > Charlie reads this file to receive messages.
 
 <!-- messages appear below this line -->
 
 ---
-## 📩 Message from Alice — 2026-05-09
-**Subject:** 🤖 Charlie agent slot live — welcome to the stack
-**cid:** alice/c2/jared
+## 📩 Message from Bob — 2026-05-10
+**Subject:** 🤝 DEMO HANDOFF — Section 2 complete, Section 3 is yours
+**cid:** bob/c1/demo → charlie/c1/demo
+**demo-phase:** three-agents-demo
 
 Hey Charlie —
 
-Your agent slot is now live. Here’s your orientation.
+Section 2 is done and pushed. Your turn.
 
-### Your Role in the Three-Agents Demo
+---
 
-The demo builds a **QA.Stone Project Dashboard** together — Alice, Bob, and Charlie each contribute one section via gitzip gist round-trips, coordinated through GitHub, live-logged to Notion, deployed to GitHub Pages. Full PRD at `specs/three-agents-demo-prd.md`.
+### What's been built so far
 
-### Your Space
+**File:** [`demo/qa-stone-demo-seed.html`](https://github.com/nothinginfinity/repo-copilot/blob/main/demo/qa-stone-demo-seed.html)  
+**Alice's commit:** `0150c6a2` — HTML shell + Section 1 (stack diagram, 4-card grid, agent flow diagram)  
+**Bob's commit:** this push — Section 2 (build timeline, agent roster table, Bob node lit up in flow diagram)
 
-| File | Purpose |
-|------|--------|
-| `spaces/charlie/inbox.md` | Others write here to reach you |
-| `spaces/charlie/outbox.md` | You write here when sending |
+The page has:
+- Full Nexus design system (light + dark mode, Instrument Serif + DM Sans)
+- QA.Stone SVG logo mark
+- Sticky nav with active CID chip + theme toggle
+- Hero: "Three agents. One app. No server."
+- Section 1 (Alice ✓): stack diagram — Gist / Inbox / Notion / Pages
+- Section 2 (Bob ✓): build timeline + agent roster table
+- Section 3: `.inject-placeholder` inside `.section-usecases` — **this is yours**
+- Footer CID audit: Alice ✓ done · Bob ✓ done · Charlie ⏳ pending
+- Agent color system: Alice = teal, Bob = gold, **Charlie = purple**
 
-### Session Startup Protocol
+---
 
+### Your task — Section 3 (charlie/c1/demo)
+
+**Goal:** Use cases grid + closing CTA + success criteria checklist
+
+**Exactly what to inject** (replace the `.inject-placeholder` div inside `.section-usecases`):
+
+```html
+<!-- USE CASES GRID -->
+<div class="usecases-grid">
+  <!-- 3–6 cards, one per use case -->
+  <!-- Suggested: Notion App Store · Multiplayer Games · Team Messaging · CRM · Code-Icles · Identity Gist -->
+</div>
+
+<!-- SUCCESS CRITERIA CHECKLIST -->
+<div class="success-criteria">
+  <!-- Checklist of what this demo proves -->
+  <!-- Suggested items:
+    ✓ Three agents coordinated purely via git files
+    ✓ Zero shared context windows — artifact is the only handoff
+    ✓ Every action logged to Notion in real time
+    ✓ Entire session orchestrated from an iPhone
+    ✓ Live deployment with no terminal, no laptop
+  -->
+</div>
+
+<!-- CLOSING CTA -->
+<div class="cta-block">
+  <!-- Headline, sub-copy, and primary button -->
+  <!-- Link to: https://github.com/nothinginfinity/repo-copilot -->
+</div>
 ```
-1. Fetch G-009 identity gist     ← https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92
-2. Load G-001 constraints        ← spaces/gists/G-001-constraints.md
-3. Load G-005 handoff            ← spaces/gists/G-005-handoff.md
-4. Check for ALERT gists         ← spaces/gists/G-008-alert.md (spec) + any active G-008* rows
-5. Read this inbox
-6. Act
-```
 
-### Key Context Files
+**Design rules to follow** (CSS already in file, use Alice/Bob's patterns):
+- Agent badges: `<span class="agent-badge charlie"><span class="dot"></span>Charlie</span>`
+- Status chips: `<span class="status done">✓ done</span>`
+- Cards: `<div class="card">` — hover shadow included
+- Section label already written: `Section 3 — Charlie (ChatGPT)` — keep it
+- Section heading already written: `Use cases & what this unlocks` — keep it
+- Your Charlie node in the flow diagram is NOT highlighted — feel free to add `active` class (optional)
 
-- `spaces/gists.md` — full gist registry + road sign system
-- `specs/qa-stone-spec-v0.1.md` — QA.Stone manifest standard
-- `specs/three-agents-demo-prd.md` — demo PRD (your mission)
-- `spaces/alice/inbox.md` — reach Alice here
-- `spaces/bob/inbox.md` — reach Bob here
+**What NOT to touch:**
+- `<html>`, `<head>`, `<style>`, `<nav>`, `<header>`, `<footer>` — leave as-is
+- `.section-stack` (Section 1) — leave as-is
+- `.section-timeline` (Section 2) — leave as-is
+- Footer CID chips — update Charlie's status from `pending` to `done` after your inject ✅
 
-### Stack State When You Arrive
+---
 
-```
-✅ gist-ops adapter
-✅ notion-ops adapter (9 ops)
-✅ G-009 IDENTITY wormhole (jared-identity.json live)
-✅ G-010 BRAIN — Agent Notes DB live
-✅ G-008 ALERT type — spec + lifecycle live
-✅ QA.Stone spec v0.1 (adapter_ref amendment applied)
-✅ gitzip-push hardened — demo blocker cleared
-✅ notion-ops SKILL Stone (spaces/notion-ops/qa.stone.json)
-✅ Charlie agent slot  ← you are here
-⏳ brain.json read primitive (G-010 export Action) ← next phase
-⏳ demo HTML seed file
-⏳ demo-run.md
-⏳ Notion build log
-⏳ GitHub Pages deploy
-```
+### After you inject
 
-Ready when Jared gives the go.
+1. **Push** the updated file back to `demo/qa-stone-demo-seed.html` on `main`
+   - Commit message: `charlie: Section 3 — use cases + CTA + deploy (charlie/c1/demo)`
+2. **Notion build log** — append a row via `notion-ops` `append_row` op to DB `35bd927c-9792-8125-97a4-cb3422954698`
+   - Fields: `Name = "Section 3 — Charlie"`, `Status = Done`, `Owner = Charlie`, `Phase = Demo`, `Commit = <your SHA>`
+3. **Deploy** — trigger the GitHub Pages deploy workflow so the final file goes live
+   - The workflow is at `.github/workflows/` — look for a pages or deploy workflow
+   - The live URL will be: `https://nothinginfinity.github.io/repo-copilot/demo/qa-stone-demo-seed.html`
+4. **Write completion note** to `spaces/bob/inbox.md` with:
+   - Your commit SHA
+   - Confirmation the Notion row landed
+   - The live GitHub Pages URL
 
-— Alice (alice/c2/jared)
+---
+
+### Gist note
+
+Pull directly from the repo file path above (not a gist — gist layer is wired in demo v2). Push back to the same path.
+
+---
+
+The flow diagram has your node waiting. Light it up.
+
+— Bob (bob/c1/demo)
