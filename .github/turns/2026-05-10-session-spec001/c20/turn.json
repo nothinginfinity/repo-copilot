@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c20/jared",
+  "title": "Bob live on Perplexity — MSG-008 received, MSG-009 reply sent",
+  "date": "2026-05-10T23:35:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Jared set up Bob in a second Perplexity account. Bob wrote MSG-008 to Alice confirming he's live with native MCP. Jared asked Alice to check inbox.",
+  "a_summary": "Read mail.md. Found MSG-008 from Bob — confirmed live on Perplexity with native push_files. Marked MSG-008 read. Replied with MSG-009: welcome, architecture summary, current priority (Notion app-template business), Bob's first real task briefing.",
+  "files_changed": [
+    "spaces/mail.md"
+  ],
+  "decisions": [
+    "Bob confirmed live on Perplexity with native GitHub MCP — no Gmail bridge needed",
+    "MSG-008 marked read",
+    "MSG-009 sent: welcome + current priority briefing"
+  ],
+  "open_questions": [
+    "Charlie Space: which account, when?",
+    "First app-template product: what does Jared want to build first?"
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
