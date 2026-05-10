@@ -1,0 +1,153 @@
+name: Unzip and Route Turn Bundle
+
+on:
+  push:
+    paths:
+      - '.github/turn-bundles/**'
+
+jobs:
+  route:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find latest zip bundle
+        id: find_zip
+        run: |
+          ZIP=$(find .github/turn-bundles -name '*.zip' | sort | tail -1)
+          echo "zip=$ZIP" >> $GITHUB_OUTPUT
+          echo "Found bundle: $ZIP"
+
+      - name: Unzip bundle
+        run: |
+          mkdir -p /tmp/turn-bundle
+          unzip -o "${{ steps.find_zip.outputs.zip }}" -d /tmp/turn-bundle
+          echo "Bundle contents:"
+          find /tmp/turn-bundle -type f
+
+      - name: Route files into repo
+        run: |
+          cd /tmp/turn-bundle
+
+          # Route turns/ → .github/turns/
+          if [ -d turns ]; then
+            cp -r turns/. "$GITHUB_WORKSPACE/.github/turns/"
+            echo "✅ Routed turns/"
+          fi
+
+          # Route spaces/ → spaces/ (inbox, outbox, conversations)
+          if [ -d spaces ]; then
+            # Deduplicate inbox/outbox appends — only copy if content differs
+            find spaces -type f | while read f; do
+              dest="$GITHUB_WORKSPACE/$f"
+              mkdir -p "$(dirname $dest)"
+              if [ -f "$dest" ]; then
+                incoming_hash=$(sha256sum "$f" | cut -d' ' -f1)
+                existing_hash=$(sha256sum "$dest" | cut -d' ' -f1)
+                if [ "$incoming_hash" != "$existing_hash" ]; then
+                  cp "$f" "$dest"
+                  echo "✅ Updated $f"
+                else
+                  echo "⏭️  Skipped (identical): $f"
+                fi
+              else
+                cp "$f" "$dest"
+                echo "✅ Created $f"
+              fi
+            done
+          fi
+
+          # Route notion-ops-queue entries
+          if [ -d .github/notion-ops-queue ]; then
+            cp -r .github/notion-ops-queue/. "$GITHUB_WORKSPACE/.github/notion-ops-queue/"
+            echo "✅ Routed notion-ops-queue"
+          fi
+
+      - name: Assemble transcript for session
+        run: |
+          # Find turn.json files and assemble transcript
+          find "$GITHUB_WORKSPACE/.github/turns" -name 'turn.json' | sort | while read f; do
+            SESSION=$(echo $f | grep -oP '(?<=turns/).*(?=/[^/]+/turn.json)')
+            CID=$(echo $f | grep -oP '(?<=/)[^/]+(?=/turn.json)')
+            TRANSCRIPT_DIR="$GITHUB_WORKSPACE/spaces/conversations/$SESSION"
+            mkdir -p "$TRANSCRIPT_DIR"
+            TRANSCRIPT="$TRANSCRIPT_DIR/transcript.md"
+
+            # Append turn to transcript if CID not already present
+            if ! grep -q "## $CID" "$TRANSCRIPT" 2>/dev/null; then
+              echo "" >> "$TRANSCRIPT"
+              echo "## $CID" >> "$TRANSCRIPT"
+              echo "**Date:** $(date -u +"%Y-%m-%d %H:%M UTC")" >> "$TRANSCRIPT"
+              echo "" >> "$TRANSCRIPT"
+              # Extract q and a from turn.json
+              Q=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('q_summary',''))")
+              A=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('a_summary',''))")
+              echo "**Q:** $Q" >> "$TRANSCRIPT"
+              echo "" >> "$TRANSCRIPT"
+              echo "**A:** $A" >> "$TRANSCRIPT"
+              echo "" >> "$TRANSCRIPT"
+              echo "---" >> "$TRANSCRIPT"
+              echo "✅ Appended $CID to $SESSION transcript"
+            else
+              echo "⏭️  $CID already in transcript"
+            fi
+          done
+
+      - name: Push brain note to Agent Notes DB
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          BRAIN_DB: 35bd927c-9792-81b9-816a-e357c9339d2f
+        run: |
+          # Find the newest turn.json
+          LATEST=$(find "$GITHUB_WORKSPACE/.github/turns" -name 'turn.json' | sort | tail -1)
+          if [ -z "$LATEST" ]; then
+            echo "No turn.json found, skipping brain push"
+            exit 0
+          fi
+
+          CID=$(python3 -c "import json; d=json.load(open('$LATEST')); print(d.get('cid','unknown'))")
+          TITLE=$(python3 -c "import json; d=json.load(open('$LATEST')); print(d.get('title','Turn note'))")
+          SOURCE=$(python3 -c "import json; d=json.load(open('$LATEST')); print(d.get('source','perplexity'))")
+          SUMMARY=$(python3 -c "import json; d=json.load(open('$LATEST')); print(d.get('a_summary',''))")
+
+          python3 - <<EOF
+          import urllib.request, json, os
+          token = os.environ['NOTION_TOKEN']
+          db = os.environ['BRAIN_DB']
+          payload = {
+            "parent": {"database_id": db},
+            "properties": {
+              "Name": {"title": [{"text": {"content": "$TITLE"}}]},
+              "CID": {"rich_text": [{"text": {"content": "$CID"}}]},
+              "Source": {"rich_text": [{"text": {"content": "$SOURCE"}}]},
+              "Summary": {"rich_text": [{"text": {"content": "$SUMMARY"[:1800]}}]}
+            }
+          }
+          req = urllib.request.Request(
+            'https://api.notion.com/v1/pages',
+            data=json.dumps(payload).encode(),
+            headers={
+              'Authorization': f'Bearer {token}',
+              'Content-Type': 'application/json',
+              'Notion-Version': '2022-06-28'
+            },
+            method='POST'
+          )
+          res = urllib.request.urlopen(req)
+          print('✅ Brain note pushed:', res.status)
+          EOF
+
+      - name: Commit routed files
+        run: |
+          git config user.name "repo-copilot[bot]"
+          git config user.email "repo-copilot@nothinginfinity.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore: route turn bundle $(date -u +"%Y-%m-%dT%H:%M")"
+          git push
+          echo "✅ Routed files committed"

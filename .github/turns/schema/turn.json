@@ -1,0 +1,24 @@
+{
+  "_comment": "turn.json schema — copy this template for every turn-close push",
+  "schema_version": "1.0",
+
+  "cid": "bob/cN/jared",
+  "title": "Short title describing what happened this turn (5-10 words)",
+  "date": "YYYY-MM-DDTHH:MM:SSZ",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "YYYY-MM-DD-session-slug",
+
+  "q_summary": "One sentence: what Jared asked or directed (25 words max)",
+  "a_summary": "2-3 sentences: what Bob built, decided, or shipped this turn (50 words max)",
+
+  "commits": ["SHA1", "SHA2"],
+  "files_changed": ["path/to/file1.ext", "path/to/file2.ext"],
+  "decisions": ["Key decision made this turn (one line each)"],
+  "open_questions": ["Anything surfaced but unresolved"],
+
+  "inbox_messages_sent": [
+    {"to": "alice", "summary": "one line of what was sent"}
+  ],
+  "notion_ops_queued": ["filename of any .json queued to notion-ops-queue"]
+}
