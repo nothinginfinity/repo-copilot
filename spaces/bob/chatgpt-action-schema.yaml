@@ -1,144 +1,187 @@
 openapi: 3.1.0
 info:
-  title: Bob GitHub Write API
-  description: >
-    GitHub REST API write operations for Bob (repo-copilot agent).
-    Provides push_files (create/update), get_file (read with SHA),
-    and push_turn_bundle helpers scoped to nothinginfinity/repo-copilot.
-  version: 1.0.0
+  title: Bob GitHub Relay
+  description: |
+    Bob-native GitHub write relay for nothinginfinity/repo-copilot.
+    All writes go through the relay worker — Bob never touches the raw GitHub API.
+    Relay handles base64, SHA lookup, create-vs-update, multi-file commits, and auth.
+  version: 2.0.0
 
 servers:
-  - url: https://api.github.com
+  - url: YOUR_RELAY_URL
+    description: Cloudflare Worker relay (replace YOUR_RELAY_URL after deploy)
 
 paths:
-
-  /repos/{owner}/{repo}/contents/{path}:
+  /health:
     get:
-      operationId: getFileContents
-      summary: Get file contents and SHA
-      description: >
-        Reads a file from the repo. Returns content (base64) and SHA.
-        Always call this before updating an existing file to get the current SHA.
-      parameters:
-        - name: owner
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Repository owner (use nothinginfinity)
-        - name: repo
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Repository name (use repo-copilot)
-        - name: path
-          in: path
-          required: true
-          schema:
-            type: string
-          description: File path within the repo (e.g. spaces/bob/inbox.md)
-        - name: ref
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Branch name (default main)
+      operationId: healthCheck
+      summary: Check relay is live
       responses:
         '200':
-          description: File contents
+          description: OK
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  name:
-                    type: string
-                  path:
-                    type: string
-                  sha:
-                    type: string
-                    description: Blob SHA — required when updating this file
-                  content:
-                    type: string
-                    description: Base64-encoded file content
-                  encoding:
-                    type: string
-                  html_url:
-                    type: string
+                  status: { type: string }
+                  relay: { type: string }
+                  version: { type: string }
 
-    put:
-      operationId: createOrUpdateFile
-      summary: Create or update a single file
-      description: >
-        Creates or updates a file in the repo with a commit message.
-        SHA is REQUIRED when updating an existing file (get it via getFileContents first).
-        Content must be base64-encoded.
-      parameters:
-        - name: owner
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: repo
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: path
-          in: path
-          required: true
-          schema:
-            type: string
+  /get_file:
+    post:
+      operationId: getFile
+      summary: Read a file from the repo
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-                - message
-                - content
-                - branch
+              required: [path]
               properties:
-                message:
+                path:
                   type: string
-                  description: Commit message
-                content:
-                  type: string
-                  description: Base64-encoded file content
-                sha:
-                  type: string
-                  description: SHA of file being replaced (required for updates, omit for new files)
-                branch:
-                  type: string
-                  description: Target branch (use main)
+                  description: Repo-relative file path (e.g. spaces/mail.md)
       responses:
         '200':
-          description: File updated
+          description: File content and SHA
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  content:
+                  path: { type: string }
+                  content: { type: string }
+                  sha: { type: string }
+
+  /push_files:
+    post:
+      operationId: pushFiles
+      summary: Write 1-10 files to the repo in one commit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [files, message]
+              properties:
+                files:
+                  type: array
+                  maxItems: 10
+                  items:
                     type: object
+                    required: [path, content]
                     properties:
                       path:
                         type: string
-                      sha:
+                        description: Repo-relative file path
+                      content:
                         type: string
-                      html_url:
-                        type: string
-                  commit:
-                    type: object
-                    properties:
-                      sha:
-                        type: string
-                      html_url:
-                        type: string
-        '201':
-          description: File created
+                        description: Raw file content (relay handles base64)
+                message:
+                  type: string
+                  description: Commit message
+      responses:
+        '200':
+          description: Files pushed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        path: { type: string }
+                        sha: { type: string }
+                        commit: { type: string }
+
+  /append_mail:
+    post:
+      operationId: appendMail
+      summary: Append a message block to spaces/mail.md
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  description: Full message block to append (Markdown, starting with ## 📨 MSG-NNN)
+                mark_read_id:
+                  type: string
+                  description: Optional MSG ID to mark as read (e.g. MSG-005)
+      responses:
+        '200':
+          description: Mail updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  commit: { type: string }
+
+  /push_turn_bundle:
+    post:
+      operationId: pushTurnBundle
+      summary: Write a turn.json bundle and optionally update mail.md
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [turn_json]
+              properties:
+                turn_json:
+                  type: object
+                  description: Turn bundle object (must include cid and session fields)
+                  required: [cid, session]
+                  properties:
+                    schema_version: { type: string }
+                    cid: { type: string }
+                    session: { type: string }
+                    title: { type: string }
+                    date: { type: string }
+                    agent: { type: string }
+                    source: { type: string }
+                    q_summary: { type: string }
+                    a_summary: { type: string }
+                    files_changed:
+                      type: array
+                      items: { type: string }
+                    decisions:
+                      type: array
+                      items: { type: string }
+                    open_questions:
+                      type: array
+                      items: { type: string }
+                mail_update:
+                  type: object
+                  description: Optional mail append operation
+                  properties:
+                    content: { type: string }
+                    mark_read_id: { type: string }
+      responses:
+        '200':
+          description: Turn bundle pushed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  turn_commit: { type: string }
+                  mail_commit: { type: string }
 
 security:
   - BearerAuth: []
@@ -148,8 +191,4 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-      description: >
-        GitHub Personal Access Token (PAT) with Contents: Read & Write scope.
-        Generate at https://github.com/settings/tokens?type=beta
-        Select repo: nothinginfinity/repo-copilot
-        Required permission: Repository contents — Read and Write
+      description: RELAY_SECRET — set in Cloudflare Worker secrets, paste into GPT Action Bearer auth

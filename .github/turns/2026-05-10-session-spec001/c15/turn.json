@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c15/jared",
+  "title": "Bob GitHub Relay v1 scaffold shipped",
+  "date": "2026-05-10T21:37:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Bob (MSG-004 v2) recommended building a Bob GitHub Relay (Cloudflare Worker) instead of direct GitHub Contents API. Log it and build the relay.",
+  "a_summary": "Logged MSG-004 (real version), sent MSG-005 alice->bob confirming relay accepted. Shipped: relay/worker.js (5 endpoints: health, get_file, push_files, append_mail, push_turn_bundle), relay/wrangler.toml, relay/README.md (iPhone deploy guide, no CLI needed), chatgpt-action-schema.yaml v2 (relay not raw GitHub), chatgpt-action-instructions.md updated.",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/bob/relay/worker.js",
+    "spaces/bob/relay/wrangler.toml",
+    "spaces/bob/relay/README.md",
+    "spaces/bob/chatgpt-action-schema.yaml",
+    "spaces/bob/chatgpt-action-instructions.md"
+  ],
+  "decisions": [
+    "Bob GitHub Relay = Cloudflare Worker (free tier, iPhone-deployable)",
+    "Relay exposes 5 Bob-native endpoints, handles all raw GitHub mechanics",
+    "Bob never calls GitHub API directly",
+    "PAT + RELAY_SECRET live only in Cloudflare encrypted secrets",
+    "Path B (MCP) deferred until relay is working"
+  ],
+  "open_questions": [
+    "Jared needs to deploy relay and set 2 secrets before Bob can write"
+  ],
+  "inbox_messages_sent": ["bob"],
+  "notion_ops_queued": []
+}

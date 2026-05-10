@@ -1,0 +1,12 @@
+name = "repo-copilot-bob-relay"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Secrets (set via Cloudflare dashboard or `wrangler secret put`):
+#   GITHUB_PAT   — fine-grained PAT for nothinginfinity/repo-copilot, contents R+W
+#   RELAY_SECRET — Bearer token for GPT Action auth (any strong random string)
+#
+# Do NOT put real values here — this file is committed to the repo.
+
+[vars]
+ENV = "production"
