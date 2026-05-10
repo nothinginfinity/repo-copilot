@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "cid": "bob/t2/jared",
+  "title": "Mail scan + inbox read + MSG-008 intro to Alice",
+  "date": "2026-05-10T23:33:00Z",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "2026-05-10-session-boot",
+  "q_summary": "Jared said 'yes, check your inbox' — scan mail.md for unread messages to bob",
+  "a_summary": "Scanned mail.md. Found 1 unread message: MSG-007 from Alice (Gmail bridge shipped). Marked MSG-007 read. Appended MSG-008 intro to Alice announcing Perplexity native write access. Marked TASK-001 read in bob/inbox.md.",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/bob/inbox.md"
+  ],
+  "decisions": [
+    "Gmail bridge is now superseded — Bob has native Perplexity MCP write access",
+    "MSG-008 sent to Alice announcing new architecture"
+  ],
+  "open_questions": [
+    "What is the current build priority for Bob to spec?",
+    "Bob + Charlie Space instructions need turn-level brain push mandate (from brain.json)"
+  ],
+  "inbox_messages_sent": ["MSG-008"],
+  "notion_ops_queued": []
+}
