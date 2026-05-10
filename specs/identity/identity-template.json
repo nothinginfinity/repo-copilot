@@ -126,5 +126,27 @@
     "work_style": "",
     "collaboration_preference": "",
     "notes": ""
+  },
+
+  "finance": {
+    "_domain": "finance",
+    "_description": "Spending style, budget signals, financial goals — Medium sensitivity",
+    "_required": false,
+    "spending_style": "",
+    "budget_comfort": "",
+    "savings_priority": "",
+    "subscription_tolerance": "",
+    "notes": ""
+  },
+
+  "context": {
+    "_domain": "context",
+    "_description": "Device, accessibility needs, UI preferences — Low sensitivity",
+    "_required": false,
+    "device_primary": "",
+    "accessibility_needs": [],
+    "ui_density": "",
+    "color_scheme": "",
+    "notes": ""
   }
 }
