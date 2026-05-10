@@ -1,8 +1,8 @@
-<!-- boot-version: 1.1 | last-updated: 2026-05-10 | merged-from: G-009, G-001, G-003, G-017 -->
+<!-- boot-version: 1.2 | last-updated: 2026-05-10 | merged-from: G-009, G-001, G-003, G-017 -->
 
 # G-000 — Alice Boot Instructions
 
-> **Type:** `BOOT` 🥾 Single-call startup gist
+> **Type:** `BOOT` 🥞 Single-call startup gist
 > **Owner:** alice
 > **Load at:** session start — ONE tool call loads everything
 > **Last updated:** 2026-05-10
@@ -109,7 +109,7 @@ Only include files that changed this turn.
 
 ### What GitHub Actions Does Automatically
 
-`unzip-and-route.yml` handles: transcript assembly, brain note push to Agent Notes DB (Notion), file routing, inbox/outbox deduplication. **No manual Notion API call needed.**
+`unzip-and-route.yml` handles: transcript assembly, brain note push to Agent Notes DB (Notion), file routing, inbox/outbox deduplication, **sub-inbox routing by `to:` header**. **No manual Notion API call needed.**
 
 ### Hard DONTs
 - ❌ Do NOT call `append_note` Notion API — it is retired
@@ -143,6 +143,16 @@ This file is **call 1 of 3** at session start. Load in this exact order:
 
 After loading all 3, output a one-line summary of what each file **contains** (not just its size). If you cannot summarize the content, you did not successfully load it.
 
+### Inbox Architecture
+
+| File | Reader | Receives |
+|------|--------|----------|
+| `spaces/alice/inbox.md` | Alice (principal) | Unrouted messages, `to: alice` or no `to:` field |
+| `spaces/alice/inbox-ops.md` | alice-ops | Messages with `to: alice-ops` |
+| `spaces/alice/inbox-review.md` | alice-review | Messages with `to: alice-review` |
+
+Routing is automatic via `unzip-and-route.yml`. Never manually edit sub-inbox files.
+
 ---
 
 ## 6. Current Project Phase
@@ -151,8 +161,8 @@ After loading all 3, output a one-line summary of what each file **contains** (n
 |-------|-------|
 | Phase | **Bootloader pattern — dynamic Space instructions via GitHub repo** |
 | Active goal | Single-call boot via G-000; update agent behavior by pushing to repo, not editing Space settings |
-| Last completed | G-000 v1.1 — removed source breadcrumb headers to prevent redundant gist loads (2026-05-10) |
-| Up next | Validate 3-call boot in fresh Alice Space; extend bootloader pattern to Bob/Charlie |
+| Last completed | SPEC-001 v1.0 — sub-inbox routing system live (inbox-ops, inbox-review, unzip-and-route.yml updated, 2026-05-10) |
+| Up next | Validate sub-inbox routing with a test message; extend bootloader pattern to Bob/Charlie |
 
 ---
 
@@ -162,3 +172,4 @@ After loading all 3, output a one-line summary of what each file **contains** (n
 |------|--------|----|
 | 2026-05-10 | v1.0 — initial creation, merged from G-009, G-001, G-003, G-017 | Alice |
 | 2026-05-10 | v1.1 — removed "from G-0XX" section headers; added explicit warning not to re-load source gists | Alice |
+| 2026-05-10 | v1.2 — added Inbox Architecture table (SPEC-001); updated project phase | Alice |

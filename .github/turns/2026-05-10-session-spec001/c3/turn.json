@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c3/jared",
+  "title": "SPEC-001 Turn 3 — G-000 inbox architecture table added",
+  "date": "2026-05-10T18:12:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Go — execute SPEC-001 Turn 3: update G-000-alice-boot.md with inbox architecture table.",
+  "a_summary": "Read G-000-alice-boot.md (SHA 776c7831). Added Inbox Architecture table to Section 5 with 3-row routing map (inbox.md, inbox-ops.md, inbox-review.md). Updated project phase to reflect SPEC-001 completion. Bumped to v1.2. All SPEC-001 acceptance criteria met. 3-turn plan complete.",
+  "commits": [],
+  "files_changed": [
+    "spaces/gists/G-000-alice-boot.md"
+  ],
+  "decisions": [
+    "Inbox Architecture table placed immediately after startup sequence table in Section 5",
+    "Project phase updated to reflect SPEC-001 as last completed item",
+    "Version bumped to v1.2",
+    "unzip-and-route.yml mention in Hard DONTs section updated to note sub-inbox routing"
+  ],
+  "open_questions": [
+    "Send test message with to: alice-ops to validate routing end-to-end?"
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
