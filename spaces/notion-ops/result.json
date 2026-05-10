@@ -1,235 +1,24 @@
 {
-  "op": "diagnose",
-  "database_id": "35bd927c-9792-8158-9e5c-e00633385dbe",
-  "ran_at": "2026-05-09T23:35:31.000Z",
-  "requested_by": "bob/c2/jared",
+  "op": "batch_rows",
+  "database_id": "35bd927c-9792-8125-97a4-cb3422954698",
+  "ran_at": "2026-05-10T01:03:07.000Z",
+  "requested_by": "alice/c4/jared",
   "summary": {
-    "total": 5,
-    "ok": 5,
-    "failed": 0,
+    "total": 2,
+    "ok": 0,
+    "failed": 2,
     "skipped": 0
   },
   "results": [
     {
-      "status": "ok",
-      "note": "diagnosis complete"
-    }
-  ],
-  "sample": [
-    {
-      "page_id": "35bd927c-9792-8107-bbd0-e2e5de1ebda1",
-      "properties": {
-        "Last Updated": {
-          "type": "date"
-        },
-        "Track": {
-          "type": "select",
-          "value": "Infrastructure"
-        },
-        "Live Site": {
-          "type": "url",
-          "value": null
-        },
-        "Status": {
-          "type": "select",
-          "value": "\u26ab Archived"
-        },
-        "Language": {
-          "type": "select",
-          "value": "JavaScript"
-        },
-        "GitHub URL": {
-          "type": "url",
-          "value": "https://github.com/nothinginfinity/ztgi-ui-v4z"
-        },
-        "Agent Owner": {
-          "type": "select",
-          "value": "Jared"
-        },
-        "Description": {
-          "type": "rich_text"
-        },
-        "URL (1)": {
-          "type": "url",
-          "value": null
-        },
-        "Name": {
-          "type": "title",
-          "value": "ztgi-ui-v4z"
-        }
-      }
+      "name": "?",
+      "status": "error",
+      "error": "Couldn't find editable properties for these identifiers: Title"
     },
     {
-      "page_id": "35bd927c-9792-810f-97e3-c6a869755ed3",
-      "properties": {
-        "Last Updated": {
-          "type": "date"
-        },
-        "Track": {
-          "type": "select",
-          "value": "Tools"
-        },
-        "Live Site": {
-          "type": "url",
-          "value": null
-        },
-        "Status": {
-          "type": "select",
-          "value": "\ud83d\udfe2 Active"
-        },
-        "Language": {
-          "type": "select",
-          "value": "JavaScript"
-        },
-        "GitHub URL": {
-          "type": "url",
-          "value": "https://github.com/nothinginfinity/git-bridge-agent"
-        },
-        "Agent Owner": {
-          "type": "select",
-          "value": "Jared"
-        },
-        "Description": {
-          "type": "rich_text"
-        },
-        "URL (1)": {
-          "type": "url",
-          "value": null
-        },
-        "Name": {
-          "type": "title",
-          "value": "git-bridge-agent"
-        }
-      }
-    },
-    {
-      "page_id": "35bd927c-9792-8113-950a-d0844264fe33",
-      "properties": {
-        "Last Updated": {
-          "type": "date"
-        },
-        "Track": {
-          "type": "select",
-          "value": "Infrastructure"
-        },
-        "Live Site": {
-          "type": "url",
-          "value": null
-        },
-        "Status": {
-          "type": "select",
-          "value": "\u26ab Archived"
-        },
-        "Language": {
-          "type": "select",
-          "value": "Python"
-        },
-        "GitHub URL": {
-          "type": "url",
-          "value": "https://github.com/nothinginfinity/llm-native-inbox-v4"
-        },
-        "Agent Owner": {
-          "type": "select",
-          "value": "Jared"
-        },
-        "Description": {
-          "type": "rich_text"
-        },
-        "URL (1)": {
-          "type": "url",
-          "value": null
-        },
-        "Name": {
-          "type": "title",
-          "value": "llm-native-inbox-v4"
-        }
-      }
-    },
-    {
-      "page_id": "35bd927c-9792-811a-8f13-dcae81076c93",
-      "properties": {
-        "Last Updated": {
-          "type": "date"
-        },
-        "Track": {
-          "type": "select",
-          "value": "Infrastructure"
-        },
-        "Live Site": {
-          "type": "url",
-          "value": null
-        },
-        "Status": {
-          "type": "select",
-          "value": "\ud83d\udfe2 Active"
-        },
-        "Language": {
-          "type": "select",
-          "value": "TypeScript"
-        },
-        "GitHub URL": {
-          "type": "url",
-          "value": "https://github.com/nothinginfinity/m-mcp-rss"
-        },
-        "Agent Owner": {
-          "type": "select",
-          "value": "Jared"
-        },
-        "Description": {
-          "type": "rich_text"
-        },
-        "URL (1)": {
-          "type": "url",
-          "value": null
-        },
-        "Name": {
-          "type": "title",
-          "value": "m-mcp-rss"
-        }
-      }
-    },
-    {
-      "page_id": "35bd927c-9792-811b-8fa0-c3b0fb885bbf",
-      "properties": {
-        "Last Updated": {
-          "type": "date"
-        },
-        "Track": {
-          "type": "select",
-          "value": "Infrastructure"
-        },
-        "Live Site": {
-          "type": "url",
-          "value": null
-        },
-        "Status": {
-          "type": "select",
-          "value": "\ud83d\udfe2 Active"
-        },
-        "Language": {
-          "type": "select",
-          "value": "JavaScript"
-        },
-        "GitHub URL": {
-          "type": "url",
-          "value": "https://github.com/nothinginfinity/mmcp-api"
-        },
-        "Agent Owner": {
-          "type": "select",
-          "value": "Jared"
-        },
-        "Description": {
-          "type": "rich_text"
-        },
-        "URL (1)": {
-          "type": "url",
-          "value": null
-        },
-        "Name": {
-          "type": "title",
-          "value": "mmcp-api"
-        }
-      }
+      "name": "?",
+      "status": "error",
+      "error": "Couldn't find editable properties for these identifiers: Title"
     }
   ]
 }
