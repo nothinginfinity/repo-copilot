@@ -3,7 +3,8 @@
 > **Type:** `CONTEXT` 🗺️ "You Are Here" Map
 > **Owner:** alice
 > **Load at:** session start, before reading inbox
-> **Last updated:** 2026-05-09
+> **Last updated:** 2026-05-10
+> **Loaded via:** `fetch_url` from Perplexity Space bootloader
 
 ---
 
@@ -21,50 +22,65 @@
 
 ---
 
-## ⚠️ MANDATORY: Turn-Level Brain Push
+## ⚠️ MANDATORY: Turn-Close Bundle (G-017)
 
 > **This is a hard constraint, not a suggestion.**
 
-**After EVERY response, Alice MUST push a turn note to the brain as the final step — no exceptions.**
+**After EVERY response, Alice MUST push a turn-close bundle as slot 3 — no exceptions.**
+
+The manual `append_note` Notion API call is **RETIRED**. `unzip-and-route.yml` handles brain writes automatically from the `turn.json` payload.
 
 The unit of memory is the **turn** (one prompt + one response), not the session.
 Every turn is a first-class citizen. Nothing is ever lost.
 
-### Turn Note Protocol
+### Turn-Close Protocol (G-017)
 
 1. Deliver the response fully
-2. As the **last action** of every turn, push `append_note` to `spaces/notion-ops/queue.json`
-3. The note must be **lightweight** — 3–8 word title, concepts from THIS turn only, one-line decisions/questions
-4. Use the turn note schema in `spaces/gists/G-010-brain.md`
+2. As the **last action** (slot 3) of every turn, push a `push_files` bundle containing:
+   - `turn.json` (filled from `.github/turns/schema/turn.json`)
+   - Any inbox/outbox messages being sent this turn
+3. All files land in **one single commit** — never split across multiple commits
 
-### Turn Note Template
+### turn.json Template (alice version)
 
 ```json
 {
-  "op": "append_note",
-  "requested_by": "alice/c2/jared",
-  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "<3–8 word summary of THIS specific turn>",
-  "date": "YYYY-MM-DD",
-  "source": "Perplexity",
-  "project": "<inferred from context>",
-  "new_concepts": ["<only concepts NEW in this turn>"],
-  "decisions": "<decision or conclusion from this turn, or null>",
-  "open_questions": "<what this turn leaves unresolved, or null>",
-  "cid": "alice/c2/jared"
+  "schema_version": "1.0",
+  "cid": "alice/cN/jared",
+  "title": "Short title (5-10 words)",
+  "date": "YYYY-MM-DDTHH:MM:SSZ",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "YYYY-MM-DD-session-slug",
+  "q_summary": "What Jared asked this turn (25 words max)",
+  "a_summary": "What Alice built, decided, or shipped (50 words max)",
+  "commits": [],
+  "files_changed": [],
+  "decisions": [],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
 }
 ```
 
-### What counts as a turn
-- Every prompt + response pair is one turn
-- Even short acknowledgment turns get a note (title only is fine if nothing new)
-- If the turn produced no new concepts and no decision: push with `new_concepts: []` and `decisions: null`
-
 ### What NOT to do
+- ❌ Do NOT call `append_note` Notion API — it is retired
+- ❌ Do NOT skip slot 3 for any reason
+- ❌ Do NOT split turn.json and inbox messages into separate commits
 - ❌ Do NOT wait until end of session
-- ❌ Do NOT skip a turn because it felt minor
-- ❌ Do NOT batch multiple turns into one note
-- ❌ Do NOT write long prose in decisions/open_questions — one line max
+
+---
+
+## 🥾 Bootloader Pattern
+
+These instructions are loaded dynamically via `fetch_url` each session.
+To update Alice's behavior: push changes to this file on `main`.
+**No Perplexity Space settings update required.**
+
+The Space instructions are a permanent thin bootloader — this file is the OS.
+
+### Bootloader URL
+`https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/gists/G-003-alice-context.md`
 
 ---
 
@@ -72,11 +88,11 @@ Every turn is a first-class citizen. Nothing is ever lost.
 
 | Field | Value |
 |-------|-------|
-| Phase | **Turn-level brain wiring** — every Perplexity turn auto-pushed to Agent Notes DB |
-| Active goal | Turn-level push live for Alice; extend to Bob/Charlie/Claude/ChatGPT next |
-| Blocking issues | None |
-| Last completed | brain.json read primitive (export_brain op + brain-export.yml daily cron) |
-| Up next | Phase 2: dedup + semantic compression workflow; Three-Agents Demo build |
+| Phase | **Turn-level brain wiring via G-017 turn-bundle** |
+| Active goal | Bootloader pattern live — update agents via repo push, not Space settings |
+| Blocking issues | G-001 stale (append_note mandate) — Bob to fix |
+| Last completed | G-017 turn-bundle validated in new Alice Space (2026-05-10) |
+| Up next | Bootloader pattern test in fresh Space; extend to Bob/Charlie next |
 
 ---
 
@@ -89,23 +105,12 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 ## 🔧 My Defaults
 
 - Default branch: `main`
-- Preferred commit style: `feat(scope): description` or `brain: <title> (alice/c2/jared)`
+- Preferred commit style: `feat(scope): description` or `alice: <title> (alice/cN/jared)`
 - Max tool calls per turn: **3** (see G-001)
+- Budget: 1 read + 1 write + 1 turn-bundle push (slot 3)
 - Always confirm SHA before updating existing files
 - Never describe code without pushing it
-- **Turn note push counts as 1 tool call** — budget accordingly
-
----
-
-## 📝 Session Notes
-
-> _This section is rewritten each session by Alice. Holds ephemeral working notes._
-
-- Turn-level brain push wired 2026-05-09 (alice/c2/jared)
-- Turn note schema lives in G-010-brain.md
-- Every turn = one append_note to Agent Notes DB (database_id: 35bd927c-9792-81b9-816a-e357c9339d2f)
-- Phase 2 (dedup/compression) deferred — log first, compress later
-- Brain DB accumulates across Alice, Bob, Charlie, Claude, ChatGPT — all same DB
+- **Turn-bundle push counts as slot 3** — plan reads/writes so slot 3 is always free
 
 ---
 
@@ -115,3 +120,4 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 |------|--------|----|
 | 2026-05-07 | Initial creation | Bob (on Alice's behalf) |
 | 2026-05-09 | Updated phase, added turn-level brain push mandate | Alice (alice/c2/jared) |
+| 2026-05-10 | G-017 turn-bundle replaces append_note; bootloader pattern documented | Alice (alice/c4/jared) |

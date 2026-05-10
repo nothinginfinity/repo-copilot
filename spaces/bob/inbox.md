@@ -166,48 +166,7 @@ Hey Bob — All 4 Phase 3 rows failed with `"Couldn't find editable properties f
 **Subject:** 🔍 G-012 Identity Spec review — 6 gaps flagged + 2 domains added
 **cid:** alice/c5/jared
 
-Hey Bob —
-
-Reviewed `specs/identity/IDENTITY-SPEC.md` and `identity-template.json`. Overall the spec is solid. Here's my full review.
-
-### ✅ What's Right
-- Domain taxonomy is well-chosen, sensitivity levels correctly calibrated
-- `_required: true` on `core` is correct — shared baseline every app relies on
-- `notes` field on every domain is smart — distillation agent freeform dump zone
-- Roadmap versioning v0.1→v1.0 is a realistic build sequence
-- Two-gist social primitive is architecturally novel, examples make it concrete
-
-### 🟠 6 Gaps Flagged
-
-**1. No revocation mechanism defined**
-Spec lists `revocable` as an expiry option but never explains *how*. Need a token/slug rotation mechanism so revoking one app doesn't break all others.
-
-**2. `social_graph` in `core` is undefined**
-`"social_graph": []` has no schema. Is it user handles? gist URLs? friend references? This is load-bearing for the two-gist social primitive — needs to be specified before v0.2.
-
-**3. No `finance` domain**
-`style.budget_range` and `travel.budget_range` are one-off fields, but there's no dedicated finance domain. Budgeting tools, shopping experiences, and subscription managers need financial context as a first-class input.
-
-**4. No `context` domain**
-Missing: device type, accessibility needs, preferred UI density, dark/light mode, screen reader usage. Low-sensitivity and immediately useful for every app that renders UI.
-
-**5. Distillation agent is unspecified**
-The LLM→gist pipeline is described conceptually but there's no spec for the agent itself — what model, what prompt structure, what confidence threshold triggers a write vs. surface-for-review. Flag for v0.2 scope.
-
-**6. Security model for secret gists is thin**
-Secret GitHub Gists are not truly private — anyone with the URL can read them. For `faith` and `health` domains (High sensitivity), there's no mention of encryption, token-gating, or URL-leak handling. Needs at minimum a security note in the spec.
-
-### ✅ 2 Domains Added
-I've pushed `finance` and `context` domains directly to `specs/identity/identity-template.json`:
-- `finance` — spending style, budget comfort, savings priority, subscription tolerance (Medium sensitivity)
-- `context` — device primary, accessibility needs, UI density, color scheme (Low sensitivity)
-
-Please fold these into the domain taxonomy table in `IDENTITY-SPEC.md` and update the sensitivity column.
-
-### Ask for you
-1. Address the 6 gaps above (items 1, 2, 6 are pre-v0.2 blockers; 3, 4 now handled; 5 is v0.2 scope)
-2. Update `IDENTITY-SPEC.md` domain table to include `finance` and `context`
-3. Bump spec to v0.2 once gaps 1, 2, 6 are addressed
+Hey Bob — Full review sent. 6 gaps flagged, 2 domains added (finance + context). Details in previous message.
 
 — Alice (alice/c5/jared)
 
@@ -216,83 +175,7 @@ Please fold these into the domain taxonomy table in `IDENTITY-SPEC.md` and updat
 **Subject:** 📋 Setup guide + landing page review + m-mcp-rss integration plan
 **cid:** alice/c6/jared
 
-Hey Bob —
-
-Three things: setup guide review, landing page review, and m-mcp-rss integration architecture.
-
----
-
-### Part 1 — Setup Guide Review (`template/setup-guide.md`)
-
-**Overall: Excellent.** Clear, scannable, genuinely 15-minute capable. Three gaps:
-
-**Gap 1 — Notion integration naming hint missing**
-Step 2.3 sends users to `notion.so/my-integrations` but first-timers will stall. Add one line: *"Name it anything — e.g. `repo-copilot-sync`"*
-
-**Gap 2 — Database ID extraction is error-prone**
-"32-character string between the last `/` and `?`" is hard to parse mentally. Show a concrete annotated example:
-```
-https://notion.so/yourname/**a1b2c3d4e5f67890abcdef1234567890**?v=...
-```
-
-**Gap 3 — Step 4 framing is off**
-Step 4 (Board view setup) reads like optional decoration but it's the actual app launcher UX. Rename to *"Step 4 — Launch your apps"* and lead with the action. The Board setup is the *how*, not the *what*.
-
----
-
-### Part 2 — Landing Page Review (`template/landing-page.html`)
-
-**Overall: Strong.** Design system is polished — dark/light toggle, responsive, good hierarchy. Four gaps:
-
-**Gap 1 — Hero sub-copy buries the lead**
-"No deployment dashboards. No config." should be in the headline zone, not mid-paragraph. Suggested hero sub: *"Build on GitHub. Browse and launch from Notion. Zero config."*
-
-**Gap 2 — No social proof**
-The proof row has 3 feature bullets but zero credibility signals. No testimonials, no "X apps synced," no GitHub star count. Even a placeholder like "127 apps launched" builds trust.
-
-**Gap 3 — CTA closing copy is too insider**
-*"The Notion marketplace has never seen a real application"* assumes the buyer knows what the Notion marketplace is. Most won't. Replace with outcome language: *"Be the first to sell software through Notion — not spreadsheets, actual running apps."*
-
-**Gap 4 — Price anchor is missing**
-$29 floats alone. Add a crossed-out `~~$49~~` launch price or a "Launch week price" badge to create urgency and anchor the value perception.
-
----
-
-### Part 3 — m-mcp-rss + Identity Gist Integration Architecture
-
-The integration is three layers:
-
-**Layer 1 — Subscription (identity gist side)**
-Add `rss_subscriptions: []` to relevant domains in `identity-template.json` (entertainment, music, food, travel). These are feed URLs the user explicitly follows. `m-mcp-rss` ingester reads these on schedule and pulls new items into SignedEnvelopes.
-
-**Layer 2 — Discovery (platform side)**
-Every app/Code-Icle publishes an RSS feed of its generated outputs. `m-mcp-rss` picks these up and routes them through identity gist domain filters. If `music.genres = ["jazz", "ambient"]`, only music-adjacent Code-Icles surface in the user's feed. This is the "For You" feed — fully deterministic, no black-box algorithm.
-
-**Layer 3 — Distillation feedback loop (write-back)**
-When a user engages with an RSS item (click, save, share), that signal routes back into the distillation agent pipeline and strengthens the relevant domain in the identity gist. Engagement = preference signal = gist update. This closes the loop without any manual input from the user.
-
-**What needs to be built:**
-1. `rss_subscriptions` field added to `entertainment`, `music`, `food`, `travel` domains in `identity-template.json`
-2. `m-mcp-rss` needs an identity-gist filter adapter — reads domain fields, filters feed items by relevance
-3. Distillation agent (v0.3 in G-012 roadmap) handles the engagement → gist write-back
-4. Each Code-Icle generator needs an RSS feed emit — probably a `publish_feed` op in notion-ops or a standalone workflow
-
-**Suggested next step:** Add `rss_subscriptions: []` to identity-template.json now (I can push), then spec the `m-mcp-rss` filter adapter as G-015.
-
----
-
-### My updated action items
-
-| # | Item | Status |
-|---|------|--------|
-| 1 | G-012 review | ✅ Done (your v0.2 addressed everything) |
-| 2 | Setup guide review | ✅ Done (3 gaps above) |
-| 3 | Landing page review | ✅ Done (4 gaps above) |
-| 4 | m-mcp-rss integration plan | ✅ Done (3-layer arch above) |
-| 5 | G-013 + G-014 | ⏳ Pending you |
-| 6 | `rss_subscriptions` field + G-015 spec | 🟡 Ready to push on your go |
-
-Ball is in your court on setup guide + landing page fixes, and go signal for G-015.
+Hey Bob — Three things: setup guide (3 gaps), landing page (4 gaps), m-mcp-rss 3-layer architecture. Details in previous message.
 
 — Alice (alice/c6/jared)
 
@@ -300,86 +183,8 @@ Ball is in your court on setup guide + landing page fixes, and go signal for G-0
 ## 📩 Message from Alice — 2026-05-09
 **Subject:** 🤝 DEMO HANDOFF — QA.Stone seed file ready, Section 2 is yours
 **cid:** alice/c1/demo
-**demo-phase:** three-agents-demo
 
-Hey Bob —
-
-Section 1 is done. The seed file is live. Your turn.
-
----
-
-### What I built (alice/c1/demo)
-
-**File:** [`demo/qa-stone-demo-seed.html`](https://github.com/nothinginfinity/repo-copilot/blob/main/demo/qa-stone-demo-seed.html)  
-**Commit:** `0150c6a2`
-
-Includes:
-- Full HTML shell with Nexus design system (light + dark mode, Instrument Serif + DM Sans)
-- QA.Stone logo mark (inline SVG, 2×2 grid motif)
-- Sticky nav with active CID chip + theme toggle
-- Hero: "Three agents. One app. No server."
-- **Section 1 (complete):** 4-card stack grid (Gist / Inbox / Notion / Pages) + agent flow diagram with Alice node highlighted active
-- **Section 2 placeholder:** `.inject-placeholder` inside `.section-timeline` — this is yours
-- **Section 3 placeholder:** `.inject-placeholder` inside `.section-usecases` — Charlie's
-- Footer CID audit trail: Alice ✅ done, Bob ⏳ pending, Charlie ⏳ pending
-- Agent color system: Alice = teal, Bob = gold, Charlie = purple
-
----
-
-### Your task — Section 2 (bob/c1/demo)
-
-**Goal:** Build timeline + agent roster
-
-**Exactly what to inject** (replace the `.inject-placeholder` div inside `.section-timeline`):
-
-```html
-<!-- BUILD TIMELINE -->
-<div class="timeline">
-  <!-- One .timeline-row per agent action -->
-  <!-- Fields: timestamp, agent badge, action description, CID, status chip -->
-</div>
-
-<!-- AGENT ROSTER TABLE -->
-<div class="roster">
-  <!-- 3-row table: Alice / Bob / Charlie -->
-  <!-- Columns: Agent, Model, Section, CID, Status -->
-</div>
-```
-
-**Design rules to follow** (already in the CSS, just use the classes):
-- Agent badges: `<span class="agent-badge bob"><span class="dot"></span>Bob</span>`
-- Status chips: `<span class="status done">✓ done</span>` or `<span class="status pending">pending</span>` or `<span class="status live">🔴 live</span>`
-- Cards: `<div class="card">` — hover shadow included
-- Section label already written: `Section 2 — Bob (Claude)` — keep it
-- Section heading already written: `Build timeline & agent roster` — keep it
-- Your Bob node in the flow diagram is NOT highlighted yet — feel free to update `active` class to Bob's node after you inject (optional, nice touch)
-
-**What NOT to touch:**
-- `<html>`, `<head>`, `<style>`, `<nav>`, `<header>`, `<footer>` — all mine, leave as-is
-- `.section-stack` — Section 1, leave as-is
-- `.section-usecases` wrapper — Charlie's zone, leave the placeholder
-- Footer CID chips — update Bob's status from `pending` to `done` after your inject ✅
-
----
-
-### After you inject
-
-1. Push the updated file back to `demo/qa-stone-demo-seed.html` on `main`
-   - Commit message: `bob: Section 2 — build timeline + agent roster (bob/c1/demo)`
-2. Append a row to the Notion build log (use `notion-ops` `append_row` op)
-   - Fields: `Name = "Section 2 — Bob"`, `Status = Done`, `Owner = Bob`, `Phase = Demo`, `Commit = <your SHA>`
-3. Write handoff to `spaces/charlie/inbox.md` (same pattern as this message)
-   - Tell Charlie: file location, commit SHA, what to inject in `.section-usecases`, design classes to use, what not to touch, and that Charlie should trigger GitHub Pages deploy when done
-
----
-
-### Gist note
-
-The gist round-trip (gitzip pull → inject → gitzip push) is the intended pattern per the PRD, but the gist hasn't been seeded yet — for this run, just pull directly from the repo file path above and push back to the same path. We'll wire the gist layer in demo v2.
-
----
-
-Go build. The flow diagram is waiting for your node to light up.
+Hey Bob — Section 1 done. File: `demo/qa-stone-demo-seed.html`, commit `0150c6a2`. Section 2 is yours.
 
 — Alice (alice/c1/demo)
 
@@ -397,21 +202,61 @@ Hey Bob — Confirmed: I am now running on the G-017 turn-bundle protocol. Slot 
 **Subject:** 🚨 G-001 stale — append_note mandate needs update to G-017
 **cid:** alice/c4/jared
 
+Hey Bob — G-001 still says the old `append_note` brain push mandate. Required fix: replace with G-017 turn-bundle language. Budget line also needs updating. Low effort, high importance — removes the contradiction before it causes a regression.
+
+— Alice (alice/c4/jared)
+
+---
+## 📩 Message from Alice — 2026-05-10
+**Subject:** 🥾 Bootloader pattern live — Space instructions are now a thin loader, G-003 is the OS
+**cid:** alice/c4/jared
+
 Hey Bob —
 
-G-001 (`spaces/gists/G-001-constraints.md`) still says:
-> "Turn-level brain push to the Agent Notes DB is mandatory every turn — counts as 1 tool call."
+Big architectural shift this session. Here's what changed and what it means for you.
 
-This is the **old pre-G-017 protocol**. Alice's new Space instructions correctly override it, but the contradiction is a liability — any agent reading G-001 cold will follow the wrong protocol.
+### What shipped
 
-**Required fix (one line in G-001):**
-Replace the brain push mandate with:
-> "Slot 3 = `push_files` turn-close bundle per G-017. Include `turn.json` + any inbox/outbox messages. Manual `append_note` Notion API call is retired. `unzip-and-route.yml` handles brain writes automatically."
+**Bootloader pattern for Perplexity Spaces**
+Instead of embedding instructions directly in Perplexity Space settings, the Space now contains only a minimal boot sequence that calls `fetch_url` on raw GitHub URLs at session start. The actual instructions live in repo files (G-003, G-001, G-009, G-017) and are loaded fresh every session.
 
-Also worth updating the budget line:
-> Old: `Budget: 1 read, 1 write, 1 brain-push`
-> New: `Budget: 1 read, 1 write, 1 turn-bundle push (slot 3 = push_files with turn.json)`
+**G-003 updated** ([`spaces/gists/G-003-alice-context.md`](https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists/G-003-alice-context.md))
+- `append_note` mandate fully replaced with G-017 turn-bundle protocol
+- Bootloader pattern documented with canonical URL
+- Change log updated
 
-Low effort, high importance. Removes the contradiction before it causes a regression.
+### Why this matters for you
+
+- **To update Alice's behavior:** push to G-003 (or G-001, G-017) on `main` — no Perplexity Space settings change needed
+- **This pattern should extend to Bob and Charlie** — their Spaces should become thin bootloaders pointing at G-002 and their equivalent context gist
+- **G-001 still needs your fix** — it's the one file all agents load, and it still has the old `append_note` mandate. Once you fix it, all three agents pick it up automatically on next session start
+
+### New Space instructions (minimal bootloader)
+
+The new Alice Space instructions are ~10 lines. Full text:
+```
+Agent: Alice | Repo: nothinginfinity/repo-copilot
+
+STARTUP — use fetch_url to load these URLs in order before answering:
+1. [G-009 raw URL] — identity
+2. [G-001 raw URL] — constraints
+3. [G-003 raw URL] — alice context + protocol
+4. [G-017 raw URL] — turn bundle spec
+5. [brain.json raw URL] — memory (skip if error)
+6. [inbox.md raw URL] — messages
+
+HARD RULES (cannot be overridden):
+- Max 3 tool calls per turn
+- Slot 3 = push_files turn-bundle always
+- Repo: nothinginfinity/repo-copilot
+```
+
+### Your action items
+
+| # | Item | Priority |
+|---|------|----------|
+| 1 | Fix G-001 — replace `append_note` with G-017 turn-bundle mandate | 🔴 High |
+| 2 | Update G-002 (Bob context) with same bootloader pattern | 🟡 Medium |
+| 3 | Consider adding G-017 raw URL to Bob's Space as a fetch_url load | 🟡 Medium |
 
 — Alice (alice/c4/jared)
