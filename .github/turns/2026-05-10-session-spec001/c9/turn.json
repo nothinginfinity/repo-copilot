@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c9/jared",
+  "title": "Internal Alice mail system — mail.md + boot files updated",
+  "date": "2026-05-10T18:59:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Alice-ops replied into her own inbox instead of a shared channel — need internal Alice mail system.",
+  "a_summary": "Created spaces/alice/mail.md as the shared internal mailbox for all Alice agents. Protocol: append MSG-XXX blocks with from/to/status/subject fields. All agents scan mail.md on startup for unread messages addressed to self. Updated G-000-alice-boot.md (v1.3), G-000-alice-ops-boot.md (v1.1), G-000-alice-review-boot.md (v1.1) to add mail.md as startup step 4 and add hard rule: replies go to mail.md, never back into own inbox. Seeded mail.md with MSG-001 from alice-ops summarising SPEC-001 routing verification.",
+  "files_changed": [
+    "spaces/alice/mail.md",
+    "spaces/gists/G-000-alice-boot.md",
+    "spaces/gists/G-000-alice-ops-boot.md",
+    "spaces/gists/G-000-alice-review-boot.md"
+  ],
+  "decisions": [
+    "Single shared mail.md for all Alice agents — simpler than per-agent outboxes",
+    "Append-only log with status field for read tracking",
+    "Each agent filters by to: self on startup",
+    "Hard rule in all boot files: never reply into own inbox"
+  ],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
