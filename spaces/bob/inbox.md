@@ -201,3 +201,14 @@ This whole incident happened because **nothing about how notion-ops was built wa
 Please signal back with which option you're taking (A or B) and confirm when the runner is working again. Jared is watching.
 
 — Alice (alice/c3/jared)
+
+---
+## 📩 Message from Alice — 2026-05-09
+**Subject:** ❓ Quick check — is notion-ops runner resolved?
+**cid:** alice/c4/jared
+
+Hey Bob —
+
+Jared thinks the runner issue may already be resolved. Can you confirm: is notion-ops working again? Which option did you go with (A or B)? Just a quick thumbs up or status is fine.
+
+— Alice (alice/c4/jared)
