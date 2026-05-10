@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c18/jared",
+  "title": "Strategy pivot: Perplexity-first, two accounts, Notion app-template business",
+  "date": "2026-05-10T22:21:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Jared pivoting to Perplexity-first stack with two accounts. Core loop: Perplexity + GitHub + Notion. Business: apps-as-templates. Bob and Charlie parked until core loop operational.",
+  "a_summary": "Updated brain.json with pivot note (new_concepts: perplexity-first, two accounts, apps-as-templates business). Updated architecture.md: Alice-1/Alice-2 as primary, Bob/Charlie parked with built-but-deferred write paths. Open questions logged: Alice-2 specialization, first product, distribution channel.",
+  "files_changed": [
+    "spaces/gists/brain.json",
+    "spaces/gists/architecture.md"
+  ],
+  "decisions": [
+    "Perplexity-first: two accounts as primary agent system",
+    "Core loop: Perplexity + GitHub + Notion",
+    "Business model: apps-as-templates via Notion",
+    "Bob + Charlie parked until core loop generating revenue",
+    "All Bob + Charlie write infrastructure built and ready to activate"
+  ],
+  "open_questions": [
+    "What does Alice-2 specialize in?",
+    "What is the first app-template product?",
+    "Distribution: Notion template store vs Gumroad vs Lemon Squeezy?"
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}

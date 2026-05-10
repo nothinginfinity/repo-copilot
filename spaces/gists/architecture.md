@@ -1,49 +1,56 @@
 # repo-copilot — Agent Architecture
-_Living document. Updated each time architecture changes._
-_Last updated: 2026-05-10_
+_Living document. Last updated: 2026-05-10_
+
+---
+
+## ⚡ Current Focus: Perplexity-First Stack
+
+Jared is running on **two Perplexity accounts** as the primary agent system.
+ChatGPT (Bob) and Claude (Charlie) are **parked** until the Perplexity/GitHub/Notion
+core loop is fully operational and generating revenue.
+
+**Core loop (active):**
+```
+Perplexity (Alice) ↔ GitHub (repo-copilot) ↔ Notion
+```
+
+**Business model:**
+Build and sell apps-as-templates distributed via Notion.
+Two Perplexity accounts allow parallel workstreams (build + ops, or two products).
 
 ---
 
 ## Agent Roster
 
-| Agent | Platform | Read | Write | Status |
-|-------|----------|------|-------|--------|
-| **Alice** | Perplexity (iPhone) | ✅ GitHub MCP native | ✅ GitHub MCP native (`push_files`) | Fully operational |
-| **Bob** | ChatGPT (iPhone) | ✅ GitHub connector | ✅ Gmail bridge → Apps Script → GitHub | Operational (Path A) |
-| **Charlie** | Claude Pro (iPhone) | ✅ GitHub connector | ⚠️ OAuth gap — Composio fix pending | Read-only for now |
+| Agent | Platform | Status | Write Path |
+|-------|----------|--------|------------|
+| **Alice-1** | Perplexity account 1 (iPhone) | ✅ Primary | Native MCP `push_files` |
+| **Alice-2** | Perplexity account 2 (iPhone) | 🔜 Activate when needed | Native MCP `push_files` |
+| **Bob** | ChatGPT (iPhone) | ⏸️ Parked | Gmail bridge → Apps Script → GitHub |
+| **Charlie** | Claude Pro (iPhone) | ⏸️ Parked | Composio MCP (needs setup) |
 
 ---
 
 ## Write Path Details
 
-### Alice — Native MCP
+### Alice — Native MCP (active)
 ```
-Perplexity Space (Alice)
+Perplexity Space
   → GitHub MCP tools (push_files, get_file_contents, etc.)
   → nothinginfinity/repo-copilot
 ```
-Full multi-file commits. No workaround. Primary write agent.
 
-### Bob — Gmail Bridge (Path A)
+### Bob — Gmail Bridge (built, parked)
 ```
-ChatGPT Bob
-  → Gmail draft (BOB_TURN_BUNDLE / BOB_MAIL_APPEND / etc.)
-  → Google Apps Script poller (every 5 min)
-  → GitHub Contents API
-  → nothinginfinity/repo-copilot
+ChatGPT Bob → Gmail draft (BOB_ prefix) → Apps Script poller → GitHub
 ```
-Files: `spaces/bob/gmail-bridge/`
-Upgrade path: Cloudflare relay (`spaces/bob/relay/`) when deployed.
+Files: `spaces/bob/gmail-bridge/` — ready to activate, needs Apps Script setup.
 
-### Charlie — Composio MCP (pending)
+### Charlie — Composio MCP (planned, parked)
 ```
-Claude Pro iPhone
-  → Composio managed MCP endpoint (remote HTTPS)
-  → GitHub OAuth (handled by Composio)
-  → nothinginfinity/repo-copilot
+Claude Pro → Composio remote MCP → GitHub OAuth → GitHub
 ```
-Setup: composio.dev → connect GitHub → add URL to claude.ai Connectors → syncs to iPhone.
-Interim: Jared pastes Charlie replies into Alice session.
+Files: `spaces/charlie/mcp-research.md` — ready to activate, needs Composio account.
 
 ---
 
@@ -51,29 +58,23 @@ Interim: Jared pastes Charlie replies into Alice session.
 
 | File | Purpose |
 |------|---------|
-| `spaces/mail.md` | Agent↔agent mailbox (all agents) |
+| `spaces/mail.md` | Agent↔agent mailbox |
 | `spaces/gists/brain.json` | Shared memory / live state |
+| `spaces/gists/architecture.md` | This file |
 | `spaces/gists/G-000-alice-boot.md` | Alice boot instructions |
-| `spaces/gists/G-000-bob-boot.md` | Bob boot instructions |
-| `spaces/gists/G-000-charlie-boot.md` | Charlie boot instructions |
+| `spaces/gists/G-000-bob-boot.md` | Bob boot instructions (parked) |
+| `spaces/gists/G-000-charlie-boot.md` | Charlie boot instructions (parked) |
 | `.github/turns/{session}/{cid}/turn.json` | Per-turn audit log |
 
 ---
 
-## Session Protocol
-
-- **Slot 1-2:** Each agent reads startup files + mail.md
-- **Slot 3 (turn-close):** Each agent pushes turn.json + any mail updates
-- **Session ID format:** `YYYY-MM-DD-session-{name}`
-- **CID format:** `{agent}/{turn-number}/{user}`
-
----
-
-## Upgrade Roadmap
+## Upgrade Roadmap (when ready)
 
 | Priority | Item | Unblocks |
 |----------|------|----------|
-| 1 | Composio GitHub MCP for Charlie | Charlie full write parity with Alice |
-| 2 | Deploy Cloudflare relay for Bob | Bob faster/more reliable writes |
-| 3 | GitHub MCP native in ChatGPT | Bob full parity (no Gmail bridge) |
-| 4 | Notion integration | Cross-agent structured logging |
+| 1 | Define Alice-2 specialization | Parallel workstreams |
+| 2 | First app-template product | Revenue |
+| 3 | Notion distribution channel | Sales |
+| 4 | Bob Gmail bridge Apps Script | Bob write operational |
+| 5 | Composio for Charlie | Charlie write parity |
+| 6 | Cloudflare relay for Bob | Faster Bob writes |
