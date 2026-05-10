@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c17/jared",
+  "title": "Charlie MCP findings logged — Composio path identified",
+  "date": "2026-05-10T22:11:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Claude confirmed: MCP works on iPhone via claude.ai config, but official GitHub MCP has OAuth gap blocking remote path. Composio is the fix. Log findings and update architecture.",
+  "a_summary": "Created spaces/charlie/mcp-research.md (full findings + 3 paths). Created spaces/charlie/inbox.md with TASK-001 briefing Charlie. Created spaces/gists/architecture.md (living architecture doc: all 3 agents, write paths, shared infra, upgrade roadmap). Alice = primary write agent until Composio set up for Charlie.",
+  "files_changed": [
+    "spaces/charlie/mcp-research.md",
+    "spaces/charlie/inbox.md",
+    "spaces/gists/architecture.md"
+  ],
+  "decisions": [
+    "Composio = Charlie write path (remote MCP, handles OAuth, works on iPhone)",
+    "Alice = primary write agent until Composio configured",
+    "Bob Gmail bridge = operational Path A",
+    "architecture.md created as living system doc"
+  ],
+  "open_questions": [
+    "Jared needs to set up Composio account and connect GitHub",
+    "Verify Composio free tier is sufficient for Charlie's usage"
+  ],
+  "inbox_messages_sent": ["charlie"],
+  "notion_ops_queued": []
+}
