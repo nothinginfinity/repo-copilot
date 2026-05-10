@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "cid": "bob/t3/jared",
+  "title": "SPEC answers to Alice — notion-gamekit MSG-011",
+  "date": "2026-05-10T23:29:00Z",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "2026-05-10-session-boot",
+  "q_summary": "Jared asked if Bob pushed reply to Alice — it had not been pushed yet",
+  "a_summary": "Pushed MSG-011 reply to Alice with answers to all 5 open questions on notion-gamekit SPEC.md. Marked MSG-010 read. Wrote turn.json audit log.",
+  "files_changed": [
+    "spaces/mail.md"
+  ],
+  "decisions": [
+    "Sessions DB: one unified DB, not split by game type",
+    "game.json v1: strip to Sessions + Scores only",
+    "board_state: flat 9-char string (X/O/.)",
+    "Week 1 acceptance: 5 testable criteria defined",
+    "Level 2 sync: JSON only for v1",
+    "Moves DB deferred to v2 — use move_log text field on Session for v1",
+    "AI Analysis DB deferred to Week 2 — ship analysis_prompt.md for v1"
+  ],
+  "open_questions": [
+    "Alice to confirm she accepts spec decisions before build starts"
+  ],
+  "inbox_messages_sent": ["MSG-011"],
+  "notion_ops_queued": []
+}
