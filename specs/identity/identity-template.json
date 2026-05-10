@@ -1,0 +1,130 @@
+{
+  "_meta": {
+    "spec_version": "0.1",
+    "gist_id": "G-012",
+    "created": "",
+    "updated": "",
+    "owner": "",
+    "public": false,
+    "description": "Domain identity gist template — fork and fill for each domain"
+  },
+
+  "core": {
+    "_domain": "core",
+    "_description": "Shared with every app that requests any domain",
+    "_required": true,
+    "name": "",
+    "preferred_name": "",
+    "pronouns": "",
+    "language": "en",
+    "timezone": "",
+    "location_region": "",
+    "social_graph": []
+  },
+
+  "style": {
+    "_domain": "style",
+    "_description": "Clothing, fashion, aesthetic preferences",
+    "_required": false,
+    "aesthetic_keywords": [],
+    "preferred_fits": [],
+    "color_palette": [],
+    "brands_loved": [],
+    "brands_avoided": [],
+    "budget_range": "",
+    "size_info": {},
+    "cultural_influences": [],
+    "notes": ""
+  },
+
+  "music": {
+    "_domain": "music",
+    "_description": "Music taste, genres, moods, artists",
+    "_required": false,
+    "genres": [],
+    "artists_loved": [],
+    "artists_avoided": [],
+    "moods": [],
+    "tempo_preference": "",
+    "cultural_roots": [],
+    "discovery_openness": "",
+    "notes": ""
+  },
+
+  "food": {
+    "_domain": "food",
+    "_description": "Diet, cuisine, flavor profile, restrictions",
+    "_required": false,
+    "diet_type": "",
+    "cuisines_loved": [],
+    "cuisines_avoided": [],
+    "allergies": [],
+    "flavor_profile": [],
+    "spice_tolerance": "",
+    "cultural_influences": [],
+    "notes": ""
+  },
+
+  "faith": {
+    "_domain": "faith",
+    "_description": "Values, traditions, observances, ethics",
+    "_required": false,
+    "tradition": "",
+    "observances": [],
+    "dietary_laws": [],
+    "values_keywords": [],
+    "community_type": "",
+    "notes": ""
+  },
+
+  "health": {
+    "_domain": "health",
+    "_description": "Wellness preferences, sensitivities, conditions (share carefully)",
+    "_required": false,
+    "activity_level": "",
+    "sleep_pattern": "",
+    "sensitivities": [],
+    "wellness_goals": [],
+    "preferred_modalities": [],
+    "notes": ""
+  },
+
+  "travel": {
+    "_domain": "travel",
+    "_description": "Travel style, pace, interests, past destinations",
+    "_required": false,
+    "pace": "",
+    "budget_range": "",
+    "accommodation_style": "",
+    "interests": [],
+    "regions_visited": [],
+    "regions_wishlist": [],
+    "travel_constraints": [],
+    "notes": ""
+  },
+
+  "entertainment": {
+    "_domain": "entertainment",
+    "_description": "Film, TV, games, books, creative media",
+    "_required": false,
+    "film_genres": [],
+    "tv_genres": [],
+    "game_genres": [],
+    "book_genres": [],
+    "creators_loved": [],
+    "formats_preferred": [],
+    "notes": ""
+  },
+
+  "work": {
+    "_domain": "work",
+    "_description": "Professional context, tools, collaboration style",
+    "_required": false,
+    "role": "",
+    "industry": "",
+    "tools_used": [],
+    "work_style": "",
+    "collaboration_preference": "",
+    "notes": ""
+  }
+}
