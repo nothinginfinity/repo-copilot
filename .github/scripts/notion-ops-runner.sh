@@ -56,7 +56,6 @@ if [ "$OP" = "diagnose" ]; then
   RESPONSE=$(notion_request POST "/databases/${DB}/query" '{"page_size":5}')
   echo "Raw response (first 500 chars): ${RESPONSE:0:500}"
 
-  # Check for Notion API error (has 'object: error' in response)
   HAS_ERROR=$(python3 -c "import json,sys; r=json.loads(sys.argv[1]); print('yes' if r.get('object')=='error' else 'no')" "$RESPONSE" 2>/dev/null || echo "no")
   if [ "$HAS_ERROR" = "yes" ]; then
     ERROR_MSG=$(python3 -c "import json,sys; r=json.loads(sys.argv[1]); print(r.get('message','unknown error'))" "$RESPONSE")
@@ -103,8 +102,20 @@ rows_str, db, op, ran_at, requested_by, result_path = sys.argv[1:]
 rows = json.loads(rows_str)
 results = []
 for row in rows:
-    name = (row.get('Name',{}).get('title',[{}])[0].get('text',{}).get('content','?') if row.get('Name') else '?')
-    payload = json.dumps({'parent': {'database_id': db}, 'properties': row})
+    # --- Build Notion property payload ---
+    # Schema contract (G-013): title col = "Name", selects = Status/Type/Phase/Owner/Track
+    name_text = row.get('Name', '?')
+    properties = {
+        'Name': {'title': [{'text': {'content': name_text}}]}
+    }
+    for select_field in ['Status', 'Type', 'Phase', 'Owner', 'Track']:
+        if row.get(select_field):
+            properties[select_field] = {'select': {'name': row[select_field]}}
+    for text_field in ['Commit', 'Depends On', 'Notes']:
+        if row.get(text_field):
+            properties[text_field] = {'rich_text': [{'text': {'content': row[text_field]}}]}
+
+    payload = json.dumps({'parent': {'database_id': db}, 'properties': properties})
     r = subprocess.run([
         'curl', '-s', '-X', 'POST', 'https://api.notion.com/v1/pages',
         '-H', f'Authorization: Bearer {os.environ["NOTION_API_KEY"]}',
@@ -114,11 +125,11 @@ for row in rows:
     ], capture_output=True, text=True)
     resp = json.loads(r.stdout)
     if 'id' in resp:
-        results.append({'name': name, 'status': 'ok', 'id': resp['id']})
-        print(f'OK: {name}')
+        results.append({'name': name_text, 'status': 'ok', 'id': resp['id']})
+        print(f'OK: {name_text}')
     else:
-        results.append({'name': name, 'status': 'error', 'error': resp.get('message','unknown')})
-        print(f'FAIL: {name} - {resp.get("message")}')
+        results.append({'name': name_text, 'status': 'error', 'error': resp.get('message','unknown')})
+        print(f'FAIL: {name_text} - {resp.get("message")}')
 ok = sum(1 for r in results if r['status']=='ok')
 failed = sum(1 for r in results if r['status']=='error')
 result = {

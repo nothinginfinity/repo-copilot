@@ -1,7 +1,41 @@
 {
-  "op": "diagnose",
+  "op": "batch_rows",
   "requested_by": "bob/c6/jared",
   "database_id": "35bd927c-9792-8125-97a4-cb3422954698",
-  "description": "Diagnose Roadmap DB — return raw property names and types so batch_rows can be fixed",
+  "description": "Seed 4 Phase 3 Roadmap rows (Alice's rows, re-queued with correct Name property)",
+  "rows": [
+    {
+      "Name": "Notion App Store template",
+      "Phase": "Phase 3",
+      "Status": "⏳ Pending",
+      "Owner": "Bob",
+      "Type": "Task",
+      "Track": "Infrastructure"
+    },
+    {
+      "Name": "Landing page polish",
+      "Phase": "Phase 3",
+      "Status": "⏳ Pending",
+      "Owner": "Alice",
+      "Type": "Task",
+      "Track": "Infrastructure"
+    },
+    {
+      "Name": "Buyer onboarding flow test",
+      "Phase": "Phase 3",
+      "Status": "⏳ Pending",
+      "Owner": "Alice",
+      "Type": "Task",
+      "Track": "Infrastructure"
+    },
+    {
+      "Name": "space-card public release",
+      "Phase": "Phase 3",
+      "Status": "⏳ Pending",
+      "Owner": "Bob",
+      "Type": "Task",
+      "Track": "Infrastructure"
+    }
+  ],
   "_bump": 1
 }
