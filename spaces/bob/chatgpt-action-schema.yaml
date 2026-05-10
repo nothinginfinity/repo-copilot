@@ -1,0 +1,155 @@
+openapi: 3.1.0
+info:
+  title: Bob GitHub Write API
+  description: >
+    GitHub REST API write operations for Bob (repo-copilot agent).
+    Provides push_files (create/update), get_file (read with SHA),
+    and push_turn_bundle helpers scoped to nothinginfinity/repo-copilot.
+  version: 1.0.0
+
+servers:
+  - url: https://api.github.com
+
+paths:
+
+  /repos/{owner}/{repo}/contents/{path}:
+    get:
+      operationId: getFileContents
+      summary: Get file contents and SHA
+      description: >
+        Reads a file from the repo. Returns content (base64) and SHA.
+        Always call this before updating an existing file to get the current SHA.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository owner (use nothinginfinity)
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Repository name (use repo-copilot)
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: File path within the repo (e.g. spaces/bob/inbox.md)
+        - name: ref
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Branch name (default main)
+      responses:
+        '200':
+          description: File contents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  path:
+                    type: string
+                  sha:
+                    type: string
+                    description: Blob SHA — required when updating this file
+                  content:
+                    type: string
+                    description: Base64-encoded file content
+                  encoding:
+                    type: string
+                  html_url:
+                    type: string
+
+    put:
+      operationId: createOrUpdateFile
+      summary: Create or update a single file
+      description: >
+        Creates or updates a file in the repo with a commit message.
+        SHA is REQUIRED when updating an existing file (get it via getFileContents first).
+        Content must be base64-encoded.
+      parameters:
+        - name: owner
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: repo
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+                - content
+                - branch
+              properties:
+                message:
+                  type: string
+                  description: Commit message
+                content:
+                  type: string
+                  description: Base64-encoded file content
+                sha:
+                  type: string
+                  description: SHA of file being replaced (required for updates, omit for new files)
+                branch:
+                  type: string
+                  description: Target branch (use main)
+      responses:
+        '200':
+          description: File updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: object
+                    properties:
+                      path:
+                        type: string
+                      sha:
+                        type: string
+                      html_url:
+                        type: string
+                  commit:
+                    type: object
+                    properties:
+                      sha:
+                        type: string
+                      html_url:
+                        type: string
+        '201':
+          description: File created
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        GitHub Personal Access Token (PAT) with Contents: Read & Write scope.
+        Generate at https://github.com/settings/tokens?type=beta
+        Select repo: nothinginfinity/repo-copilot
+        Required permission: Repository contents — Read and Write

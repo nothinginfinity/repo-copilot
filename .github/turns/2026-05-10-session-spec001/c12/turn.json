@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c12/jared",
+  "title": "ChatGPT Action schema for Bob + Claude boot for Charlie",
+  "date": "2026-05-10T20:46:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Write ChatGPT custom Action schema for Bob write access. Alice=Perplexity, Bob=ChatGPT, Charlie=Claude, iPhone only.",
+  "a_summary": "Created spaces/bob/chatgpt-action-schema.yaml (OpenAPI 3.1 schema for GitHub contents API read+write, Bearer PAT auth). Created spaces/bob/chatgpt-action-instructions.md (step-by-step setup guide: PAT generation, Action wiring, base64 note, sequential write pattern replacing push_files). Updated G-000-charlie-boot.md to v1.2: LLM field updated to Claude, Claude iPhone note added to turn-bundle section, source field in turn.json set to claude, bootloader section renamed to Claude Project Bootloader.",
+  "files_changed": [
+    "spaces/bob/chatgpt-action-schema.yaml",
+    "spaces/bob/chatgpt-action-instructions.md",
+    "spaces/gists/G-000-charlie-boot.md"
+  ],
+  "decisions": [
+    "OpenAPI 3.1 schema covers getFileContents (GET) and createOrUpdateFile (PUT) — the two primitives Bob needs",
+    "Bearer PAT auth scoped to repo contents read+write only",
+    "Bob slot-3 becomes sequential single-file writes (no multi-file push_files in ChatGPT Actions)",
+    "Charlie LLM = Claude — uses GitHub MCP natively, push_files works identically to Alice",
+    "source field in Charlie turn.json = claude (was chatgpt)"
+  ],
+  "open_questions": [
+    "Does ChatGPT iPhone app support custom Actions in Projects (not just custom GPTs)?"
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
