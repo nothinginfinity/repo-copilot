@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c2/jared",
+  "title": "SPEC-001 Turn 2 — workflow routing step added + boot gists updated",
+  "date": "2026-05-10T18:10:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Continue SPEC-001 Turn 2: update unzip-and-route.yml and boot gist inbox paths.",
+  "a_summary": "Read gists directory (SHAs confirmed). Added Python routing step to unzip-and-route.yml after Route files step. Updated G-000-alice-ops-boot.md and G-000-alice-review-boot.md startup table call 3 inbox paths to inbox-ops.md and inbox-review.md respectively. Next: Turn 3 — update G-000-alice-boot.md inbox architecture table.",
+  "commits": [],
+  "files_changed": [
+    ".github/workflows/unzip-and-route.yml",
+    "spaces/gists/G-000-alice-ops-boot.md",
+    "spaces/gists/G-000-alice-review-boot.md"
+  ],
+  "decisions": [
+    "Routing step inserted after Route files step and before Assemble transcript step",
+    "Graceful exit added if inbox.md not found (defensive improvement over raw spec)",
+    "Boot gist inbox paths updated per SPEC-001 exact diff"
+  ],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}

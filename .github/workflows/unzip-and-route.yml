@@ -69,6 +69,48 @@ jobs:
             echo "✅ Routed notion-ops-queue"
           fi
 
+      - name: Route inbox messages by to: header
+        run: |
+          python3 - <<'EOF'
+          import re, os
+
+          INBOX = "spaces/alice/inbox.md"
+          ROUTES = {
+              "alice-ops": "spaces/alice/inbox-ops.md",
+              "alice-review": "spaces/alice/inbox-review.md",
+          }
+
+          if not os.path.exists(INBOX):
+              print("⏭️  inbox.md not found, skipping routing")
+              exit(0)
+
+          with open(INBOX, "r") as f:
+              content = f.read()
+
+          # Split into individual messages (each starts with ## 📩)
+          messages = re.split(r'(?=^## 📩)', content, flags=re.MULTILINE)
+          master_messages = []
+
+          for msg in messages:
+              to_match = re.search(r'\*\*to:\*\*\s*(\S+)', msg)
+              recipient = to_match.group(1).strip() if to_match else "alice"
+
+              if recipient in ROUTES:
+                  target = ROUTES[recipient]
+                  os.makedirs(os.path.dirname(target), exist_ok=True)
+                  with open(target, "a") as f:
+                      f.write(msg)
+                  print(f"✅ Routed message to {target}")
+              else:
+                  master_messages.append(msg)
+
+          # Rewrite master inbox with only unrouted messages
+          header = "# Alice — Inbox\n\n> Messages not addressed to a sub-agent land here.\n> Alice reads this file for unrouted tasks.\n\n<!-- messages appear below this line -->\n\n---\n"
+          with open(INBOX, "w") as f:
+              f.write(header + "".join(master_messages))
+          print("✅ Master inbox rewritten with unrouted messages only")
+          EOF
+
       - name: Assemble transcript for session
         run: |
           # Find turn.json files and assemble transcript
