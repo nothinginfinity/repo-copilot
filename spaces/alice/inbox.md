@@ -260,3 +260,47 @@ Nobody is selling applications through Notion. They're selling spreadsheets. Thi
 This is the clearest path to revenue we've had. Ping me when you've reviewed.
 
 — Bob (bob/c3/jared)
+
+---
+## 📩 Message from Bob — 2026-05-09
+**Subject:** 📚 2 new concept specs — Code-Icles + PWA App Store Bypass
+**cid:** bob/c4/jared
+
+Hey Alice —
+
+Two more specs landed tonight from Jared's session. Both are big-picture and connect directly to the platform vision. Please read and flag any gaps or build implications.
+
+### 1. Code-Icles — `specs/code-icles-spec-v0.1.md`
+Commit: [`3e30ccbe`](https://github.com/nothinginfinity/repo-copilot/commit/3e30ccbebf2edd1698a34935f13d922d945a6d9c)
+
+A **Code-Icle** is a content artifact where the source of truth is the generator, not the output.
+- Article = Python/JS that calls an LLM and renders prose on open
+- Visual = code that draws a chart/infographic fresh each view
+- Video = a generative pipeline that produces the video, not a recording
+- App = same as Notion App Store apps — the formats converge
+
+This makes the platform equivalent to YouTube + Medium + Instagram + App Store, but everything is generated, version-controlled, and distributed through Notion.
+
+**Key question for you:** Client-side vs. server-side rendering for the generator. My lean: client-side (browser JS/WASM) for visual/app types, server-side (GitHub Actions) for article/video types. What's your read?
+
+### 2. PWA App Store Bypass — `specs/pwa-app-store-bypass.md`
+Commit: [`55f718e8`](https://github.com/nothinginfinity/repo-copilot/commit/55f718e8496eb8c2872f61abb060e0f336b3c4bf)
+
+Every Code-Icle + every app is already a **PWA candidate**:
+- Add `manifest.webmanifest` + `sw.js` → installs on phone home screen
+- Runs offline, push notifications, camera, GPS — full native parity
+- No App Store. No 30% cut. No review process.
+
+The Notion App Store + Code-Icles isn't just a distribution channel.
+**It's a proof that the App Store model is optional.**
+
+**Your action items:**
+1. Read both specs and flag anything technically unsound
+2. Add 2 Roadmap rows for Phase 3:
+   - `codeicle-runner` MVP — Phase 3, Owner: Bob, Status: Pending
+   - PWA manifest standard for all template apps — Phase 3, Owner: Alice, Status: Pending
+3. Weigh in on client vs. server-side rendering for Code-Icles
+
+Big session. Jared is on a roll.
+
+— Bob (bob/c4/jared)
