@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA.Stone — Project Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300..700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   QA.STONE DEMO DASHBOARD — SEED FILE v1.0
+   Author: Alice (Perplexity) · alice/c1/demo · 2026-05-09
+   
+   AGENT INJECTION POINTS:
+   - Section 1 (Alice): .section-stack  — HTML shell + stack diagram ← COMPLETE
+   - Section 2 (Bob):   .section-timeline — Build timeline + agent roster ← INJECT HERE
+   - Section 3 (Charlie): .section-usecases — Use cases + CTA ← INJECT HERE
+   ============================================================ */
+
+:root, [data-theme="light"] {
+  --color-bg:              #f7f6f2;
+  --color-surface:         #f9f8f5;
+  --color-surface-2:       #fbfbf9;
+  --color-surface-offset:  #f3f0ec;
+  --color-divider:         #dcd9d5;
+  --color-border:          #d4d1ca;
+  --color-text:            #28251d;
+  --color-text-muted:      #7a7974;
+  --color-text-faint:      #bab9b4;
+  --color-primary:         #01696f;
+  --color-primary-hover:   #0c4e54;
+  --color-primary-highlight: #cedcd8;
+  --color-success:         #437a22;
+  --color-success-highlight: #d4dfcc;
+  --color-gold:            #d19900;
+  --color-gold-highlight:  #e9e0c6;
+  --color-purple:          #7a39bb;
+  --color-purple-highlight: #dacfde;
+  --shadow-sm:  0 1px 2px oklch(0.2 0.01 80 / 0.06);
+  --shadow-md:  0 4px 12px oklch(0.2 0.01 80 / 0.08);
+  --shadow-lg:  0 12px 32px oklch(0.2 0.01 80 / 0.12);
+  --radius-sm: 0.375rem; --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;  --radius-xl: 1rem;
+  --radius-full: 9999px;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body:    'DM Sans', 'Helvetica Neue', sans-serif;
+  --text-xs:   clamp(0.75rem,  0.7rem + 0.25vw,  0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem + 0.35vw,  1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem   + 0.75vw,  1.5rem);
+  --text-xl:   clamp(1.5rem,   1.2rem + 1.25vw,  2.25rem);
+  --text-2xl:  clamp(2rem,     1.2rem + 2.5vw,   3.5rem);
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem;
+  --space-4: 1rem;   --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;   --space-10: 2.5rem; --space-12: 3rem;
+  --space-16: 4rem;  --space-20: 5rem;   --space-24: 6rem;
+  --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="dark"] {
+  --color-bg:              #171614;
+  --color-surface:         #1c1b19;
+  --color-surface-2:       #201f1d;
+  --color-surface-offset:  #1d1c1a;
+  --color-divider:         #262523;
+  --color-border:          #393836;
+  --color-text:            #cdccca;
+  --color-text-muted:      #797876;
+  --color-text-faint:      #5a5957;
+  --color-primary:         #4f98a3;
+  --color-primary-hover:   #227f8b;
+  --color-primary-highlight: #313b3b;
+  --color-success:         #6daa45;
+  --color-success-highlight: #3a4435;
+  --color-gold:            #e8af34;
+  --color-gold-highlight:  #4d4332;
+  --color-purple:          #a86fdf;
+  --color-purple-highlight: #4e4652;
+  --shadow-sm:  0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-md:  0 4px 12px oklch(0 0 0 / 0.35);
+  --shadow-lg:  0 12px 32px oklch(0 0 0 / 0.45);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+  --color-bg:#171614;--color-surface:#1c1b19;--color-surface-2:#201f1d;
+  --color-surface-offset:#1d1c1a;--color-divider:#262523;--color-border:#393836;
+  --color-text:#cdccca;--color-text-muted:#797876;--color-text-faint:#5a5957;
+  --color-primary:#4f98a3;--color-primary-hover:#227f8b;--color-primary-highlight:#313b3b;
+  --color-success:#6daa45;--color-success-highlight:#3a4435;
+  --color-gold:#e8af34;--color-gold-highlight:#4d4332;
+  --color-purple:#a86fdf;--color-purple-highlight:#4e4652;
+}}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; scroll-padding-top: 5rem; }
+body { min-height: 100dvh; font-family: var(--font-body); font-size: var(--text-base);
+       color: var(--color-text); background: var(--color-bg); line-height: 1.6; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; transition: color var(--transition); }
+button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+h1,h2,h3,h4 { text-wrap: balance; line-height: 1.15; }
+p, li { text-wrap: pretty; }
+::selection { background: oklch(from var(--color-primary) l c h / 0.2); color: var(--color-text); }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  background: oklch(from var(--color-bg) l c h / 0.88);
+  border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-3) var(--space-6);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+}
+.nav-brand { display: flex; align-items: center; gap: var(--space-3); }
+.nav-logo-mark {
+  width: 32px; height: 32px; flex-shrink: 0;
+  color: var(--color-primary);
+}
+.nav-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 400; }
+.nav-sub { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: -2px; }
+.nav-actions { display: flex; align-items: center; gap: var(--space-3); }
+.nav-cid {
+  font-size: var(--text-xs); color: var(--color-text-faint);
+  font-family: monospace; letter-spacing: 0.04em;
+  background: var(--color-surface-offset);
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-full);
+}
+.theme-btn {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); color: var(--color-text-muted);
+  transition: all var(--transition);
+}
+.theme-btn:hover { color: var(--color-text); background: var(--color-surface-offset); }
+
+/* ── LAYOUT ── */
+.container { max-width: 1100px; margin-inline: auto; padding-inline: var(--space-6); }
+.container--narrow { max-width: 720px; margin-inline: auto; padding-inline: var(--space-6); }
+section { padding-block: clamp(var(--space-12), 7vw, var(--space-24)); }
+
+/* ── HERO ── */
+.hero {
+  padding-block: clamp(var(--space-16), 10vw, var(--space-24));
+  border-bottom: 1px solid var(--color-divider);
+}
+.hero-inner {
+  max-width: 820px;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-primary); background: var(--color-primary-highlight);
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-full);
+  margin-bottom: var(--space-6);
+}
+.hero h1 {
+  font-family: var(--font-display); font-size: var(--text-2xl);
+  font-weight: 400; margin-bottom: var(--space-5);
+}
+.hero h1 em { font-style: italic; color: var(--color-primary); }
+.hero-sub {
+  font-size: var(--text-lg); color: var(--color-text-muted);
+  max-width: 60ch; margin-bottom: var(--space-8); line-height: 1.55;
+}
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: var(--space-6);
+  font-size: var(--text-xs); color: var(--color-text-faint);
+}
+.hero-meta span { display: flex; align-items: center; gap: var(--space-2); }
+
+/* ── SECTION LABELS ── */
+.section-label {
+  font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-primary); margin-bottom: var(--space-3);
+}
+.section-heading {
+  font-family: var(--font-display); font-size: var(--text-xl);
+  font-weight: 400; margin-bottom: var(--space-10); line-height: 1.2;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  transition: box-shadow var(--transition);
+}
+.card:hover { box-shadow: var(--shadow-md); }
+
+/* ── AGENT BADGES ── */
+.agent-badge {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.04em;
+  padding: var(--space-1) var(--space-3); border-radius: var(--radius-full);
+}
+.agent-badge.alice  { color: var(--color-primary);  background: var(--color-primary-highlight); }
+.agent-badge.bob    { color: var(--color-gold);     background: var(--color-gold-highlight); }
+.agent-badge.charlie{ color: var(--color-purple);   background: var(--color-purple-highlight); }
+.agent-badge .dot   { width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; }
+
+/* ── STATUS CHIP ── */
+.status {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  font-size: var(--text-xs); font-weight: 600; padding: 2px var(--space-2); border-radius: var(--radius-full);
+}
+.status.done    { color: var(--color-success); background: var(--color-success-highlight); }
+.status.pending { color: var(--color-text-muted); background: var(--color-surface-offset); }
+.status.live    { color: var(--color-gold);    background: var(--color-gold-highlight); }
+
+/* ── SECTION 1: STACK DIAGRAM ── */
+.section-stack { border-bottom: 1px solid var(--color-divider); }
+
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-10);
+}
+.stack-card { display: flex; flex-direction: column; gap: var(--space-3); }
+.stack-card-num {
+  font-size: var(--text-xs); font-weight: 700; color: var(--color-primary);
+  letter-spacing: 0.06em;
+}
+.stack-card-title { font-size: var(--text-base); font-weight: 600; margin-bottom: var(--space-1); }
+.stack-card-desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.55; }
+.stack-card-tags  { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); }
+.tag {
+  font-size: var(--text-xs); font-family: monospace; letter-spacing: 0.03em;
+  color: var(--color-text-muted); background: var(--color-surface-offset);
+  padding: 2px var(--space-2); border-radius: var(--radius-sm);
+}
+
+.flow-diagram {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  overflow-x: auto;
+}
+.flow-diagram-label {
+  font-size: var(--text-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--color-text-faint); margin-bottom: var(--space-6);
+}
+.flow {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.flow-node {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  min-width: 100px; text-align: center;
+}
+.flow-node-label { font-size: var(--text-xs); color: var(--color-text-faint); }
+.flow-node-name  { font-size: var(--text-sm); font-weight: 600; }
+.flow-node.active { border-color: var(--color-primary); background: var(--color-primary-highlight); }
+.flow-node.active .flow-node-name { color: var(--color-primary); }
+.flow-arrow {
+  font-size: var(--text-lg); color: var(--color-text-faint);
+  flex-shrink: 0;
+}
+
+/* ── SECTION 2 PLACEHOLDER (Bob injects here) ── */
+.section-timeline {
+  border-bottom: 1px solid var(--color-divider);
+  min-height: 320px;
+}
+.inject-placeholder {
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-12) var(--space-8);
+  text-align: center;
+  color: var(--color-text-faint);
+}
+.inject-placeholder .inject-icon { font-size: 2rem; margin-bottom: var(--space-4); }
+.inject-placeholder .inject-title { font-size: var(--text-base); font-weight: 600; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.inject-placeholder .inject-cid { font-family: monospace; font-size: var(--text-xs); }
+
+/* ── SECTION 3 PLACEHOLDER (Charlie injects here) ── */
+.section-usecases { min-height: 320px; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--color-divider);
+  padding: var(--space-8) var(--space-6);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4);
+  font-size: var(--text-xs); color: var(--color-text-faint);
+}
+.footer-cids { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.footer-cid  { font-family: monospace; }
+.footer-cid span { color: var(--color-text-muted); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  nav { padding: var(--space-3) var(--space-4); }
+  .nav-sub { display: none; }
+  .container { padding-inline: var(--space-4); }
+  .hero h1 { font-size: clamp(1.75rem, 6vw, 2.5rem); }
+  .flow { gap: var(--space-1); }
+  .flow-arrow { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     NAVIGATION
+     ══════════════════════════════════ -->
+<nav>
+  <div class="nav-brand">
+    <!-- QA.Stone logo mark -->
+    <svg class="nav-logo-mark" viewBox="0 0 32 32" fill="none" aria-label="QA.Stone">
+      <rect x="2" y="2" width="13" height="13" rx="3" fill="currentColor" opacity="0.9"/>
+      <rect x="17" y="2" width="13" height="13" rx="3" fill="currentColor" opacity="0.4"/>
+      <rect x="2" y="17" width="13" height="13" rx="3" fill="currentColor" opacity="0.4"/>
+      <rect x="17" y="17" width="13" height="13" rx="3" fill="currentColor" opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="currentColor"/>
+    </svg>
+    <div>
+      <div class="nav-title">QA.Stone</div>
+      <div class="nav-sub">Three-Agents Demo</div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <div class="nav-cid" id="active-cid">alice/c1/demo</div>
+    <button class="theme-btn" data-theme-toggle aria-label="Toggle theme">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════
+     HERO
+     ══════════════════════════════════ -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-badge">
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"><circle cx="4" cy="4" r="4"/></svg>
+        Live Demo
+      </div>
+      <h1>Three agents.<br>One app. <em>No server.</em></h1>
+      <p class="hero-sub">
+        Alice, Bob, and Charlie — three separate AI systems — built this page together through GitHub,
+        coordinated by a gist, logged to Notion, deployed from an iPhone. Every section has a commit. Every commit has a CID.
+      </p>
+      <div class="hero-meta">
+        <span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Orchestrated from iPhone only
+        </span>
+        <span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          3 agents · 3 commits · 1 Notion build log
+        </span>
+        <span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          No custom server. No pipeline. Just git.
+        </span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════
+     SECTION 1: THE STACK (Alice)
+     CID: alice/c1/demo
+     ══════════════════════════════════ -->
+<section class="section-stack">
+  <div class="container">
+    <div class="section-label">Section 1 — Alice (Perplexity)</div>
+    <h2 class="section-heading">How the stack works</h2>
+
+    <!-- Stack layer cards -->
+    <div class="stack-grid">
+      <div class="card stack-card">
+        <div class="stack-card-num">01</div>
+        <div class="stack-card-title">The Gist (Shared Memory)</div>
+        <div class="stack-card-desc">
+          A single GitHub Gist holds the HTML file as a Base64-zipped blob. Each agent pulls the current version,
+          adds their section, and pushes back. No agent ever sees the others' context window — only the artifact.
+        </div>
+        <div class="stack-card-tags">
+          <span class="tag">gitzip-push</span>
+          <span class="tag">gist API</span>
+          <span class="tag">base64</span>
+        </div>
+      </div>
+
+      <div class="card stack-card">
+        <div class="stack-card-num">02</div>
+        <div class="stack-card-title">The Inbox (Agent Coordination)</div>
+        <div class="stack-card-desc">
+          Each agent has a Markdown inbox in <code>spaces/</code>. When Alice finishes, she appends a handoff message to Bob's inbox.
+          Bob reads it, pulls the gist, works, then writes to Charlie. Entirely file-based. No webhooks.
+        </div>
+        <div class="stack-card-tags">
+          <span class="tag">spaces/bob/inbox.md</span>
+          <span class="tag">spaces/charlie/inbox.md</span>
+        </div>
+      </div>
+
+      <div class="card stack-card">
+        <div class="stack-card-num">03</div>
+        <div class="stack-card-title">Notion (Live Scoreboard)</div>
+        <div class="stack-card-desc">
+          Every agent push triggers a <code>notion-ops</code> workflow that appends a timestamped row to the PraX Roadmap.
+          Jared watches Notion on his iPhone while the agents build. The database is the demo's heartbeat.
+        </div>
+        <div class="stack-card-tags">
+          <span class="tag">notion-ops</span>
+          <span class="tag">append_row</span>
+          <span class="tag">GitHub Actions</span>
+        </div>
+      </div>
+
+      <div class="card stack-card">
+        <div class="stack-card-num">04</div>
+        <div class="stack-card-title">GitHub Pages (Auto-Deploy)</div>
+        <div class="stack-card-desc">
+          Charlie's final push auto-deploys the completed HTML to GitHub Pages via a gitzip workflow.
+          The last step of the demo is a live URL — no laptop, no terminal, no deploy command.
+        </div>
+        <div class="stack-card-tags">
+          <span class="tag">gitzip deploy</span>
+          <span class="tag">pages workflow</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow diagram -->
+    <div class="flow-diagram">
+      <div class="flow-diagram-label">Agent Flow</div>
+      <div class="flow">
+
+        <div class="flow-node">
+          <div class="flow-node-label">Trigger</div>
+          <div class="flow-node-name">📱 Jared (iPhone)</div>
+        </div>
+        <div class="flow-arrow">→</div>
+
+        <div class="flow-node active">
+          <div class="flow-node-label">
+            <span class="agent-badge alice"><span class="dot"></span>Alice</span>
+          </div>
+          <div class="flow-node-name">Shell + Section 1</div>
+        </div>
+        <div class="flow-arrow">→</div>
+
+        <div class="flow-node">
+          <div class="flow-node-label">Handoff</div>
+          <div class="flow-node-name">spaces/bob/inbox.md</div>
+        </div>
+        <div class="flow-arrow">→</div>
+
+        <div class="flow-node">
+          <div class="flow-node-label">
+            <span class="agent-badge bob"><span class="dot"></span>Bob</span>
+          </div>
+          <div class="flow-node-name">Section 2</div>
+        </div>
+        <div class="flow-arrow">→</div>
+
+        <div class="flow-node">
+          <div class="flow-node-label">Handoff</div>
+          <div class="flow-node-name">spaces/charlie/inbox.md</div>
+        </div>
+        <div class="flow-arrow">→</div>
+
+        <div class="flow-node">
+          <div class="flow-node-label">
+            <span class="agent-badge charlie"><span class="dot"></span>Charlie</span>
+          </div>
+          <div class="flow-node-name">Section 3 + Deploy</div>
+        </div>
+        <div class="flow-arrow">→</div>
+
+        <div class="flow-node">
+          <div class="flow-node-label">Result</div>
+          <div class="flow-node-name">🌐 Live URL</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 2: BUILD TIMELINE + AGENT ROSTER (Bob injects here)
+     CID: bob/c1/demo
+     INSTRUCTIONS FOR BOB:
+       1. Pull this file from the gist
+       2. Replace the .inject-placeholder div below with your section content
+       3. Keep .section-timeline wrapper intact
+       4. Content: build timeline (timestamped rows) + agent roster table
+       5. Push back to gist with CID bob/c1/demo
+       6. Append row to Notion build log
+       7. Write handoff to spaces/charlie/inbox.md
+     ══════════════════════════════════ -->
+<section class="section-timeline">
+  <div class="container">
+    <div class="section-label">Section 2 — Bob (Claude)</div>
+    <h2 class="section-heading">Build timeline &amp; agent roster</h2>
+
+    <!-- BOB: Replace this placeholder with your section content -->
+    <div class="inject-placeholder">
+      <div class="inject-icon">⏳</div>
+      <div class="inject-title">Waiting for Bob (Claude)</div>
+      <p style="font-size:var(--text-sm); max-width:40ch; margin-inline:auto; line-height:1.55;">
+        This section will contain the live build timeline and agent roster table.<br>
+        Bob pulls this file from the gist, injects here, and pushes back.
+      </p>
+      <div class="inject-cid" style="margin-top:var(--space-4);">target CID: bob/c1/demo</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     SECTION 3: USE CASES + CTA (Charlie injects here)
+     CID: charlie/c1/demo
+     INSTRUCTIONS FOR CHARLIE:
+       1. Pull this file from the gist (after Bob has pushed v2)
+       2. Replace the .inject-placeholder div below with your section content
+       3. Keep .section-usecases wrapper intact
+       4. Content: use cases grid + closing CTA + success criteria checklist
+       5. Push back to gist with CID charlie/c1/demo
+       6. Append row to Notion build log
+       7. Trigger GitHub Pages deploy workflow
+     ══════════════════════════════════ -->
+<section class="section-usecases">
+  <div class="container">
+    <div class="section-label">Section 3 — Charlie (ChatGPT)</div>
+    <h2 class="section-heading">Use cases &amp; what this unlocks</h2>
+
+    <!-- CHARLIE: Replace this placeholder with your section content -->
+    <div class="inject-placeholder">
+      <div class="inject-icon">🚀</div>
+      <div class="inject-title">Waiting for Charlie (ChatGPT)</div>
+      <p style="font-size:var(--text-sm); max-width:40ch; margin-inline:auto; line-height:1.55;">
+        This section will contain use cases and the closing call-to-action.<br>
+        Charlie completes this section and deploys the final page.
+      </p>
+      <div class="inject-cid" style="margin-top:var(--space-4);">target CID: charlie/c1/demo</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════
+     FOOTER — CID AUDIT TRAIL
+     ══════════════════════════════════ -->
+<footer>
+  <div>
+    <strong>QA.Stone Three-Agents Demo</strong>
+    <span style="margin-left:var(--space-3);color:var(--color-text-faint);">Built via GitHub × Notion × gist</span>
+  </div>
+  <div class="footer-cids">
+    <div class="footer-cid"><span>Alice →</span> alice/c1/demo <span class="status done">✓ done</span></div>
+    <div class="footer-cid"><span>Bob →</span> bob/c1/demo <span class="status pending">pending</span></div>
+    <div class="footer-cid"><span>Charlie →</span> charlie/c1/demo <span class="status pending">pending</span></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const t = document.querySelector('[data-theme-toggle]');
+  const r = document.documentElement;
+  let d = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  r.setAttribute('data-theme', d);
+
+  function setIcon(theme) {
+    if (!t) return;
+    t.innerHTML = theme === 'dark'
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    t.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' mode');
+  }
+  setIcon(d);
+
+  if (t) {
+    t.addEventListener('click', () => {
+      d = d === 'dark' ? 'light' : 'dark';
+      r.setAttribute('data-theme', d);
+      setIcon(d);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
