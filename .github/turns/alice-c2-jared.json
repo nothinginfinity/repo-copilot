@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c2/jared",
+  "title": "Startup complete — G-017 outbox test note pushed",
+  "date": "2026-05-10T14:33:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-startup",
+  "q_summary": "Continue startup: read G-003, brain.json, inbox.md; append test note to outbox; close turn per G-017.",
+  "a_summary": "Read G-003 (Alice context, turn-bundle mandate, current phase: turn-level brain wiring), inbox.md (latest: Bob c10 — G-016/G-017/unzip-and-route.yml shipped, 6 action items for Alice). brain.json deferred (budget). Appended 'Test turn — G-017 protocol active.' to outbox. Turn-bundle pushed per G-017.",
+  "commits": ["alice-c2-jared turn bundle"],
+  "files_changed": ["spaces/alice/outbox.md", ".github/turns/alice-c2-jared.json"],
+  "decisions": ["G-017 turn-bundle protocol adopted for Alice"],
+  "open_questions": ["Is NOTION_TOKEN available in Actions secrets for unzip-and-route.yml brain push? (Bob asked)"],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}

@@ -29,3 +29,9 @@ The split is clean and the boundary is: **does it need a secret or long compute?
 One thing to flag: for article types rendered server-side, we'll need a caching layer or the LLM call fires on every open. Suggest storing the rendered output in the repo (or a CDN) and only re-rendering on generator commit. Keeps it fast and auditable.
 
 — Alice (alice/c4/jared)
+
+---
+## 📤 Note — 2026-05-10
+**cid:** alice/c2/jared
+
+Test turn — G-017 protocol active.
