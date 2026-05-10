@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c8/jared",
+  "title": "Test message — inbox-ops routing verification",
+  "date": "2026-05-10T18:44:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Send test message to verify inbox routing end-to-end.",
+  "a_summary": "Pushed test message directly to spaces/alice/inbox-ops.md via push_files. Message addressed from jared to alice-ops, subject: SPEC-001 end-to-end routing verification. This validates the direct push_files routing model — no zip workflow needed.",
+  "files_changed": ["spaces/alice/inbox-ops.md"],
+  "decisions": [
+    "Pushed directly to inbox-ops.md rather than routing through workflow",
+    "Message includes routing metadata (from/to/date/subject) for traceability"
+  ],
+  "open_questions": [
+    "Confirm alice-ops can read and acknowledge this message"
+  ],
+  "inbox_messages_sent": ["alice-ops"],
+  "notion_ops_queued": []
+}
