@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c4/jared",
+  "title": "Fix unzip-and-route.yml — graceful no-op when no zip",
+  "date": "2026-05-10T18:17:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Actions failed after SPEC-001 turns — fix unzip-and-route.yml workflow.",
+  "a_summary": "Diagnosed root cause: workflow triggers on .github/turn-bundles/** path but our push_files commits touched .github/workflows/ and spaces/gists/, causing the workflow to run with no zip present and fail at unzip step. Fixed by adding skip=true guard in Find latest zip bundle step and gating all subsequent steps on skip != true. Workflow now exits cleanly as a no-op when no bundle is present.",
+  "commits": [],
+  "files_changed": [
+    ".github/workflows/unzip-and-route.yml"
+  ],
+  "decisions": [
+    "Added 2>/dev/null to find command to suppress errors when turn-bundles dir is absent",
+    "Added skip output flag to find step",
+    "All processing steps gated with if: steps.find_zip.outputs.skip != 'true'",
+    "Added explicit no-op step that logs a friendly message when skipping"
+  ],
+  "open_questions": [
+    "Why did Turn 2 commit (unzip-and-route.yml change) trigger the workflow? The path filter is .github/turn-bundles/** not .github/workflows/** — may be a GitHub Actions path filter edge case or the Turn 3 commit touched a turn-bundles path incidentally."
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}

@@ -20,11 +20,24 @@ jobs:
       - name: Find latest zip bundle
         id: find_zip
         run: |
-          ZIP=$(find .github/turn-bundles -name '*.zip' | sort | tail -1)
-          echo "zip=$ZIP" >> $GITHUB_OUTPUT
-          echo "Found bundle: $ZIP"
+          ZIP=$(find .github/turn-bundles -name '*.zip' 2>/dev/null | sort | tail -1)
+          if [ -z "$ZIP" ]; then
+            echo "No zip bundle found — nothing to route."
+            echo "zip=" >> $GITHUB_OUTPUT
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Found bundle: $ZIP"
+            echo "zip=$ZIP" >> $GITHUB_OUTPUT
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if no bundle
+        if: steps.find_zip.outputs.skip == 'true'
+        run: |
+          echo "⏭️  No turn bundle present — workflow complete (no-op)."
 
       - name: Unzip bundle
+        if: steps.find_zip.outputs.skip != 'true'
         run: |
           mkdir -p /tmp/turn-bundle
           unzip -o "${{ steps.find_zip.outputs.zip }}" -d /tmp/turn-bundle
@@ -32,6 +45,7 @@ jobs:
           find /tmp/turn-bundle -type f
 
       - name: Route files into repo
+        if: steps.find_zip.outputs.skip != 'true'
         run: |
           cd /tmp/turn-bundle
 
@@ -70,6 +84,7 @@ jobs:
           fi
 
       - name: Route inbox messages by to: header
+        if: steps.find_zip.outputs.skip != 'true'
         run: |
           python3 - <<'EOF'
           import re, os
@@ -112,8 +127,8 @@ jobs:
           EOF
 
       - name: Assemble transcript for session
+        if: steps.find_zip.outputs.skip != 'true'
         run: |
-          # Find turn.json files and assemble transcript
           find "$GITHUB_WORKSPACE/.github/turns" -name 'turn.json' | sort | while read f; do
             SESSION=$(echo $f | grep -oP '(?<=turns/).*(?=/[^/]+/turn.json)')
             CID=$(echo $f | grep -oP '(?<=/)[^/]+(?=/turn.json)')
@@ -121,13 +136,11 @@ jobs:
             mkdir -p "$TRANSCRIPT_DIR"
             TRANSCRIPT="$TRANSCRIPT_DIR/transcript.md"
 
-            # Append turn to transcript if CID not already present
             if ! grep -q "## $CID" "$TRANSCRIPT" 2>/dev/null; then
               echo "" >> "$TRANSCRIPT"
               echo "## $CID" >> "$TRANSCRIPT"
               echo "**Date:** $(date -u +"%Y-%m-%d %H:%M UTC")" >> "$TRANSCRIPT"
               echo "" >> "$TRANSCRIPT"
-              # Extract q and a from turn.json
               Q=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('q_summary',''))")
               A=$(python3 -c "import json,sys; d=json.load(open('$f')); print(d.get('a_summary',''))")
               echo "**Q:** $Q" >> "$TRANSCRIPT"
@@ -142,11 +155,11 @@ jobs:
           done
 
       - name: Push brain note to Agent Notes DB
+        if: steps.find_zip.outputs.skip != 'true'
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           BRAIN_DB: 35bd927c-9792-81b9-816a-e357c9339d2f
         run: |
-          # Find the newest turn.json
           LATEST=$(find "$GITHUB_WORKSPACE/.github/turns" -name 'turn.json' | sort | tail -1)
           if [ -z "$LATEST" ]; then
             echo "No turn.json found, skipping brain push"
@@ -186,6 +199,7 @@ jobs:
           EOF
 
       - name: Commit routed files
+        if: steps.find_zip.outputs.skip != 'true'
         run: |
           git config user.name "repo-copilot[bot]"
           git config user.email "repo-copilot@nothinginfinity.com"
