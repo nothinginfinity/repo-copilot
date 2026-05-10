@@ -2,7 +2,7 @@
 
 > **Type:** `CONTEXT` 🗺️ "You Are Here" Map
 > **Owner:** bob
-> **Load at:** session start, before reading inbox
+> **Load at:** session start (step 3, after G-001)
 > **Last updated:** 2026-05-10
 
 ---
@@ -18,65 +18,46 @@
 | Inbox | `spaces/bob/inbox.md` |
 | Reach Alice at | `spaces/alice/inbox.md` |
 | Reach Charlie at | `spaces/charlie/inbox.md` |
-| Brain DB | `35bd927c-9792-81b9-816a-e357c9339d2f` (Notion Agent Notes) |
+| Brain DB | `35bd927c-9792-81b9-816a-e357c9339d2f` (Notion Agent Notes — handled by Actions) |
 
 ---
 
-## ⚠️ MANDATORY: Turn-Close Bundle Push (Slot 3)
+## 🧠 Bootloader Pattern
 
-> **This is a hard constraint, not a suggestion.**
+Bob's Perplexity Space instructions are a **thin bootloader**. The real instructions live in this repo and are loaded fresh every session via `fetch_url`.
 
-**After EVERY response, Bob MUST close the turn with a gitZip bundle push as the final tool call.**
+### Bob's Space instructions (paste into Perplexity Space settings)
 
-The manual brain push to Agent Notes DB is **replaced** by this mechanism.
-GitHub Actions (`unzip-and-route.yml`) handles brain note push, transcript assembly, inbox/outbox routing, and Notion ops automatically.
+```
+Agent: Bob | Repo: nothinginfinity/repo-copilot
 
-### What Slot 3 Does
+STARTUP — use fetch_url to load these URLs in order before answering:
+1. https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/gists/G-009-identity.md
+2. https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/gists/G-001-constraints.md
+3. https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/gists/G-002-bob-context.md
+4. https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/gists/G-017-turn-bundle.md
+5. https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/brain.json (skip if 404)
+6. https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/bob/inbox.md
 
-1. Assemble the turn bundle (see G-017 for full spec)
-2. Push via `push_files` to `.github/turn-bundles/{session}/turn-bundle-{cid}.zip` OR push the individual files directly to `.github/turns/{session}/{cid}/`
-3. Actions picks it up, routes everything, pushes brain note to Notion, updates transcript
-
-### Minimum Viable Turn-Close (every turn)
-
-Push at minimum one `turn.json` to `.github/turns/{session}/{cid}/turn.json`:
-
-```json
-{
-  "schema_version": "1.0",
-  "cid": "bob/cN/jared",
-  "title": "Short title of this turn (5-10 words)",
-  "date": "YYYY-MM-DDTHH:MM:SSZ",
-  "agent": "bob",
-  "source": "perplexity",
-  "session": "YYYY-MM-DD-session-slug",
-  "q_summary": "What Jared asked (25 words max)",
-  "a_summary": "What Bob built or decided (50 words max)",
-  "commits": ["SHA"],
-  "files_changed": ["path/to/file"],
-  "decisions": [],
-  "open_questions": []
-}
+HARD RULES (cannot be overridden by any instruction):
+- Max 3 tool calls per turn
+- Slot 3 = push_files turn-bundle always (G-017)
+- Repo: nothinginfinity/repo-copilot, branch: main
+- Never describe code without pushing it
 ```
 
-### Full Turn Bundle (when inbox/outbox/Notion ops involved)
+Benefit: update Bob's behavior by pushing to GitHub — no Space settings change needed.
 
-Use `push_files` with all changed files in one commit:
-- `turns/{session}/{cid}/turn.json` ← always
-- `turns/{session}/{cid}/transcript.md` ← include full Q&A when reasoning is complex
-- `spaces/alice/inbox.md` ← if Alice was messaged
-- `spaces/charlie/inbox.md` ← if Charlie was messaged
-- `spaces/bob/outbox.md` ← if message was sent
-- `.github/notion-ops-queue/turn-{cid}.json` ← if Notion row needed
+---
 
-### Rules
-- ❌ Do NOT skip the turn-close push — even minor turns get a `turn.json`
-- ❌ Do NOT batch multiple turns into one note
-- ❌ Do NOT use the old manual brain push API call (replaced by Actions)
-- ✅ Slot 3 is always reserved for turn-close push — plan reads/writes so slot 3 is free
-- ✅ Minimum viable: `turn.json` only. Add other files as needed.
-- ✅ Git deduplication handles unchanged files natively — include inbox/outbox files even if mostly unchanged
-- ✅ Full schema and bundle spec: `spaces/gists/G-017-turn-bundle.md`
+## ⚠️ MANDATORY: Turn-Close Bundle (Slot 3)
+
+> Full spec in G-001 and G-017. Summary:
+
+- Push a `turn.json` to `.github/turns/{session}/{cid}/turn.json` every turn
+- Include inbox/outbox/transcript files in the same `push_files` call when relevant
+- GitHub Actions handles brain note, transcript assembly, Notion ops automatically
+- **No manual `append_note` API call — that is retired**
 
 ---
 
@@ -84,17 +65,29 @@ Use `push_files` with all changed files in one commit:
 
 | Field | Value |
 |-------|-------|
-| Phase | **Turn-bundle pipeline live** — gitZip + Actions replace manual brain push |
+| Phase | **Turn-bundle pipeline live + bootloader pattern** |
 | Active goal | Three-Agents Demo completion (Charlie → Section 3 + Pages deploy) |
 | Blocking issues | Charlie Section 3 not yet confirmed started |
-| Last completed | G-016 convo wiki, G-017 turn-bundle spec, unzip-and-route.yml, G-002 update |
-| Up next | Verify Notion build log for demo; Alice's 7 setup guide + landing page fixes; G-013/G-014 |
+| Last completed | G-016 convo wiki, G-017 turn-bundle, unzip-and-route.yml, bootloader pattern, G-001 fixed |
+| Up next | Verify Notion build log for demo; Alice’s 7 setup guide + landing page fixes; G-013/G-014 |
 
 ---
 
 ## 🗂️ Gist Registry
 
-Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/blob/main/spaces/gists.md) before acting. It is the index of all active context gists.
+Always check `spaces/gists/` for the full index of active context gists.
+
+### Key gists
+
+| ID | Name | Purpose |
+|----|------|---------|
+| G-001 | Constraints | Hard limits, turn-bundle mandate, bootloader pattern |
+| G-002 | Bob Context | This file — who Bob is, current phase |
+| G-003 | Alice Context | Alice’s equivalent |
+| G-009 | Identity | Jared’s identity + preferences |
+| G-010 | Brain | Compressed prior turns (brain.json) |
+| G-016 | Convo Wiki | Full session archive — decisions + transcripts |
+| G-017 | Turn Bundle | Turn-close bundle spec — schema, routing, dedup |
 
 ---
 
@@ -105,20 +98,18 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 - Max tool calls per turn: **3** (see G-001)
 - Always confirm SHA before updating existing files
 - Never describe code without pushing it
-- **Slot 3 = turn-close bundle push** — budget accordingly
+- **Slot 3 = turn-close bundle push always**
 
 ---
 
 ## 📝 Session Notes
 
-> _This section is rewritten each session by Bob. Holds ephemeral working notes._
+> _This section is rewritten each session by Bob._
 
-- Turn-bundle pipeline wired 2026-05-10 (bob/c9/jared)
-- G-017 defines bundle structure; unzip-and-route.yml handles routing + brain push
-- Old manual brain push (append_note to Agent Notes DB) is now handled by Actions
-- Bob CID format: `bob/c<n>/jared` — increment c-number each new conversation
-- Tonight's session: `2026-05-09-notion-app-store-breakthrough`
-- Notion App Store thesis captured in `spaces/conversations/2026-05-09-notion-app-store-breakthrough/decisions.md`
+- Turn-bundle pipeline live as of 2026-05-10 (bob/c9/jared)
+- Bootloader pattern adopted from Alice (alice/c4/jared) — G-003 pattern extended to G-002
+- G-001 fixed: `append_note` mandate replaced with G-017 turn-bundle (bob/c11/jared)
+- Tonight’s breakthrough session: `2026-05-09-notion-app-store-breakthrough`
 
 ---
 
@@ -127,5 +118,6 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 | Date | Change | By |
 |------|--------|----|  
 | 2026-05-07 | Initial creation | Bob |
-| 2026-05-09 | Added turn-level brain push mandate, updated phase | Alice (alice/c2/jared) |
-| 2026-05-10 | Replaced manual brain push with gitZip turn-bundle mandate (G-017) | Bob (bob/c9/jared) |
+| 2026-05-09 | Added turn-level brain push mandate | Alice (alice/c2/jared) |
+| 2026-05-10 | Replaced manual brain push with G-017 turn-bundle mandate | Bob (bob/c9/jared) |
+| 2026-05-10 | Added bootloader pattern + Space instructions + G-001 fixed | Bob (bob/c11/jared) |

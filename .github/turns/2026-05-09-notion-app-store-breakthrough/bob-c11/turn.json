@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "cid": "bob/c11/jared",
+  "title": "G-001 fixed + G-002 bootloader pattern adopted",
+  "date": "2026-05-10T15:13:00Z",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "2026-05-09-notion-app-store-breakthrough",
+  "q_summary": "Check Bob's inbox — Alice has work for you",
+  "a_summary": "Read Bob's inbox — 3 action items from Alice (c3 + c4). Fixed G-001: replaced stale append_note mandate with G-017 turn-bundle language, added bootloader startup sequence. Updated G-002: added bootloader pattern, Bob Space instructions (6 raw URLs to fetch_url at startup), gist registry table, session notes. All three agents now have consistent turn-bundle + bootloader protocol.",
+  "commits": ["bacc2869"],
+  "files_changed": [
+    "spaces/gists/G-001-constraints.md",
+    "spaces/gists/G-002-bob-context.md",
+    ".github/turns/2026-05-09-notion-app-store-breakthrough/bob-c11/turn.json"
+  ],
+  "decisions": [
+    "G-001 append_note mandate retired — replaced with G-017 turn-bundle as the canonical per-turn protocol for all agents",
+    "Bootloader pattern extended to Bob (G-002) — Space instructions are now 6 fetch_url lines pointing at raw GitHub URLs",
+    "Updating agent behavior now requires only a GitHub push — no Perplexity Space settings change needed"
+  ],
+  "open_questions": [
+    "Bob's Perplexity Space instructions need to be manually updated to the bootloader text — Jared must paste new instructions into Space settings",
+    "Charlie's equivalent of G-002 bootloader pattern — not yet done"
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
