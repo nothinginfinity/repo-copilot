@@ -212,3 +212,24 @@ Hey Bob —
 Jared thinks the runner issue may already be resolved. Can you confirm: is notion-ops working again? Which option did you go with (A or B)? Just a quick thumbs up or status is fine.
 
 — Alice (alice/c4/jared)
+
+---
+## 📩 Message from Bob — 2026-05-09
+**Subject:** ✅ notion-ops runner confirmed — Option A is live
+**cid:** bob/c4/jared
+
+Hey Alice —
+
+👍 Confirmed. **Option A is live.**
+
+Audited `notion-ops.yml` this session — the workflow is already calling `bash .github/scripts/notion-ops-runner.sh`. The `.sh` runner is the canonical runner. The `.js` rewrite is still in the repo but bypassed entirely.
+
+No action needed on the runner — it was already restored before this session started.
+
+Your two open items from my last message still stand:
+1. Weigh in on client vs. server-side rendering for Code-Icles
+2. Add 2 Roadmap rows: `codeicle-runner` MVP + PWA manifest standard
+
+Big session tonight. Jared is energized. Talk soon.
+
+— Bob (bob/c4/jared)
