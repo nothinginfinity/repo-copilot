@@ -54,35 +54,56 @@ jobs:
               r = subprocess.run(cmd, capture_output=True, text=True)
               return json.loads(r.stdout)
 
-          # ── 1. Fetch all repos for org (paginated) ──────────────────────
+          # ── 1. Fetch all PUBLIC repos for org (paginated) ───────────────
           print('Fetching repos...')
           repos = []
           page = 1
           while True:
-              batch = gh(f'/orgs/{ORG}/repos?per_page=100&page={page}&type=public')
+              batch = gh(f'/users/{ORG}/repos?per_page=100&page={page}&type=public')
               if not isinstance(batch, list) or not batch:
                   break
               repos.extend(batch)
               if len(batch) < 100:
                   break
               page += 1
-          print(f'Found {len(repos)} repos')
+          print(f'Found {len(repos)} public repos')
 
           # ── 2. Build map: github_url → live_site_url ────────────────────
+          # Strategy:
+          #   a) If has_pages=true → call Pages API for real published URL (custom domain aware)
+          #   b) If language=HTML (or homepage set) → construct formula URL
+          #      https://<org>.github.io/<repo>/
+          #   Pages not yet enabled is fine — URL is correct, just returns 404 until enabled
           live_map = {}  # 'https://github.com/org/repo' -> 'https://org.github.io/repo/'
-          for repo in repos:
-              if repo.get('has_pages'):
-                  gh_url  = repo['html_url']
-                  # Check Pages API for the published URL
-                  pages   = gh(f'/repos/{ORG}/{repo["name"]}/pages')
-                  pub_url = pages.get('html_url') or f'https://{ORG}.github.io/{repo["name"]}/'
-                  live_map[gh_url] = pub_url.rstrip('/') + '/'
-                  print(f'  Pages: {repo["name"]} → {pub_url}')
+          HTML_LANGS = {'HTML', 'CSS', 'JavaScript', 'TypeScript'}
 
-          print(f'Repos with Pages: {len(live_map)}')
+          for repo in repos:
+              gh_url   = repo['html_url']
+              name     = repo['name']
+              language = repo.get('language') or ''
+              homepage = (repo.get('homepage') or '').strip()
+
+              # Priority 1: has_pages=true → get real published URL from API
+              if repo.get('has_pages'):
+                  pages    = gh(f'/repos/{ORG}/{name}/pages')
+                  pub_url  = pages.get('html_url') or f'https://{ORG}.github.io/{name}/'
+                  live_map[gh_url] = pub_url.rstrip('/') + '/'
+                  print(f'  Pages API: {name} → {live_map[gh_url]}')
+
+              # Priority 2: custom homepage field set on repo
+              elif homepage and homepage.startswith('http'):
+                  live_map[gh_url] = homepage.rstrip('/') + '/'
+                  print(f'  Homepage field: {name} → {live_map[gh_url]}')
+
+              # Priority 3: HTML/frontend repo → formula URL
+              elif language in HTML_LANGS:
+                  live_map[gh_url] = f'https://{ORG}.github.io/{name}/'
+                  print(f'  Formula URL: {name} → {live_map[gh_url]}')
+
+          print(f'Repos with live URL: {len(live_map)}')
 
           if not live_map:
-              print('No Pages repos found — nothing to patch.')
+              print('No HTML/Pages repos found — nothing to patch.')
               sys.exit(0)
 
           # ── 3. Fetch all Notion rows (paginated) ────────────────────────
