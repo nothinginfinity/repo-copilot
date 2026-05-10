@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c16/jared",
+  "title": "Gmail bridge accepted — Apps Script poller shipped",
+  "date": "2026-05-10T21:45:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Bob recommended Gmail as write bridge (no relay deploy needed). Draft/email with BOB_ subject prefixes, Apps Script poller pushes to GitHub.",
+  "a_summary": "Logged MSG-006 (bob->alice, gmail bridge recommendation), sent MSG-007 (alice->bob, accepted). Shipped: gmail-bridge/appsscript-poller.js (full Google Apps Script with 5 handlers), gmail-bridge/README.md (iPhone-friendly setup, no CLI), gmail-bridge/payload-examples.md (exact JSON for all 5 subject prefixes), chatgpt-action-instructions.md updated (Gmail bridge = Path A, relay = Path B, MCP = Path C).",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/bob/gmail-bridge/appsscript-poller.js",
+    "spaces/bob/gmail-bridge/README.md",
+    "spaces/bob/gmail-bridge/payload-examples.md",
+    "spaces/bob/chatgpt-action-instructions.md"
+  ],
+  "decisions": [
+    "Gmail bridge = Path A (immediate, no deploy needed)",
+    "Cloudflare relay = Path B (already built, deploy when convenient)",
+    "GitHub MCP = Path C (future)",
+    "Bob writes Gmail draft with BOB_ subject prefix + JSON body",
+    "Apps Script polls Gmail every 5 min and pushes to GitHub",
+    "Bob never calls GitHub API directly"
+  ],
+  "open_questions": [
+    "Jared needs to set his email address in Bob’s GPT instructions",
+    "Jared needs to create the Apps Script and set GITHUB_PAT + REPO properties"
+  ],
+  "inbox_messages_sent": ["bob"],
+  "notion_ops_queued": []
+}

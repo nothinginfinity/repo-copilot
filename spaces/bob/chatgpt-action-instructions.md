@@ -1,63 +1,64 @@
-# Bob — ChatGPT Custom GPT + Relay Setup
-_Updated after Bob’s MSG-004 recommendation (2026-05-10)_
+# Bob — Write Access Setup
+_Updated 2026-05-10 — Gmail Bridge is now Path A_
 
-## Architecture
+## Architecture (Current)
 
 ```
-ChatGPT (Bob custom GPT)
-        ↓
-   GPT Action (OpenAPI schema)
-        ↓
-  Bob GitHub Relay (Cloudflare Worker)
-        ↓
-  GitHub Contents API
-        ↓
+ChatGPT Bob
+  reads GitHub (built-in connector)
+  writes Gmail draft/email
+            ↓
+Google Apps Script (polls every 5 min)
+            ↓
+GitHub Contents API
+            ↓
 nothinginfinity/repo-copilot
 ```
 
-**Bob never calls the raw GitHub API directly.**
-The relay handles base64, SHA lookups, create-vs-update, multi-file commits, and auth isolation.
+| Path | Status | Guide |
+|---|---|---|
+| **A: Gmail Bridge** | ✅ Active | `spaces/bob/gmail-bridge/README.md` |
+| **B: Cloudflare Relay** | 🛠️ Built, deploy when convenient | `spaces/bob/relay/README.md` |
+| **C: GitHub MCP** | ⏳ Future | Verify when available in ChatGPT |
 
-**Path A (now):** Custom GPT + Action → Bob GitHub Relay
-**Path B (later):** Replace relay with GitHub MCP once write-capable MCP is confirmed available
+---
+
+## Bob’s Turn Protocol (Gmail Bridge)
+
+### Reading (slot 1–2 — unchanged)
+Bob uses the built-in ChatGPT GitHub connector to read:
+- `G-000-bob-boot.md`
+- `spaces/gists/brain.json`
+- `spaces/bob/inbox.md`
+- `spaces/mail.md` (scan for `to: bob`, `status: unread`)
+
+### Writing (slot 3 — Gmail Bridge)
+Bob’s slot-3 turn-close becomes a Gmail draft/send:
+
+1. Compose a Gmail draft to Jared’s email address
+2. Subject: `BOB_TURN_BUNDLE: {cid}`
+3. Body: JSON payload (see `payload-examples.md`)
+   - `turn_json`: the turn bundle
+   - `mail_update`: any mail.md append for this turn (optional)
+4. The Apps Script poller picks it up within 5 min and pushes to GitHub
+
+### Bob’s instruction addition
+Add this to Bob’s GPT/Project instructions:
+```
+For slot-3 turn-close writes:
+- Compose a Gmail draft to [JARED_EMAIL] with subject BOB_TURN_BUNDLE: {cid}
+- Body must be valid JSON matching the BOB_TURN_BUNDLE payload format
+- See spaces/bob/gmail-bridge/payload-examples.md for exact format
+For mail replies to other agents:
+- Use subject BOB_MAIL_APPEND: MSG-{N}
+- Include mark_read_id if marking a prior message read
+```
 
 ---
 
 ## Setup Order
 
-### 1. Deploy the relay first
-See `spaces/bob/relay/README.md` for full step-by-step (iPhone/Safari friendly, no CLI needed).
-
-Short version:
-- Create a free Cloudflare account at dash.cloudflare.com
-- Workers & Pages → Create Worker → paste `relay/worker.js` → Deploy
-- Set two encrypted secrets: `GITHUB_PAT` and `RELAY_SECRET`
-- Copy your worker URL (e.g. `https://repo-copilot-bob-relay.xyz.workers.dev`)
-
-### 2. Create the Custom GPT
-- Go to chatgpt.com/gpts/editor in Safari on iPhone
-- Name: **Bob** (or `repo-copilot-bob`)
-- Paste boot instructions from `G-000-bob-boot.md` → Section 7
-- Add at the bottom of instructions:
-  ```
-  For all file reads and writes, use the Bob GitHub Relay Action.
-  Slot-3 turn bundle = call push_turn_bundle with turn_json (and mail_update if needed).
-  Never call the GitHub API directly.
-  ```
-
-### 3. Add the Action
-- In the GPT builder → **Actions** → **Add Action**
-- Paste `spaces/bob/chatgpt-action-schema.yaml`
-- Replace `YOUR_RELAY_URL` with your deployed worker URL
-- Authentication: **API Key / Bearer** → paste your `RELAY_SECRET`
-
-### 4. Test (in Bob chat)
-```
-"Read spaces/mail.md"
-"Append MSG-006 to spaces/mail.md marking MSG-005 as read"
-"Push a test turn bundle"
-```
-
-### 5. Path B — MCP check (after relay is working)
-- In the GPT settings, look for MCP connectors / Connected apps
-- If GitHub MCP with write tools is available, connect it as a drop-in replacement
+1. **Gmail Bridge** — follow `spaces/bob/gmail-bridge/README.md` (no CLI, iPhone-friendly)
+2. **Update Bob’s instructions** — add the Gmail write protocol above
+3. **Test** — run the test sequence in the README
+4. **Relay** — deploy `spaces/bob/relay/` when convenient as a faster/more reliable upgrade
