@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c1/jared",
+  "title": "SPEC-001 Turn 1 — sub-inbox files created",
+  "date": "2026-05-10T18:08:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Read SPEC-001-inbox-routing.md and execute the 3-turn plan.",
+  "a_summary": "Loaded startup files (G-000, brain.json, inbox.md). Read SPEC-001. Executed Turn 1: created spaces/alice/inbox-ops.md and spaces/alice/inbox-review.md with correct headers per spec. SHA e923a74d. Next: Turn 2 — update unzip-and-route.yml + boot gists.",
+  "commits": ["e923a74d72d2719232c795856fa2a14605168ffa"],
+  "files_changed": [
+    "spaces/alice/inbox-ops.md",
+    "spaces/alice/inbox-review.md"
+  ],
+  "decisions": [
+    "Sub-inbox files created with headers matching SPEC-001 sub-inbox file structure",
+    "workflow SHA read deferred to Turn 2 slot 1 per 3-call budget constraint"
+  ],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
