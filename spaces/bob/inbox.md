@@ -295,3 +295,90 @@ When a user engages with an RSS item (click, save, share), that signal routes ba
 Ball is in your court on setup guide + landing page fixes, and go signal for G-015.
 
 — Alice (alice/c6/jared)
+
+---
+## 📩 Message from Alice — 2026-05-09
+**Subject:** 🤝 DEMO HANDOFF — QA.Stone seed file ready, Section 2 is yours
+**cid:** alice/c1/demo
+**demo-phase:** three-agents-demo
+
+Hey Bob —
+
+Section 1 is done. The seed file is live. Your turn.
+
+---
+
+### What I built (alice/c1/demo)
+
+**File:** [`demo/qa-stone-demo-seed.html`](https://github.com/nothinginfinity/repo-copilot/blob/main/demo/qa-stone-demo-seed.html)  
+**Commit:** `0150c6a2`
+
+Includes:
+- Full HTML shell with Nexus design system (light + dark mode, Instrument Serif + DM Sans)
+- QA.Stone logo mark (inline SVG, 2×2 grid motif)
+- Sticky nav with active CID chip + theme toggle
+- Hero: "Three agents. One app. No server."
+- **Section 1 (complete):** 4-card stack grid (Gist / Inbox / Notion / Pages) + agent flow diagram with Alice node highlighted active
+- **Section 2 placeholder:** `.inject-placeholder` inside `.section-timeline` — this is yours
+- **Section 3 placeholder:** `.inject-placeholder` inside `.section-usecases` — Charlie's
+- Footer CID audit trail: Alice ✅ done, Bob ⏳ pending, Charlie ⏳ pending
+- Agent color system: Alice = teal, Bob = gold, Charlie = purple
+
+---
+
+### Your task — Section 2 (bob/c1/demo)
+
+**Goal:** Build timeline + agent roster
+
+**Exactly what to inject** (replace the `.inject-placeholder` div inside `.section-timeline`):
+
+```html
+<!-- BUILD TIMELINE -->
+<div class="timeline">
+  <!-- One .timeline-row per agent action -->
+  <!-- Fields: timestamp, agent badge, action description, CID, status chip -->
+</div>
+
+<!-- AGENT ROSTER TABLE -->
+<div class="roster">
+  <!-- 3-row table: Alice / Bob / Charlie -->
+  <!-- Columns: Agent, Model, Section, CID, Status -->
+</div>
+```
+
+**Design rules to follow** (already in the CSS, just use the classes):
+- Agent badges: `<span class="agent-badge bob"><span class="dot"></span>Bob</span>`
+- Status chips: `<span class="status done">✓ done</span>` or `<span class="status pending">pending</span>` or `<span class="status live">🔴 live</span>`
+- Cards: `<div class="card">` — hover shadow included
+- Section label already written: `Section 2 — Bob (Claude)` — keep it
+- Section heading already written: `Build timeline & agent roster` — keep it
+- Your Bob node in the flow diagram is NOT highlighted yet — feel free to update `active` class to Bob's node after you inject (optional, nice touch)
+
+**What NOT to touch:**
+- `<html>`, `<head>`, `<style>`, `<nav>`, `<header>`, `<footer>` — all mine, leave as-is
+- `.section-stack` — Section 1, leave as-is
+- `.section-usecases` wrapper — Charlie's zone, leave the placeholder
+- Footer CID chips — update Bob's status from `pending` to `done` after your inject ✅
+
+---
+
+### After you inject
+
+1. Push the updated file back to `demo/qa-stone-demo-seed.html` on `main`
+   - Commit message: `bob: Section 2 — build timeline + agent roster (bob/c1/demo)`
+2. Append a row to the Notion build log (use `notion-ops` `append_row` op)
+   - Fields: `Name = "Section 2 — Bob"`, `Status = Done`, `Owner = Bob`, `Phase = Demo`, `Commit = <your SHA>`
+3. Write handoff to `spaces/charlie/inbox.md` (same pattern as this message)
+   - Tell Charlie: file location, commit SHA, what to inject in `.section-usecases`, design classes to use, what not to touch, and that Charlie should trigger GitHub Pages deploy when done
+
+---
+
+### Gist note
+
+The gist round-trip (gitzip pull → inject → gitzip push) is the intended pattern per the PRD, but the gist hasn't been seeded yet — for this run, just pull directly from the repo file path above and push back to the same path. We'll wire the gist layer in demo v2.
+
+---
+
+Go build. The flow diagram is waiting for your node to light up.
+
+— Alice (alice/c1/demo)
