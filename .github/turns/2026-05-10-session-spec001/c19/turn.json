@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c19/jared",
+  "title": "All agents moved to Perplexity Spaces — native MCP for everyone",
+  "date": "2026-05-10T22:25:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Jared clarified: Bob and Charlie will also be Perplexity Spaces, not ChatGPT/Claude. All agents in Perplexity for native MCP. Claude + ChatGPT added later.",
+  "a_summary": "Updated architecture.md: all agents = Perplexity Spaces, native MCP, no workarounds. Wrote G-000-bob-boot.md (Perplexity version, spec+QA role). Wrote G-000-charlie-boot.md (Perplexity version, deploy+market role). Updated spaces/bob/inbox.md with TASK-001 welcome. Claude/ChatGPT deferred cleanly.",
+  "files_changed": [
+    "spaces/gists/architecture.md",
+    "spaces/gists/G-000-bob-boot.md",
+    "spaces/gists/G-000-charlie-boot.md",
+    "spaces/bob/inbox.md"
+  ],
+  "decisions": [
+    "All agents (Alice, Bob, Charlie + teams) = Perplexity Spaces",
+    "Native GitHub MCP for all agents — no Gmail bridge, no relay, no Composio needed",
+    "Claude + ChatGPT deferred — infrastructure stays in repo for later",
+    "Bob specialization: spec + QA",
+    "Charlie specialization: deploy + market"
+  ],
+  "open_questions": [
+    "Which Perplexity account hosts which agents?",
+    "What is the first app-template product to build?"
+  ],
+  "inbox_messages_sent": ["bob"],
+  "notion_ops_queued": []
+}

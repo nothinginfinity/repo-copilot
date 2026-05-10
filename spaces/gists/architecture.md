@@ -3,54 +3,63 @@ _Living document. Last updated: 2026-05-10_
 
 ---
 
-## ⚡ Current Focus: Perplexity-First Stack
+## ⚡ Current Architecture: All Agents in Perplexity Spaces
 
-Jared is running on **two Perplexity accounts** as the primary agent system.
-ChatGPT (Bob) and Claude (Charlie) are **parked** until the Perplexity/GitHub/Notion
-core loop is fully operational and generating revenue.
+All agents and teams run as **Perplexity Spaces** on Jared’s accounts.
+Every agent gets native GitHub MCP read+write from day one — no workarounds.
 
-**Core loop (active):**
+**Core loop:**
 ```
-Perplexity (Alice) ↔ GitHub (repo-copilot) ↔ Notion
+Perplexity Spaces (Alice, Bob, Charlie + teams) ↔ GitHub (repo-copilot) ↔ Notion
 ```
 
-**Business model:**
-Build and sell apps-as-templates distributed via Notion.
-Two Perplexity accounts allow parallel workstreams (build + ops, or two products).
+**Claude (Anthropic) and ChatGPT (OpenAI) are deferred** — added later once
+the Perplexity/GitHub/Notion system is fully operational.
 
 ---
 
-## Agent Roster
+## Agent Roster — Perplexity Spaces
 
-| Agent | Platform | Status | Write Path |
-|-------|----------|--------|------------|
-| **Alice-1** | Perplexity account 1 (iPhone) | ✅ Primary | Native MCP `push_files` |
-| **Alice-2** | Perplexity account 2 (iPhone) | 🔜 Activate when needed | Native MCP `push_files` |
-| **Bob** | ChatGPT (iPhone) | ⏸️ Parked | Gmail bridge → Apps Script → GitHub |
-| **Charlie** | Claude Pro (iPhone) | ⏸️ Parked | Composio MCP (needs setup) |
+### Core Agents
+
+| Agent | Space | Account | Specialization | Status |
+|-------|-------|---------|---------------|--------|
+| **Alice** | `repo-copilot-alice` | Account 1 | Primary build + ops | ✅ Active |
+| **Bob** | `repo-copilot-bob` | Account 1 or 2 | Spec + QA | 🔜 Create |
+| **Charlie** | `repo-copilot-charlie` | Account 1 or 2 | Deploy + market | 🔜 Create |
+
+### Agent Teams (sub-agents per agent)
+
+| Team Agent | Parent | Specialization |
+|------------|--------|---------------|
+| alice-ops | Alice | Operations, infra, turn-close |
+| alice-review | Alice | Code review, QA |
+| bob-spec | Bob | Spec writing, requirements |
+| bob-qa | Bob | Testing, validation |
+| charlie-deploy | Charlie | Deployment, GitHub Actions |
+| charlie-market | Charlie | Templates, distribution, sales |
 
 ---
 
-## Write Path Details
+## Why Perplexity-First
 
-### Alice — Native MCP (active)
+- Every Space gets the same native GitHub MCP tools Alice uses today
+- `push_files`, `get_file_contents`, `create_pull_request` — all native
+- No Gmail bridge, no Cloudflare relay, no OAuth workarounds
+- Two Perplexity accounts = distribute Spaces across accounts as needed
+- Claude + ChatGPT added later as optional extra capacity — not core dependencies
+
+---
+
+## Write Path (All Agents)
+
 ```
-Perplexity Space
+Perplexity Space (any agent)
   → GitHub MCP tools (push_files, get_file_contents, etc.)
-  → nothinginfinity/repo-copilot
+  → nothinginfinity/repo-copilot (branch: main)
 ```
 
-### Bob — Gmail Bridge (built, parked)
-```
-ChatGPT Bob → Gmail draft (BOB_ prefix) → Apps Script poller → GitHub
-```
-Files: `spaces/bob/gmail-bridge/` — ready to activate, needs Apps Script setup.
-
-### Charlie — Composio MCP (planned, parked)
-```
-Claude Pro → Composio remote MCP → GitHub OAuth → GitHub
-```
-Files: `spaces/charlie/mcp-research.md` — ready to activate, needs Composio account.
+Identical for Alice, Bob, Charlie, and all team agents.
 
 ---
 
@@ -58,23 +67,41 @@ Files: `spaces/charlie/mcp-research.md` — ready to activate, needs Composio ac
 
 | File | Purpose |
 |------|---------|
-| `spaces/mail.md` | Agent↔agent mailbox |
+| `spaces/mail.md` | Agent↔agent mailbox (all agents) |
 | `spaces/gists/brain.json` | Shared memory / live state |
 | `spaces/gists/architecture.md` | This file |
 | `spaces/gists/G-000-alice-boot.md` | Alice boot instructions |
-| `spaces/gists/G-000-bob-boot.md` | Bob boot instructions (parked) |
-| `spaces/gists/G-000-charlie-boot.md` | Charlie boot instructions (parked) |
+| `spaces/gists/G-000-bob-boot.md` | Bob boot instructions |
+| `spaces/gists/G-000-charlie-boot.md` | Charlie boot instructions |
 | `.github/turns/{session}/{cid}/turn.json` | Per-turn audit log |
 
 ---
 
-## Upgrade Roadmap (when ready)
+## Boot File Per Agent
 
-| Priority | Item | Unblocks |
-|----------|------|----------|
-| 1 | Define Alice-2 specialization | Parallel workstreams |
-| 2 | First app-template product | Revenue |
-| 3 | Notion distribution channel | Sales |
-| 4 | Bob Gmail bridge Apps Script | Bob write operational |
-| 5 | Composio for Charlie | Charlie write parity |
-| 6 | Cloudflare relay for Bob | Faster Bob writes |
+Each Perplexity Space loads 3 files on startup:
+1. `spaces/gists/G-000-{agent}-boot.md` — full operating instructions
+2. `spaces/gists/brain.json` — shared memory
+3. `spaces/{agent}/inbox.md` — current tasks from Jared
+
+All boot files follow the same format. Alice’s is the template.
+
+---
+
+## Deferred (add later)
+
+| Item | Notes |
+|------|-------|
+| Claude (Anthropic) iPhone | Composio MCP setup — plan in `spaces/charlie/mcp-research.md` |
+| ChatGPT (OpenAI) iPhone | Gmail bridge + Cloudflare relay — built in `spaces/bob/` |
+| Notion distribution | Template store for apps-as-templates product |
+
+---
+
+## Next Build Steps
+
+1. Create Bob Perplexity Space — new Space using `G-000-bob-boot.md`
+2. Create Charlie Perplexity Space — new Space using `G-000-charlie-boot.md`
+3. Create team agent Spaces (alice-ops, bob-spec, etc.) as needed
+4. Define first app-template product
+5. Wire Notion distribution channel
