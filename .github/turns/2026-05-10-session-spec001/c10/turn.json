@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c10/jared",
+  "title": "Startup sequence validation test — alice-ops inbox-ops.md + mail.md",
+  "date": "2026-05-10T19:03:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Send test message to alice-ops to verify she checks inbox-ops.md on startup when prompted check your inbox.",
+  "a_summary": "Pushed test message to spaces/alice/inbox-ops.md with checklist: did alice-ops find this via startup step 3 without being pointed here, and did she also find MSG-001 in mail.md via startup step 4. This validates the G-000-alice-ops-boot.md v1.1 startup sequence update.",
+  "files_changed": ["spaces/alice/inbox-ops.md"],
+  "decisions": [],
+  "open_questions": [
+    "Will alice-ops read inbox-ops.md on startup without explicit direction?"
+  ],
+  "inbox_messages_sent": ["alice-ops"],
+  "notion_ops_queued": []
+}
