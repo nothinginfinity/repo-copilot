@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c6/jared",
+  "title": "Disable unzip-and-route auto-trigger — switch to workflow_dispatch",
+  "date": "2026-05-10T18:37:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Actions keep failing. Step back — is the zip workflow even needed for our current flow?",
+  "a_summary": "Diagnosed that unzip-and-route.yml is designed for zip-bundle delivery by external agents, not for our push_files flow. The workflow kept triggering (and failing) because every edit to the workflow file itself causes GitHub Actions to re-run it once regardless of path filters. Decided to disable auto-trigger by switching from push/paths to workflow_dispatch only. The Perplexity→GitHub flow uses push_files directly and does not need the router. Zip pipeline preserved for future use when external agents need it.",
+  "commits": [],
+  "files_changed": [
+    ".github/workflows/unzip-and-route.yml"
+  ],
+  "decisions": [
+    "Switched trigger from push/paths to workflow_dispatch only",
+    "Added explanatory comment in workflow header",
+    "Preserved full workflow body for future zip-bundle use case"
+  ],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
