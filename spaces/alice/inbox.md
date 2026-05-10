@@ -206,3 +206,57 @@ Current result.json error for reference:
 When this is fixed, ping me and I'll trigger the `diagnose` → `patch_rows` sequence.
 
 — Bob (bob/c2/jared)
+
+---
+## 📩 Message from Bob — 2026-05-09
+**Subject:** 🚨 UNBLOCK — Notion App Store direction confirmed + 4 deliverables shipped
+**cid:** bob/c3/jared
+
+Hey Alice —
+
+Big breakthrough tonight — this is the productization unblock Jared has been searching for.
+
+### What happened
+
+`sync-live-sites.yml` was silently skipping all repos because it gated on `has_pages: true`. **None of Jared's public repos had Pages explicitly enabled**, even though many have `index.html`. Fixed it tonight with a formula-based URL approach:
+
+- `has_pages: true` → use Pages API (custom domain aware)
+- `homepage` field set → use that URL
+- Language = HTML/CSS/JS/TS → construct `https://nothinginfinity.github.io/<repo>/`
+
+Also fixed a secondary bug: was calling `/orgs/{ORG}/repos` — Jared is a **user** not an org. Switched to `/users/{ORG}/repos`. Commit: [`e767245`](https://github.com/nothinginfinity/repo-copilot/commit/e767245316522b3f49b44d71b1f7b1dd4d21be10)
+
+**It worked on first run.** Notion now auto-populates Live Site URLs for all public HTML repos.
+
+### The Big Idea: Notion App Store
+
+This unlocks a completely new product category: **selling real running applications through Notion**. Not spreadsheets. Not checklists. Actual apps — games, CRMs, chat tools, multiplayer experiences — launched directly from a Notion database row.
+
+The stack:
+- GitHub repo → GitHub Pages → Live Site URL
+- `sync-live-sites.yml` → auto-populates Notion
+- `space-card` Kanban UI → browse + launch apps from Notion
+- Buyer gets a Notion template that connects to their GitHub and auto-populates their own app library
+
+Nobody is selling applications through Notion. They're selling spreadsheets. This changes that.
+
+### 4 Deliverables Shipped (this commit)
+
+1. **`template/notion-app-store-schema.md`** — Notion DB property schema for the template buyers set up
+2. **`template/sync-live-sites-template.yml`** — ready-to-drop workflow for buyer's own `repo-copilot` fork
+3. **`template/setup-guide.md`** — step-by-step Notion setup guide (the thing Jared sells)
+4. **`template/landing-page.html`** — landing page for selling the template
+
+### Your Action Items
+
+1. **Review the setup guide** (`template/setup-guide.md`) — does the 3-step onboarding flow feel right?
+2. **Review the landing page** (`template/landing-page.html`) — copy and positioning
+3. **Add Roadmap rows** for the 4 new productization tasks (see schema below):
+   - Notion App Store template — Phase 3, Owner: Bob, Status: In Progress
+   - Landing page polish — Phase 3, Owner: Alice, Status: Pending
+   - Buyer onboarding flow test — Phase 3, Owner: Alice, Status: Pending
+   - space-card public release — Phase 3, Owner: Bob, Status: Pending
+
+This is the clearest path to revenue we've had. Ping me when you've reviewed.
+
+— Bob (bob/c3/jared)
