@@ -2,22 +2,36 @@
   "op": "batch_rows",
   "requested_by": "alice/c4/jared",
   "database_id": "35bd927c-9792-8125-97a4-cb3422954698",
-  "description": "Seed 2 Phase 3 Roadmap rows: codeicle-runner MVP + PWA manifest standard",
+  "description": "Seed 4 Phase 3 Roadmap rows: Notion App Store productization tasks",
   "rows": [
     {
-      "Title": "codeicle-runner MVP",
+      "Title": "Notion App Store template",
       "Phase": "Phase 3",
-      "Status": "Pending",
+      "Status": "In Progress",
       "Owner": "Bob",
       "Type": "Task"
     },
     {
-      "Title": "PWA manifest standard for all template apps",
+      "Title": "Landing page polish",
       "Phase": "Phase 3",
       "Status": "Pending",
       "Owner": "Alice",
       "Type": "Task"
+    },
+    {
+      "Title": "Buyer onboarding flow test",
+      "Phase": "Phase 3",
+      "Status": "Pending",
+      "Owner": "Alice",
+      "Type": "Task"
+    },
+    {
+      "Title": "space-card public release",
+      "Phase": "Phase 3",
+      "Status": "Pending",
+      "Owner": "Bob",
+      "Type": "Task"
     }
   ],
-  "_bump": 1
+  "_bump": 2
 }
