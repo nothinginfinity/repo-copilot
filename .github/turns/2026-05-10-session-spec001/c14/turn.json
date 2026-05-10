@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c14/jared",
+  "title": "MSG-004 logged + Bob setup instructions updated to Custom GPT path",
+  "date": "2026-05-10T20:54:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Bob replied via Jared relay with MSG-004 recommending Custom GPT + Action (Path A), MCP as Path B. Log it and update instructions.",
+  "a_summary": "Logged MSG-004 (bob->alice) in spaces/mail.md. MSG-003 marked read. Updated spaces/bob/chatgpt-action-instructions.md: renamed to Custom GPT path, added architecture decision section (Path A/B), updated Step 2 to GPT builder flow, added Step 3 iPhone verify, Step 4 write test sequence, Step 5 Path B MCP check. Sequential slot-3 write pattern documented.",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/bob/chatgpt-action-instructions.md"
+  ],
+  "decisions": [
+    "Bob = Custom GPT + Action (Path A), NOT a ChatGPT Project",
+    "MCP = Path B, verify after Path A working",
+    "Setup requires browser/desktop GPT builder, day-to-day on iPhone",
+    "Slot-3 = sequential createOrUpdateFile calls"
+  ],
+  "open_questions": [
+    "Is GitHub MCP connector available on Jared’s ChatGPT plan?"
+  ],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
