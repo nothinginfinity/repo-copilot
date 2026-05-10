@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c5/jared",
+  "title": "Fix workflow guards — explicit skip==false conditions",
+  "date": "2026-05-10T18:26:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Actions still failing after guard fix — push corrected workflow.",
+  "a_summary": "Identified two bugs: (1) find command could exit non-zero if turn-bundles dir missing entirely; (2) all downstream if: conditions used != 'true' which passes when output is empty string. Fixed by adding explicit directory existence check before find, and changing all downstream gates from skip != 'true' to skip == 'false' so they only run when explicitly set.",
+  "commits": [],
+  "files_changed": [
+    ".github/workflows/unzip-and-route.yml"
+  ],
+  "decisions": [
+    "Directory existence check added before find command",
+    "All downstream step conditions changed from skip != 'true' to skip == 'false'",
+    "Added || true to find pipe as extra safety net"
+  ],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
