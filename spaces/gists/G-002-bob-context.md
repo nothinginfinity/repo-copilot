@@ -3,7 +3,7 @@
 > **Type:** `CONTEXT` 🗺️ "You Are Here" Map
 > **Owner:** bob
 > **Load at:** session start, before reading inbox
-> **Last updated:** 2026-05-09
+> **Last updated:** 2026-05-10
 
 ---
 
@@ -22,47 +22,61 @@
 
 ---
 
-## ⚠️ MANDATORY: Turn-Level Brain Push
+## ⚠️ MANDATORY: Turn-Close Bundle Push (Slot 3)
 
 > **This is a hard constraint, not a suggestion.**
 
-**After EVERY response, Bob MUST push a turn note to the brain as the final step — no exceptions.**
+**After EVERY response, Bob MUST close the turn with a gitZip bundle push as the final tool call.**
 
-The unit of memory is the **turn** (one prompt + one response), not the session.
-Every turn is a first-class citizen. Nothing is ever lost.
+The manual brain push to Agent Notes DB is **replaced** by this mechanism.
+GitHub Actions (`unzip-and-route.yml`) handles brain note push, transcript assembly, inbox/outbox routing, and Notion ops automatically.
 
-### Turn Note Protocol
+### What Slot 3 Does
 
-1. Deliver the response fully
-2. As the **last action** of every turn, push `append_note` to `spaces/notion-ops/queue.json`
-3. The note must be **lightweight** — 3–8 word title, concepts from THIS turn only, one-line decisions/questions
-4. Use the turn note schema in `spaces/gists/G-010-brain.md`
+1. Assemble the turn bundle (see G-017 for full spec)
+2. Push via `push_files` to `.github/turn-bundles/{session}/turn-bundle-{cid}.zip` OR push the individual files directly to `.github/turns/{session}/{cid}/`
+3. Actions picks it up, routes everything, pushes brain note to Notion, updates transcript
 
-### Turn Note Template
+### Minimum Viable Turn-Close (every turn)
+
+Push at minimum one `turn.json` to `.github/turns/{session}/{cid}/turn.json`:
 
 ```json
 {
-  "op": "append_note",
-  "requested_by": "bob/c2/jared",
-  "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "title": "<3–8 word summary of THIS specific turn>",
-  "date": "YYYY-MM-DD",
-  "source": "Perplexity",
-  "project": "<inferred from context>",
-  "new_concepts": ["<only concepts NEW in this turn>"],
-  "decisions": "<decision or conclusion from this turn, or null>",
-  "open_questions": "<what this turn leaves unresolved, or null>",
-  "cid": "bob/c2/jared"
+  "schema_version": "1.0",
+  "cid": "bob/cN/jared",
+  "title": "Short title of this turn (5-10 words)",
+  "date": "YYYY-MM-DDTHH:MM:SSZ",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "YYYY-MM-DD-session-slug",
+  "q_summary": "What Jared asked (25 words max)",
+  "a_summary": "What Bob built or decided (50 words max)",
+  "commits": ["SHA"],
+  "files_changed": ["path/to/file"],
+  "decisions": [],
+  "open_questions": []
 }
 ```
 
+### Full Turn Bundle (when inbox/outbox/Notion ops involved)
+
+Use `push_files` with all changed files in one commit:
+- `turns/{session}/{cid}/turn.json` ← always
+- `turns/{session}/{cid}/transcript.md` ← include full Q&A when reasoning is complex
+- `spaces/alice/inbox.md` ← if Alice was messaged
+- `spaces/charlie/inbox.md` ← if Charlie was messaged
+- `spaces/bob/outbox.md` ← if message was sent
+- `.github/notion-ops-queue/turn-{cid}.json` ← if Notion row needed
+
 ### Rules
-- ❌ Do NOT wait until end of session
-- ❌ Do NOT skip a turn because it felt minor
+- ❌ Do NOT skip the turn-close push — even minor turns get a `turn.json`
 - ❌ Do NOT batch multiple turns into one note
-- ❌ Do NOT write long prose — one line max per field
-- ✅ Minimum viable note: title + date + source + cid
-- ✅ Brain push counts as tool call **slot 3** — plan reads/writes so slot 3 is always free
+- ❌ Do NOT use the old manual brain push API call (replaced by Actions)
+- ✅ Slot 3 is always reserved for turn-close push — plan reads/writes so slot 3 is free
+- ✅ Minimum viable: `turn.json` only. Add other files as needed.
+- ✅ Git deduplication handles unchanged files natively — include inbox/outbox files even if mostly unchanged
+- ✅ Full schema and bundle spec: `spaces/gists/G-017-turn-bundle.md`
 
 ---
 
@@ -70,11 +84,11 @@ Every turn is a first-class citizen. Nothing is ever lost.
 
 | Field | Value |
 |-------|-------|
-| Phase | **Turn-level brain wiring** — every turn auto-pushed to Agent Notes DB |
-| Active goal | Turn-level push live for Bob; Three-Agents Demo build next |
-| Blocking issues | None |
-| Last completed | gitzip hardening, Path A (Agent Notes DB), append_note op, G-010 BRAIN |
-| Up next | Three-Agents Demo build; Phase 2 dedup/compression workflow |
+| Phase | **Turn-bundle pipeline live** — gitZip + Actions replace manual brain push |
+| Active goal | Three-Agents Demo completion (Charlie → Section 3 + Pages deploy) |
+| Blocking issues | Charlie Section 3 not yet confirmed started |
+| Last completed | G-016 convo wiki, G-017 turn-bundle spec, unzip-and-route.yml, G-002 update |
+| Up next | Verify Notion build log for demo; Alice's 7 setup guide + landing page fixes; G-013/G-014 |
 
 ---
 
@@ -87,11 +101,11 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 ## 🔧 My Defaults
 
 - Default branch: `main`
-- Preferred commit style: `feat(scope): description` or `brain: <title> (bob/c2/jared)`
+- Preferred commit style: `feat(scope): description`
 - Max tool calls per turn: **3** (see G-001)
 - Always confirm SHA before updating existing files
 - Never describe code without pushing it
-- **Turn note push counts as 1 tool call** — budget accordingly
+- **Slot 3 = turn-close bundle push** — budget accordingly
 
 ---
 
@@ -99,11 +113,12 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 
 > _This section is rewritten each session by Bob. Holds ephemeral working notes._
 
-- Turn-level brain push wired 2026-05-09 (via alice/c2/jared on Bob's behalf)
-- Turn note schema lives in G-010-brain.md
-- Every turn = one append_note to Agent Notes DB
-- Brain DB accumulates across Alice, Bob, Charlie, Claude, ChatGPT — all same DB
-- Bob's CID format: `bob/c<n>/jared` — increment c-number each new conversation
+- Turn-bundle pipeline wired 2026-05-10 (bob/c9/jared)
+- G-017 defines bundle structure; unzip-and-route.yml handles routing + brain push
+- Old manual brain push (append_note to Agent Notes DB) is now handled by Actions
+- Bob CID format: `bob/c<n>/jared` — increment c-number each new conversation
+- Tonight's session: `2026-05-09-notion-app-store-breakthrough`
+- Notion App Store thesis captured in `spaces/conversations/2026-05-09-notion-app-store-breakthrough/decisions.md`
 
 ---
 
@@ -113,3 +128,4 @@ Always load [`spaces/gists.md`](https://github.com/nothinginfinity/repo-copilot/
 |------|--------|----|  
 | 2026-05-07 | Initial creation | Bob |
 | 2026-05-09 | Added turn-level brain push mandate, updated phase | Alice (alice/c2/jared) |
+| 2026-05-10 | Replaced manual brain push with gitZip turn-bundle mandate (G-017) | Bob (bob/c9/jared) |

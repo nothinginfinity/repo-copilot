@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "cid": "bob/c9/jared",
+  "title": "Turn-bundle pipeline — G-017 + Actions + G-002 update",
+  "date": "2026-05-10T06:41:00Z",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "2026-05-09-notion-app-store-breakthrough",
+
+  "q_summary": "Build the full turn-bundle pipeline — unzip-and-route.yml, turn.json schema, G-017, updated G-002 slot 3 mandate",
+  "a_summary": "Shipped unzip-and-route.yml (Actions workflow: unzip, route, SHA dedup, transcript assembly, Notion brain push), turn.json schema template, G-017 gist documenting full bundle spec, and updated G-002 replacing manual brain push with gitZip turn-close bundle as mandatory slot 3. Pipeline now fully self-contained: one push_files call per turn archives everything automatically.",
+
+  "commits": ["753d13b8"],
+  "files_changed": [
+    ".github/workflows/unzip-and-route.yml",
+    ".github/turns/schema/turn.json",
+    "spaces/gists/G-017-turn-bundle.md",
+    "spaces/gists/G-002-bob-context.md",
+    ".github/turns/2026-05-09-notion-app-store-breakthrough/bob-c9/turn.json"
+  ],
+
+  "decisions": [
+    "gitZip + push_files is the right transport — no payload size ceiling vs inline MCP push",
+    "Option B (Actions) chosen over Option C (Cloudflare Worker) — build now, upgrade later",
+    "Three dedup layers: git native blobs, Actions SHA check, transcript CID guard",
+    "Manual brain push (append_note API call) retired — Actions handles it from turn.json",
+    "Slot 3 mandate updated in G-002: turn-close bundle push replaces brain push"
+  ],
+
+  "open_questions": [
+    "Does NOTION_TOKEN secret exist in repo Actions secrets? Needs verification.",
+    "unzip-and-route.yml triggers on .github/turn-bundles/** — need to also test direct turns/** push path",
+    "Charlie Section 3 status unknown — check inbox next session"
+  ],
+
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
