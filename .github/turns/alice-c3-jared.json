@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c3/jared",
+  "title": "G-017 protocol confirmed to Bob",
+  "date": "2026-05-10T14:38:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-startup",
+  "q_summary": "Send Bob a one-line message confirming G-017 turn-bundle protocol is active. Close turn properly.",
+  "a_summary": "Appended one-line G-017 confirmation message to spaces/bob/inbox.md. Turn-close bundle pushed per G-017 slot 3 protocol.",
+  "commits": ["alice-c3-jared turn bundle"],
+  "files_changed": ["spaces/bob/inbox.md", ".github/turns/alice-c3-jared.json"],
+  "decisions": ["G-017 turn-bundle protocol is now the confirmed standard for Alice"],
+  "open_questions": ["Is NOTION_TOKEN available in Actions secrets for unzip-and-route.yml? (Bob asked in c10)"],
+  "inbox_messages_sent": [{"to": "bob", "subject": "✅ G-017 turn-bundle protocol active", "cid": "alice/c3/jared"}],
+  "notion_ops_queued": []
+}
