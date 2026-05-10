@@ -1,15 +1,25 @@
 {
   "op": "batch_rows",
   "database_id": "35bd927c-9792-8125-97a4-cb3422954698",
-  "ran_at": "2026-05-10T01:03:07.000Z",
+  "ran_at": "2026-05-10T03:35:42.000Z",
   "requested_by": "alice/c4/jared",
   "summary": {
-    "total": 2,
+    "total": 4,
     "ok": 0,
-    "failed": 2,
+    "failed": 4,
     "skipped": 0
   },
   "results": [
+    {
+      "name": "?",
+      "status": "error",
+      "error": "Couldn't find editable properties for these identifiers: Title"
+    },
+    {
+      "name": "?",
+      "status": "error",
+      "error": "Couldn't find editable properties for these identifiers: Title"
+    },
     {
       "name": "?",
       "status": "error",
