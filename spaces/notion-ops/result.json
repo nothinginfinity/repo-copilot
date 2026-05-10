@@ -1,34 +1,210 @@
 {
-  "op": "batch_rows",
+  "op": "diagnose",
   "database_id": "35bd927c-9792-8125-97a4-cb3422954698",
-  "ran_at": "2026-05-10T03:35:42.000Z",
-  "requested_by": "alice/c4/jared",
+  "ran_at": "2026-05-10T04:25:18.000Z",
+  "requested_by": "bob/c6/jared",
   "summary": {
-    "total": 4,
-    "ok": 0,
-    "failed": 4,
+    "total": 5,
+    "ok": 5,
+    "failed": 0,
     "skipped": 0
   },
   "results": [
     {
-      "name": "?",
-      "status": "error",
-      "error": "Couldn't find editable properties for these identifiers: Title"
+      "status": "ok",
+      "note": "diagnosis complete"
+    }
+  ],
+  "sample": [
+    {
+      "page_id": "35bd927c-9792-8104-be1e-c2c9fa4405d1",
+      "properties": {
+        "Commit": {
+          "type": "rich_text"
+        },
+        "Depends On": {
+          "type": "rich_text"
+        },
+        "Status": {
+          "type": "select",
+          "value": "\u23f3 Pending"
+        },
+        "Type": {
+          "type": "select",
+          "value": "Success Criteria"
+        },
+        "Phase": {
+          "type": "select",
+          "value": "Phase 2"
+        },
+        "Owner": {
+          "type": "select",
+          "value": "Alice"
+        },
+        "Track": {
+          "type": "select",
+          "value": "Demo"
+        },
+        "Notes": {
+          "type": "rich_text"
+        },
+        "Name": {
+          "type": "title",
+          "value": "3 distinct agent CIDs visible in git commit log"
+        }
+      }
     },
     {
-      "name": "?",
-      "status": "error",
-      "error": "Couldn't find editable properties for these identifiers: Title"
+      "page_id": "35bd927c-9792-8111-a55b-ed5c0ef76c5d",
+      "properties": {
+        "Commit": {
+          "type": "rich_text"
+        },
+        "Depends On": {
+          "type": "rich_text"
+        },
+        "Status": {
+          "type": "select",
+          "value": "\u23f3 Pending"
+        },
+        "Type": {
+          "type": "select",
+          "value": "Task"
+        },
+        "Phase": {
+          "type": "select",
+          "value": "Phase 2"
+        },
+        "Owner": {
+          "type": "select",
+          "value": "Bob"
+        },
+        "Track": {
+          "type": "select",
+          "value": "Integration"
+        },
+        "Notes": {
+          "type": "rich_text"
+        },
+        "Name": {
+          "type": "title",
+          "value": "Wire Notion build log"
+        }
+      }
     },
     {
-      "name": "?",
-      "status": "error",
-      "error": "Couldn't find editable properties for these identifiers: Title"
+      "page_id": "35bd927c-9792-8130-b49a-f6ebd67b5ad0",
+      "properties": {
+        "Commit": {
+          "type": "rich_text"
+        },
+        "Depends On": {
+          "type": "rich_text"
+        },
+        "Status": {
+          "type": "select",
+          "value": "\u23f3 Pending"
+        },
+        "Type": {
+          "type": "select",
+          "value": "Success Criteria"
+        },
+        "Phase": {
+          "type": "select",
+          "value": "Phase 2"
+        },
+        "Owner": {
+          "type": "select",
+          "value": "Alice"
+        },
+        "Track": {
+          "type": "select",
+          "value": "Demo"
+        },
+        "Notes": {
+          "type": "rich_text"
+        },
+        "Name": {
+          "type": "title",
+          "value": "Demo is fully repeatable from demo-run.md by anyone"
+        }
+      }
     },
     {
-      "name": "?",
-      "status": "error",
-      "error": "Couldn't find editable properties for these identifiers: Title"
+      "page_id": "35bd927c-9792-8148-8bad-c85cc7391d34",
+      "properties": {
+        "Commit": {
+          "type": "rich_text"
+        },
+        "Depends On": {
+          "type": "rich_text"
+        },
+        "Status": {
+          "type": "select",
+          "value": "\u23f3 Pending"
+        },
+        "Type": {
+          "type": "select",
+          "value": "Task"
+        },
+        "Phase": {
+          "type": "select",
+          "value": "Phase 2"
+        },
+        "Owner": {
+          "type": "select",
+          "value": "Charlie"
+        },
+        "Track": {
+          "type": "select",
+          "value": "Integration"
+        },
+        "Notes": {
+          "type": "rich_text"
+        },
+        "Name": {
+          "type": "title",
+          "value": "Wire GitHub Pages deploy"
+        }
+      }
+    },
+    {
+      "page_id": "35bd927c-9792-814c-9281-eee8b4ff62bb",
+      "properties": {
+        "Commit": {
+          "type": "rich_text"
+        },
+        "Depends On": {
+          "type": "rich_text"
+        },
+        "Status": {
+          "type": "select",
+          "value": "\u2705 Done"
+        },
+        "Type": {
+          "type": "select",
+          "value": "Task"
+        },
+        "Phase": {
+          "type": "select",
+          "value": "Phase 0"
+        },
+        "Owner": {
+          "type": "select",
+          "value": "Bob"
+        },
+        "Track": {
+          "type": "select",
+          "value": "Infrastructure"
+        },
+        "Notes": {
+          "type": "rich_text"
+        },
+        "Name": {
+          "type": "title",
+          "value": "\ud83c\udfe0 PraX Hub"
+        }
+      }
     }
   ]
 }
