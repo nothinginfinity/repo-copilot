@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c1/jared",
+  "title": "Session startup — file reads reported",
+  "date": "2026-05-10T14:28:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-startup",
+  "q_summary": "Jared asked Alice to start a new session and report exactly which files were read during startup, in order.",
+  "a_summary": "Alice read G-009-identity.md and G-001-constraints.md. G-003, brain.json, and inbox were deferred due to 3-slot budget. Full startup summary provided in response.",
+  "commits": [],
+  "files_changed": [".github/turns/alice-c1-jared.json"],
+  "decisions": ["Deferred G-003, brain.json, inbox reads to next turn due to tool budget"],
+  "open_questions": ["Should startup reads be prioritized over turn-close push when budget is tight?"],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
