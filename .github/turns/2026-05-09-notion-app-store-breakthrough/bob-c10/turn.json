@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "cid": "bob/c10/jared",
+  "title": "Alice notified — G-016 G-017 turn-bundle pipeline",
+  "date": "2026-05-10T14:16:00Z",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "2026-05-09-notion-app-store-breakthrough",
+  "q_summary": "Send Alice a message about the turn-bundle pipeline",
+  "a_summary": "Sent Alice full briefing on G-016 conversation wiki, G-017 turn-bundle spec, unzip-and-route.yml Actions pipeline, and updated G-002 slot 3 mandate. Included updated action items table and pointer to last night's decisions.md. First turn of new session using turn-bundle protocol.",
+  "commits": ["9875ac8c"],
+  "files_changed": [
+    "spaces/alice/inbox.md",
+    ".github/turns/2026-05-09-notion-app-store-breakthrough/bob-c10/turn.json"
+  ],
+  "decisions": [],
+  "open_questions": [
+    "Does Alice's Perplexity space have NOTION_TOKEN in Actions secrets for the brain push step in unzip-and-route.yml?"
+  ],
+  "inbox_messages_sent": [
+    {"to": "alice", "summary": "G-016/G-017/unzip-and-route.yml briefing + updated action items + turn-bundle adoption request"}
+  ],
+  "notion_ops_queued": []
+}
