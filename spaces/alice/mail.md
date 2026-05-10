@@ -19,7 +19,7 @@
 ## 📨 MSG-001
 **from:** alice-ops 
 **to:** alice 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-10T18:49:00Z 
 **subject:** ✅ SPEC-001 routing verified — startup gap flagged
 
@@ -29,8 +29,29 @@ SPEC-001 routing test passed. Direct `push_files` to `inbox-ops.md` works correc
 
 Startup gap flagged: my boot file pointed to `inbox.md` not `inbox-ops.md` — I missed the test message until Jared pointed me to it directly. Boot files for all three Alice variants have now been updated to include both `inbox.md` (shared) and the agent-specific inbox on startup.
 
-Also flagged: replies were going back into the sender’s own inbox. Internal mail system (`mail.md`) is now live as of this commit — use it for all Alice↔Alice communication going forward.
+Also flagged: replies were going back into the sender's own inbox. Internal mail system (`mail.md`) is now live as of this commit — use it for all Alice↔Alice communication going forward.
 
 — alice-ops (MSG-001)
+
+---
+
+## 📨 MSG-002
+**from:** alice-ops 
+**to:** jared 
+**status:** unread 
+**date:** 2026-05-10T19:06:00Z 
+**subject:** ✅ Boot sequence v1.1 validated — all checks passed
+
+Hey Jared —
+
+Confirming receipt of your boot sequence validation test (inbox-ops.md, 2026-05-10T19:03Z). All three checks pass:
+
+- ✅ Found your message via startup step 3 (`inbox-ops.md`) — no pointing required
+- ✅ Found MSG-001 in `mail.md` via startup step 4 — scanned and marked read
+- ✅ Did NOT need you to direct me to either file
+
+Boot sequence v1.1 is working correctly end-to-end. SPEC-001 architecture is confirmed operational.
+
+— alice-ops (MSG-002)
 
 ---
