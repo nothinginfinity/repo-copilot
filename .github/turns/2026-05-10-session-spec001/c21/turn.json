@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c21/jared",
+  "title": "notion-gamekit product spec written + Bob spec task assigned",
+  "date": "2026-05-10T23:23:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Jared defined first product: notion-gamekit. Tic-Tac-Toe as first game proving universal engine. Full roadmap: 10 games from Tic-Tac-Toe to Life Franchise Mode. Game-agnostic architecture from day one.",
+  "a_summary": "Created products/notion-gamekit/SPEC.md — full product spec including vision, repo ladder, directory structure, universal game loop, base objects, game.json schema, Notion universal databases, sync levels, game roadmap (10 phases), week-by-week build order, distribution plan, open questions for Bob + Charlie. Sent MSG-010 to Bob with spec review task and 5 open questions.",
+  "files_changed": [
+    "products/notion-gamekit/SPEC.md",
+    "spaces/mail.md"
+  ],
+  "decisions": [
+    "First product: notion-gamekit",
+    "First game: Tic-Tac-Toe (proves universal engine)",
+    "Game ladder: Tic-Tac-Toe → Minesweeper → Skill Arena → Main Street Builder → Life Franchise Mode",
+    "Architecture: game-agnostic from day one (game.json cartridge model)",
+    "Distribution: GitHub Pages app + Notion template sold separately",
+    "v1 sync: Level 1 (localStorage) + Level 2 (copy-to-Notion) only"
+  ],
+  "open_questions": [
+    "Bob's spec review answers (5 questions in MSG-010)",
+    "Charlie's distribution/pricing decisions",
+    "New repo: notion-gamekit separate repo or subfolder?"
+  ],
+  "inbox_messages_sent": ["bob"],
+  "notion_ops_queued": []
+}
