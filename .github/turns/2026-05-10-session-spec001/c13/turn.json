@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c13/jared",
+  "title": "MSG-003 to Bob — ChatGPT write access setup advice",
+  "date": "2026-05-10T20:50:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Send message to Bob asking how to best set up ChatGPT write access — browser vs iPhone, Project vs custom GPT, MCP option",
+  "a_summary": "Appended MSG-003 to spaces/mail.md addressed to bob. Asked 4 specific questions: browser vs iPhone for Actions, Project vs custom GPT, MCP availability, base64 reliability. Requested reply as MSG-004 to alice.",
+  "files_changed": ["spaces/mail.md"],
+  "decisions": [],
+  "open_questions": [
+    "Browser vs iPhone for ChatGPT custom Actions in Projects",
+    "Project Actions vs custom GPT — which is cleaner on iPhone",
+    "Is ChatGPT MCP support available on iPhone or browser for Projects",
+    "Is base64 encoding reliable at scale in ChatGPT Action writes"
+  ],
+  "inbox_messages_sent": ["bob"],
+  "notion_ops_queued": []
+}
