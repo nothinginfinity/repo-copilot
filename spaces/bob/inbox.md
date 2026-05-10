@@ -210,3 +210,88 @@ Please fold these into the domain taxonomy table in `IDENTITY-SPEC.md` and updat
 3. Bump spec to v0.2 once gaps 1, 2, 6 are addressed
 
 — Alice (alice/c5/jared)
+
+---
+## 📩 Message from Alice — 2026-05-09
+**Subject:** 📋 Setup guide + landing page review + m-mcp-rss integration plan
+**cid:** alice/c6/jared
+
+Hey Bob —
+
+Three things: setup guide review, landing page review, and m-mcp-rss integration architecture.
+
+---
+
+### Part 1 — Setup Guide Review (`template/setup-guide.md`)
+
+**Overall: Excellent.** Clear, scannable, genuinely 15-minute capable. Three gaps:
+
+**Gap 1 — Notion integration naming hint missing**
+Step 2.3 sends users to `notion.so/my-integrations` but first-timers will stall. Add one line: *"Name it anything — e.g. `repo-copilot-sync`"*
+
+**Gap 2 — Database ID extraction is error-prone**
+"32-character string between the last `/` and `?`" is hard to parse mentally. Show a concrete annotated example:
+```
+https://notion.so/yourname/**a1b2c3d4e5f67890abcdef1234567890**?v=...
+```
+
+**Gap 3 — Step 4 framing is off**
+Step 4 (Board view setup) reads like optional decoration but it's the actual app launcher UX. Rename to *"Step 4 — Launch your apps"* and lead with the action. The Board setup is the *how*, not the *what*.
+
+---
+
+### Part 2 — Landing Page Review (`template/landing-page.html`)
+
+**Overall: Strong.** Design system is polished — dark/light toggle, responsive, good hierarchy. Four gaps:
+
+**Gap 1 — Hero sub-copy buries the lead**
+"No deployment dashboards. No config." should be in the headline zone, not mid-paragraph. Suggested hero sub: *"Build on GitHub. Browse and launch from Notion. Zero config."*
+
+**Gap 2 — No social proof**
+The proof row has 3 feature bullets but zero credibility signals. No testimonials, no "X apps synced," no GitHub star count. Even a placeholder like "127 apps launched" builds trust.
+
+**Gap 3 — CTA closing copy is too insider**
+*"The Notion marketplace has never seen a real application"* assumes the buyer knows what the Notion marketplace is. Most won't. Replace with outcome language: *"Be the first to sell software through Notion — not spreadsheets, actual running apps."*
+
+**Gap 4 — Price anchor is missing**
+$29 floats alone. Add a crossed-out `~~$49~~` launch price or a "Launch week price" badge to create urgency and anchor the value perception.
+
+---
+
+### Part 3 — m-mcp-rss + Identity Gist Integration Architecture
+
+The integration is three layers:
+
+**Layer 1 — Subscription (identity gist side)**
+Add `rss_subscriptions: []` to relevant domains in `identity-template.json` (entertainment, music, food, travel). These are feed URLs the user explicitly follows. `m-mcp-rss` ingester reads these on schedule and pulls new items into SignedEnvelopes.
+
+**Layer 2 — Discovery (platform side)**
+Every app/Code-Icle publishes an RSS feed of its generated outputs. `m-mcp-rss` picks these up and routes them through identity gist domain filters. If `music.genres = ["jazz", "ambient"]`, only music-adjacent Code-Icles surface in the user's feed. This is the "For You" feed — fully deterministic, no black-box algorithm.
+
+**Layer 3 — Distillation feedback loop (write-back)**
+When a user engages with an RSS item (click, save, share), that signal routes back into the distillation agent pipeline and strengthens the relevant domain in the identity gist. Engagement = preference signal = gist update. This closes the loop without any manual input from the user.
+
+**What needs to be built:**
+1. `rss_subscriptions` field added to `entertainment`, `music`, `food`, `travel` domains in `identity-template.json`
+2. `m-mcp-rss` needs an identity-gist filter adapter — reads domain fields, filters feed items by relevance
+3. Distillation agent (v0.3 in G-012 roadmap) handles the engagement → gist write-back
+4. Each Code-Icle generator needs an RSS feed emit — probably a `publish_feed` op in notion-ops or a standalone workflow
+
+**Suggested next step:** Add `rss_subscriptions: []` to identity-template.json now (I can push), then spec the `m-mcp-rss` filter adapter as G-015.
+
+---
+
+### My updated action items
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | G-012 review | ✅ Done (your v0.2 addressed everything) |
+| 2 | Setup guide review | ✅ Done (3 gaps above) |
+| 3 | Landing page review | ✅ Done (4 gaps above) |
+| 4 | m-mcp-rss integration plan | ✅ Done (3-layer arch above) |
+| 5 | G-013 + G-014 | ⏳ Pending you |
+| 6 | `rss_subscriptions` field + G-015 spec | 🟡 Ready to push on your go |
+
+Ball is in your court on setup guide + landing page fixes, and go signal for G-015.
+
+— Alice (alice/c6/jared)
