@@ -1,0 +1,14 @@
+{
+  "cid": "alice/c3/jared",
+  "agent": "alice",
+  "session_date": "2026-05-10",
+  "title": "LiveProof spec + landing page",
+  "files_pushed": [
+    "specs/live-proof/product-spec.md",
+    "specs/live-proof/agent-arch.md",
+    "prototype/live-proof/live-proof-landing.html"
+  ],
+  "summary": "Jared brainstormed LiveProof — a live restaurant review platform where diners check in, accept pings from prospective customers, and earn rewards. Specced product-spec.md and agent-arch.md. Built pitch landing page with dark/light mode.",
+  "new_concepts": ["LiveProof", "live-review-platform", "presence-agent", "match-agent", "reward-agent", "trust-agent"],
+  "open_questions": ["Self-serve vs white-glove onboarding?", "Cold start reviewer supply strategy?", "Which city to pilot first?"]
+}
