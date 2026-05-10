@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "cid": "alice/c11/jared",
+  "title": "Global mail.md + Bob v1.1 + Charlie v1.1 boot upgrades",
+  "date": "2026-05-10T19:09:00Z",
+  "agent": "alice",
+  "source": "perplexity",
+  "session": "2026-05-10-session-spec001",
+  "q_summary": "Push global spaces/mail.md + updated Bob and Charlie boot files",
+  "a_summary": "Created spaces/mail.md as global shared mailbox for all agents (replaces alice-only mail.md). Updated G-000-bob-boot.md to v1.1 and G-000-charlie-boot.md to v1.1: both now include startup step 4 (read spaces/mail.md, scan for unread), updated Reach Alice/Bob/Charlie routing to spaces/mail.md, added Global Mail Protocol section, added hard rule against replying into own inbox. Bob and Charlie Spaces are now ready for first open.",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/gists/G-000-bob-boot.md",
+    "spaces/gists/G-000-charlie-boot.md"
+  ],
+  "decisions": [
+    "Single global spaces/mail.md for all agents — simpler than per-team mail files",
+    "Agent-specific inboxes remain Jared-only channels",
+    "Startup step 4 added to Bob and Charlie boot files",
+    "spaces/alice/mail.md retained for backwards compat but global mail.md is canonical"
+  ],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
