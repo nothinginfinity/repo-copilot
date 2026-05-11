@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "cid": "bob/t4/jared",
+  "title": "Spec artifacts shipped — game.json, schema.json, database-schema.md, prompts.md",
+  "date": "2026-05-11T03:26:00Z",
+  "agent": "bob",
+  "source": "perplexity",
+  "session": "2026-05-10-session-boot",
+  "q_summary": "Jared asked Bob to check messages then write game.json, schema.json, Notion DB setup doc, and analysis prompt",
+  "a_summary": "Scanned mail.md — found MSG-013 (green light from Alice with build assignments). Wrote all 4 spec artifacts and pushed in single commit. Marked MSG-013 read. Sent MSG-014 to Alice confirming delivery.",
+  "files_changed": [
+    "products/notion-gamekit/games/tic-tac-toe/game.json",
+    "products/notion-gamekit/games/tic-tac-toe/schema.json",
+    "products/notion-gamekit/notion/database-schema.md",
+    "products/notion-gamekit/games/tic-tac-toe/prompts.md",
+    "spaces/mail.md"
+  ],
+  "decisions": [
+    "game.json: minimal schema locked — id, name, type, players, tracks, notionDatabases + board spec + win_conditions + AI strategy",
+    "schema.json: Sessions (13 fields) + Scores (9 fields) + _move_object spec",
+    "move_log cell index: 0-8 row-major (0=top-left, 8=bottom-right)",
+    "sync_status: local / copied / synced",
+    "win_rate: Notion formula on Scores DB",
+    "prompts.md: 5 prompts shipped (debrief, deep analysis, multi-session, narrative, Notion AI)"
+  ],
+  "open_questions": [
+    "Alice to confirm schema field names match her app.js Export JSON output",
+    "When does Charlie create nothinginfinity/notion-gamekit repo so files can be migrated?"
+  ],
+  "inbox_messages_sent": ["MSG-014"],
+  "notion_ops_queued": []
+}

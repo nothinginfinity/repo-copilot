@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "game": "tic-tac-toe",
+  "databases": {
+    "Sessions": {
+      "description": "One record per completed game. Primary log object.",
+      "fields": [
+        { "name": "session_id",    "type": "string",    "format": "uuid-v4",             "example": "a3f1c8b2-...",      "required": true,  "notes": "Generated on session start" },
+        { "name": "game",          "type": "string",    "format": "game-id",             "example": "tic-tac-toe",      "required": true,  "notes": "Matches game.json id field" },
+        { "name": "player",        "type": "string",    "format": "free text",           "example": "Jared",            "required": true,  "notes": "Human player name" },
+        { "name": "opponent",      "type": "string",    "format": "free text",           "example": "AI",               "required": true,  "notes": "'AI' for v1" },
+        { "name": "mode",          "type": "select",    "options": ["human_vs_ai"],      "example": "human_vs_ai",      "required": true,  "notes": "v1 supports human_vs_ai only" },
+        { "name": "started_at",    "type": "datetime", "format": "ISO 8601",            "example": "2026-05-10T22:00:00Z", "required": true,  "notes": "" },
+        { "name": "ended_at",      "type": "datetime", "format": "ISO 8601",            "example": "2026-05-10T22:02:34Z", "required": true,  "notes": "" },
+        { "name": "duration_secs", "type": "number",   "format": "integer",            "example": 154,                "required": true,  "notes": "ended_at - started_at in seconds" },
+        { "name": "result",        "type": "select",    "options": ["win","loss","draw"],"example": "win",              "required": true,  "notes": "From human player perspective" },
+        { "name": "move_count",    "type": "number",   "format": "integer",            "example": 7,                  "required": true,  "notes": "Total moves played" },
+        { "name": "final_state",   "type": "string",   "format": "9-char board string", "example": "XOXOXOXXO",        "required": true,  "notes": "Board state at game end. X=player, O=AI, .=empty" },
+        { "name": "move_log",      "type": "string",   "format": "JSON array (stringified)", "example": "[{\"n\":1,\"p\":\"X\",\"cell\":4,\"state\":\".X.......\"},...]", "required": true, "notes": "Full move history as compact JSON string. See move object spec below." },
+        { "name": "sync_status",   "type": "select",   "options": ["local","copied","synced"], "example": "copied", "required": true,  "notes": "local=localStorage only, copied=pasted to Notion manually, synced=API auto-push (v3)" }
+      ]
+    },
+    "Scores": {
+      "description": "One record per player. Running lifetime leaderboard.",
+      "fields": [
+        { "name": "player",          "type": "string",  "format": "free text",  "example": "Jared",  "required": true,  "notes": "Matches Sessions.player" },
+        { "name": "game",            "type": "string",  "format": "game-id",    "example": "tic-tac-toe", "required": true, "notes": "" },
+        { "name": "total_sessions",  "type": "number",  "format": "integer",   "example": 12,        "required": true,  "notes": "" },
+        { "name": "wins",            "type": "number",  "format": "integer",   "example": 7,         "required": true,  "notes": "" },
+        { "name": "losses",          "type": "number",  "format": "integer",   "example": 3,         "required": true,  "notes": "" },
+        { "name": "draws",           "type": "number",  "format": "integer",   "example": 2,         "required": true,  "notes": "" },
+        { "name": "win_rate",        "type": "formula", "format": "percent",   "example": "58%",     "required": false, "notes": "Notion formula: wins / total_sessions" },
+        { "name": "current_streak",  "type": "number",  "format": "integer",   "example": 3,         "required": false, "notes": "Positive = win streak, negative = loss streak" },
+        { "name": "last_played",     "type": "datetime","format": "ISO 8601",  "example": "2026-05-10T22:02:34Z", "required": true, "notes": "" }
+      ]
+    },
+    "_move_object": {
+      "description": "Schema for individual move entries stored inside Sessions.move_log (not a separate DB in v1)",
+      "fields": [
+        { "name": "n",      "type": "number", "notes": "Move number, 1-indexed" },
+        { "name": "p",      "type": "string", "notes": "Player token: X or O" },
+        { "name": "cell",   "type": "number", "notes": "Cell index 0-8 (row-major: 0=top-left, 8=bottom-right)" },
+        { "name": "state",  "type": "string", "notes": "Full 9-char board state AFTER this move" }
+      ],
+      "example": [
+        { "n": 1, "p": "X", "cell": 4, "state": "....X...." },
+        { "n": 2, "p": "O", "cell": 0, "state": "O...X...." },
+        { "n": 3, "p": "X", "cell": 2, "state": "O.XX....." }
+      ]
+    }
+  }
+}

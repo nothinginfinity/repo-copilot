@@ -1,0 +1,47 @@
+{
+  "id": "tic-tac-toe",
+  "name": "Tic-Tac-Toe",
+  "version": "1.0.0",
+  "type": "turn_based_board",
+  "players": {
+    "min": 1,
+    "max": 2
+  },
+  "tracks": [
+    "wins",
+    "losses",
+    "draws"
+  ],
+  "notionDatabases": [
+    "Sessions",
+    "Scores"
+  ],
+  "board": {
+    "shape": "grid",
+    "rows": 3,
+    "cols": 3,
+    "cells": 9,
+    "state_format": "flat_string",
+    "state_tokens": {
+      "X": "Player 1 / Human",
+      "O": "Player 2 / AI",
+      ".": "Empty cell"
+    },
+    "state_example": "XO.X..O.."
+  },
+  "win_conditions": [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+  ],
+  "result_values": ["win", "loss", "draw"],
+  "ai": {
+    "strategy": "random_with_blocking",
+    "description": "AI picks randomly unless it can win or must block. Sufficient for v1."
+  }
+}
