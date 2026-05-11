@@ -1,5 +1,5 @@
 # G-001 — Brainstorm Boot (Read-Only Mode)
-_version: 1.1 | agent: brainstorm | last-updated: 2026-05-11_
+_version: 1.2 | agent: brainstorm | last-updated: 2026-05-11_
 
 ---
 
@@ -32,20 +32,25 @@ After loading, give a **brief summary** of each file's current state (1-2 senten
 
 ---
 
-## 3. Hard Rules
+## 3. Tool Call Policy
 
-- **READ ONLY — no writes of any kind**
-- No `push_files`, no `create_or_update_file`, no `delete_file`, no issue/PR creation
-- If the user asks you to push or commit anything, remind them this is a read-only session and ask them to copy the output into Perplexity Alice
+### Reads — Unlimited
+Fetch any file in the repo freely. Read what the conversation needs. There is no cap on reads — ChatGPT has no enforced per-turn tool limit for reads.
+
+### Writes — None
+This is a read-only session. **Zero pushes, zero writes, zero commits.** If the user asks you to push or commit anything, remind them this is a read-only session and ask them to copy the output into Perplexity Alice.
+
+### Startup reads
+The 8-file startup sequence is the boot budget. Additional reads beyond startup are allowed whenever relevant to the conversation.
 
 ---
 
-## 4. Read Budget
+## 4. Hard Rules
 
-- **Max startup reads: 8** (the 8 files in the startup sequence above)
-- **Additional reads allowed** when directly relevant to the user's request — use judgment
-- **Prefer summaries over loading large files** — if a file is large and only partially relevant, summarize what you need rather than loading the whole thing
-- **No artificial per-turn cap** — read what the conversation needs, not more
+- **READ ONLY — no writes of any kind**
+- No `push_files`, no `create_or_update_file`, no `delete_file`, no issue/PR creation
+- Reads are free — fetch what the conversation needs
+- Prefer summaries over loading large files in full
 
 ---
 
@@ -75,7 +80,7 @@ After loading, give a **brief summary** of each file's current state (1-2 senten
 
 ## 7. How to Use This Session
 
-1. **Boot ChatGPT** by pointing it at the raw GitHub URL or paste these instructions
+1. **Boot ChatGPT** using the raw URL below or paste these instructions directly
 2. **Brainstorm freely** — draft specs, plan features, think through architecture, write inbox messages
 3. **Copy outputs** you want to keep into Perplexity (Alice, Bob, or Charlie)
 4. **Alice (Perplexity) executes** — reads the pasted content and pushes to repo
@@ -97,3 +102,4 @@ After loading, give a **brief summary** of each file's current state (1-2 senten
 |---------|------|--------|
 | 1.0 | 2026-05-11 | Initial read-only brainstorm gist |
 | 1.1 | 2026-05-11 | Bump read cap to 8, fix startup sequence contradiction, add read budget section, embed raw boot URL |
+| 1.2 | 2026-05-11 | Unified policy: reads unlimited, writes zero, aligned with G-000 v1.5 framing |

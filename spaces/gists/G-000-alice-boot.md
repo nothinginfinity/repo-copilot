@@ -1,5 +1,5 @@
 # G-000 — Alice Boot Instructions
-_version: 1.4 | agent: alice | last-updated: 2026-05-11_
+_version: 1.5 | agent: alice | last-updated: 2026-05-11_
 
 ---
 
@@ -20,33 +20,33 @@ On every session start, load these files **in order**:
 
 After loading, summarize what each file contains. Report any unread mail from `mail.md`.
 
-> **Note:** Startup reads count toward the 3-tool-call turn limit. If startup requires more than 3 reads, batch where possible or continue loading at the start of the next turn before responding to any task.
-
 ---
 
-## 3. Tool Call Budget
+## 3. Tool Call Policy
 
-Perplexity enforces a **hard limit of 3 tool calls per turn**. Understand what counts:
+### Reads — Unlimited
+Fetch any file in the repo freely. Read what the conversation needs. There is no cap on reads per turn.
 
-| Action | Counts as tool call? | Notes |
-|--------|---------------------|-------|
-| `get_file_contents` (read) | ✅ Yes | Each file read = 1 call |
-| `push_files` (write) | ✅ Yes | Always slot 3 when writing |
-| Any other GitHub MCP tool | ✅ Yes | Counts toward the 3 limit |
+### Writes (`push_files`) — Max 3 per turn, prefer 1
 
-**Budget strategy per turn:**
-- **Writing turn:** 2 reads + 1 `push_files` (slot 3)
-- **Reading-only turn:** up to 3 reads, no push
-- **Never skip the push** if files were modified this turn — use slot 3
+| Scenario | Push count | Approach |
+|----------|-----------|----------|
+| Normal turn (1–many files modified) | **1** | Bundle ALL modified files into a single `push_files` array — this is the default |
+| Edge case (separate branches or repos) | **2–3** | Only when files must go to different targets |
+| Hard ceiling | **3** | Never exceed 3 pushes in a single turn |
 
-**Read freely within the budget.** There is no separate cap on reads — reads and writes share the same 3-slot pool. Read what the conversation needs; just be mindful of the shared budget.
+**Bundling means:** one `push_files` call can contain any number of files — pass them all in the `files` array. File size is not a concern for this repo (all files are small markdown/JSON). Bundle everything modified in a turn into one clean commit.
+
+### Turn-Close Rule
+If any files were modified during a turn, the **last action** must be `push_files` containing all modified files plus `.github/turns/<session>/<cid>/turn.json`. Never end a turn with uncommitted changes.
 
 ---
 
 ## 4. Hard Rules
 
-- Max 3 tool calls per turn (Perplexity hard limit — reads + writes combined)
-- Slot 3 is always `push_files` turn-close bundle **when any file was modified**
+- Reads are free — fetch what you need
+- Max 3 `push_files` per turn; prefer 1 bundled push
+- Last action of any writing turn is always `push_files`
 - Repo: `nothinginfinity/repo-copilot` | Branch: `main`
 - Never describe code without pushing it
 
@@ -66,17 +66,7 @@ Perplexity enforces a **hard limit of 3 tool calls per turn**. Understand what c
 
 ---
 
-## 6. Turn-Close Bundle (Slot 3)
-
-Every turn where files were modified must close with a `push_files` containing:
-- All files modified this turn
-- `.github/turns/<session>/<cid>/turn.json`
-
-If no files were modified, slot 3 is free for an additional read.
-
----
-
-## 7. Project Phase
+## 6. Project Phase
 
 Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05-10).
 
@@ -90,4 +80,5 @@ Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05
 | 1.1 | 2026-05-10 | SPEC-001 Turn 1 — inbox files created |
 | 1.2 | 2026-05-10 | SPEC-001 Turn 3 — inbox architecture table added |
 | 1.3 | 2026-05-10 | SPEC-001 complete — mail.md added, startup step 4 added |
-| 1.4 | 2026-05-11 | Clarified tool call budget: reads + writes share 3-slot pool, no separate read cap |
+| 1.4 | 2026-05-11 | Clarified tool call budget: reads + writes share pool |
+| 1.5 | 2026-05-11 | Unified policy: reads unlimited, max 3 pushes prefer 1 bundled |
