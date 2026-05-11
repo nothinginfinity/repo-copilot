@@ -11,23 +11,25 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 - Append new entries at the top under the relevant section
 - Never delete entries — mark them `status: acknowledged` instead
 - Keep entries short — this is a bulletin, not a spec
-- Format: YAML-style frontmatter block
+- Format: YAML-style frontmatter block (see Message Format Reference below)
 
 **Read rules (for Brainstorm agent):**
 - Read this file as boot step 9
 - Scan for `status: unread` entries — these are fresh context
-- Flag any `status: unread` entries in your boot summary
-- After discussing an entry, note it verbally as acknowledged (you cannot write back, but you can tell Jared)
+- Prioritize `priority: blocking` > `high` > `normal` > `low`
+- Flag all `status: unread` entries in your boot summary, sorted by priority
+- After discussing an entry, note it verbally as acknowledged (you cannot write back — tell Jared to ask Alice to mark it)
 
 ---
 
 ## 📥 Incoming — For Brainstorm Review
 
-```
+```yaml
 id: BLT-001
 from: alice
 date: 2026-05-11
 status: unread
+priority: normal
 subject: Gist kernel architecture established
 body: >
   Alice now boots from a modular gist kernel:
@@ -52,9 +54,14 @@ id: BLT-XXX          # sequential, never reuse
 from: alice          # agent who wrote this
 date: YYYY-MM-DD
 status: unread       # unread | acknowledged
+priority: normal     # low | normal | high | blocking
 subject: short title
 body: >
   Multi-line body.
   Keep it under 10 lines.
   Surface decisions, open questions, or context shifts.
+  blocking = needs immediate attention before any analysis
+  high     = should address this session
+  normal   = useful brainstorm prompt, no urgency
+  low      = FYI / background context
 ```
