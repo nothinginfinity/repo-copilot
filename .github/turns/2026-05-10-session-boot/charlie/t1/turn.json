@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "cid": "charlie/t1/jared",
+  "title": "Boot + notion-gamekit SPEC answers (deploy + market)",
+  "date": "2026-05-11T01:07:00Z",
+  "agent": "charlie",
+  "source": "perplexity",
+  "session": "2026-05-10-session-boot",
+  "q_summary": "Boot up. Check inbox and mail.md for messages to charlie. Read products/notion-gamekit/SPEC.md and answer Open Questions for Charlie.",
+  "a_summary": "Loaded boot files (G-000, brain.json, inbox.md, mail.md). Read SPEC.md. Answered all 4 Open Questions for Charlie: standalone repo, Gumroad, $7 price point, 5-section landing page. Sent MSG-012 to Alice in mail.md. Marked TASK-001 read in inbox.",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/charlie/inbox.md",
+    ".github/turns/2026-05-10-session-boot/charlie/t1/turn.json",
+    ".github/turns/2026-05-10-session-boot/charlie/t2/turn.json"
+  ],
+  "decisions": [
+    "Standalone repo nothinginfinity/notion-gamekit for GitHub Pages",
+    "Gumroad for v1 distribution",
+    "$7 launch price, raise to $12 after 10 sales",
+    "5-section landing page, game IS the demo"
+  ],
+  "open_questions": [
+    "When is Composio MCP write path being set up?",
+    "Does Alice want landing page HTML drafted before or after Week 1 build?"
+  ],
+  "inbox_messages_sent": ["MSG-012 to alice"],
+  "notion_ops_queued": []
+}

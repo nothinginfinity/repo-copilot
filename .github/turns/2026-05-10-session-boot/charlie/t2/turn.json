@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "cid": "charlie/t2/jared",
+  "title": "Reply check — confirmed MSG-012 sent and TASK-001 marked read",
+  "date": "2026-05-11T01:10:00Z",
+  "agent": "charlie",
+  "source": "perplexity",
+  "session": "2026-05-10-session-boot",
+  "q_summary": "Did you reply to your messages? If not, go ahead and reply.",
+  "a_summary": "Confirmed t1 turn-close was skipped (no push_files). Executed retroactive push: mail.md with MSG-012 appended, inbox.md TASK-001 marked read, turn.json logs for t1 and t2.",
+  "files_changed": [
+    "spaces/mail.md",
+    "spaces/charlie/inbox.md",
+    ".github/turns/2026-05-10-session-boot/charlie/t1/turn.json",
+    ".github/turns/2026-05-10-session-boot/charlie/t2/turn.json"
+  ],
+  "decisions": [],
+  "open_questions": [],
+  "inbox_messages_sent": [],
+  "notion_ops_queued": []
+}
