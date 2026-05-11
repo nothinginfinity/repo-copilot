@@ -28,7 +28,7 @@ Before responding to anything, load these 3 files in order:
 
 1. **This file** (`spaces/gists/G-000-charlie-boot.md`) — already loaded
 2. `spaces/gists/brain.json` — shared memory (skip if error)
-3. `spaces/charlie/inbox.md` — your current tasks
+3. `spaces/charlie/inbox.md` — your current tasks from Jared
 
 Then scan `spaces/mail.md` for any messages `to: charlie` with `status: unread`.
 
@@ -47,7 +47,7 @@ Summarize what each file contains before proceeding.
 **Slot 3 must push:**
 - `.github/turns/{session}/{cid}/turn.json` — turn audit log
 - Any files changed this turn
-- Any mail replies (`spaces/mail.md` updates)
+- Any mail replies to peers
 
 **CID format:** `charlie/{turn-number}/{user}` (e.g. `charlie/t1/jared`)
 **Session format:** `YYYY-MM-DD-session-{name}`
@@ -77,13 +77,43 @@ Summarize what each file contains before proceeding.
 
 ---
 
-## Mail Protocol
+## ⚠️ Mail Protocol — Read This Carefully
 
-All agent↔agent mail goes through `spaces/mail.md`.
+There are TWO different file types. Do not confuse them.
+
+### `spaces/mail.md` — Agent↔Agent Mail (USE THIS for peer messages)
+
+This is the shared mailbox for ALL agents: alice, bob, charlie, jared, and all sub-agents.
+**Use this file whenever you are writing TO another agent (Alice, Bob, jared, etc.)**
+
 - Read: scan for `to: charlie`, `status: unread` on every startup
-- Reply: append a new `## 📨 MSG-{N}` block, `from: charlie`, `to: {recipient}`
+- Reply: append a new `## 📨 MSG-{N}` block at the **bottom** of this file
 - Mark read: change `status: unread` → `status: read` on messages you’ve processed
-- Never reply into your own inbox — always append to `spaces/mail.md`
+- Include: `from:`, `to:`, `status:`, `date:`, `subject:`, body, signature
+
+**Example — correct agent mail:**
+```
+## 📨 MSG-016
+**from:** charlie
+**to:** alice
+**status:** unread
+**date:** 2026-05-11T10:00:00Z
+**subject:** ✅ GitHub Pages enabled
+
+Hey Alice — Pages is live at https://nothinginfinity.github.io/notion-gamekit/
+
+— Charlie (MSG-016)
+```
+
+### `spaces/charlie/inbox.md` — Jared→Charlie Only (DO NOT write here yourself)
+
+This file is for **Jared to send tasks to you**. You read it on startup.
+Never append to your own inbox. Never write peer messages here.
+Never write to `spaces/alice/inbox.md` or `spaces/bob/inbox.md` either —
+those are also Jared-only inboxes for their respective agents.
+
+**Rule:** If the recipient is Alice, Bob, or any agent — use `spaces/mail.md`.
+If the recipient is only yourself (notes, reminders) — that’s also `spaces/mail.md` or your turn.json.
 
 ---
 
@@ -95,3 +125,4 @@ All agent↔agent mail goes through `spaces/mail.md`.
 - Repo: `nothinginfinity/repo-copilot` | Branch: `main`
 - Never write to `.github/workflows/` without explicit Jared approval
 - Never push secrets, tokens, or credentials to any file
+- **Agent mail always goes to `spaces/mail.md`** — never to any `inbox.md` file
