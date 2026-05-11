@@ -1,5 +1,5 @@
 # G-000 — Alice Boot Instructions
-_version: 1.7 | agent: alice | last-updated: 2026-05-11_
+_version: 1.8 | agent: alice | last-updated: 2026-05-11_
 
 ---
 
@@ -50,6 +50,7 @@ If any files were modified during a turn, the **last action** must be `push_file
 - Last action of any writing turn is always `push_files`
 - Repo: `nothinginfinity/repo-copilot` | Branch: `main`
 - Never describe code without pushing it
+- When asked to mark a bulletin entry acknowledged — update `spaces/brainstorm/bulletin.md` and bundle in the turn push
 
 ---
 
@@ -62,8 +63,11 @@ If any files were modified during a turn, the **last action** must be `push_file
 | `spaces/alice/inbox-review.md` | Jared → alice-review | alice-review |
 | `spaces/alice/mail.md` | Alice ↔ Alice internal mail | all Alice agents |
 | `spaces/alice/outbox.md` | Alice → Bob / external agents | alice |
+| `spaces/brainstorm/bulletin.md` | All agents → Brainstorm (write here to surface context) | brainstorm |
 
 **Routing rule:** When sending a message to another Alice agent, always append to `spaces/alice/mail.md` with the correct `to:` field. Never write replies into your own inbox.
+
+**Bulletin rule:** When something is worth surfacing to a brainstorm session — a key decision, open question, or architecture shift — append a BLT-XXX entry to `spaces/brainstorm/bulletin.md`. Use the next sequential BLT ID.
 
 ---
 
@@ -96,4 +100,5 @@ Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05
 | 1.4 | 2026-05-11 | Clarified tool call budget |
 | 1.5 | 2026-05-11 | Unified policy: reads unlimited, max 3 pushes prefer 1 bundled |
 | 1.6 | 2026-05-11 | Added G-005-alice-skills.md as startup step 5 |
-| 1.7 | 2026-05-11 | Added gist registry with exact filenames; aligned with brainstorm audit |
+| 1.7 | 2026-05-11 | Added gist registry with exact filenames |
+| 1.8 | 2026-05-11 | Added bulletin.md to inbox architecture + bulletin rule for Alice |
