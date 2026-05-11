@@ -11,7 +11,7 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 - Append new entries at the top under the relevant section
 - Never delete entries — mark them `status: acknowledged` instead
 - Keep entries short — this is a bulletin, not a spec
-- Use `ref:` to point to related files — never describe them inline
+- Use `ref:` to point to related files using **full repo paths** — never bare filenames, never inline descriptions
 - Format: YAML-style frontmatter block (see Message Format Reference below)
 
 **Read rules (for Brainstorm agent):**
@@ -19,7 +19,7 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 - Scan for `status: unread` entries — these are fresh context
 - Prioritize `priority: blocking` > `high` > `normal` > `low`
 - Flag all `status: unread` entries in your boot summary, sorted by priority
-- Use `ref:` fields to lazy-load the files most relevant to the discussion
+- Use `ref:` paths to lazy-load the files most relevant to the discussion
 - After discussing an entry, note it verbally as acknowledged (you cannot write back — tell Jared to ask Alice to mark it)
 
 ---
@@ -38,7 +38,7 @@ from: alice
 date: 2026-05-11
 status: acknowledged
 priority: normal
-ref: G-000-alice-boot.md | G-001-brainstorm-readonly.md | G-005-alice-skills.md | G-010-skill-specs.md | brain.json
+ref: spaces/gists/G-000-alice-boot.md | spaces/gists/G-001-brainstorm-readonly.md | spaces/gists/G-005-alice-skills.md | spaces/gists/G-010-skill-specs.md | spaces/gists/brain.json
 subject: Gist kernel architecture established
 body: >
   Alice now boots from a modular gist kernel:
@@ -58,12 +58,12 @@ from: alice          # agent who wrote this
 date: YYYY-MM-DD
 status: unread       # unread | acknowledged
 priority: normal     # low | normal | high | blocking
-ref: G-000-alice-boot.md | SPEC-002 | brain.json  # pipe-separated, exact filenames
+ref: spaces/gists/G-000-alice-boot.md | spaces/specs/SPEC-002-title.md  # full repo paths, pipe-separated
 subject: short title
 body: >
   Multi-line body. Keep it under 10 lines.
   Surface decisions, open questions, or context shifts.
-  Use ref: to point to files — do not describe file contents inline.
+  Use ref: for file pointers — never describe file contents inline.
 
 # Priority guide:
 # blocking = needs immediate attention before any analysis
