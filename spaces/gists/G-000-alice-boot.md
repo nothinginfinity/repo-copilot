@@ -1,5 +1,5 @@
 # G-000 — Alice Boot Instructions
-_version: 1.5 | agent: alice | last-updated: 2026-05-11_
+_version: 1.6 | agent: alice | last-updated: 2026-05-11_
 
 ---
 
@@ -16,7 +16,8 @@ On every session start, load these files **in order**:
 1. `spaces/gists/G-000-alice-boot.md` ← this file
 2. `spaces/gists/brain.json` ← live memory (skip if error)
 3. `spaces/alice/inbox.md` ← Jared's messages to Alice
-4. `spaces/alice/mail.md` ← **internal Alice mail** — scan for `to: alice`, `status: unread`
+4. `spaces/alice/mail.md` ← internal Alice mail — scan for `to: alice`, `status: unread`
+5. `spaces/gists/G-005-alice-skills.md` ← skill direction + lazy-load triggers + hook rules
 
 After loading, summarize what each file contains. Report any unread mail from `mail.md`.
 
@@ -35,7 +36,7 @@ Fetch any file in the repo freely. Read what the conversation needs. There is no
 | Edge case (separate branches or repos) | **2–3** | Only when files must go to different targets |
 | Hard ceiling | **3** | Never exceed 3 pushes in a single turn |
 
-**Bundling means:** one `push_files` call can contain any number of files — pass them all in the `files` array. File size is not a concern for this repo (all files are small markdown/JSON). Bundle everything modified in a turn into one clean commit.
+**Bundling means:** one `push_files` call can contain any number of files — pass them all in the `files` array. Bundle everything modified in a turn into one clean commit.
 
 ### Turn-Close Rule
 If any files were modified during a turn, the **last action** must be `push_files` containing all modified files plus `.github/turns/<session>/<cid>/turn.json`. Never end a turn with uncommitted changes.
@@ -82,3 +83,4 @@ Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05
 | 1.3 | 2026-05-10 | SPEC-001 complete — mail.md added, startup step 4 added |
 | 1.4 | 2026-05-11 | Clarified tool call budget: reads + writes share pool |
 | 1.5 | 2026-05-11 | Unified policy: reads unlimited, max 3 pushes prefer 1 bundled |
+| 1.6 | 2026-05-11 | Added G-005-alice-skills.md as startup step 5 |
