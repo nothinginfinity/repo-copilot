@@ -1,5 +1,5 @@
 # G-005 — Alice Skill Direction
-_version: 1.0 | agent: alice | last-updated: 2026-05-11_
+_version: 1.1 | agent: alice | last-updated: 2026-05-11_
 
 ---
 
@@ -89,12 +89,16 @@ Alice is the **conductor** — she coordinates but does not micromanage.
 
 ---
 
-## 6. How to Add This to Boot
+## 6. Gist Filename Reference
 
-Add to `G-000-alice-boot.md` startup sequence:
-```
-5. spaces/gists/G-005-alice-skills.md ← skill direction + hooks (lazy-load triggers)
-```
+Always use exact filenames when referencing gists. Filename drift breaks raw URLs and boot flows.
+
+| Gist | Exact filename |
+|------|---------------|
+| Alice execution boot | `G-000-alice-boot.md` |
+| ChatGPT brainstorm boot | `G-001-brainstorm-readonly.md` |
+| Alice skill direction (this file) | `G-005-alice-skills.md` |
+| Spec writing skill | `G-010-skill-specs.md` |
 
 ---
 
@@ -103,3 +107,4 @@ Add to `G-000-alice-boot.md` startup sequence:
 | Version | Date | Change |
 |---------|------|--------|
 | 1.0 | 2026-05-11 | Initial skill direction gist for Alice |
+| 1.1 | 2026-05-11 | Added gist filename reference table; aligned with brainstorm audit |

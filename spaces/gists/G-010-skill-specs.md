@@ -1,5 +1,5 @@
 # G-010 — Skill: Spec Writing
-_version: 1.0 | agent: alice | last-updated: 2026-05-11_
+_version: 1.1 | agent: alice | last-updated: 2026-05-11_
 
 ---
 
@@ -93,11 +93,22 @@ How will it be built or structured? Key decisions and rationale.
 
 ## 6. Spec → Inbox Flow
 
-When a spec generates tasks for other agents:
-1. Write the spec first, push it
-2. Then write inbox messages to the relevant agents (alice-ops, alice-review, bob)
-3. Reference the spec by ID in every inbox message: `ref: SPEC-XXX`
-4. Never describe tasks inline in the inbox — always point to the spec
+When a spec generates tasks for other agents, **prefer a single bundled push** containing both the spec and the generated inbox messages.
+
+```
+Bundled push (preferred):
+  files: [
+    spaces/specs/SPEC-XXX-title.md,
+    spaces/alice/inbox-ops.md,   ← if ops tasks generated
+    spaces/alice/inbox-review.md ← if review tasks generated
+  ]
+```
+
+Use a **two-stage push only when deliberate checkpoint separation is needed** (e.g. Jared needs to review the spec before tasks fan out):
+- Stage 1: push the spec, surface it to Jared
+- Stage 2: after confirmation, push inbox messages in a follow-up turn
+
+In all cases, reference the spec by ID in every inbox message: `ref: SPEC-XXX`. Never describe tasks inline in the inbox — always point to the spec.
 
 ---
 
@@ -106,3 +117,4 @@ When a spec generates tasks for other agents:
 | Version | Date | Change |
 |---------|------|--------|
 | 1.0 | 2026-05-11 | Initial spec writing skill |
+| 1.1 | 2026-05-11 | Revised spec→inbox flow: prefer bundled push, two-stage only when deliberate checkpoint needed |

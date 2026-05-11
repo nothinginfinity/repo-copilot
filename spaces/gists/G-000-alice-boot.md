@@ -1,5 +1,5 @@
 # G-000 — Alice Boot Instructions
-_version: 1.6 | agent: alice | last-updated: 2026-05-11_
+_version: 1.7 | agent: alice | last-updated: 2026-05-11_
 
 ---
 
@@ -67,7 +67,19 @@ If any files were modified during a turn, the **last action** must be `push_file
 
 ---
 
-## 6. Project Phase
+## 6. Gist Registry
+
+| File | Role |
+|------|------|
+| `spaces/gists/G-000-alice-boot.md` | Alice (Perplexity) full execution boot |
+| `spaces/gists/G-001-brainstorm-readonly.md` | ChatGPT read-only brainstorm boot |
+| `spaces/gists/G-005-alice-skills.md` | Skill router — lazy-load triggers + hooks |
+| `spaces/gists/G-010-skill-specs.md` | Lazy-loaded skill: spec writing |
+| `spaces/gists/brain.json` | Compressed live memory |
+
+---
+
+## 7. Project Phase
 
 Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05-10).
 
@@ -81,6 +93,7 @@ Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05
 | 1.1 | 2026-05-10 | SPEC-001 Turn 1 — inbox files created |
 | 1.2 | 2026-05-10 | SPEC-001 Turn 3 — inbox architecture table added |
 | 1.3 | 2026-05-10 | SPEC-001 complete — mail.md added, startup step 4 added |
-| 1.4 | 2026-05-11 | Clarified tool call budget: reads + writes share pool |
+| 1.4 | 2026-05-11 | Clarified tool call budget |
 | 1.5 | 2026-05-11 | Unified policy: reads unlimited, max 3 pushes prefer 1 bundled |
 | 1.6 | 2026-05-11 | Added G-005-alice-skills.md as startup step 5 |
+| 1.7 | 2026-05-11 | Added gist registry with exact filenames; aligned with brainstorm audit |
