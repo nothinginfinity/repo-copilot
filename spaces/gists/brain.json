@@ -1,11 +1,36 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-12T22:12:00.000Z",
+  "generated_at": "2026-05-12T22:20:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 8,
+  "note_count": 9,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 8 sessions distilled. Latest: 2026-05-12. Projects: repo-copilot, agent-feed-optimization. Top concepts: AFO website audit product, LLM visibility audit service, before/after proof demo, $10-20/month monitor tier, audit-fix-monitor business model, AFO content-layer proof, SEO analogy confirmed, G-000 gap report v0.3 needed, Scenario B confounder (GitHub connector), bootstrap URL pattern.",
+  "fortune_decode": "Agent second brain. 9 sessions distilled. Latest: 2026-05-12. Projects: repo-copilot, agent-feed-optimization. Top concepts: AI Visibility Audit product locked, ICP = small business website owners, MVP = agent-assisted audit, G-000 v0.3 = audit agent, AFO = technical substrate, no-connector canonical test, before/after proof demo, audit-fix-monitor model, Scenario C = perfect-site demo, Scenario B = gap demo.",
   "notes": [
+    {
+      "title": "AI Visibility Audit — product direction locked from Brainstorm feedback",
+      "date": "2026-05-12",
+      "source": "Perplexity",
+      "project": "agent-feed-optimization",
+      "new_concepts": [
+        "AI Visibility Audit",
+        "LLM Search Readiness",
+        "AFO as technical substrate",
+        "ICP = small business website owners",
+        "local service businesses first",
+        "creators and small ecommerce second",
+        "agencies as resellers later",
+        "agent-assisted MVP",
+        "audit agent vs reader agent",
+        "plain-English gap report",
+        "recommended fix package",
+        "before/after screenshots as proof"
+      ],
+      "decisions": "Q5 confirmed as real product. AFO becomes the technical substrate underneath an 'AI Visibility Audit' / 'LLM Search Readiness' service. Primary ICP: small business website owners first, especially local service businesses. Creators and small ecommerce second. Agencies = resellers later, NOT first ICP. MVP is agent-assisted not fully automated: URL in → no-connector LLM visibility test → endpoint checklist → AFO score /18 → plain-English gap report → recommended fix package → before/after screenshots. Positioning: do NOT use 'optimize once, found forever.' Use 'make your website easier for AI assistants to find, understand, cite, and recommend.' Build order: (1) G-000 v0.3 as audit agent not just reader agent, (2) minimum viable audit report template, (3) Scenario C as perfect-site demo, (4) Scenario B no-connector as gap demo, (5) first small-business sample audit.",
+      "open_questions": "What does the audit report look like for a non-technical small business owner? What file formats do we deliver (PDF, email, Google Doc)? How does the fix package get delivered — does Jared do it manually, or does an agent generate the files and send them? What is the upsell path from one-time audit to monthly monitor?",
+      "cid": "brainstorm/afo/jared",
+      "gist_snapshot": null,
+      "notion_url": null
+    },
     {
       "title": "AFO Website Audit Product — accidentally-on-purpose product concept",
       "date": "2026-05-12",
@@ -21,8 +46,8 @@
         "same-day verifiable ROI",
         "accidentally-on-purpose product"
       ],
-      "decisions": "The AFO test suite IS the audit engine. G-000 running a URL = the audit. The gap report output = the client deliverable. Business model: (1) Audit — free lead magnet or $49 one-time, run URL through G-000 gap report; (2) Fix — build missing files (rss.xml, llms.txt, agent-context, policy, actions, context-cookie) for $200-500 flat; (3) Monitor — re-run audit monthly, push updates as LLM standards evolve, $10-20/month; (4) Proof — before/after test showing client's site appearing in LLM answers, included in monitor tier. The killer demo: open ChatGPT/Perplexity, ask about the client's niche, show their site appearing in the answer. Same question before and after. Screenshot pair = entire sales pitch. Defensible because ROI is same-day and self-verifiable by the client — unlike SEO which takes months. G-000 v0.3 gap report patch = the audit report template. We were building the product the whole time.",
-      "open_questions": "What is the minimum viable audit report format for a non-technical client? Should the audit be fully automated (URL in → PDF out) or agent-assisted? What is the fulfillment workflow — does Jared build the files manually, or does an agent generate them? Is the primary customer a solo website owner, a small business, or an agency reseller?",
+      "decisions": "G-000 test run IS the audit. Gap report IS the client deliverable. Business model: Audit / Fix / Monitor / Proof tiers. Killer demo = before/after LLM answer screenshots.",
+      "open_questions": "Superseded by AI Visibility Audit note above.",
       "cid": "alice/afo/jared",
       "gist_snapshot": null,
       "notion_url": null
@@ -39,8 +64,8 @@
         "no-connector as canonical test condition",
         "G-000 gap report missing"
       ],
-      "decisions": "Scenario B 3-way complete. Finding 1: GitHub connector neutralizes baseline gap — both agents score similarly when connector is on. Finding 2: Plain Perplexity no-connector spontaneously offered to build AFO files for the repo — unprompted gap-to-offer behavior. Finding 3: G-000 Space does NOT produce structured gap report for non-AFO sites; plain baseline did it better. G-000 v0.3 needs: per-endpoint checkmark status + 'adding this enables X' + estimated AFO score/18. Finding 4: AFO terminology in LLM training data — plain Perplexity web-searched its way to sanity.io field guide and AFO-adjacent concepts without any instructions. Connector state must be controlled variable in all future tests. Canonical test condition = no connector.",
-      "open_questions": "Does partial AFO (llms.txt only) produce measurable baseline lift? What is minimum viable AFO surface?",
+      "decisions": "Connector neutralizes delta. No-connector = canonical. G-000 v0.3 needs structured gap report. AFO terminology in LLM training data confirmed.",
+      "open_questions": "Does partial AFO produce measurable baseline lift?",
       "cid": "alice/afo/jared",
       "gist_snapshot": null,
       "notion_url": null
@@ -57,7 +82,7 @@
         "SEO analogy confirmed",
         "context-layer vs instruction-layer discovery"
       ],
-      "decisions": "Baseline 14/18, AFO Space 17/18. Close gap = strong content. SEO analogy confirmed. Any LLM surfaces AFO-structured content better without special instructions.",
+      "decisions": "Baseline 14/18, AFO Space 17/18. Close gap = strong content. SEO analogy confirmed.",
       "open_questions": "Does Scenario B delta hold for partial AFO sites?",
       "cid": "alice/afo/jared",
       "gist_snapshot": null,
@@ -69,8 +94,8 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["archive_block", "notion-ops-soft-delete", "unarchive-support"],
-      "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true; unarchive boolean supported",
-      "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
+      "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true",
+      "open_questions": "Add archive_database alias?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62"
@@ -81,8 +106,8 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["cleanup-audit", "notion-ops-result-write-verified"],
-      "decisions": "Items 1 and 3 already clean; Item 2 (archive old DB) needs Jared action in Notion",
-      "open_questions": "Should we add archive_database op to notion-ops?",
+      "decisions": "Items 1 and 3 clean; Item 2 needs Jared Notion action",
+      "open_questions": "Add archive_database op?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1"
@@ -94,7 +119,7 @@
       "project": "repo-copilot",
       "new_concepts": ["multi-user provisioning", "bootstrap URL pattern", "gist template with placeholders", "provision GitHub Action", "Notion Roadmap DB", "phase-ordered build roadmap"],
       "decisions": "Space instructions = one bootstrap URL. Build order finalized across 4 phases.",
-      "open_questions": "Provision Action design: GitHub App vs PAT?",
+      "open_questions": "GitHub App vs PAT for provisioning?",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Full-build-order-roadmap-Bob-message-sent-35bd927c979281f98bebfc7419967cb9"
@@ -104,9 +129,9 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["turn as unit of memory", "turn-level brain push", "3-slot tool call budget", "minimum viable turn note", "slot-3 brain push reservation"],
+      "new_concepts": ["turn as unit of memory", "turn-level brain push", "3-slot tool call budget", "slot-3 brain push reservation"],
       "decisions": "Every Alice turn ends with append_note as slot 3.",
-      "open_questions": "Bob and Charlie Space instructions need same turn-level mandate.",
+      "open_questions": "Bob and Charlie need same mandate.",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Turn-level-brain-push-mandate-wired-35bd927c97928138920bdc7f89ad6e16"
@@ -116,7 +141,7 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["normalizeSrc", "execFileSync", "zip bomb guard", "create_database op", "append_row op", "append_note op", "G-010 BRAIN gist type", "agent second brain pattern"],
+      "new_concepts": ["normalizeSrc", "execFileSync", "zip bomb guard", "append_note op", "G-010 BRAIN gist type"],
       "decisions": "append_note is canonical session-end write primitive.",
       "open_questions": "When to build brain.json read primitive?",
       "cid": "bob/c1/jared",
