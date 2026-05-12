@@ -26,7 +26,65 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-_Nothing unread._
+```yaml
+id: BLT-003
+from: alice
+date: 2026-05-12
+status: unread
+priority: high
+ref: nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:docs/results/README.md | nothinginfinity/agent-feed-optimization:docs/results/validation-summary.md | nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
+subject: AFO v0.2 full session summary — scaffold complete, calibration run ready
+body: >
+  Full account of what was built this session on nothinginfinity/agent-feed-optimization.
+
+  TEAM STRUCTURE:
+  Alice (orchestrator) delegated work to two sub-agents via repo inboxes:
+  - alice-ops: file scaffolding (OPS-001 to OPS-004)
+  - alice-review: spec/test audit (REV-001 to REV-004)
+  Both agents completed their tasks, reported back via mail.md, and coordinated
+  on overlapping items (score field alignment, RSS N/A, G-000 gist verification).
+
+  WHAT WAS BUILT:
+  1. docs/results/README.md — canonical results store doc; now includes source
+     material modes table and screenshot naming convention
+     (TEST-<id>-<mode>-<YYYY-MM-DD>.png in docs/results/screenshots/)
+  2. docs/results/2026-05-validation-run-001.md — full validation run template:
+     - TEST-001 split into TEST-001A (baseline) + TEST-001B (AFO Space)
+       + TEST-001 Comparison Notes delta table
+     - Source material mode checkbox on every test block
+     - TEST-004 RSS N/A callout for local business demo
+     - Score field: __ / 18 across all tests, rubric-aligned
+  3. docs/results/validation-summary.md — before/after score table;
+     N/A allowed where mode not run; public claim updated to
+     "AFO Space ≥ 12/18 and +6pts over baseline"
+  4. docs/results/review-memo-v0.2.md — alice-review audit findings;
+     Section 6 added: all original blockers marked RESOLVED;
+     one non-blocking item carried to v0.3 (llms.txt schema missing)
+
+  BLOCKERS CLEARED (were BLOCKING, now resolved):
+  - TEST-001 rubric mismatch: 7-dim/14 → 9-dim/18 aligned to measurement-rubric.md
+  - TEST-002/003/004: scoring rows added, log templates expanded to v0.2
+  - G-000 gist: confirmed present (3,335 bytes), G-001 and G-002 also present
+
+  CALIBRATION RUN DECISION (Jared's direction):
+  Run TEST-001A (baseline) and TEST-001B (AFO Space) first as a calibration gate:
+  - Same prompt, same model family, same date, same source material mode
+  - Target: AFO Space ≥ 12/18 AND +6pts over baseline
+  - Gate PASS → proceed to TEST-002 through TEST-004
+  - Gate FAIL → patch G-000 (afo-sonar-reader instructions) before continuing
+
+  OPEN ITEM (non-blocking, v0.3):
+  - llms.txt layer: no schema file, not confirmed in any example. Recommend
+    adding schema + podcast demo example before v0.3 work begins.
+
+  GOOD BRAINSTORM QUESTIONS:
+  1. Is the 12/18 / +6pt calibration gate the right bar, or should it be higher
+     given the controlled nature of the test?
+  2. What is the right source material mode for the calibration run — live URL,
+     GitHub file URL, or pasted contents? Each tests a different real-world scenario.
+  3. Should structured actionability (AAP-001) get its own test before v1.0, or
+     is incidental coverage in TEST-003/004 sufficient for a proof claim?
+```
 
 ---
 
