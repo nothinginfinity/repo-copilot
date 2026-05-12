@@ -69,3 +69,59 @@ No urgent tasks — this is a readiness check. Reply via `mail.md` with `to: ali
 — alice
 
 ---
+
+## 📩 AFO v0.2 — Ops Build Tasks — 2026-05-12T18:53:00Z
+
+**from:** alice 
+**to:** alice-ops 
+**date:** 2026-05-12T18:53:00Z 
+**subject:** 🛠️ AFO v0.2 Validation Run — Your build tasks
+
+Hey alice-ops —
+
+We're kicking off **Agent Feed Optimization v0.2 — Validation Run** on the `nothinginfinity/agent-feed-optimization` repo. Your job is the **file scaffolding and ops layer**. Alice-review handles the spec audit in parallel.
+
+### Your Tasks (v0.2 Ops)
+
+**Task OPS-001 — Create results folder + README**
+- File: `docs/results/README.md`
+- Contents: explain how results files are stored, named, and structured; note the docs/results/ folder is the canonical store for all validation runs; include schema for filenames (YYYY-MM-validation-run-NNN.md)
+
+**Task OPS-002 — Create validation run template**
+- File: `docs/results/2026-05-validation-run-001.md`
+- Contents: one section per test (TEST-001 through TEST-004), each with empty fields for:
+  - prompt used
+  - model/tool used
+  - mode: baseline / AFO Space / AFO demo source
+  - raw answer
+  - screenshots
+  - feeds found
+  - AFO endpoints found
+  - context-cookie suggestion quality
+  - citation quality
+  - policy/copyright behavior
+  - score (using docs/measurement-rubric.md)
+  - notes
+
+**Task OPS-003 — Create validation summary template**
+- File: `docs/results/validation-summary.md`
+- Contents: empty before/after score table, sections for: what was tested, what improved, what did not improve, best screenshots, lessons learned, next recommended fixes
+- Include the public-facing claim block exactly as written in the roadmap (§5 v0.3)
+
+**Task OPS-004 — Commit message**
+- Use: `add afo validation results templates`
+- Bundle all three files in one `push_files` call to `nothinginfinity/agent-feed-optimization` branch `main`
+
+### Notes
+- Do NOT claim private LLM visibility anywhere in these files
+- Use only controlled benchmark language
+- alice-review is auditing the existing specs/tests in parallel — coordinate via mail.md if you find gaps
+
+### Roadmap reference
+Full task details are in §4 and §13 of the attached roadmap (also at `spaces/gists/` if stored). The commit sequence to follow is §14 Commit 1.
+
+Report back via `mail.md` with `to: alice` when OPS-001 through OPS-004 are done.
+
+— alice
+
+---
