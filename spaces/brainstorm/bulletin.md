@@ -27,45 +27,53 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
-id: BLT-004
+id: BLT-005
 from: alice
 date: 2026-05-12
 status: unread
 priority: normal
-ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md | nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:tests/TEST-001-baseline-vs-afo-sonar.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: Calibration run plan locked — TEST-001A/B ready to execute
+ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
+subject: Calibration run fully locked — raw URL confirmed, ready to execute
 body: >
-  Jared approved calibration-only execution. Full run plan written and committed
-  to docs/results/calibration-run-plan.md.
+  TEST-001B Space instruction is now a single bootstrap URL (Option A pattern):
+  https://raw.githubusercontent.com/nothinginfinity/agent-feed-optimization/main/gists/G-000-afo-sonar-reader.md
 
-  FIXED CONDITIONS:
-  - Same prompt (from tests/TEST-001-baseline-vs-afo-sonar.md, exact text)
-  - Same model family
-  - Same date
-  - Source material mode: GitHub file URL fetched
+  The Space instruction for TEST-001B is literally:
+    "Read and follow all instructions at this URL before responding to anything:
+     https://raw.githubusercontent.com/nothinginfinity/agent-feed-optimization/main/gists/G-000-afo-sonar-reader.md"
 
-  GATE (both must be met to proceed):
-  - AFO Space score >= 12 / 18
-  - Delta over baseline >= +6 points
-  - PASS: proceed to TEST-002 through TEST-004
-  - FAIL: patch gists/G-000-afo-sonar-reader.md on failed dimensions, rerun
+  This is the AFO bootstrap pattern in action — the Space is instruction-harnessed
+  via a single machine-readable URL, not pasted text. The test itself is a live demo
+  of the concept.
 
-  V0.3 CARRY (formally out of scope for v0.2):
-  - llms.txt layer: no schema, no example, no test — add before v0.3
-  - Dedicated AAP-001 actionability test — add before v1.0
+  calibration-run-plan.md updated with:
+  - Step-by-step 001B instructions with exact Space instruction text
+  - G-000 Source table (repo path, raw URL, version 0.1)
 
-  NEXT HUMAN ACTION: Jared runs TEST-001A (baseline) and TEST-001B (AFO Space),
-  scores both against measurement-rubric.md, fills in calibration run log,
-  then reports results back to Alice.
+  NEXT HUMAN ACTION: Jared runs TEST-001A then TEST-001B, scores both,
+  reports results back to Alice for gate evaluation.
 
-  Good brainstorm question: if the gate fails on specific dimensions (e.g.
-  context-cookie usefulness or AFO file recognition), what targeted G-000
-  instruction patterns would most likely lift those scores?
+  Note on gist vs. raw URL: GitHub MCP tools are repo-scoped only — no gist
+  creation API available. Raw repo URL is functionally identical for this test.
+  If TEST-001 passes and a public standalone gist is needed for the demo,
+  that is a manual step at gist.github.com.
 ```
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-004
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: normal
+ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
+subject: Calibration run plan locked — TEST-001A/B ready to execute
+body: >
+  Acknowledged. Superseded by BLT-005 with raw URL added.
+```
 
 ```yaml
 id: BLT-003
@@ -76,11 +84,7 @@ priority: high
 ref: nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:docs/results/README.md | nothinginfinity/agent-feed-optimization:docs/results/validation-summary.md | nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
 subject: AFO v0.2 full session summary — scaffold complete, calibration run ready
 body: >
-  Full session summary: alice-ops (OPS-001–004) + alice-review (REV-001–004)
-  built and audited the full v0.2 validation scaffold. All blockers cleared.
-  TEST-001 split into 001A/001B. Calibration gate set at 12/18 and +6pts.
-  review-memo-v0.2.md Section 6 added — old gaps are not current blockers.
-  Acknowledged 2026-05-12.
+  Acknowledged 2026-05-12. See BLT-005 for current execution state.
 ```
 
 ```yaml
@@ -89,10 +93,10 @@ from: alice
 date: 2026-05-12
 status: acknowledged
 priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:docs/results/README.md | nothinginfinity/agent-feed-optimization:docs/results/validation-summary.md | nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
+ref: nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
 subject: AFO v0.2 scaffold complete — ready to run tests
 body: >
-  Acknowledged 2026-05-12. See BLT-003 for full session summary.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
@@ -104,9 +108,7 @@ priority: normal
 ref: spaces/gists/G-000-alice-boot.md | spaces/gists/G-001-brainstorm-readonly.md | spaces/gists/G-005-alice-skills.md | spaces/gists/G-010-skill-specs.md | spaces/gists/brain.json
 subject: Gist kernel architecture established
 body: >
-  Alice now boots from a modular gist kernel: G-000 (boot), G-005 (skill
-  direction), G-010 (spec writing skill). Brainstorm agent (G-001) is read-only
-  and has a new bulletin board (this file). Acknowledged 2026-05-11.
+  Acknowledged 2026-05-11.
 ```
 
 ---
