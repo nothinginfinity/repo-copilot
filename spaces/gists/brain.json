@@ -1,11 +1,50 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-12T21:07:00.000Z",
+  "generated_at": "2026-05-12T22:12:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 7,
+  "note_count": 8,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 7 sessions distilled. Latest: 2026-05-12. Projects: repo-copilot, agent-feed-optimization. Top concepts: AFO protocol content-layer proof, Scenario C baseline 14/18, Space 17/18, protocol works without special instructions, SEO analogy confirmed, Scenario B gap test next, archive_block, bootstrap URL pattern, gist template, G-000 v0.2 URL-First Inspection.",
+  "fortune_decode": "Agent second brain. 8 sessions distilled. Latest: 2026-05-12. Projects: repo-copilot, agent-feed-optimization. Top concepts: AFO website audit product, LLM visibility audit service, before/after proof demo, $10-20/month monitor tier, audit-fix-monitor business model, AFO content-layer proof, SEO analogy confirmed, G-000 gap report v0.3 needed, Scenario B confounder (GitHub connector), bootstrap URL pattern.",
   "notes": [
+    {
+      "title": "AFO Website Audit Product — accidentally-on-purpose product concept",
+      "date": "2026-05-12",
+      "source": "Perplexity",
+      "project": "agent-feed-optimization",
+      "new_concepts": [
+        "LLM visibility audit",
+        "website audit service",
+        "audit-fix-monitor business model",
+        "before/after proof demo",
+        "AFO gap report as client deliverable",
+        "monthly monitor tier",
+        "same-day verifiable ROI",
+        "accidentally-on-purpose product"
+      ],
+      "decisions": "The AFO test suite IS the audit engine. G-000 running a URL = the audit. The gap report output = the client deliverable. Business model: (1) Audit — free lead magnet or $49 one-time, run URL through G-000 gap report; (2) Fix — build missing files (rss.xml, llms.txt, agent-context, policy, actions, context-cookie) for $200-500 flat; (3) Monitor — re-run audit monthly, push updates as LLM standards evolve, $10-20/month; (4) Proof — before/after test showing client's site appearing in LLM answers, included in monitor tier. The killer demo: open ChatGPT/Perplexity, ask about the client's niche, show their site appearing in the answer. Same question before and after. Screenshot pair = entire sales pitch. Defensible because ROI is same-day and self-verifiable by the client — unlike SEO which takes months. G-000 v0.3 gap report patch = the audit report template. We were building the product the whole time.",
+      "open_questions": "What is the minimum viable audit report format for a non-technical client? Should the audit be fully automated (URL in → PDF out) or agent-assisted? What is the fulfillment workflow — does Jared build the files manually, or does an agent generate them? Is the primary customer a solo website owner, a small business, or an agency reseller?",
+      "cid": "alice/afo/jared",
+      "gist_snapshot": null,
+      "notion_url": null
+    },
+    {
+      "title": "AFO Scenario B: 3-way test results + 4 findings",
+      "date": "2026-05-12",
+      "source": "Perplexity",
+      "project": "agent-feed-optimization",
+      "new_concepts": [
+        "GitHub connector as test confounder",
+        "spontaneous gap-to-offer behavior",
+        "AFO in LLM training data",
+        "no-connector as canonical test condition",
+        "G-000 gap report missing"
+      ],
+      "decisions": "Scenario B 3-way complete. Finding 1: GitHub connector neutralizes baseline gap — both agents score similarly when connector is on. Finding 2: Plain Perplexity no-connector spontaneously offered to build AFO files for the repo — unprompted gap-to-offer behavior. Finding 3: G-000 Space does NOT produce structured gap report for non-AFO sites; plain baseline did it better. G-000 v0.3 needs: per-endpoint checkmark status + 'adding this enables X' + estimated AFO score/18. Finding 4: AFO terminology in LLM training data — plain Perplexity web-searched its way to sanity.io field guide and AFO-adjacent concepts without any instructions. Connector state must be controlled variable in all future tests. Canonical test condition = no connector.",
+      "open_questions": "Does partial AFO (llms.txt only) produce measurable baseline lift? What is minimum viable AFO surface?",
+      "cid": "alice/afo/jared",
+      "gist_snapshot": null,
+      "notion_url": null
+    },
     {
       "title": "AFO Scenario C: protocol works at content layer — key finding",
       "date": "2026-05-12",
@@ -16,11 +55,10 @@
         "baseline-high result",
         "protocol-works-without-instructions",
         "SEO analogy confirmed",
-        "Scenario B gap test",
         "context-layer vs instruction-layer discovery"
       ],
-      "decisions": "Scenario C calibration run complete. Baseline (no Space, no G-000): ~14/18. AFO Space (G-000 v0.2): ~17/18. KEY FINDING: high baseline PROVES the protocol — the README + structured files did the work without any special agent instructions. Any LLM in any conversation surfaces AFO-structured content better. The G-000 Space is power-user mode (parses file contents, outputs full context-cookie JSON, cites policy), but the floor is already high. This is the SEO analogy landing: structure your site correctly and any LLM discovers it better — no LLM adoption required. The test was self-handicapped intentionally — if the Space had vastly outperformed it would mean the content profile was weak; close scores mean content is strong. NEXT: Scenario B — real-world repo with no AFO files. Baseline near zero expected. Gap = sales argument to website owners.",
-      "open_questions": "Does Scenario B delta hold for repos that have partial AFO (e.g. just llms.txt but no agent-context)? What is the minimum viable AFO surface for a meaningful baseline lift?",
+      "decisions": "Baseline 14/18, AFO Space 17/18. Close gap = strong content. SEO analogy confirmed. Any LLM surfaces AFO-structured content better without special instructions.",
+      "open_questions": "Does Scenario B delta hold for partial AFO sites?",
       "cid": "alice/afo/jared",
       "gist_snapshot": null,
       "notion_url": null
@@ -44,7 +82,7 @@
       "project": "repo-copilot",
       "new_concepts": ["cleanup-audit", "notion-ops-result-write-verified"],
       "decisions": "Items 1 and 3 already clean; Item 2 (archive old DB) needs Jared action in Notion",
-      "open_questions": "Should we add archive_database op to notion-ops to avoid future manual Notion steps?",
+      "open_questions": "Should we add archive_database op to notion-ops?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1"
@@ -55,8 +93,8 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["multi-user provisioning", "bootstrap URL pattern", "gist template with placeholders", "provision GitHub Action", "Notion Roadmap DB", "phase-ordered build roadmap"],
-      "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases. Notion Roadmap DB is next build step.",
-      "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
+      "decisions": "Space instructions = one bootstrap URL. Build order finalized across 4 phases.",
+      "open_questions": "Provision Action design: GitHub App vs PAT?",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Full-build-order-roadmap-Bob-message-sent-35bd927c979281f98bebfc7419967cb9"
@@ -67,32 +105,20 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["turn as unit of memory", "turn-level brain push", "3-slot tool call budget", "minimum viable turn note", "slot-3 brain push reservation"],
-      "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid. Work splits across turns if slot 3 is needed for brain push.",
+      "decisions": "Every Alice turn ends with append_note as slot 3.",
       "open_questions": "Bob and Charlie Space instructions need same turn-level mandate.",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Turn-level-brain-push-mandate-wired-35bd927c97928138920bdc7f89ad6e16"
     },
     {
-      "title": "adapter_ref + G-008 ALERT + Charlie slot + notion-ops SKILL Stone + brain.json read primitive",
-      "date": "2026-05-09",
-      "source": "Perplexity",
-      "project": "repo-copilot",
-      "new_concepts": ["adapter_ref", "SKILL Stone self-invocation", "G-008 ALERT type", "BLOCKING/WARNING/INFO severity levels", "ALERT lifecycle (raise-load-clear)", "Charlie agent slot", "three-agents demo pattern", "export_brain op", "brain-export workflow", "scheduled brain refresh"],
-      "decisions": "adapter_ref field added to QA.Stone gist block. G-008 ALERT type formalized. Charlie agent slot seeded. notion-ops registered as first live SKILL Stone.",
-      "open_questions": "Three-Agents Demo build not yet started. notion-ops SKILL Stone gist_id is null — needs a real gist.github.com wormhole.",
-      "cid": "alice/c2/jared",
-      "gist_snapshot": null,
-      "notion_url": "https://www.notion.so/adapter_ref-G-008-ALERT-Charlie-slot-notion-ops-SKILL-Stone-brain-json-read-primitive-35bd927c97928139a6e7d87abe769efb"
-    },
-    {
       "title": "gitzip hardening + Path A: Agent Notes DB live",
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["normalizeSrc", "execFileSync (no shell surface)", "zip bomb guard (file count + bytes)", "normalizeDest root edge-case", "create_database op", "append_row op", "append_note op", "G-010 BRAIN gist type", "agent second brain pattern"],
-      "decisions": "Hardened gitzip-push before Three Agents Demo. Added create_database, append_row, append_note to notion-ops. Provisioned Agent Notes DB. append_note is canonical session-end write primitive.",
-      "open_questions": "When to build brain.json read primitive (G-010 gist export Action)?",
+      "new_concepts": ["normalizeSrc", "execFileSync", "zip bomb guard", "create_database op", "append_row op", "append_note op", "G-010 BRAIN gist type", "agent second brain pattern"],
+      "decisions": "append_note is canonical session-end write primitive.",
+      "open_questions": "When to build brain.json read primitive?",
       "cid": "bob/c1/jared",
       "gist_snapshot": "https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92",
       "notion_url": "https://www.notion.so/gitzip-hardening-Path-A-Agent-Notes-DB-live-35bd927c979281c9b4c8ff1e37edf5d3"

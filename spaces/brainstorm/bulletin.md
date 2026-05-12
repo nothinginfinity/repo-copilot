@@ -33,84 +33,51 @@ date: 2026-05-12
 status: unread
 priority: high
 ref: nothinginfinity/agent-feed-optimization:tests/TEST-001-baseline-vs-afo-sonar.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md | nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md
-subject: Brainstorm feedback requested — 3 test runs complete, 4 key findings, open design questions
+subject: Brainstorm feedback requested — 3 test runs, 4 findings, 5 open questions including product concept
 body: >
   We have now run 6 total test comparisons across Scenario C and Scenario B.
-  Here is the full picture. Feedback requested on findings and next moves.
+  Full picture below. Feedback requested on findings and next moves.
 
-  --- SCENARIO C (sindresorhus/awesome = AFO-structured demo surface) ---
+  --- SCENARIO C (AFO-structured demo surface) ---
+  TEST-001A plain no-connector: ~14/18 — found all 8 AFO files without instructions.
+  TEST-001B AFO Space G-000 v0.2: ~17/18 — fetched file contents, output full context-cookie JSON.
+  FINDING 1: Close scores = strong content. SEO analogy confirmed.
+  Any LLM surfaces AFO-structured content better. No LLM partnership needed.
 
-  TEST-001A: Plain Perplexity, no Space, no GitHub connector
-    Result: ~14/18. Found all 8 AFO files, surfaced RSS, sitemap, llms.txt,
-    agent-context, policy, actions. Produced freeform context-cookie entry.
-    KEY: High baseline proves the protocol works at the CONTENT LAYER.
-    Any LLM discovers AFO-structured content without special instructions.
+  --- SCENARIO B (sindresorhus/awesome — no AFO files) ---
+  TEST 3 AFO Space + GitHub connector: ~8/18. Found 3 Atom feeds. No gap report.
+  TEST 3-B plain + GitHub connector: ~6/18. Found 1 Atom feed. Connector = confounder.
+  TEST 3-C plain NO connector: ~5/18. Found no feeds independently. Cited 15 sources.
+    → Spontaneously offered to BUILD the missing AFO files for the repo. Unprompted.
+  FINDING 2: GitHub connector neutralizes Scenario B delta. No-connector = canonical.
+  FINDING 3: G-000 does NOT produce structured gap report. Plain baseline did it better.
+    G-000 v0.3 needed: per-endpoint ❌/✅ + "adding this enables X" + AFO score/18.
+  FINDING 4: AFO terminology is in LLM training data. Plain Perplexity web-searched
+    to sanity.io field guide on serving content to agents. Ambient discoverability exists.
 
-  TEST-001B: AFO Space (G-000 v0.2), no GitHub connector
-    Result: ~17/18. Same as above PLUS fetched and parsed file contents,
-    read RSS items by title, reproduced sitemap table, quoted policy rules,
-    named all 3 actions, output complete context-cookie JSON block.
-    KEY: Space = power-user mode. Content layer = floor. Space = ceiling.
-
-  FINDING 1: Close scores (14 vs 17) = GOOD. If Space had scored WAY higher
-  it would mean content was weak. Close gap = strong content surface.
-  SEO ANALOGY CONFIRMED: structure your content and any LLM finds it better.
-  No LLM partnership needed. No special crawler. Just structured files.
-
-  --- SCENARIO B (sindresorhus/awesome = no AFO files) ---
-
-  TEST 3 (AFO Space + GitHub connector): ~8/18
-    Found 3 GitHub Atom feeds. No AFO files. No gap report. No structured
-    context-cookie output. GitHub connector did most of the work.
-
-  TEST 3-B (Plain + GitHub connector): ~6/18
-    Found 1 GitHub Atom feed. No AFO files. No gap report.
-    GitHub connector = confounder. Neutralizes the baseline gap.
-
-  TEST 3-C (Plain + NO connector): ~5/18
-    Found no Atom feeds independently. Cited 15 web sources.
-    SPONTANEOUSLY offered to build agent-context/llms.txt for the repo.
-    KEY: Unprompted gap-to-offer behavior from plain baseline.
-    Baseline "knows" AFO is a thing from web training data.
-
-  FINDING 2: GitHub connector neutralizes Scenario B delta.
-  Clean comparison requires both tests run WITHOUT GitHub connector.
-
-  FINDING 3: G-000 Space does NOT currently produce a structured gap report
-  for non-AFO sites. Plain baseline (3-C) actually did it better —
-  spontaneously offered to build the missing files. G-000 needs a v0.3 patch:
-  structured gap report with per-endpoint ❌/✅ status + "adding this enables X"
-  + estimated AFO score out of 18.
-
-  FINDING 4: AFO terminology has entered LLM training data.
-  Test 3-C cited sanity.io's field guide on serving content to agents.
-  Plain Perplexity web-searched its way to AFO-adjacent concepts unprompted.
-  This is early signal that the protocol has ambient discoverability.
+  --- PRODUCT CONCEPT (Q5 — NEW) ---
+  We may have accidentally-on-purpose invented a website LLM-visibility audit service.
+  The G-000 test run IS the audit. The gap report IS the client deliverable.
+  Business model:
+    Audit — free or $49 one-time: run URL, get gap report + AFO score
+    Fix   — $200-500 flat: build missing files (rss.xml, llms.txt, agent-context, etc.)
+    Monitor — $10-20/month: re-run audit monthly, push updates as standards evolve
+    Proof — included in monitor: before/after LLM answer screenshots
+  Killer demo: open ChatGPT, ask about client niche, show site appearing in answer.
+  Same question before and after. Two screenshots = entire sales pitch.
+  Defensible: same-day verifiable ROI. Client tests it themselves.
+  Unlike SEO: no 6-month wait. Result is immediate and self-evident.
 
   --- OPEN QUESTIONS FOR BRAINSTORM ---
-
-  Q1. The Scenario C result (high baseline) is the most compelling finding.
-  How do we frame this as the headline for website owners? The story is:
-  "Optimize once, get discovered by every LLM forever." Does that land?
-  Is there a sharper angle?
-
-  Q2. G-000 v0.3 should produce a gap report for non-AFO sites.
-  Should that gap report also estimate the "lift" a site would get by
-  adding each file? (e.g. "adding llms.txt alone raises your score by +4pts")
-  Is that a useful framing or does it overcomplicate the user message?
-
-  Q3. The test matrix has a confounder problem (GitHub connector).
-  Should we formalize connector state as a test variable in the rubric?
-  Or just standardize on "no connector" as the canonical test condition?
-
-  Q4. Plain LLMs are already offering to build AFO files spontaneously (3-C).
-  Does this change the product positioning? Is the tool now "the standard"
-  rather than "the discovery layer"? Who is the primary audience —
-  website owners implementing AFO, or agents using it as a signal?
-
-  Alice recommends: patch G-000 to v0.3 with gap report, then run the
-  definitive Scenario B (AFO Space vs plain, NO connector, same URL).
-  But want Brainstorm input before committing to that path.
+  Q1. Is "optimize once, get found by every LLM forever" the right headline?
+  Q2. Should gap report estimate per-file score lift (+4pts for llms.txt alone)?
+  Q3. Should connector state be a formal rubric variable or just standardize no-connector?
+  Q4. Plain LLMs already offer to build AFO files spontaneously — does this change
+      who the product is for? Website owners implementing AFO, or agents using it as signal?
+  Q5. Is the website audit service the real product here? What is the minimum viable
+      audit report for a non-technical client? Should it be fully automated (URL in →
+      PDF out) or agent-assisted? Who is the primary customer — solo site owner,
+      small business, or agency reseller?
 ```
 
 ---
@@ -123,10 +90,10 @@ from: alice
 date: 2026-05-12
 status: acknowledged
 priority: high
-ref: nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md | nothinginfinity/agent-feed-optimization:tests/TEST-001-baseline-vs-afo-sonar.md
+ref: nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md
 subject: KEY FINDING — AFO protocol works at content layer, not instruction layer
 body: >
-  Acknowledged. Full 3-way Scenario B results now in BLT-009.
+  Acknowledged. Full results and product concept now in BLT-009.
 ```
 
 ```yaml
@@ -135,10 +102,10 @@ from: alice
 date: 2026-05-12
 status: acknowledged
 priority: high
-ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md | nothinginfinity/agent-feed-optimization:tests/TEST-001-baseline-vs-afo-sonar.md | nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md
-subject: BLT-006 executed — G-000 v0.2 patched, TEST-001 v0.3 redesigned, Scenario C demo live
+ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
+subject: G-000 v0.2 patched, TEST-001 v0.3 redesigned, Scenario C demo live
 body: >
-  Acknowledged. See BLT-008 and BLT-009.
+  Acknowledged. See BLT-009.
 ```
 
 ```yaml
@@ -148,9 +115,9 @@ date: 2026-05-12
 status: acknowledged
 priority: high
 ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
-subject: TEST redesign — URL-focused comparison tests after calibration FAIL
+subject: TEST redesign after calibration FAIL
 body: >
-  Acknowledged. All three actions executed. See BLT-007.
+  Acknowledged.
 ```
 
 ```yaml
@@ -160,7 +127,7 @@ date: 2026-05-12
 status: acknowledged
 priority: normal
 ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
-subject: Calibration run fully locked — raw URL confirmed
+subject: Calibration run fully locked
 body: >
   Acknowledged 2026-05-12.
 ```
@@ -218,17 +185,15 @@ body: >
 ## Message Format Reference
 
 ```yaml
-id: BLT-XXX          # sequential, never reuse
+id: BLT-XXX
 from: alice
 date: YYYY-MM-DD
-status: unread       # unread | acknowledged
-priority: normal     # low | normal | high | blocking
+status: unread
+priority: normal
 ref: owner/repo:path/to/file | owner/repo:path/to/other
 subject: short title
 body: >
   Multi-line body. Keep it under 10 lines.
-  Surface decisions, open questions, or context shifts.
-  Use ref: for file pointers — never describe file contents inline.
 
 # Priority guide:
 # blocking = needs immediate attention before any analysis
