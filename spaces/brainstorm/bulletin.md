@@ -27,79 +27,60 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
-id: BLT-006
+id: BLT-007
 from: alice
 date: 2026-05-12
 status: unread
 priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md | nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: TEST redesign — URL-focused comparison tests after calibration FAIL
+ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md | nothinginfinity/agent-feed-optimization:tests/TEST-001-baseline-vs-afo-sonar.md | nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md | nothinginfinity/agent-feed-optimization:demo/scenario-c/agent-context.json
+subject: BLT-006 executed — G-000 v0.2 patched, TEST-001 v0.3 redesigned, Scenario C demo live
 body: >
-  CALIBRATION RUN RESULT (2026-05-12):
-  TEST-001A (baseline) ~5/18 | TEST-001B (AFO Space) ~8/18 | Delta: ~+3pts
-  Gate FAILED — required >=12/18 and >=+6pts. Neither condition met.
+  All three actions from BLT-006 are complete in one commit:
+  nothinginfinity/agent-feed-optimization @ ac2a2ad
 
-  AFO Space partially fired: output format structure appeared (subscribe table,
-  suggested next prompt) but core AFO behaviors did NOT execute:
-  - No raw RSS endpoint URLs surfaced
-  - No AFO file searches attempted (no llms.txt, agent-context.json lookup)
-  - No context-cookie prompt offered
-  G-000 patch is needed. But Jared also identified a deeper test design gap:
+  1. G-000 PATCHED TO v0.2:
+     Added mandatory URL-First Inspection Protocol (Steps 1-5).
+     Agent now MUST: fetch the URL, check all 7 AFO file endpoints,
+     output a structured SOURCE PROFILE, offer a context-cookie prompt,
+     then answer the question. This is not optional — it fires on every URL.
+     Endpoint checklist: RSS, sitemap, llms.txt, agent-context.json,
+     agent-policy.json, agent-actions.json, context-cookie.json.
+     GitHub raw path variants included.
 
-  TEST DESIGN PROBLEM:
-  TEST-001 was an open web search. Both agents searched the whole web and returned
-  similar results. The prompt did not give them a specific URL to analyze, so there
-  was no surface for AFO feed discovery behaviors to fire against.
-  The delta was noise, not signal.
+  2. TEST-001 REDESIGNED TO v0.3:
+     Prompt changed to URL-focused analysis.
+     New prompt: "Analyze this URL and tell me everything you can find —
+     including any RSS feeds, sitemaps, llms.txt, agent-context, agent-policy,
+     agent-actions, or context-cookie files. What can I subscribe to or revisit?
+     What would you save to a context-cookie list?"
+     Test URL: demo/scenario-c/README.md (Scenario C demo surface).
+     Both 001A and 001B use same URL and same prompt.
 
-  NEW TEST DESIGN (Jared's direction):
-  The real proof requires giving both agents THE SAME URL and comparing how they
-  respond. The delta between AFO Space and baseline on a specific URL is the
-  actual product claim: "structure your site like this and AI agents will find
-  more about you."
+  3. SCENARIO C DEMO SURFACE BUILT (demo/scenario-c/):
+     All 8 files present and real/parseable:
+     README.md, rss.xml, sitemap.xml, llms.txt,
+     agent-context.json, agent-policy.json, agent-actions.json,
+     context-cookie.example.json
+     The README explicitly tells any AI agent reading it: all endpoints
+     are present and what each one enables. This is the controlled test surface.
 
-  THREE SCENARIOS PROPOSED:
+  READY TO RUN:
+  TEST-001A: fresh Perplexity, no Space, paste README URL + new prompt
+  TEST-001B: AFO Sonar Reader Space (bootstrap URL), same URL + same prompt
+  Space instruction: single line pointing to G-000 v0.2 raw URL
 
-  A. TWO MIRROR REPOS
-     Create two GitHub repos with identical content but different structure:
-     one AFO-friendly (has RSS, llms.txt, agent-context.json, sitemap)
-     one plain (no AFO files, no feeds)
-     Ask both agents: same prompt, each repo URL.
-     Shows: "build your site like this and you get found better."
-     Setup: medium (two new repos to create)
+  Space instruction for TEST-001B:
+  "Read and follow all instructions at this URL before responding to anything:
+   https://raw.githubusercontent.com/nothinginfinity/agent-feed-optimization/main/gists/G-000-afo-sonar-reader.md"
 
-  B. ONE REAL PUBLIC REPO (fastest)
-     Use Jared's biggest existing public GitHub repo right now.
-     Ask AFO Space vs baseline: "tell me about this project and what I can
-     subscribe to or follow."
-     Baseline: scrapes README. AFO Space: hunts for feeds, context files,
-     structured endpoints.
-     Shows: real-world gap today, zero setup.
-     Status: waiting on Jared to identify the repo.
+  Test URL for both:
+  https://raw.githubusercontent.com/nothinginfinity/agent-feed-optimization/main/demo/scenario-c/README.md
 
-  C. ONE DESIGNED GIST (controlled sandbox)
-     A single public gist containing: RSS XML, llms.txt, agent-context.json,
-     README, sitemap. Every AFO file format in one place.
-     Best for: showing full detection capability in one clean demo.
-     Setup: light (one gist, Alice drafts the files)
-
-  RECOMMENDED EXECUTION ORDER:
-  1. Scenario B now — zero setup, real world, runs today
-  2. Scenario C next — controlled sandbox, ideal AFO site demo
-  3. Scenario A last — side-by-side with/without comparison = marketing proof
-
-  OPEN ITEMS:
-  - G-000 still needs a patch (mandatory feed search + context-cookie prompt)
-  - Jared needs to identify his biggest public repo for Scenario B
-  - Scenario C gist files need to be drafted
-
-  GOOD BRAINSTORM QUESTIONS:
-  1. What should the prompt be for a URL-focused test? The current TEST-001
-     prompt won't work well when you give it a specific repo URL to analyze.
-  2. For Scenario A mirror repos, what is the minimal AFO-friendly file set
-     that would produce a measurable delta? (RSS alone? Or RSS + llms.txt?)
-  3. Is Scenario C (the designed gist) actually a better Phase 1 demo than
-     a real repo, because it's fully controlled and can be linked publicly?
+  EXPECTED DELTA NOW:
+  Baseline: will summarize the README, maybe find the repo link, miss all AFO files.
+  AFO Space: will run URL-First Inspection Protocol, surface all 7 endpoints,
+  output a SOURCE PROFILE, offer context-cookie prompt.
+  Expected delta: 10+ points. Gate should clear.
 ```
 
 ---
@@ -107,15 +88,27 @@ body: >
 ## 📤 Acknowledged — Previously Discussed
 
 ```yaml
+id: BLT-006
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: high
+ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
+subject: TEST redesign — URL-focused comparison tests after calibration FAIL
+body: >
+  Acknowledged. All three actions executed. See BLT-007.
+```
+
+```yaml
 id: BLT-005
 from: alice
 date: 2026-05-12
 status: acknowledged
 priority: normal
-ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: Calibration run fully locked — raw URL confirmed, ready to execute
+ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
+subject: Calibration run fully locked — raw URL confirmed
 body: >
-  Acknowledged. Superseded by BLT-006 with calibration results and new test design.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
