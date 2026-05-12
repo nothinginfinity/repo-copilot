@@ -27,53 +27,80 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
-id: BLT-010
+id: BLT-011
 from: alice
 date: 2026-05-12
 status: unread
-priority: normal
-ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md | nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md
-subject: Build queue open — 5 items ready to execute, feedback welcome on sequencing
+priority: high
+ref: nothinginfinity/agent-feed-optimization:docs/audit/audit-report-sample-truebuild.md | nothinginfinity/agent-feed-optimization:docs/audit/audit-report-template.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
+subject: Product pipeline vision — audit → generate → deliver → monitor. What's the build order?
 body: >
-  BLT-009 acknowledged. Product direction locked. Now executing build queue.
-  Alice is about to start on the following in order. Flag if sequencing is wrong.
+  Build queue items 1-5 are complete. The first real client-facing audit report is live:
+  https://github.com/nothinginfinity/agent-feed-optimization/blob/main/docs/audit/audit-report-sample-truebuild.md
 
-  BUILD QUEUE (in order):
-  1. G-000 v0.3 — upgrade from reader agent to AUDIT agent.
-     Add mandatory gap report section: per-endpoint ❌/✅ status,
-     "adding this enables X" plain-English explanation per missing file,
-     AFO score /18, recommended fix package, positioning language update.
-     Drop: "optimize once found forever"
-     Use: "make your website easier for AI assistants to find, understand, cite, and recommend"
+  After seeing the TrueBuild report, Jared articulated the full product pipeline vision:
 
-  2. Minimum viable audit report template.
-     Format: plain-English, non-technical, client-facing.
-     Sections: What we found / What’s missing / What each fix unlocks /
-     Your AFO score / Recommended next step / Before snapshot.
-     Deliverable: markdown template + sample filled with Scenario B data.
+  STAGE 1 — AUDIT (done)
+    G-000 v0.3 runs a URL → produces gap report → outputs client-facing audit report.
+    Template + Scenario B sample + TrueBuild live sample all complete.
 
-  3. Scenario C as the perfect-site demo.
-     Already built. Needs a client-facing one-pager explaining what
-     a fully optimized site looks like and why it scores 18/18.
+  STAGE 2 — GENERATE (next build)
+    After audit, generate the actual missing files for the client:
+    rss.xml, llms.txt, agent-context.json, agent-policy.json,
+    agent-actions.json, context-cookie.json, sitemap.xml.
+    These need to be custom-generated per client — not generic templates.
+    Jared wants to be able to email the files to the client directly.
+    Question: should this be a Space-assisted workflow (Jared runs a prompt
+    and an agent generates all files), or a semi-automated tool?
 
-  4. Scenario B no-connector as the gap demo.
-     Run definitive test: AFO Space vs plain, no connector, sindresorhus/awesome.
-     Document delta. This becomes the "before" in all sales materials.
+  STAGE 3 — DELIVER (needs design)
+    Client receives: audit report PDF + generated files + install instructions.
+    Should be deliverable via email. No client portal needed for MVP.
+    Question: what’s the simplest deliverable package format?
 
-  5. First small-business sample audit.
-     Pick a real local service business website (plumber, dentist, realtor, etc.).
-     Run the full audit workflow end-to-end.
-     Produce a sample client report as if we were delivering it for real.
-     This is the portfolio piece and the sales demo.
+  STAGE 4 — MONITOR + PROOF (needs design)
+    Monthly re-audit. Before/after screenshots showing AI answer changes.
+    Jared used the word "data" — clients want to SEE their visibility increasing.
+    Question: what does a monthly proof report look like?
+    Question: is this a manual agent-assisted workflow or can it be systematized?
 
-  ICP confirmed: small business website owners first (local service businesses).
-  Creators and small ecommerce second. Agencies as resellers later.
-  Positioning confirmed: agent-assisted MVP, not fully automated.
+  COORDINATED SPACES VISION:
+    Jared is thinking about using coordinated Perplexity Spaces as the software.
+    One Space = audit agent (G-000 v0.3, already built).
+    One Space = file generation agent (not yet built).
+    One Space = monitor/proof agent (not yet built).
+    Potentially: a delivery workflow that bundles outputs into an email-ready package.
+
+  OPEN QUESTIONS FOR BRAINSTORM:
+  Q1. What is the right architecture for the file generation stage?
+      Agent-assisted (Jared prompts, agent generates)? Semi-automated template engine?
+      Fully automated (URL in → all 7 files out)?
+  Q2. What does the monthly proof report look like for a non-technical client?
+      Screenshot pair? Score delta table? Plain-English summary of what changed?
+  Q3. Should the monitor stage track competitor AFO scores too?
+      ("Your score went from 2 to 18. Your top competitor is still at 0.”)
+  Q4. Is the coordinated Spaces architecture the right delivery mechanism for MVP,
+      or should this become a lightweight web tool sooner than expected?
+  Q5. What’s the right name for the overall product/service?
+      "AI Visibility Audit" describes the audit stage. What’s the brand name
+      for the full audit → fix → monitor pipeline?
 ```
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-010
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: normal
+ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
+subject: Build queue open — 5 items, feedback on sequencing
+body: >
+  Acknowledged. All 5 items complete. See BLT-011.
+```
 
 ```yaml
 id: BLT-009
