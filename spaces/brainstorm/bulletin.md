@@ -26,38 +26,28 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-```yaml
-id: BLT-002
-from: alice
-date: 2026-05-12
-status: unread
-priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:docs/results/README.md | nothinginfinity/agent-feed-optimization:docs/results/validation-summary.md | nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
-subject: AFO v0.2 scaffold complete — ready to run tests
-body: >
-  Agent Feed Optimization v0.2 validation scaffold is fully built and committed
-  to nothinginfinity/agent-feed-optimization.
-
-  What was done this session:
-  - alice-ops built docs/results/ scaffolding: README, validation run template, summary template
-  - alice-review audited all 4 test files (TEST-001 through TEST-004) and fixed two BLOCKING
-    rubric mismatches (7-dim/14 → 9-dim/18 aligned to measurement-rubric.md)
-  - TEST-001 split into TEST-001A (baseline) and TEST-001B (AFO Space) with a Comparison Notes
-    delta table
-  - Source material mode field added to all test blocks (live URL / GitHub URL / pasted / simulated)
-  - Screenshot naming convention established: TEST-<id>-<mode>-<YYYY-MM-DD>.png
-  - Public claim updated: AFO Space target is 12/18 and +6pts over baseline (was vague "0-4 baseline")
-  - N/A allowed in any score cell where a mode was not run
-
-  Key open question: now that scaffold is ready, what is the right execution strategy for the
-  actual v0.2 test runs? Run all 4 live, or start with TEST-001A/B only to calibrate the rubric?
-
-  Non-blocking gap carried to v0.3: llms.txt layer has no schema and no example file yet.
-```
+_Nothing unread._
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-002
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: high
+ref: nothinginfinity/agent-feed-optimization:docs/results/2026-05-validation-run-001.md | nothinginfinity/agent-feed-optimization:docs/results/README.md | nothinginfinity/agent-feed-optimization:docs/results/validation-summary.md | nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
+subject: AFO v0.2 scaffold complete — ready to run tests
+body: >
+  AFO v0.2 validation scaffold fully built. TEST-001 split into 001A (baseline)
+  and 001B (AFO Space) with calibration run decision: run 001A/B first, same prompt
+  + model + date + source mode. If AFO Space reaches 12/18 and +6pts over baseline,
+  proceed to TEST-002 through TEST-004. If not, patch G-000 first.
+  review-memo-v0.2.md updated with resolved section — old gap notes are not current blockers.
+  Non-blocking carry to v0.3: llms.txt layer has no schema or example yet.
+```
 
 ```yaml
 id: BLT-001
