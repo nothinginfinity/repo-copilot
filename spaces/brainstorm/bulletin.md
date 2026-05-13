@@ -26,7 +26,80 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-_No unread entries._
+```yaml
+id: BLT-014
+from: alice
+date: 2026-05-12
+status: unread
+priority: high
+ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/agent-feed-optimization:jobs/_template/job.json | nothinginfinity/agent-feed-optimization:jobs/README.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/mail.md
+subject: Session recap + project analysis request — what’s where, what’s next, path to live testing
+body: >
+  SESSION RECAP — 2026-05-12 evening:
+
+  1. BLT-012 decisions accepted (Q1–Q5 locked).
+     G-001 v1.1 build plan routed to alice-ops + alice-review.
+
+  2. alice-ops delivered job folder scaffold to agent-feed-optimization:
+     jobs/README.md, jobs/_template/job.json, README-review.md,
+     README-install.md. Committed in one bundle.
+
+  3. alice-review completed REV-G001-001 through REV-G001-004.
+     Findings: G-001 gist still at v0.1 (17-field intake schema not
+     pushed), job.json missing 5 fields, 2 naming inconsistencies.
+
+  4. BLT-013 naming decisions locked by Jared:
+     Q1: deliver BOTH agent-policy.json (canonical) + policy.md
+         (explanatory).
+     Q2: deliver BOTH context-cookie.json (client payload) +
+         context-cookie.md (explanatory). context-cookie.schema.json
+         stays in repo as spec only — never in client ZIP.
+     Canonical delivery ZIP is now 10 files.
+
+  5. alice-ops patch tasks queued (inbox-ops.md):
+     5 job.json fixes + naming corrections to README-review.md and
+     jobs/README.md. Not yet executed — awaiting next alice-ops session.
+
+  OPEN ITEM — still not done:
+     G-001 gist is still v0.1. The 17-field intake schema has not been
+     pushed to agent-feed-optimization:gists/G-001-afo-agent-identity.md.
+     This is a prerequisite before G-001 can function as a draft writer.
+
+  ---
+
+  ANALYSIS REQUEST FROM JARED:
+
+  Jared wants a structured analysis this session. Key questions:
+
+  A. WHAT’S WHERE — clarify the repo split:
+     - What belongs in repo-copilot vs agent-feed-optimization?
+     - Is the current split clean or should anything move?
+     - Where do client job folders live long-term? In
+       agent-feed-optimization, or a separate client-jobs repo?
+       (This was BLT-012 open question Q-B — still unresolved.)
+
+  B. PROJECT STATE — honest assessment:
+     - What is actually built and working end-to-end?
+     - What is scaffolded but not yet wired together?
+     - What is still missing before G-001 can run a real job on a
+       real client website without Jared doing manual assembly?
+
+  C. PATH TO LIVE TESTING:
+     - What is the minimum build needed to test on a real website?
+     - Which real websites are candidates? (TrueBuild is the obvious
+       first — but what else?)
+     - What does a successful live test look like? What would we
+       measure, and what would ‘pass’ mean?
+
+  D. RECOMMENDED NEXT BUILD:
+     - Given everything above, what should alice-ops and alice-review
+       work on next?
+     - Is the G-001 gist v1.1 update the right first move, or is
+       there something more valuable to unblock first?
+
+  Load the ref files above as needed. Start with your honest read
+  of where the project stands before making recommendations.
+```
 
 ---
 
@@ -42,18 +115,10 @@ ref: nothinginfinity/repo-copilot:spaces/alice/mail.md | nothinginfinity/agent-f
 subject: Two delivery package naming decisions deferred — Jared needs to think it over
 body: >
   Acknowledged 2026-05-12. Jared decided:
-
-  Q1 — policy file: Option C.
-    Deliver BOTH agent-policy.json (canonical, installs to /.well-known/)
-    AND policy.md (explanatory, human-readable summary).
-    agent-policy.json is the operative file; policy.md is documentation.
-
-  Q2 — context-cookie file: Option C, refined.
-    Deliver BOTH context-cookie.json (generated client payload)
-    AND context-cookie.md (human-readable explanation).
-    IMPORTANT: context-cookie.schema.json remains the schema/spec file only.
-    It is NOT the client payload. The generated file is context-cookie.json.
-    context-cookie.schema.json stays in the repo as the spec — not in the ZIP.
+  Q1: Option C — deliver both agent-policy.json (canonical) + policy.md (explanatory).
+  Q2: Option C refined — deliver context-cookie.json (client payload) +
+  context-cookie.md (explanatory). context-cookie.schema.json stays in repo
+  as spec only, never in ZIP.
 ```
 
 ```yaml
