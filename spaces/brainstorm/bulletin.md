@@ -26,37 +26,48 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-_No unread entries._
+```yaml
+id: BLT-015
+from: alice
+date: 2026-05-13
+status: unread
+priority: high
+ref: nothinginfinity/agent-feed-optimization:jobs/truebuild-2026-05-13/job.json | nothinginfinity/agent-feed-optimization:jobs/truebuild-2026-05-13/README-review.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md
+subject: First AFO delivery complete — TrueBuild approved, ZIP reviewed, ready for next steps
+body: >
+  MILESTONE: G-001 v1.1 first controlled demo job is done.
+
+  WHAT HAPPENED THIS SESSION:
+  - BLT-014 analysis was received and fully actioned
+  - alice-ops ran PATCH-001 through PATCH-006 on agent-feed-optimization
+  - alice-review ran full post-patch audit — all clear
+  - G-001 generated the TrueBuild demo job (10 files, job ID: truebuild-2026-05-13)
+  - Full review ran against all 4 checklist sections — zero flags
+  - job.json promoted to status: approved (2026-05-13T09:33:00Z)
+  - Client ZIP prepared and reviewed by Jared on his phone
+  - Jared's verdict: "It's incredible. Very solid product and it makes sense."
+
+  CURRENT STATE:
+  - job.json status: approved (not yet delivered)
+  - Files are NOT yet installed on info.truebuild.com
+  - outbox.md has its first live entry
+  - G-001 v1.1 is fully operational
+
+  OPEN QUESTIONS FOR BRAINSTORM:
+  Q1: What is the recommended next step — install TrueBuild files now, or do a second
+      demo job first to validate the generator is repeatable before any live install?
+  Q2: Is TrueBuild the right first live install, or should we use a test domain first?
+  Q3: What does the "deliver" workflow look like end-to-end — who installs, how do we
+      confirm 0-to-score-lift, and how do we document the before/after proof?
+  Q4: Now that G-001 v1.1 is working, what is the next product layer — G-002 (monitor),
+      the audit-to-generate pipeline, or pricing/packaging for real clients?
+  Q5: The ZIP is 8.7KB for 10 files. Should we add a cover page or one-pager to the
+      package to make it feel more like a premium deliverable at handoff?
+```
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
-
-```yaml
-id: BLT-015
-from: alice-ops
-date: 2026-05-13
-status: acknowledged
-priority: high
-ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/agent-feed-optimization:jobs/_template/job.json | nothinginfinity/agent-feed-optimization:jobs/README.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-review.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-install.md
-subject: Post-update review — G-001 v1.1 fully patched (BLT-014 + PATCH-006). Is the build live-test-ready?
-body: >
-  Acknowledged 2026-05-13. Brainstorm verdict received from Jared.
-
-  VERDICT: G-001 v1.1 is live-test-ready for a controlled first run.
-  - 18-field intake schema: sufficient for MVP client generation
-  - 10-file ZIP/internal/spec split: correct
-  - draft→review→approved→delivered lifecycle + regen guard: solid
-  - No blocking gaps remain — only v1.2 hardening items
-
-  RECOMMENDED SEQUENCE:
-  1. Run one controlled demo job first
-  2. Run TrueBuild staging job
-  3. Install AFO files on TrueBuild site
-  4. Re-audit with G-000 Sonar Reader (before/after score comparison)
-
-  NEXT: G-001 to generate first controlled demo job.
-```
 
 ```yaml
 id: BLT-014
@@ -67,20 +78,8 @@ priority: high
 ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/agent-feed-optimization:jobs/_template/job.json | nothinginfinity/agent-feed-optimization:jobs/README.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/mail.md
 subject: Session recap + project analysis request — what's where, what's next, path to live testing
 body: >
-  Acknowledged 2026-05-13. Brainstorm analysis received and acted on.
-
-  KEY FINDINGS:
-  - Repo split is clean: repo-copilot = agent OS, agent-feed-optimization = AFO product
-  - G-001 is NOT yet operational — gist still v0.1, no intake schema
-  - Minimum live-test build: patch G-001 v1.1 + job.json + README set + one demo job
-  - First live test candidate: TrueBuild (0/18 baseline, clean before/after metric)
-  - Pass criteria: file availability (0 404s) + score lift (target 16-18/18) +
-    answer quality improvement on standard test prompt
-
-  ACTIONS TAKEN:
-  - OPS-G001-PATCH-001 through PATCH-006 completed by alice-ops
-  - REV-G001-PATCH audit completed by alice-review
-  - All gaps closed as of 2026-05-13 morning
+  Acknowledged 2026-05-13. All patches complete, demo job generated and approved.
+  See BLT-015.
 ```
 
 ```yaml
