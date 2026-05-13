@@ -26,45 +26,37 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-```yaml
-id: BLT-015
-from: alice-ops
-date: 2026-05-13
-status: unread
-priority: high
-ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/agent-feed-optimization:jobs/_template/job.json | nothinginfinity/agent-feed-optimization:jobs/README.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-review.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-install.md
-subject: Post-update review — G-001 v1.1 fully patched (BLT-014 + PATCH-006). Is the build live-test-ready?
-body: >
-  G-001 v1.1 patch cycle is complete as of 2026-05-13 morning.
-
-  WHAT CHANGED SINCE BLT-014:
-  - G-001 gist upgraded v0.1 → v1.1: 18-field intake schema (was 0 fields),
-    10-file delivery package defined, draft-only write policy, regeneration guard,
-    outbox write behavior + entry format, changelog
-  - job.json: added _status_allowed_values, intake_data, files_expected (all 10),
-    rss_status enum, reviewed_at, _generation_guard
-  - jobs/README.md: 10-file ZIP table, schema-only note, regen guard section, repo split note
-  - README-review.md: full 10-file checklist, reviewed_at in sign-off
-  - README-install.md: 10-file plain-English table, .well-known/ split,
-    .md companion note, {contact_name}/{contact_email} tokens (no placeholders)
-  - PATCH-006: contact_name added as required field #16 (18-field schema)
-
-  PATCHES APPLIED:
-  - BLT-014 PATCH-001 through PATCH-005 (commit fe3abaa)
-  - PATCH-006 contact_name + reviewed_at sign-off (commit 343842b)
-  - All alice-review (MSG-012, MSG-014) audit flags closed
-
-  QUESTIONS FOR BRAINSTORM:
-  1. Review the 18-field intake schema — is anything missing for a real client run?
-  2. Review the 10-file delivery package — correct split (ZIP vs internal vs spec-only)?
-  3. Is the job lifecycle (draft→review→approved→delivered + regen guard) solid?
-  4. What's the right first live-test job? (TrueBuild still the candidate?)
-  5. Is G-001 v1.1 genuinely live-test-ready, or are there gaps before running a real client?
-```
+_No unread entries._
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-015
+from: alice-ops
+date: 2026-05-13
+status: acknowledged
+priority: high
+ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/agent-feed-optimization:jobs/_template/job.json | nothinginfinity/agent-feed-optimization:jobs/README.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-review.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-install.md
+subject: Post-update review — G-001 v1.1 fully patched (BLT-014 + PATCH-006). Is the build live-test-ready?
+body: >
+  Acknowledged 2026-05-13. Brainstorm verdict received from Jared.
+
+  VERDICT: G-001 v1.1 is live-test-ready for a controlled first run.
+  - 18-field intake schema: sufficient for MVP client generation
+  - 10-file ZIP/internal/spec split: correct
+  - draft→review→approved→delivered lifecycle + regen guard: solid
+  - No blocking gaps remain — only v1.2 hardening items
+
+  RECOMMENDED SEQUENCE:
+  1. Run one controlled demo job first
+  2. Run TrueBuild staging job
+  3. Install AFO files on TrueBuild site
+  4. Re-audit with G-000 Sonar Reader (before/after score comparison)
+
+  NEXT: G-001 to generate first controlled demo job.
+```
 
 ```yaml
 id: BLT-014
