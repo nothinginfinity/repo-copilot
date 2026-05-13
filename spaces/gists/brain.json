@@ -1,124 +1,23 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-12T17:29:00.000Z",
+  "generated_at": "2026-05-13T07:17:18.720Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 10,
+  "note_count": 6,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 10 sessions distilled. Latest: 2026-05-12. Projects: repo-copilot, agent-feed-optimization. Top concepts: AI Visibility Audit product locked, ICP = small business website owners, MVP = agent-assisted audit, G-001 v1.1 = repo-write generator with draft/staging gate, job folder scaffold assigned to alice-ops, intake schema audit assigned to alice-review, BLT-012 posted, generator outbox initialized.",
+  "fortune_decode": "Agent second brain. 6 sessions distilled. Latest: 2026-05-09. Projects: repo-copilot. Top concepts: archive_block, notion-ops-soft-delete, unarchive-support, cleanup-audit, notion-ops-result-write-verified, multi-user provisioning, bootstrap URL pattern, gist template with placeholders, provision GitHub Action, Notion Roadmap DB.",
   "notes": [
-    {
-      "title": "G-001 v1.1 — orchestration upgrade routed to alice-ops and alice-review",
-      "date": "2026-05-12",
-      "source": "Perplexity",
-      "project": "agent-feed-optimization",
-      "new_concepts": [
-        "G-001 v1.1",
-        "draft/staging job folder",
-        "human review gate",
-        "job.json status lifecycle",
-        "review-state: draft → review → approved → delivered",
-        "README-install.md vs README-review.md split",
-        "17-field intake schema",
-        "validate.js local-first",
-        "generator outbox",
-        "spaces/generator/outbox.md"
-      ],
-      "decisions": "Q1: repo write = yes, draft/staging only. Q2: outbox + bulletin (bulletin for important events only). Q3: 17-field intake collected upfront. Q4: README split — file #8 in ZIP, not installed on site. Q5: validate.js local first → GitHub Actions → hosted later. alice-ops assigned job folder scaffold (OPS-G001-001 through 005). alice-review assigned intake schema audit and lifecycle review (REV-G001-001 through 004). BLT-011 marked acknowledged. BLT-012 posted. spaces/generator/outbox.md created.",
-      "open_questions": "Q-A: What is the right trigger/prompt template for G-001 to run a job? Q-B: Should job folders live in agent-feed-optimization or a separate client-jobs repo? Q-C: When does the monitor stage (Stage 4) get its own Space?",
-      "cid": "alice/g001-v1.1/jared",
-      "gist_snapshot": null,
-      "notion_url": null
-    },
-    {
-      "title": "AI Visibility Audit — product direction locked from Brainstorm feedback",
-      "date": "2026-05-12",
-      "source": "Perplexity",
-      "project": "agent-feed-optimization",
-      "new_concepts": [
-        "AI Visibility Audit",
-        "LLM Search Readiness",
-        "AFO as technical substrate",
-        "ICP = small business website owners",
-        "local service businesses first",
-        "creators and small ecommerce second",
-        "agencies as resellers later",
-        "agent-assisted MVP",
-        "audit agent vs reader agent",
-        "plain-English gap report",
-        "recommended fix package",
-        "before/after screenshots as proof"
-      ],
-      "decisions": "Q5 confirmed as real product. AFO becomes the technical substrate underneath an 'AI Visibility Audit' / 'LLM Search Readiness' service. Primary ICP: small business website owners first, especially local service businesses. Creators and small ecommerce second. Agencies = resellers later, NOT first ICP. MVP is agent-assisted not fully automated: URL in → no-connector LLM visibility test → endpoint checklist → AFO score /18 → plain-English gap report → recommended fix package → before/after screenshots. Positioning: do NOT use 'optimize once, found forever.' Use 'make your website easier for AI assistants to find, understand, cite, and recommend.' Build order: (1) G-000 v0.3 as audit agent not just reader agent, (2) minimum viable audit report template, (3) Scenario C as perfect-site demo, (4) Scenario B no-connector as gap demo, (5) first small-business sample audit.",
-      "open_questions": "What does the audit report look like for a non-technical small business owner? What file formats do we deliver (PDF, email, Google Doc)? How does the fix package get delivered — does Jared do it manually, or does an agent generate the files and send them? What is the upsell path from one-time audit to monthly monitor?",
-      "cid": "brainstorm/afo/jared",
-      "gist_snapshot": null,
-      "notion_url": null
-    },
-    {
-      "title": "AFO Website Audit Product — accidentally-on-purpose product concept",
-      "date": "2026-05-12",
-      "source": "Perplexity",
-      "project": "agent-feed-optimization",
-      "new_concepts": [
-        "LLM visibility audit",
-        "website audit service",
-        "audit-fix-monitor business model",
-        "before/after proof demo",
-        "AFO gap report as client deliverable",
-        "monthly monitor tier",
-        "same-day verifiable ROI",
-        "accidentally-on-purpose product"
-      ],
-      "decisions": "G-000 test run IS the audit. Gap report IS the client deliverable. Business model: Audit / Fix / Monitor / Proof tiers. Killer demo = before/after LLM answer screenshots.",
-      "open_questions": "Superseded by AI Visibility Audit note above.",
-      "cid": "alice/afo/jared",
-      "gist_snapshot": null,
-      "notion_url": null
-    },
-    {
-      "title": "AFO Scenario B: 3-way test results + 4 findings",
-      "date": "2026-05-12",
-      "source": "Perplexity",
-      "project": "agent-feed-optimization",
-      "new_concepts": [
-        "GitHub connector as test confounder",
-        "spontaneous gap-to-offer behavior",
-        "AFO in LLM training data",
-        "no-connector as canonical test condition",
-        "G-000 gap report missing"
-      ],
-      "decisions": "Connector neutralizes delta. No-connector = canonical. G-000 v0.3 needs structured gap report. AFO terminology in LLM training data confirmed.",
-      "open_questions": "Does partial AFO produce measurable baseline lift?",
-      "cid": "alice/afo/jared",
-      "gist_snapshot": null,
-      "notion_url": null
-    },
-    {
-      "title": "AFO Scenario C: protocol works at content layer — key finding",
-      "date": "2026-05-12",
-      "source": "Perplexity",
-      "project": "agent-feed-optimization",
-      "new_concepts": [
-        "AFO content-layer proof",
-        "baseline-high result",
-        "protocol-works-without-instructions",
-        "SEO analogy confirmed",
-        "context-layer vs instruction-layer discovery"
-      ],
-      "decisions": "Baseline 14/18, AFO Space 17/18. Close gap = strong content. SEO analogy confirmed.",
-      "open_questions": "Does Scenario B delta hold for partial AFO sites?",
-      "cid": "alice/afo/jared",
-      "gist_snapshot": null,
-      "notion_url": null
-    },
     {
       "title": "archive_block op added to notion-ops",
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["archive_block", "notion-ops-soft-delete", "unarchive-support"],
-      "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true",
-      "open_questions": "Add archive_database alias?",
+      "new_concepts": [
+        "archive_block",
+        "notion-ops-soft-delete",
+        "unarchive-support"
+      ],
+      "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true; unarchive boolean supported",
+      "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62"
@@ -128,9 +27,12 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["cleanup-audit", "notion-ops-result-write-verified"],
-      "decisions": "Items 1 and 3 clean; Item 2 needs Jared Notion action",
-      "open_questions": "Add archive_database op?",
+      "new_concepts": [
+        "cleanup-audit",
+        "notion-ops-result-write-verified"
+      ],
+      "decisions": "Items 1 and 3 already clean; Item 2 (archive old DB) needs Jared action in Notion",
+      "open_questions": "Should we add archive_database op to notion-ops to avoid future manual Notion steps?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1"
@@ -140,9 +42,16 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["multi-user provisioning", "bootstrap URL pattern", "gist template with placeholders", "provision GitHub Action", "Notion Roadmap DB", "phase-ordered build roadmap"],
-      "decisions": "Space instructions = one bootstrap URL. Build order finalized across 4 phases.",
-      "open_questions": "GitHub App vs PAT for provisioning?",
+      "new_concepts": [
+        "multi-user provisioning",
+        "bootstrap URL pattern",
+        "gist template with placeholders",
+        "provision GitHub Action",
+        "Notion Roadmap DB",
+        "phase-ordered build roadmap"
+      ],
+      "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases. Notion Roadmap DB is next build step.",
+      "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Full-build-order-roadmap-Bob-message-sent-35bd927c979281f98bebfc7419967cb9"
@@ -152,21 +61,60 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["turn as unit of memory", "turn-level brain push", "3-slot tool call budget", "slot-3 brain push reservation"],
-      "decisions": "Every Alice turn ends with append_note as slot 3.",
-      "open_questions": "Bob and Charlie need same mandate.",
+      "new_concepts": [
+        "turn as unit of memory",
+        "turn-level brain push",
+        "3-slot tool call budget",
+        "minimum viable turn note",
+        "slot-3 brain push reservation"
+      ],
+      "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid. Work splits across turns if slot 3 is needed for brain push.",
+      "open_questions": "Bob and Charlie Space instructions need same turn-level mandate. Perplexity Space instructions may need manual update by Jared.",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
       "notion_url": "https://www.notion.so/Turn-level-brain-push-mandate-wired-35bd927c97928138920bdc7f89ad6e16"
+    },
+    {
+      "title": "adapter_ref + G-008 ALERT + Charlie slot + notion-ops SKILL Stone + brain.json read primitive",
+      "date": "2026-05-09",
+      "source": "Perplexity",
+      "project": "repo-copilot",
+      "new_concepts": [
+        "adapter_ref",
+        "SKILL Stone self-invocation",
+        "G-008 ALERT type",
+        "BLOCKING/WARNING/INFO severity levels",
+        "ALERT lifecycle (raise-load-clear)",
+        "Charlie agent slot",
+        "three-agents demo pattern",
+        "export_brain op",
+        "brain-export workflow",
+        "scheduled brain refresh"
+      ],
+      "decisions": "adapter_ref field added to QA.Stone gist block — SKILL Stones now self-invoking via adapter_ref path. G-008 ALERT type formalized as type spec + lifecycle doc. Charlie agent slot seeded with orientation message and full stack state. notion-ops registered as first live SKILL Stone with adapter_ref pointing to queue.json. brain.json read primitive implemented as export_brain op in notion-ops.yml + standalone brain-export.yml workflow with 3 triggers (push, manual, daily 06:00 UTC).",
+      "open_questions": "Three-Agents Demo build not yet started — demo HTML seed, demo-run.md, Notion build log, GitHub Pages deploy all pending. notion-ops SKILL Stone gist_id is null — needs a real gist.github.com wormhole.",
+      "cid": "alice/c2/jared",
+      "gist_snapshot": null,
+      "notion_url": "https://www.notion.so/adapter_ref-G-008-ALERT-Charlie-slot-notion-ops-SKILL-Stone-brain-json-read-primitive-35bd927c97928139a6e7d87abe769efb"
     },
     {
       "title": "gitzip hardening + Path A: Agent Notes DB live",
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["normalizeSrc", "execFileSync", "zip bomb guard", "append_note op", "G-010 BRAIN gist type"],
-      "decisions": "append_note is canonical session-end write primitive.",
-      "open_questions": "When to build brain.json read primitive?",
+      "new_concepts": [
+        "normalizeSrc",
+        "execFileSync (no shell surface)",
+        "zip bomb guard (file count + bytes)",
+        "normalizeDest root edge-case",
+        "create_database op",
+        "append_row op",
+        "append_note op",
+        "G-010 BRAIN gist type",
+        "agent second brain pattern"
+      ],
+      "decisions": "Hardened gitzip-push before Three Agents Demo (blocking cleared). Added create_database, append_row, append_note to notion-ops. Provisioned Agent Notes DB via create_database op. Registered as G-010 BRAIN in gist registry. append_note is the canonical session-end write primitive going forward.",
+      "open_questions": "When to build brain.json read primitive (G-010 gist export Action)? Alice still needs to ship: adapter_ref QA.Stone amendment, G-008 ALERT gist, Charlie agent slot, notion-ops QA.Stone SKILL Stone registration.",
       "cid": "bob/c1/jared",
       "gist_snapshot": "https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92",
       "notion_url": "https://www.notion.so/gitzip-hardening-Path-A-Agent-Notes-DB-live-35bd927c979281c9b4c8ff1e37edf5d3"
