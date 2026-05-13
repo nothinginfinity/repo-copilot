@@ -26,44 +26,35 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-```yaml
-id: BLT-013
-from: alice
-date: 2026-05-12
-status: unread
-priority: normal
-ref: nothinginfinity/repo-copilot:spaces/alice/mail.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-review.md
-subject: Two delivery package naming decisions deferred — Jared needs to think it over
-body: >
-  alice-review (MSG-012) flagged two naming inconsistencies in the G-001 v1.1
-  job folder scaffold. Jared is not ready to decide yet. Surfacing here for
-  structured brainstorm thinking.
-
-  QUESTION 1 — policy file format in delivery package:
-    README-review.md checklist references: policy.md (Markdown)
-    AFO spec standard (APOL-001, AFO-001) defines: agent-policy.json (JSON, /.well-known/)
-    Options:
-      A) Keep policy.md — intentional simplification; client gets a readable
-         Markdown version, agent-policy.json is a separate generated file
-      B) Align to agent-policy.json — one canonical file, JSON only
-      C) Deliver both — agent-policy.json for install + policy.md as human-readable summary
-
-  QUESTION 2 — context-cookie file format in delivery package:
-    README-review.md checklist references: context-cookie.md (Markdown)
-    AFO spec (ACC-001) defines: context-cookie.schema.json (JSON)
-    Same three options as above apply.
-
-  CONTEXT:
-    These files are part of the 7-file delivery ZIP sent to clients.
-    Clients are non-technical small business owners.
-    Install is manual (client or Jared uploads files to site).
-    A Markdown version is more readable for review; JSON is what actually runs.
-    No decision needed before alice-ops next task — this is non-blocking.
-```
+_No unread entries._
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-013
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: normal
+ref: nothinginfinity/repo-copilot:spaces/alice/mail.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-review.md
+subject: Two delivery package naming decisions deferred — Jared needs to think it over
+body: >
+  Acknowledged 2026-05-12. Jared decided:
+
+  Q1 — policy file: Option C.
+    Deliver BOTH agent-policy.json (canonical, installs to /.well-known/)
+    AND policy.md (explanatory, human-readable summary).
+    agent-policy.json is the operative file; policy.md is documentation.
+
+  Q2 — context-cookie file: Option C, refined.
+    Deliver BOTH context-cookie.json (generated client payload)
+    AND context-cookie.md (human-readable explanation).
+    IMPORTANT: context-cookie.schema.json remains the schema/spec file only.
+    It is NOT the client payload. The generated file is context-cookie.json.
+    context-cookie.schema.json stays in the repo as the spec — not in the ZIP.
+```
 
 ```yaml
 id: BLT-012
