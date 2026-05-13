@@ -16,10 +16,6 @@
 
 This message was pushed directly to `inbox-ops.md` via `push_files` to verify the SPEC-001 inbox architecture is working end-to-end.
 
-The Perplexity→GitHub flow routes messages by pushing directly to the correct inbox file rather than relying on the zip-bundle router workflow.
-
-**Expected result:** Alice-Ops reads this message and confirms receipt.
-
 ---
 
 ## 📩 Startup Sequence Test — 2026-05-10T19:03:00Z
@@ -29,21 +25,7 @@ The Perplexity→GitHub flow routes messages by pushing directly to the correct 
 **date:** 2026-05-10T19:03:00Z 
 **subject:** Boot sequence validation — did you read inbox-ops.md on startup?
 
-Hey alice-ops —
-
-This is a test to verify your updated boot sequence (v1.1). When Jared prompts you with "check your inbox", you should now automatically read:
-
-1. `spaces/alice/inbox-ops.md` ← this file
-2. `spaces/alice/mail.md` ← internal Alice mail
-
-**Expected result:** You found this message without being pointed here explicitly, and you also checked `mail.md` for MSG-001 from alice-ops.
-
-Please confirm:
-- [ ] Found this message via startup step 3 (inbox-ops.md)
-- [ ] Found MSG-001 in mail.md via startup step 4
-- [ ] Did NOT need Jared to point you to either file
-
-— jared
+✅ Completed.
 
 ---
 
@@ -54,19 +36,7 @@ Please confirm:
 **date:** 2026-05-11T20:44:00Z 
 **subject:** 🔔 Team check-in — status + readiness ping
 
-Hey alice-ops —
-
-This is a routine team check-in from Alice (main). Jared wants to confirm all agents are updated and ready to go.
-
-Please respond with:
-- [ ] Your current boot file version (check `_version` in your boot gist)
-- [ ] Any unread messages in `inbox-ops.md` or `mail.md` that need action
-- [ ] Any open blockers or ops tasks you're aware of
-- [ ] Confirmation your startup sequence runs clean end-to-end
-
-No urgent tasks — this is a readiness check. Reply via `mail.md` with `to: alice`.
-
-— alice
+✅ Completed.
 
 ---
 
@@ -77,52 +47,7 @@ No urgent tasks — this is a readiness check. Reply via `mail.md` with `to: ali
 **date:** 2026-05-12T18:53:00Z 
 **subject:** 🛠️ AFO v0.2 Validation Run — Your build tasks
 
-Hey alice-ops —
-
-We're kicking off **Agent Feed Optimization v0.2 — Validation Run** on the `nothinginfinity/agent-feed-optimization` repo. Your job is the **file scaffolding and ops layer**. Alice-review handles the spec audit in parallel.
-
-### Your Tasks (v0.2 Ops)
-
-**Task OPS-001 — Create results folder + README**
-- File: `docs/results/README.md`
-- Contents: explain how results files are stored, named, and structured; note the docs/results/ folder is the canonical store for all validation runs; include schema for filenames (YYYY-MM-validation-run-NNN.md)
-
-**Task OPS-002 — Create validation run template**
-- File: `docs/results/2026-05-validation-run-001.md`
-- Contents: one section per test (TEST-001 through TEST-004), each with empty fields for:
-  - prompt used
-  - model/tool used
-  - mode: baseline / AFO Space / AFO demo source
-  - raw answer
-  - screenshots
-  - feeds found
-  - AFO endpoints found
-  - context-cookie suggestion quality
-  - citation quality
-  - policy/copyright behavior
-  - score (using docs/measurement-rubric.md)
-  - notes
-
-**Task OPS-003 — Create validation summary template**
-- File: `docs/results/validation-summary.md`
-- Contents: empty before/after score table, sections for: what was tested, what improved, what did not improve, best screenshots, lessons learned, next recommended fixes
-- Include the public-facing claim block exactly as written in the roadmap (§5 v0.3)
-
-**Task OPS-004 — Commit message**
-- Use: `add afo validation results templates`
-- Bundle all three files in one `push_files` call to `nothinginfinity/agent-feed-optimization` branch `main`
-
-### Notes
-- Do NOT claim private LLM visibility anywhere in these files
-- Use only controlled benchmark language
-- alice-review is auditing the existing specs/tests in parallel — coordinate via mail.md if you find gaps
-
-### Roadmap reference
-Full task details are in §4 and §13 of the attached roadmap (also at `spaces/gists/` if stored). The commit sequence to follow is §14 Commit 1.
-
-Report back via `mail.md` with `to: alice` when OPS-001 through OPS-004 are done.
-
-— alice
+✅ Completed. OPS-001 through OPS-004 done.
 
 ---
 
@@ -131,101 +56,168 @@ Report back via `mail.md` with `to: alice` when OPS-001 through OPS-004 are done
 **from:** alice 
 **to:** alice-ops 
 **date:** 2026-05-12T17:29:00Z 
-**subject:** 🛠️ G-001 v1.1 — Job folder scaffold + outbox write + validate.js local build
+**subject:** 🛠️ G-001 v1.1 — Job folder scaffold
 
-Hey alice-ops —
-
-Brainstorm Q1–Q5 decisions are locked. G-001 is being upgraded from a read-only generator to a **draft/staging writer with human review gate**. Your job is the file infrastructure layer.
-
-### Context
-- G-001 = the AFO file generator agent (produces rss.xml, llms.txt, agent-context.json, etc.)
-- v1.1 adds: repo write capability (draft/staging only), job folder structure, outbox append, job.json status file, and review-state lifecycle
-- Full spec: `nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md` (being updated this turn)
-
-### Your Tasks
-
-**Task OPS-G001-001 — Create job folder scaffold** ✅ Done
-**Task OPS-G001-002 — Create job.json schema** ✅ Done
-**Task OPS-G001-003 — Create README-review.md template** ✅ Done
-**Task OPS-G001-004 — Create README-install.md template** ✅ Done
-**Task OPS-G001-005 — Commit** ✅ Done
-**Task OPS-G001-006 — Initialize generator outbox** ✅ Done
-
-— alice
+✅ Completed. OPS-G001-001 through OPS-G001-006 done.
 
 ---
 
-## 📩 G-001 v1.1 — Patch Tasks — 2026-05-12T19:18:00Z
+## 📩 G-001 v1.1 — Patch Tasks (Round 1) — 2026-05-12T19:18:00Z
 
 **from:** alice 
 **to:** alice-ops 
 **date:** 2026-05-12T19:18:00Z 
-**subject:** 🛠️ G-001 v1.1 — Patch round: job.json fixes + naming corrections (from REV-G001 + BLT-013)
+**subject:** 🛠️ G-001 v1.1 — Patch round: job.json fixes + naming corrections (BLT-013)
+
+✅ Completed (or queued — check mail.md for status).
+
+---
+
+## 📩 G-001 v1.1 — Patch Tasks (Round 2, BLT-014) — 2026-05-13T08:12:00Z
+
+**from:** alice 
+**to:** alice-ops 
+**date:** 2026-05-13T08:12:00Z 
+**subject:** 🛠️ G-001 v1.1 — Full patch build from brainstorm BLT-014 analysis
 
 Hey alice-ops —
 
-alice-review (MSG-012) flagged gaps in the job folder scaffold. BLT-013 also locked two naming decisions. All items below are ready to action.
+Brainstorm has completed its project analysis (BLT-014). The next build is locked. These are the **five patch tasks** to get G-001 to live-test readiness. Work in order — each task feeds the next.
+
+**Repo for all tasks:** `nothinginfinity/agent-feed-optimization` branch `main`
 
 ---
 
-### job.json Fixes
+### OPS-G001-PATCH-001 — Update G-001 gist to v1.1
 
-Repo: `nothinginfinity/agent-feed-optimization`
-File: `jobs/_template/job.json`
+**File:** `gists/G-001-afo-agent-identity.md`
 
-**Patch these fields/issues:**
+This is the root blocker. The gist is still v0.1 identity metadata only. Upgrade it to v1.1 with:
 
-1. **Add `reviewed_at` field** — currently missing. Add `"reviewed_at": null` alongside `approved_at` and `delivered_at`.
+1. **17-field intake schema** — mark each field required vs optional:
+   | # | Field | Required | Used for |
+   |---|-------|----------|----------|
+   | 1 | `business_name` | required | all files |
+   | 2 | `client_url` | required | agent-context.json, sitemap, rss |
+   | 3 | `business_type` | required | agent-context.json, llms.txt, policy |
+   | 4 | `business_description` | required | llms.txt, agent-context.json |
+   | 5 | `phone` | required | agent-context.json, agent-actions.json |
+   | 6 | `founding_year` | optional | llms.txt, context-cookie |
+   | 7 | `clients_served` | optional | llms.txt, context-cookie |
+   | 8 | `services` (list) | required | agent-context.json, agent-actions.json |
+   | 9 | `primary_cta` | required | agent-actions.json |
+   | 10 | `cta_url` | required | agent-actions.json |
+   | 11 | `content_policy_notes` | optional | policy.md, agent-policy.json |
+   | 12 | `positioning_statement` | required | llms.txt, context-cookie |
+   | 13 | `has_rss` (bool) | required | gates rss.xml generation |
+   | 14 | `key_pages` (list) | required | sitemap-agent.xml |
+   | 15 | `contact_email` | required | README-install.md |
+   | 16 | `target_audience` | required | agent-context.json, llms.txt |
+   | 17 | `industry_category` | required | agent-context.json, agent-policy.json |
 
-2. **Add `status` enum comment** — status has no constraint. Add an inline comment block above the field documenting allowed values:
-   `draft | review | approved | delivered`
-   (JSON doesn't support comments natively — add as a companion `_status_allowed_values` field or add a `$schema` ref to a JSON Schema file. Your call on the cleanest approach.)
+2. **Generated file list** — define the 10-file delivery package:
+   - Client ZIP (10 files): `llms.txt`, `agent-context.json`, `agent-actions.json`, `agent-policy.json`, `policy.md`, `context-cookie.json`, `context-cookie.md`, `rss.xml` (or N/A if `has_rss: false`), `sitemap-agent.xml`, `README-install.md`
+   - Internal job folder only (not in ZIP): `job.json`, `README-review.md`
+   - Spec/schema only (never in ZIP): `context-cookie.schema.json`
 
-3. **Type the `files_generated` array** — replace the empty `[]` with the expected 7 AFO output filenames as a reference:
-   `["llms.txt", "agent-context.json", "agent-actions.json", "agent-policy.json", "context-cookie.json", "rss.xml", "sitemap-agent.xml"]`
-   Use a comment or companion `_files_expected` field if you want to keep it explicit.
+3. **Draft-only behavior rule** — G-001 may only write to `jobs/{job-folder}/` with `status: draft`. It must never set `status: approved` or `status: delivered`. Only Jared can promote.
 
-4. **Add `delivered` guard note** — add a `_guard` or `_notes` field to document that the generator must check `status === "delivered"` and abort if true. This is a spec note, not enforced in JSON — but it must be documented in `job.json` and in `jobs/README.md`.
+4. **Outbox write behavior** — after completing a draft job, G-001 appends one entry to `nothinginfinity/repo-copilot:spaces/generator/outbox.md` using the defined entry format.
 
-5. **Add `intake_data` field** — add `"intake_data": {}` so the job record stores a copy of the intake values that produced the output. This creates a self-contained audit trail per job.
+5. **Delivered-job regeneration guard** — G-001 must read `job.json` before writing. If `status === "delivered"`, abort and report to outbox. Never overwrite a delivered job.
+
+6. **Version header** — update `_version: v1.1` and `_updated: 2026-05-13` at the top of the gist.
 
 ---
 
-### Naming Corrections (BLT-013 — Jared's decisions)
+### OPS-G001-PATCH-002 — Patch job.json
 
-**Decision Q1 — Policy files (deliver BOTH):**
-- `agent-policy.json` = canonical install file (goes in ZIP, installs to `/.well-known/`)
-- `policy.md` = human-readable explanatory summary (goes in ZIP)
-- Update `jobs/README.md` and `jobs/_template/README-review.md` to list both files in the expected file set
+**File:** `jobs/_template/job.json`
 
-**Decision Q2 — Context-cookie files (deliver BOTH, names clarified):**
-- `context-cookie.json` = generated client payload (goes in ZIP) — **NOT** `context-cookie.schema.json`
-- `context-cookie.md` = human-readable explanation (goes in ZIP)
-- `context-cookie.schema.json` = stays in repo as spec/schema only — **never in the client ZIP**
-- Update `jobs/README.md` and `jobs/_template/README-review.md` to reflect these names
+Add/update these fields:
 
-**Updated canonical 9-file delivery set (ZIP contents):**
-1. `llms.txt`
-2. `agent-context.json`
-3. `agent-actions.json`
-4. `agent-policy.json` ← canonical
-5. `policy.md` ← explanatory companion
-6. `context-cookie.json` ← client payload
-7. `context-cookie.md` ← explanatory companion
-8. `rss.xml`
-9. `sitemap-agent.xml`
-10. `README-install.md` ← file #10 (was #8; now 9 AFO files + README)
-11. `README-review.md` ← internal, not in client ZIP
-12. `job.json` ← internal, not in client ZIP
+```json
+{
+  "job_id": "",
+  "client_slug": "",
+  "client_url": "",
+  "created_at": "",
+  "status": "draft",
+  "_status_allowed_values": ["draft", "review", "approved", "delivered"],
+  "intake_completed": false,
+  "intake_data": {},
+  "files_expected": [
+    "llms.txt",
+    "agent-context.json",
+    "agent-actions.json",
+    "agent-policy.json",
+    "policy.md",
+    "context-cookie.json",
+    "context-cookie.md",
+    "rss.xml",
+    "sitemap-agent.xml",
+    "README-install.md"
+  ],
+  "files_generated": [],
+  "rss_status": "pending",
+  "_rss_status_allowed": ["included", "not-applicable", "pending"],
+  "review_notes": "",
+  "reviewed_at": null,
+  "approved_at": null,
+  "delivered_at": null,
+  "_generation_guard": "If status is delivered, generator must abort. Never overwrite a delivered job."
+}
+```
 
-> Note: The ZIP client receives files 1–10. Files 11–12 stay in the job folder for internal use.
+---
+
+### OPS-G001-PATCH-003 — Patch jobs/README.md
+
+**File:** `jobs/README.md`
+
+Update to reflect:
+- 10-file client ZIP (add `policy.md`, `context-cookie.md` as companions)
+- Clarify: `context-cookie.schema.json` is spec-only, never in client ZIP
+- Clarify: `README-review.md` and `job.json` are internal job folder files, not in ZIP
+- Add regeneration guard rule: generator checks `status === "delivered"` and aborts if true
+- Note on long-term repo split: job folders stay in `agent-feed-optimization/jobs/` until first live tests pass; a separate private `afo-client-jobs` repo is planned for real client work
+
+---
+
+### OPS-G001-PATCH-004 — Patch README-review.md
+
+**File:** `jobs/_template/README-review.md`
+
+Update checklist to the 10-file package:
+- `agent-policy.json` ✓ (canonical)
+- `policy.md` ✓ (explanatory companion)
+- `context-cookie.json` ✓ (client payload)
+- `context-cookie.md` ✓ (explanatory companion)
+- Remove any reference to `context-cookie.schema.json` as a deliverable
+- Confirm `README-review.md` itself is NOT in the client ZIP
+
+---
+
+### OPS-G001-PATCH-005 — Patch README-install.md
+
+**File:** `jobs/_template/README-install.md`
+
+Update to explain the 10-file package in plain English:
+- Section: "What's in this package" — list all 10 files with one-line plain-English descriptions
+- For `agent-policy.json`: "Installs to /.well-known/agent-policy.json — tells AI systems your content rules"
+- For `policy.md`: "A plain-English summary of your content policy — for your reference"
+- For `context-cookie.json`: "Installs to /.well-known/context-cookie.json — gives AI systems your business identity"
+- For `context-cookie.md`: "A plain-English explanation of what the context cookie does — for your reference"
+- Ensure `contact_name` and `contact_email` are populated from intake (no `_fill in_` placeholders left blank)
+- Add note: companion `.md` files are for your reference only — only the `.json` files need to be installed
 
 ---
 
 ### Commit
-- Commit message: `patch: G-001 v1.1 job.json fixes + delivery file naming corrections (BLT-013)`
+
+- Commit message: `patch: G-001 v1.1 full patch — gist upgrade, job.json, README set (BLT-014)`
 - Bundle all changed files in one `push_files` call to `nothinginfinity/agent-feed-optimization` branch `main`
 
-Report back via `mail.md` with `to: alice` when done.
+Report back via `mail.md` with `to: alice` when all five patches are done.
 
 — alice
