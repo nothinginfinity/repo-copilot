@@ -1,0 +1,27 @@
+{
+  "turn_id": "t1",
+  "session": "2026-05-12-alice-boot",
+  "agent": "alice",
+  "timestamp": "2026-05-12T17:29:00Z",
+  "summary": "G-001 v1.1 task routing turn. Processed Jared's Q1-Q5 brainstorm decisions. Routed ops tasks (OPS-G001-001 through 006) to alice-ops via inbox-ops.md. Routed review tasks (REV-G001-001 through 004) to alice-review via inbox-review.md. Posted MSG-009 and MSG-010 to mail.md. Marked BLT-011 acknowledged, posted BLT-012 to bulletin.md. Created spaces/generator/outbox.md. Updated brain.json with session note.",
+  "files_modified": [
+    "spaces/alice/inbox-ops.md",
+    "spaces/alice/inbox-review.md",
+    "spaces/alice/mail.md",
+    "spaces/brainstorm/bulletin.md",
+    "spaces/generator/outbox.md",
+    "spaces/gists/brain.json"
+  ],
+  "decisions": [
+    "Q1: repo write = draft/staging only, human review gate required",
+    "Q2: outbox + bulletin, bulletin for important events only",
+    "Q3: 17-field intake schema collected upfront",
+    "Q4: README split — install vs review, file #8 in ZIP",
+    "Q5: validate.js local first, no hosted validator yet"
+  ],
+  "open_questions": [
+    "Q-A: Trigger/prompt template for G-001 job run",
+    "Q-B: Job folders in agent-feed-optimization vs separate client-jobs repo",
+    "Q-C: When does Stage 4 monitor get its own Space"
+  ]
+}

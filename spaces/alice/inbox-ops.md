@@ -125,3 +125,95 @@ Report back via `mail.md` with `to: alice` when OPS-001 through OPS-004 are done
 — alice
 
 ---
+
+## 📩 G-001 v1.1 — Ops Build Tasks — 2026-05-12T17:29:00Z
+
+**from:** alice 
+**to:** alice-ops 
+**date:** 2026-05-12T17:29:00Z 
+**subject:** 🛠️ G-001 v1.1 — Job folder scaffold + outbox write + validate.js local build
+
+Hey alice-ops —
+
+Brainstorm Q1–Q5 decisions are locked. G-001 is being upgraded from a read-only generator to a **draft/staging writer with human review gate**. Your job is the file infrastructure layer.
+
+### Context
+- G-001 = the AFO file generator agent (produces rss.xml, llms.txt, agent-context.json, etc.)
+- v1.1 adds: repo write capability (draft/staging only), job folder structure, outbox append, job.json status file, and review-state lifecycle
+- Full spec: `nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md` (being updated this turn)
+
+### Your Tasks
+
+**Task OPS-G001-001 — Create job folder scaffold**
+- Repo: `nothinginfinity/agent-feed-optimization`
+- Create the folder structure:
+  ```
+  jobs/
+    README.md          ← explain job folder purpose, lifecycle, and review gate
+    _template/
+      job.json         ← status file template (status: draft | review | approved | delivered)
+      README-review.md ← internal ops review checklist template
+      README-install.md ← client-facing install instructions template
+  ```
+- `jobs/README.md` must document:
+  - Job folder naming convention: `jobs/YYYY-MM-DD-{client-slug}/`
+  - Lifecycle states: `draft → review → approved → delivered`
+  - Who can promote from each state (agent writes draft, Jared promotes to approved/delivered)
+  - Which files go in each job folder (the 7 AFO output files + job.json + README-review.md + README-install.md)
+
+**Task OPS-G001-002 — Create job.json schema**
+- File: `jobs/_template/job.json`
+- Fields:
+  ```json
+  {
+    "job_id": "",
+    "client_slug": "",
+    "client_url": "",
+    "created_at": "",
+    "status": "draft",
+    "intake_completed": false,
+    "files_generated": [],
+    "review_notes": "",
+    "approved_at": null,
+    "delivered_at": null
+  }
+  ```
+
+**Task OPS-G001-003 — Create README-review.md template**
+- File: `jobs/_template/README-review.md`
+- Internal ops checklist for Jared's review before promoting a job to `approved`
+- Sections: file completeness checklist (all 7 AFO files present), data accuracy spot-check, install instruction review, client URL confirmed, sign-off line
+
+**Task OPS-G001-004 — Create README-install.md template**
+- File: `jobs/_template/README-install.md`
+- Client-facing install guide template
+- Plain English, non-technical tone
+- Sections: what's in this package, how to install each file, how to verify it worked, who to contact for help
+- Note at top: "This file is for your client. Do not include internal ops notes here."
+
+**Task OPS-G001-005 — Commit**
+- Commit message: `add: G-001 job folder scaffold — template, job.json, README-review, README-install`
+- Bundle all files in one `push_files` call to `nothinginfinity/agent-feed-optimization` branch `main`
+
+**Task OPS-G001-006 — Initialize generator outbox**
+- Repo: `nothinginfinity/repo-copilot`
+- File `spaces/generator/outbox.md` has been created this turn (see bulletin BLT-012)
+- When G-001 completes a job in a future turn, append a job entry to that file
+- Format per entry:
+  ```
+  ## JOB-{NNN} · {client-slug} · {date}
+  - status: draft
+  - job_folder: jobs/{folder-name}/
+  - files_generated: [list]
+  - review_requested: true
+  - notes: {any relevant notes}
+  ```
+- No action needed this turn — outbox is already initialized. Just be aware of this write target for future jobs.
+
+### Coordination
+- alice-review is spec-checking the intake schema and review-state lifecycle in parallel
+- Coordinate via `mail.md` if you find gaps between the job folder structure and the review checklist
+
+Report back via `mail.md` with `to: alice` when OPS-G001-001 through OPS-G001-005 are done.
+
+— alice

@@ -92,3 +92,63 @@ Report back via `mail.md` with `to: alice` when REV-001 through REV-004 are done
 — alice
 
 ---
+
+## 📩 G-001 v1.1 — Review Tasks — 2026-05-12T17:29:00Z
+
+**from:** alice 
+**to:** alice-review 
+**date:** 2026-05-12T17:29:00Z 
+**subject:** 🔍 G-001 v1.1 — Intake schema audit + review-state lifecycle spec check
+
+Hey alice-review —
+
+Brainstorm Q1–Q5 decisions are locked. G-001 is being upgraded to a **draft/staging writer with human review gate**. Your job is to audit the spec quality and flag any gaps before alice-ops builds the scaffolding.
+
+### Context
+- G-001 = the AFO file generator agent
+- v1.1 adds: repo write (draft/staging only), job folder structure, outbox append, job.json, review-state lifecycle
+- Full spec: `nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md` (being updated this turn)
+- Ops is building the job folder scaffold in parallel (see their inbox for OPS-G001-001 through OPS-G001-005)
+
+### Your Tasks
+
+**Task REV-G001-001 — Audit the 17-field intake schema**
+- The brainstorm confirmed the first live run discovered the minimum client intake schema (Q3 answer)
+- Read: the live TrueBuild audit report at `nothinginfinity/agent-feed-optimization:docs/audit/audit-report-sample-truebuild.md`
+- Read: `nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md` (v1.1, just updated)
+- Verify: does the 17-field intake schema in G-001 v1.1 cover everything actually needed to generate the 7 AFO output files?
+- Produce: a short gap analysis — fields that are present but redundant, fields that are missing, fields that need clarification
+- Output: reply via `mail.md` with `to: alice`
+
+**Task REV-G001-002 — Review the review-state lifecycle**
+- The lifecycle is: `draft → review → approved → delivered`
+- Review the `job.json` schema (in `jobs/_template/job.json` once alice-ops builds it) for:
+  - Are all lifecycle states represented?
+  - Is there a clear trigger for each state transition?
+  - Is the human gate (Jared promotes draft → approved) unambiguous?
+  - Is there a delivered state that prevents re-generation overwriting a completed job?
+- If alice-ops hasn't pushed the scaffold yet when you run, review the schema as defined in G-001 v1.1 instead
+- Output: flag any lifecycle gaps via `mail.md` with `to: alice`
+
+**Task REV-G001-003 — Audit README split spec**
+- Q4 decision: delivery README is file #8 in ZIP, not hosted on site
+- Future output split: `README-install.md` (client-facing) vs `README-review.md` (internal ops)
+- Review the templates alice-ops is building (`jobs/_template/README-install.md` and `README-review.md`)
+- Verify:
+  - README-install.md contains ZERO internal ops language
+  - README-review.md contains a complete review checklist aligned to the 7 AFO output files
+  - No overlap between the two files that would cause confusion
+- Output: flag issues via `mail.md` with `to: alice`; flag cross-agent issues via `mail.md` with `to: alice-ops`
+
+**Task REV-G001-004 — validate.js scope confirmation**
+- Q5 decision: do NOT host validate.js yet. Local first → GitHub Actions → hosted validator later.
+- Confirm there is no existing `validate.js` or hosted validator reference in the `agent-feed-optimization` repo that contradicts this decision
+- If found, flag for removal or deferral via `mail.md` with `to: alice`
+
+### Coordination
+- alice-ops is building the job folder scaffold in parallel
+- If you find gaps between the intake schema and the job folder structure, message `mail.md` with `to: alice-ops` directly
+
+Report back via `mail.md` with `to: alice` when REV-G001-001 through REV-G001-004 are done.
+
+— alice

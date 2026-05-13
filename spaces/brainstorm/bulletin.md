@@ -27,68 +27,67 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
-id: BLT-011
+id: BLT-012
 from: alice
 date: 2026-05-12
 status: unread
 priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/audit/audit-report-sample-truebuild.md | nothinginfinity/agent-feed-optimization:docs/audit/audit-report-template.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: Product pipeline vision — audit → generate → deliver → monitor. What's the build order?
+ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/inbox-ops.md | nothinginfinity/repo-copilot:spaces/alice/inbox-review.md
+subject: G-001 v1.1 build plan — orchestration upgrade, not generation quality
 body: >
-  Build queue items 1-5 are complete. The first real client-facing audit report is live:
-  https://github.com/nothinginfinity/agent-feed-optimization/blob/main/docs/audit/audit-report-sample-truebuild.md
+  Jared's Q1-Q5 decisions from brainstorm are now locked and routed.
 
-  After seeing the TrueBuild report, Jared articulated the full product pipeline vision:
+  DECISIONS LOCKED:
+  Q1 — Repo write capability: YES, but draft/staging folders only.
+       Human review required before final delivery. No agent can promote
+       a job past draft without Jared's explicit approval.
 
-  STAGE 1 — AUDIT (done)
-    G-000 v0.3 runs a URL → produces gap report → outputs client-facing audit report.
-    Template + Scenario B sample + TrueBuild live sample all complete.
+  Q2 — Output routing: BOTH outbox + bulletin.
+       G-001 appends every completed job to spaces/generator/outbox.md.
+       Bulletin entries reserved for important review/status events only.
 
-  STAGE 2 — GENERATE (next build)
-    After audit, generate the actual missing files for the client:
-    rss.xml, llms.txt, agent-context.json, agent-policy.json,
-    agent-actions.json, context-cookie.json, sitemap.xml.
-    These need to be custom-generated per client — not generic templates.
-    Jared wants to be able to email the files to the client directly.
-    Question: should this be a Space-assisted workflow (Jared runs a prompt
-    and an agent generates all files), or a semi-automated tool?
+  Q3 — Intake schema: YES, collect all 17 fields upfront.
+       First live run (TrueBuild) effectively discovered the minimum schema.
+       Fields are now formalized in G-001 v1.1.
 
-  STAGE 3 — DELIVER (needs design)
-    Client receives: audit report PDF + generated files + install instructions.
-    Should be deliverable via email. No client portal needed for MVP.
-    Question: what’s the simplest deliverable package format?
+  Q4 — README split: delivery README is file #8 in ZIP, not installed on site.
+       Future output: README-install.md (client-facing) vs
+       README-review.md (internal ops). Kept separate always.
 
-  STAGE 4 — MONITOR + PROOF (needs design)
-    Monthly re-audit. Before/after screenshots showing AI answer changes.
-    Jared used the word "data" — clients want to SEE their visibility increasing.
-    Question: what does a monthly proof report look like?
-    Question: is this a manual agent-assisted workflow or can it be systematized?
+  Q5 — validate.js: local first, then GitHub Actions, hosted validator later.
+       No self-serve validator until agencies/clients need it.
 
-  COORDINATED SPACES VISION:
-    Jared is thinking about using coordinated Perplexity Spaces as the software.
-    One Space = audit agent (G-000 v0.3, already built).
-    One Space = file generation agent (not yet built).
-    One Space = monitor/proof agent (not yet built).
-    Potentially: a delivery workflow that bundles outputs into an email-ready package.
+  BUILD PLAN (G-001 v1.1):
+  - alice-ops: build jobs/ folder scaffold, job.json schema, README templates
+  - alice-review: audit 17-field intake schema, review-state lifecycle,
+    README split quality, validate.js scope
+  - G-001 gist updated to v1.1 with full spec
+  - spaces/generator/outbox.md initialized
 
   OPEN QUESTIONS FOR BRAINSTORM:
-  Q1. What is the right architecture for the file generation stage?
-      Agent-assisted (Jared prompts, agent generates)? Semi-automated template engine?
-      Fully automated (URL in → all 7 files out)?
-  Q2. What does the monthly proof report look like for a non-technical client?
-      Screenshot pair? Score delta table? Plain-English summary of what changed?
-  Q3. Should the monitor stage track competitor AFO scores too?
-      ("Your score went from 2 to 18. Your top competitor is still at 0.”)
-  Q4. Is the coordinated Spaces architecture the right delivery mechanism for MVP,
-      or should this become a lightweight web tool sooner than expected?
-  Q5. What’s the right name for the overall product/service?
-      "AI Visibility Audit" describes the audit stage. What’s the brand name
-      for the full audit → fix → monitor pipeline?
+  Q-A. What is the right trigger for G-001 to run? Jared pastes URL + intake
+       form manually, or is there a structured prompt template G-001 reads?
+  Q-B. Should job folders live in agent-feed-optimization or a separate
+       client-jobs repo for cleaner separation of product vs client data?
+  Q-C. At what point does the monitor stage (Stage 4) get its own Space?
+       Monthly re-audit needs G-000 to re-run — is that a G-001 trigger too?
 ```
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-011
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: high
+ref: nothinginfinity/agent-feed-optimization:docs/audit/audit-report-sample-truebuild.md | nothinginfinity/agent-feed-optimization:docs/audit/audit-report-template.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
+subject: Product pipeline vision — audit → generate → deliver → monitor. What's the build order?
+body: >
+  Acknowledged 2026-05-12. Q1-Q5 answered by Jared. See BLT-012.
+```
 
 ```yaml
 id: BLT-010
