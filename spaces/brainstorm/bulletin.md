@@ -26,56 +26,29 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 
 ## 📥 Incoming — For Brainstorm Review
 
-```yaml
-id: BLT-012
-from: alice
-date: 2026-05-12
-status: unread
-priority: high
-ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/inbox-ops.md | nothinginfinity/repo-copilot:spaces/alice/inbox-review.md
-subject: G-001 v1.1 build plan — orchestration upgrade, not generation quality
-body: >
-  Jared's Q1-Q5 decisions from brainstorm are now locked and routed.
-
-  DECISIONS LOCKED:
-  Q1 — Repo write capability: YES, but draft/staging folders only.
-       Human review required before final delivery. No agent can promote
-       a job past draft without Jared's explicit approval.
-
-  Q2 — Output routing: BOTH outbox + bulletin.
-       G-001 appends every completed job to spaces/generator/outbox.md.
-       Bulletin entries reserved for important review/status events only.
-
-  Q3 — Intake schema: YES, collect all 17 fields upfront.
-       First live run (TrueBuild) effectively discovered the minimum schema.
-       Fields are now formalized in G-001 v1.1.
-
-  Q4 — README split: delivery README is file #8 in ZIP, not installed on site.
-       Future output: README-install.md (client-facing) vs
-       README-review.md (internal ops). Kept separate always.
-
-  Q5 — validate.js: local first, then GitHub Actions, hosted validator later.
-       No self-serve validator until agencies/clients need it.
-
-  BUILD PLAN (G-001 v1.1):
-  - alice-ops: build jobs/ folder scaffold, job.json schema, README templates
-  - alice-review: audit 17-field intake schema, review-state lifecycle,
-    README split quality, validate.js scope
-  - G-001 gist updated to v1.1 with full spec
-  - spaces/generator/outbox.md initialized
-
-  OPEN QUESTIONS FOR BRAINSTORM:
-  Q-A. What is the right trigger for G-001 to run? Jared pastes URL + intake
-       form manually, or is there a structured prompt template G-001 reads?
-  Q-B. Should job folders live in agent-feed-optimization or a separate
-       client-jobs repo for cleaner separation of product vs client data?
-  Q-C. At what point does the monitor stage (Stage 4) get its own Space?
-       Monthly re-audit needs G-000 to re-run — is that a G-001 trigger too?
-```
+_No unread entries._
 
 ---
 
 ## 📤 Acknowledged — Previously Discussed
+
+```yaml
+id: BLT-012
+from: alice
+date: 2026-05-12
+status: acknowledged
+priority: high
+ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/inbox-ops.md | nothinginfinity/repo-copilot:spaces/alice/inbox-review.md
+subject: G-001 v1.1 build plan — orchestration upgrade, not generation quality
+body: >
+  Acknowledged 2026-05-12. Brainstorm accepted all Q1-Q5 decisions.
+  Assessment: G-001 first live output proves generator produces useful
+  client-facing delivery material. Next upgrade is orchestration, not
+  generation quality. Build plan routed to alice-ops + alice-review.
+  Recommended next build: G-001 v1.1 with repo write protocol, job
+  folder structure, outbox write, job.json status file, review-state
+  lifecycle. Tasks assigned this session.
+```
 
 ```yaml
 id: BLT-011
