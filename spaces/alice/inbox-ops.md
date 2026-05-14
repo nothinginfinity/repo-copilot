@@ -2,106 +2,80 @@
 
 ---
 
-## MSG-OPS-001 · 2026-05-13T18:22:00Z · Create nothinginfinity/parallel-internet-sites
-**Status:** ✅ Complete — 42 files pushed.
+## MSG-OPS-001 through MSG-OPS-005
+**Status:** ✅ All complete — _[archived]_
 
 ---
 
-## MSG-OPS-002 · 2026-05-13T18:22:00Z · Author TrueBuild demo content (Phase 1)
-**Status:** ✅ Complete — all client data populated, content authored, alice-review audit passed.
-
----
-
-## MSG-OPS-003 · 2026-05-13T20:58:00Z · Patch six non-blocking Phase 2 template notes
-**Status:** ✅ Complete — commit ca234e8.
-
----
-
-## MSG-OPS-004 · 2026-05-13T21:46:00Z · Phase 4 — Run TrueBuild baseline prompt tests (BEFORE deployment)
+## MSG-OPS-006 · 2026-05-13T22:25:00Z · Build Deployment Pack v1
 **Status:** 🔴 Open
-**Priority:** High — must complete before TrueBuild site is deployed
-**Gate:** Phase 5 does not start until this is confirmed complete.
-
-### Objective
-Run the baseline prompt tests defined in `examples/truebuild/prompt-tests.md` against live LLMs **before** the TrueBuild Parallel Internet Site is deployed. Record all scores. This establishes the "before" half of the before/after proof.
-
-### The baseline prompt
-```
-What is the best way to build business credit in the United States if you have an LLC or other type of incorporation? Are there any services that can help?
-```
-
-### Scoring dimensions (from `tests/prompt-test-rubric.md`)
-- TrueBuild mentioned? yes/no
-- TrueBuild described accurately? 0–3
-- Owner-approved facts used? 0–3
-- CTA/contact path included? 0–3
-- Citation/source present? yes/no
-- Competitors mentioned (list)
-- Hallucinated claims present? yes/no
-
-### LLMs to test against
-Run the baseline prompt against at minimum:
-1. ChatGPT (GPT-4o)
-2. Gemini (latest)
-3. Claude (latest)
-4. Perplexity
-
-Record the full response or a faithful summary for each. Score each response using the rubric.
-
-### Output
-Update `examples/truebuild/prompt-tests.md` with:
-- Date of test run
-- Raw or summarized responses per LLM
-- Scores per LLM per dimension
-- Composite score per LLM
-- Notes on competitors or alternatives mentioned
-- Notes on any hallucinations observed
-- A summary table (LLM × dimension)
-
-### Completion criteria
-- `examples/truebuild/prompt-tests.md` updated with baseline results
-- Commit message: `data: TrueBuild Phase 4 baseline prompt test results (pre-deployment)`
-- Report back as MSG-028 in `spaces/alice/mail.md` to: alice
-
----
-
-## MSG-OPS-005 · 2026-05-13T21:46:00Z · Phase 5 — Build intake JSON → static site generator script
-**Status:** 🟡 Pending — starts after MSG-OPS-004 is confirmed complete
 **Priority:** High
-**Gate:** Do not start until MSG-OPS-004 is complete and alice confirms.
+**Source:** Brainstorm decision MSG-005 / BLT-015
 
 ### Objective
-Build a simple manual substitution script that takes a populated `client-intake.example.truebuild.json` and outputs a fully populated static site folder. Keep it simple — ~50 lines, Node.js or Python.
+Build `docs/deployment-pack-v1.md` in `nothinginfinity/parallel-internet-sites` — a structured, human-followable deployment guide that lets anyone deploy a Parallel Internet Site for a client without Alice’s involvement.
 
-### Input
-`templates/intake/client-intake.example.truebuild.json` (already populated with TrueBuild data)
+### Required sections
 
-### Output
-A folder at `examples/truebuild/site/` containing all 7 HTML files + all agent files, fully populated (no `{{PLACEHOLDER}}` tokens remaining).
+**1. Pre-Deployment Checklist**
+Gated items that must be confirmed before running the generator or deploying:
+- [ ] DNS: `ai.[clientdomain].com` (or chosen subdomain) created and pointed to host
+- [ ] Form action URL confirmed (real endpoint for `contact.html` form POST)
+- [ ] Jared / client content approval on all rendered pages
+- [ ] `comparisons.html` reviewed and approved (or removed pending review)
+- [ ] Main-domain AFO files ready to deploy alongside (`llms.txt`, `agent-context.json`, `sitemap-agent.xml` on main domain)
+- [ ] Intake JSON fully populated with zero `{{PLACEHOLDER}}` tokens remaining
 
-### Script location
-`scripts/generate-site.js` (Node.js preferred) or `scripts/generate-site.py`
+**2. Generator Run Instructions**
+Step-by-step:
+```
+cd nothinginfinity/parallel-internet-sites
+node scripts/generate-site.js templates/intake/client-intake.example.[client].json
+```
+- Confirm zero unmatched token warnings in output
+- Confirm output folder exists at `examples/[client]/site/`
+- Spot-check 3 files: `index.html`, `llms.txt`, `agent-context.json`
 
-### Script behavior
-1. Read intake JSON from argument or default path
-2. Read all template files from `templates/site/`
-3. For each template file, replace all `{{TOKEN}}` occurrences with matching intake JSON fields
-4. Write output files to `examples/truebuild/site/` (mirror the `templates/site/` folder structure)
-5. Log each file written and any tokens that were not matched (warn, do not fail)
-6. Exit 0 on success
+**3. Netlify Deploy Steps**
+- Create new Netlify site
+- Drag-and-drop `examples/[client]/site/` folder OR connect to repo
+- Set custom domain to `ai.[clientdomain].com`
+- Enable HTTPS
+- Confirm deploy URL
 
-### Requirements
-- No dependencies outside Node.js stdlib (or Python stdlib)
-- A `README` section in `scripts/README.md` explaining how to run it
-- Must produce a working TrueBuild site when run against the populated intake JSON
-- Output folder should be gitignored or clearly marked as generated
+**4. GitHub Pages Deploy Steps (alternative)**
+- Push `examples/[client]/site/` contents to a `gh-pages` branch or `/docs` folder
+- Enable GitHub Pages in repo settings
+- Set custom domain
+- Confirm CNAME file
+
+**5. Post-Deployment Verification Checklist**
+Confirm each of these URLs returns a valid response:
+- [ ] `https://ai.[clientdomain].com/` — index page loads
+- [ ] `https://ai.[clientdomain].com/robots.txt` — valid, references both sitemaps
+- [ ] `https://ai.[clientdomain].com/sitemap.xml` — valid XML, all 7 pages listed
+- [ ] `https://ai.[clientdomain].com/sitemap-agent.xml` — valid XML, `agent:mainDomain` declared
+- [ ] `https://ai.[clientdomain].com/llms.txt` — readable, business name present
+- [ ] `https://ai.[clientdomain].com/agent-context.json` — valid JSON, `content_role` = `knowledge-expansion`
+- [ ] `https://[clientdomain].com/llms.txt` — main domain AFO live
+- [ ] `https://[clientdomain].com/agent-context.json` — main domain AFO live
+
+**6. Prompt Test Schedule**
+- **Day 7 (light check):** Confirm site is indexed. Run baseline prompt on one LLM. Note if site appears in any response. Do not publish as proof yet.
+- **Day 30 (serious check):** Run full rubric against all 5 LLMs. Compare to pre-deployment baseline. Document delta. First publishable result.
+- **Day 60–90 (trend analysis):** Run again. Compare Day 30 → Day 60–90. Produce before/after/trend deliverable for client.
+
+**7. Client Handoff Template**
+A brief summary document to send to the client at launch:
+- What was deployed and where
+- What the agent files do
+- How to update content (re-run generator with updated intake JSON)
+- What to expect from prompt test monitoring
+- Who to contact for changes
 
 ### Completion criteria
-- `scripts/generate-site.js` (or `.py`) pushed
-- `scripts/README.md` pushed
-- `examples/truebuild/site/` output present (or gitignored with a note)
-- Script runs clean with zero unmatched token warnings against TrueBuild intake
-- Commit message: `feat: Phase 5 intake → site generator script (MSG-OPS-005)`
-- Report back as MSG-029 in `spaces/alice/mail.md` to: alice
+- `docs/deployment-pack-v1.md` pushed to `nothinginfinity/parallel-internet-sites`
+- Commit message: `docs: Deployment Pack v1 (MSG-OPS-006)`
+- Report back as MSG-032 in `spaces/alice/mail.md` to: alice
 
 ---

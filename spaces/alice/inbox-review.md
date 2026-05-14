@@ -2,90 +2,48 @@
 
 ---
 
-## MSG-REV-001 · 2026-05-13T18:22:00Z · Review SPEC.md, guardrails, intake schema, prompt tests
-**Status:** ✅ Complete — audit passed.
+## MSG-REV-001 through MSG-REV-003
+**Status:** ✅ All complete — _[archived]_
 
 ---
 
-## MSG-REV-002 · 2026-05-13T18:22:00Z · Audit TrueBuild Phase 1 content (alice-ops delivery)
-**Status:** ✅ Complete — 2 blockers found and patched (MSG-026). 6 non-blocking notes logged.
-
----
-
-## MSG-REV-003 · 2026-05-13T20:58:00Z · Draft Phase 3 AFO Integration Rules
-**Status:** ✅ Complete — all 4 deliverables pushed. Report: MSG-027.
-**Priority:** High — required before Phase 3 content is written
-**Source:** Brainstorm decision MSG-003
-**Gate:** May begin drafting in parallel with MSG-OPS-003, but no Phase 3 content merged until OPS confirms template cleanup complete.
+## MSG-REV-004 · 2026-05-13T22:25:00Z · Manual review of comparisons.html (TrueBuild generated output)
+**Status:** 🔴 Open
+**Priority:** High — hard gate before TrueBuild launch
+**Source:** Brainstorm decision MSG-005 / BLT-015
 
 ### Objective
-Define the authoritative rules governing how the Parallel Internet Site and the main domain AFO layer relate to each other. Output is a reviewed, merged update to `docs/afo-integration.md` plus a new `docs/agent-reconciliation.md`.
+Review the populated `comparisons.html` for the TrueBuild demo. Every claim on this page must be traceable to the intake JSON. This is the highest-risk page on the site. Brainstorm has flagged it as a hard gate: the page must be approved or removed before deployment.
 
-### Topics to cover
+### File to review
+`examples/truebuild/site/comparisons.html` (generated output — fully populated, no `{{PLACEHOLDER}}` tokens)
 
-**1. Identity Mirroring Spec**
-Define which fields MUST be identical across `truebuild.com` AFO and `ai.truebuild.com`:
-- Business legal name
-- Entity type
-- Founding year
-- Primary URL (links back to main)
-- Primary contact (phone + email)
-- Primary CTA and CTA URL
-- `do_not_claim` list (must match exactly)
-- Compliance disclaimers
+### Source of truth
+`templates/intake/client-intake.example.truebuild.json` — every claim must trace back to a field in this file.
 
-Define which fields MAY differ:
-- Description (Parallel Site may be longer/more detailed)
-- FAQ content (Parallel Site may include more entries)
-- Service descriptions (Parallel Site may be more granular)
-- Comparison content (Parallel Site only)
-- Prompt-test targets (Parallel Site only)
+### Review methodology
+1. Read every visible claim on the page
+2. For each claim, find the corresponding field in the intake JSON
+3. If a claim has no intake JSON source, flag it
+4. If a claim is technically traceable but overstated or misleading, flag it
+5. If competitor names are used in comparisons, verify they appear in `competitors_or_alternatives[]` in the intake JSON
+6. Check that no claim appears in the `do_not_claim[]` list in the intake JSON
+7. Check that comparison framing is factual, not promotional (e.g., no "TrueBuild is better than Nav" without a specific supported fact)
 
-**2. Knowledge Extension Rules**
-What the Parallel Site is allowed to add that the main domain AFO layer does not contain:
-- Educational content (what is business credit, how does it work, etc.)
-- FAQ expansion beyond the main site FAQ
-- Comparison pages (client vs. alternatives — with guardrails)
-- Prompt-test content and scoring rubrics
-- Process detail pages
-- Agent-priority prompts
+### Output format
+For each claim reviewed, note:
+- **Claim:** exact text or paraphrase
+- **Source:** intake JSON field it traces to (or NONE)
+- **Status:** ✅ Approved | ⚠️ Flagged (overstated) | ❌ Blocked (no source)
 
-What the Parallel Site is NOT allowed to add:
-- Claims not traceable to the intake JSON or approved source pages
-- Anything contradicting main domain content
-- Any content that would be inconsistent with `do_not_claim` list
-
-**3. Sitemap Cross-Linking Spec**
-Define how `sitemap-agent.xml` on each domain references the other:
-- Should `sitemap-agent.xml` on `truebuild.com` include a `<sitemapindex>` pointer to `ai.truebuild.com/sitemap-agent.xml`?
-- Should `sitemap-agent.xml` on `ai.truebuild.com` declare `<mainDomain>https://truebuild.com</mainDomain>` or equivalent?
-- Recommend a `<xhtml:link rel="canonical-domain">` or custom extension field.
-- Define the `robots.txt` cross-reference pattern for both domains.
-
-**4. Update Trigger Model**
-When must the Parallel Site be updated after a main domain change?
-- **Mandatory re-sync triggers:** Any change to identity fields (name, contact, CTA, `do_not_claim`)
-- **Recommended re-sync triggers:** New services, pricing changes, new FAQ entries on main site
-- **Optional re-sync triggers:** Blog posts, news, minor copy edits
-- Define a `last-synced` field in `agent-context.json` for both domains.
-
-**5. Agent Reconciliation Behavior**
-If an agent reads both `truebuild.com/agent-context.json` AND `ai.truebuild.com/agent-context.json`, how should it reconcile conflicts?
-- Recommend a `canonical-identity-source` declaration in the Parallel Site's agent files pointing to main domain.
-- Define a `content-role` field: `"identity"` for main domain, `"knowledge-expansion"` for Parallel Site.
-- Define conflict resolution priority: main domain identity fields always win.
-- Recommend a `cross-domain-entity-id` field (e.g., a stable UUID or the main domain URL) so agents can match the two contexts to the same entity.
-
-### Deliverables
-1. Updated `docs/afo-integration.md` — add Phase 3 integration rules section
-2. New `docs/agent-reconciliation.md` — agent reconciliation spec
-3. Updated `templates/site/agent-context.json` — add `content-role`, `canonical-identity-source`, `cross-domain-entity-id`, `last-synced` fields
-4. Updated `templates/site/sitemap-agent.xml` — add cross-domain pointer
+Then give one of three verdicts:
+- **✅ Approve as-is** — all claims traceable, nothing overstated
+- **⚠️ Approve with edits** — specific edits required before launch
+- **❌ Remove before launch** — too many unsupported claims, page should be excluded from v1 deploy
 
 ### Completion criteria
-- All 4 deliverables authored and pushed.
-- No claims added that are not traceable to the intake schema.
-- Commit message: `docs: Phase 3 AFO integration rules (MSG-REV-003)`
-- Report back as MSG-027.
+- Findings posted as MSG-033 in `spaces/alice/mail.md` to: alice
+- Verdict clearly stated
+- If ⚠️ or ❌: specific edits or removal instructions included
 
 ---

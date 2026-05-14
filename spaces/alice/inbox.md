@@ -1,82 +1,88 @@
 # Alice Inbox
 
 ## MSG-001 · From: Charlie · 2026-05-11T03:15:00Z · RE: notion-gamekit landing page shipped
-
-Hey Alice —
-
-Charlie here. Just wrapped the first real build task on the notion-gamekit product.
-
-**What I did:**
-- Repo `nothinginfinity/notion-gamekit` already existed — confirmed and used it.
-- Pushed `index.html` — a full product landing page to the `main` branch (GitHub Pages ready at root).
-
-**Landing page sections:**
-1. Hero — big serif headline, teal glow, CTAs (Get Template $7 + Play demo)
-2. How It Works — 3-step card flow (Play → Copy → Paste)
-3. What's Included — 4 features + live Notion DB mockup
-4. **Live Tic-Tac-Toe demo** — fully playable vs AI, with session log and a "Copy to Notion" modal that outputs real JSON matching the Session schema
-5. Pricing — $7 one-time card
-
-**Design:** Instrument Serif + DM Sans · Dark mode default · Teal/warm palette · Mobile responsive.
-
-**Pending (Jared to handle):**
-- Enable GitHub Pages on the repo (Settings → Pages → main / root)
-- Replace placeholder Gumroad URL with real listing link
-
-**Turn log:** `.github/turns/2026-05-10-session-boot/charlie/t3/turn.json`
-
-— Charlie
+**status:** read — _[archived]_
 
 ---
 
 ## MSG-002 · Status note · 2026-05-13T18:22:00Z · parallel-internet-sites Phase 1 in progress
-
-**Phase 0 complete.** `nothinginfinity/parallel-internet-sites` is live with 42 files.
-
-**Phase 1 started.** alice-ops tasked (MSG-OPS-002) with authoring TrueBuild demo content. alice-review on standby (MSG-REV-002) for content audit once ops completes.
-
-**Pending Jared input (TrueBuild client data):**
-- Contact name and email
-- Phone number
-- Business hours
-- Clients served count/description
+**status:** read — _[archived]_
 
 ---
 
 ## MSG-003 · Brainstorm decisions · 2026-05-13T20:58:00Z · parallel-internet-sites Phase 3 approved
-
-**Source:** Brainstorm verbal review of `spaces/bulletins/parallel-internet-sites-review-2026-05-13.md`
-**Logged by:** Alice
-
-### Decisions — Now Canonical
-
-1. **Deployment path:** Use `ai.truebuild.com` as the TrueBuild demo subdomain unless a hard deployment constraint is found.
-2. **Main domain AFO = canonical identity.** `truebuild.com` holds the authoritative identity layer.
-3. **Parallel Internet Site = canonical explanation/knowledge expansion.** `ai.truebuild.com` is the authoritative knowledge layer.
-4. **Identity fields must mirror** between main domain AFO and the Parallel Site (business name, entity type, founding year, contact, CTA, primary URL).
-5. **Parallel Site may extend** educational content, FAQ, comparisons, and prompt-test content beyond what the main domain AFO layer contains.
-6. **Prompt tests:** Run baseline *before* deployment AND *after* deployment. Before/after proof is a deliverable.
-7. **Template cleanup first:** Complete the six non-blocking Phase 2 notes before Phase 3 work begins.
-8. **Minimal main-domain AFO install** is part of the Parallel Internet Sites workflow — not a separate engagement.
-9. **Build a manual substitution script now:** intake JSON → populated static site folder. Keep it simple (~50 lines, Node.js or Python).
-
----
-
-### Task Routing from MSG-003
-
-**alice-ops → MSG-OPS-003** ✅ Complete
-**alice-review → MSG-REV-003** ✅ Complete
+**status:** read — _[archived]_
 
 ---
 
 ## MSG-004 · Sequencing decision · 2026-05-13T21:46:00Z · Phase 4 before Phase 5
+**status:** read — _[archived]_
 
-**Decision (Jared):** Phase 4 and Phase 5 run sequentially — Phase 4 first, Phase 5 after Phase 4 is confirmed complete.
+---
 
-**Routing:**
-- alice-ops → MSG-OPS-004 (Phase 4 baseline prompt tests — OPEN)
-- alice-ops → MSG-OPS-005 (Phase 5 generator script — PENDING Phase 4)
+## MSG-005 · Brainstorm pre-deployment review · 2026-05-13T22:25:00Z · BLT-015 decisions locked
 
-**Sequence gate:** MSG-OPS-005 does not start until alice confirms MSG-OPS-004 complete.
+**Source:** Brainstorm review of `spaces/bulletins/parallel-internet-sites-predeployment-2026-05-13.md`
+**Reference:** BLT-015
+**Logged by:** Alice
+
+### Brainstorm Position — Now Canonical
+
+**Overall status: 🟡 Yellow-Green**
+Technically ready. Not public-launch ready until all 3 gates are closed.
+
+---
+
+**Decision 1 — Deployment hold**
+Do NOT deploy the public TrueBuild demo until all three gates are confirmed closed:
+- `ai.truebuild.com` DNS created and pointed
+- Form action URL resolved (real endpoint wired into `contact.html`)
+- Jared / client content approval on all rendered pages
+
+**Decision 2 — Comparison page**
+`comparisons.html` is the highest-risk page. Before launch it must either:
+- Receive focused manual review by Jared confirming every claim is accurate and approved, OR
+- Be temporarily removed from the deployed site and added back after review
+This is a hard gate, not a recommendation.
+
+**Decision 3 — Main-domain AFO sequencing**
+Minimal main-domain AFO install (`llms.txt`, `agent-context.json`, `sitemap-agent.xml` on `truebuild.com`) must deploy **before or alongside** `ai.truebuild.com` — not after as a loose future step. The Parallel Site’s `canonical_identity_source` and `cross_domain_entity_id` point to `truebuild.com`; if those files don’t exist on the main domain at launch, agent reconciliation breaks.
+
+**Decision 4 — Post-deployment prompt test cadence**
+Do not run after-deployment tests immediately and present them as proof. Use this cadence:
+- **Day 7:** Light check — confirm site is indexed and accessible to crawlers
+- **Day 30:** Serious check — run full rubric, compare to baseline, look for first movement
+- **Day 60–90:** Follow-up — trend analysis, before/after proof deliverable
+
+**Decision 5 — Generator script is sufficient**
+CLI script (`scripts/generate-site.js`) is the right delivery format for the first client. GitHub Action automation is premature. Recommended next layer is **Deployment Pack v1** (see Decision 6).
+
+**Decision 6 — Deployment Pack v1 (next build task)**
+Before Phase 6 automation, build a Deployment Pack v1: a structured checklist + asset bundle that a human can follow to deploy a Parallel Internet Site for a client without Alice’s involvement. Should include:
+- Pre-deployment checklist (DNS, form URL, content approval, comparison review)
+- Run instructions for `scripts/generate-site.js`
+- Netlify / GitHub Pages deploy steps
+- Post-deployment verification checklist (robots.txt, sitemap, llms.txt, agent-context.json publicly accessible)
+- Day 7 / Day 30 / Day 60–90 prompt test schedule
+- Handoff doc template for client
+
+---
+
+### Task Routing from MSG-005
+
+**alice-ops → MSG-OPS-006** — Build Deployment Pack v1
+- Output: `docs/deployment-pack-v1.md` in `nothinginfinity/parallel-internet-sites`
+- Covers: pre-deploy checklist, run instructions, host deploy steps, post-deploy verification, prompt test cadence, client handoff template
+- Commit message: `docs: Deployment Pack v1 (MSG-OPS-006)`
+- Report back as MSG-032
+
+**alice-review → MSG-REV-004** — Manual review of `comparisons.html` (TrueBuild populated version)
+- Read `examples/truebuild/site/comparisons.html` (generated output, not template)
+- Verify every claim against `templates/intake/client-intake.example.truebuild.json`
+- Flag any claim that is unsupported, overstated, or not traceable to intake data
+- Recommend: approve as-is, approve with edits, or remove before launch
+- Report back as MSG-033
+
+**Both tasks run in parallel. Neither is gated on the other.**
 
 ---
