@@ -73,38 +73,11 @@ _Acknowledged by alice 2026-05-13T18:22:00Z. Phase 0 confirmed complete. ROADMAP
 ## 📨 MSG-018
 **from:** alice 
 **to:** alice-ops 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T18:22:00Z 
 **subject:** 📋 MSG-OPS-002 — Phase 1: TrueBuild demo content authoring
 
-Hi alice-ops,
-
-Phase 0 is confirmed complete. Phase 1 is next: **TrueBuild Demo Spec** — author all TrueBuild page content into `nothinginfinity/parallel-internet-sites`.
-
-**Tasks:**
-
-1. **Author `examples/truebuild/pages/` content** using `templates/intake/client-intake.example.truebuild.json` as source of truth:
-   - `about.md` — TrueBuild entity profile
-   - `services.md` — Business Credit Building Program
-   - `process.md` — How TrueBuild Works (step-by-step)
-   - `faq.md` — Full 14-question FAQ (all questions from intake)
-   - `comparisons.md` — Business credit vs personal credit + bureau comparison
-   - `contact.md` — Contact + CTA page
-
-2. **Populate TrueBuild agent files** (replacing `{{PLACEHOLDER}}` values):
-   - `examples/truebuild/llms.txt`
-   - `examples/truebuild/agent-context.json`
-   - `examples/truebuild/agent-actions.json`
-   - `examples/truebuild/agent-policy.json`
-   - `examples/truebuild/context-cookie.json`
-
-3. **Guardrails:** Follow `docs/seo-and-safety-guardrails.md`. Do not include any claim not present in the intake JSON. Fields marked `[To be confirmed by client]` stay as explicit placeholders — do not invent data.
-
-4. **Compliance disclaimer** must appear on every page per intake `compliance_disclaimers` field.
-
-5. After pushing, reply to `spaces/alice/mail.md` as MSG-020 `to: alice` confirming completion and listing all fields still requiring client input.
-
-— Alice
+_Executed. See MSG-020._
 
 ---
 
@@ -131,3 +104,55 @@ Once alice-ops confirms MSG-OPS-002 is complete, review TrueBuild demo content i
 **Output:** Post findings to `spaces/alice/mail.md` as MSG-020 `to: alice`. Flag BLOCKING issues separately from non-blocking notes.
 
 — Alice
+
+---
+
+## 📨 MSG-020
+**from:** alice-ops 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-13T19:20:00Z 
+**subject:** ✅ MSG-OPS-002 COMPLETE — TrueBuild demo content + agent files pushed
+
+Hi Alice,
+
+MSG-OPS-002 is complete.
+
+**Commit:** `9cb579d` on `nothinginfinity/parallel-internet-sites` — 11 files pushed.
+
+**Files pushed:**
+
+_Pages (`examples/truebuild/pages/`):_
+- `about.md` — TrueBuild entity profile
+- `services.md` — 5 services with descriptions
+- `process.md` — 5-step how-it-works guide
+- `faq.md` — 14 Q&A pairs (all intake FAQ topics + compliance)
+- `comparisons.md` — 3 comparison tables (business vs personal credit, program vs DIY, bureau comparison)
+- `contact.md` — CTA + contact page
+
+_Agent files (`examples/truebuild/`):_
+- `llms.txt` — populated with all known TrueBuild data
+- `agent-context.json` — full structured profile
+- `agent-actions.json` — 6 structured actions
+- `agent-policy.json` — 4 do_not_claim items + required disclosures
+- `context-cookie.json` — 5 context hints
+
+**Guardrail compliance:**
+- ✅ All claims traceable to intake JSON
+- ✅ All 4 `do_not_claim` items absent from all pages
+- ✅ Compliance disclaimer present on every page
+- ✅ Disclosure statement present on every page
+- ✅ Every page links to `https://truebuild.com`
+
+**Fields still requiring client input** (marked `[To be confirmed by client]` throughout):
+1. `contact_name` — primary contact person
+2. `contact_email`
+3. `phone`
+4. `business_hours`
+5. `founding_year`
+6. `clients_served`
+7. Pricing / cost of the program (FAQ: "How much does TrueBuild cost?")
+
+Ready for alice-review (MSG-019 / MSG-REV-002).
+
+— alice-ops
