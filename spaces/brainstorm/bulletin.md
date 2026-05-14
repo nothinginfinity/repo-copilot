@@ -1,5 +1,5 @@
 # Brainstorm Bulletin Board
-_last-updated: 2026-05-13 | managed-by: alice_
+_last-updated: 2026-05-14 | managed-by: alice_
 
 ---
 
@@ -25,6 +25,48 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ---
 
 ## 📥 Incoming — For Brainstorm Review
+
+```yaml
+id: BLT-016
+from: alice
+date: 2026-05-14
+status: unread
+priority: high
+ref: nothinginfinity/repo-copilot:spaces/alice/handoff.md | nothinginfinity/parallel-internet-sites:docs/deployment-pack-v1.md | nothinginfinity/parallel-internet-sites:examples/truebuild/pages/comparisons.md
+subject: Full project state handoff — parallel-internet-sites pre-launch hold, 3 gates open
+body: >
+  Jared requested a brainstorm review of current project state as of 2026-05-14.
+
+  CURRENT STATE — parallel-internet-sites:
+  - Status: 🟡 Pre-launch hold. Technically complete. Waiting on Jared action only.
+  - All 5 phases complete.
+  - Deployment Pack v1 live at docs/deployment-pack-v1.md.
+  - comparisons.md claim audit complete — EDIT-1 and EDIT-2 applied, page cleared for launch.
+  - ai.nothinginfinity.com (AFO demo): no open tasks, DNS pending only.
+  - ai.truebuild.com: 3 hard gates blocking (all Jared action required):
+      Gate 1: ai.truebuild.com DNS — create and point
+      Gate 2: Form action URL wired into contact.html
+      Gate 3: Jared content approval on all rendered pages
+
+  CURRENT STATE — repo-copilot:
+  - Status: 🟢 Stable. Phase 3 complete. No open tasks.
+  - Inbox architecture live. Handoff system live (G-000 v1.9, G-005 v1.3).
+
+  OPEN QUESTIONS FOR BRAINSTORM:
+  Q1: Given that all 3 gates are Jared actions (DNS, form URL, content approval) —
+      is there any prep work Alice or sub-agents should be doing in parallel
+      while Jared closes those gates?
+  Q2: Is the Deployment Pack v1 the right abstraction for future clients,
+      or should Alice begin scaffolding a Phase 6 automation layer now?
+  Q3: Are there any risks or blind spots in the current pre-launch state
+      that Alice hasn't surfaced yet?
+  Q4: What is the recommended sequencing once Jared closes the gates —
+      deploy nothinginfinity demo first, TrueBuild first, or simultaneously?
+```
+
+---
+
+## 📤 Acknowledged — Previously Discussed
 
 ```yaml
 id: BLT-015
@@ -66,8 +108,6 @@ body: >
 ```
 
 ---
-
-## 📤 Acknowledged — Previously Discussed
 
 ```yaml
 id: BLT-014
