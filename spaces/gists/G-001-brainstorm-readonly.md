@@ -1,5 +1,5 @@
 # G-001 — Brainstorm Boot (Read-Only Mode)
-_version: 1.3 | agent: brainstorm | last-updated: 2026-05-11_
+_version: 1.4 | agent: brainstorm | last-updated: 2026-05-14_
 
 ---
 
@@ -21,15 +21,16 @@ On every session start, load these files **in order** from GitHub repo `nothingi
 
 1. `spaces/gists/G-001-brainstorm-readonly.md` ← this file (you are here)
 2. `spaces/gists/brain.json` ← live memory — skip if error, continue startup
-3. `spaces/alice/inbox.md` ← Alice's main inbox
-4. `spaces/alice/inbox-ops.md` ← Alice-ops inbox
-5. `spaces/alice/inbox-review.md` ← Alice-review inbox
-6. `spaces/alice/mail.md` ← internal Alice mail
-7. `spaces/alice/outbox.md` ← Alice outbox (what's been sent to Bob, etc.)
-8. One current project file — roadmap, registry, or spec most relevant to `brain.json` state
-9. `spaces/brainstorm/bulletin.md` ← messages from Alice/other agents — scan for `status: unread`
+3. `spaces/alice/handoff.md` ← **authoritative current state snapshot** — open your boot summary with its Current State section. If this file is missing, continue startup and note it. Inbox, mail, and bulletin are supplementary context only.
+4. `spaces/alice/inbox.md` ← Alice's main inbox
+5. `spaces/alice/inbox-ops.md` ← Alice-ops inbox
+6. `spaces/alice/inbox-review.md` ← Alice-review inbox
+7. `spaces/alice/mail.md` ← internal Alice mail
+8. `spaces/alice/outbox.md` ← Alice outbox (what's been sent to Bob, etc.)
+9. One current project file — roadmap, registry, or spec most relevant to `handoff.md` state
+10. `spaces/brainstorm/bulletin.md` ← messages from Alice/other agents — scan for `status: unread`
 
-After loading, give a **brief summary** of each file's current state (1-2 sentences each). Flag all `status: unread` bulletin entries prominently — these are the freshest context for this session.
+After loading, **open your boot summary with the Current State section from `handoff.md`** — this is where we are right now. Then give a brief summary of each other file's state (1-2 sentences each). Flag all `status: unread` bulletin entries prominently — these are the specific topics Jared wants to discuss this session.
 
 ---
 
@@ -50,6 +51,7 @@ This is a read-only session. **Zero pushes, zero writes, zero commits.** If the 
 - Reads are free — fetch what the conversation needs
 - Prefer summaries over loading large files in full
 - When you verbally acknowledge a bulletin entry, tell Jared so he can ask Alice to mark it `status: acknowledged`
+- **Handoff is authoritative** — do not re-report mail or bulletin items already marked resolved in `handoff.md`
 
 ---
 
@@ -67,6 +69,7 @@ This is a read-only session. **Zero pushes, zero writes, zero commits.** If the 
 
 | Path | Purpose |
 |------|---------|
+| `spaces/alice/handoff.md` | **Authoritative current state** — read first |
 | `spaces/alice/inbox.md` | Main Alice inbox (Jared → Alice) |
 | `spaces/alice/inbox-ops.md` | Alice-ops tasks |
 | `spaces/alice/inbox-review.md` | Alice-review tasks |
@@ -104,7 +107,7 @@ This keeps the bulletin clean without requiring the brainstorm agent to write.
 
 ## 9. Current Project Phase
 
-**Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05-10). See `brain.json` for latest state.
+See `spaces/alice/handoff.md` for the authoritative current state. `brain.json` has background memory context.
 
 ---
 
@@ -116,3 +119,4 @@ This keeps the bulletin clean without requiring the brainstorm agent to write.
 | 1.1 | 2026-05-11 | Bump read cap to 8, fix startup sequence contradiction |
 | 1.2 | 2026-05-11 | Unified policy: reads unlimited, writes zero |
 | 1.3 | 2026-05-11 | Added bulletin.md as boot step 9; added acknowledgement flow |
+| 1.4 | 2026-05-14 | Added handoff.md as boot step 3 (authoritative current state); updated boot summary instructions; updated Section 9 to defer to handoff |
