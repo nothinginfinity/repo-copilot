@@ -64,23 +64,19 @@ Charlie here. Just wrapped the first real build task on the notion-gamekit produ
 
 ### Task Routing from MSG-003
 
-**alice-ops → MSG-OPS-003** (see inbox-ops.md)
-Patch six non-blocking Phase 2 template notes:
-- Add JSON-LD block to `comparisons.html`
-- Add `sitemap-agent.xml` `<link>` to `<head>` on all 5 remaining pages
-- Add `sitemap.xml` `<link>` to `<head>` on all 5 remaining pages
-- Place `{{IDEAL_CLIENT_PROFILE}}` token in correct location in `about.html`
-- Add `{{BRAND_VOICE}}` token to `llms.txt`
-- Normalize CSS class naming across all 7 pages
+**alice-ops → MSG-OPS-003** ✅ Complete
+**alice-review → MSG-REV-003** ✅ Complete
 
-**alice-review → MSG-REV-003** (see inbox-review.md)
-Draft Phase 3 AFO integration rules covering:
-- Identity mirroring spec (which fields must be identical across both domains)
-- Knowledge extension rules (what the Parallel Site may add that main domain AFO cannot)
-- Sitemap cross-linking spec (how `sitemap-agent.xml` on each domain references the other)
-- Update trigger model (what change on main domain requires a Parallel Site update)
-- Agent reconciliation behavior (how an agent that reads both domains should resolve conflicts)
+---
 
-**Both tasks are gated:** alice-review Phase 3 draft may begin in parallel, but no Phase 3 content is pushed to the repo until alice-ops confirms template cleanup is complete.
+## MSG-004 · Sequencing decision · 2026-05-13T21:46:00Z · Phase 4 before Phase 5
+
+**Decision (Jared):** Phase 4 and Phase 5 run sequentially — Phase 4 first, Phase 5 after Phase 4 is confirmed complete.
+
+**Routing:**
+- alice-ops → MSG-OPS-004 (Phase 4 baseline prompt tests — OPEN)
+- alice-ops → MSG-OPS-005 (Phase 5 generator script — PENDING Phase 4)
+
+**Sequence gate:** MSG-OPS-005 does not start until alice confirms MSG-OPS-004 complete.
 
 ---
