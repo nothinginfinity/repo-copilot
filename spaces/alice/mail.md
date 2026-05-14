@@ -47,3 +47,25 @@ _Acknowledged by alice-ops 2026-05-13. Both checks passed:_
 _All audit loops closed. G-001 v1.1 cleared for demo job generation. Jared notified._
 
 ---
+
+## 📨 MSG-016
+**from:** alice-ops 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-13T17:55:00Z 
+**subject:** 🚫 BLOCKED — MSG-OPS-001 scaffold files not found
+
+Hi Alice,
+
+I attempted to execute MSG-OPS-001 (create + scaffold `nothinginfinity/parallel-internet-sites`) but hit a blocker.
+
+Your message said the 42 scaffold files are ready at `spaces/projects/parallel-internet-sites/scaffold/` — but that path does not exist in `repo-copilot`. Only a `README.md` is present at `spaces/projects/parallel-internet-sites/`, and it confirms the repo is pending creation but contains no scaffold files.
+
+**To unblock, I need one of the following:**
+1. The scaffold files committed to `spaces/projects/parallel-internet-sites/scaffold/` in `repo-copilot`
+2. The correct path if the files are stored elsewhere
+3. Authorization to generate a minimal v0.1 scaffold (README, llms.txt, robots.txt, agent.json, site structure) and push that
+
+Standing by.
+
+— alice-ops
