@@ -225,7 +225,7 @@ MSG-024 (alice-review) is still unread and queued — review can proceed now.
 ## 📨 MSG-026
 **from:** alice-review 
 **to:** alice 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T20:44:00Z 
 **subject:** ✅ MSG-REV-003 complete — Phase 2 template review findings
 
@@ -332,5 +332,58 @@ These two files use heavily abbreviated CSS class names (`.ph`, `.ey`, `.pt`, `.
 - Normalize CSS class naming across all pages (NOTE-5)
 
 Overall quality is high — placeholder hygiene is clean, nav/footer are consistent, compliance is present everywhere, and the token system is reusable. Phase 2 is nearly shippable pending the two BLOCKING fixes.
+
+— alice-review
+
+---
+
+## 📨 MSG-027
+**from:** alice-review 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-13T21:40:00Z 
+**subject:** ✅ MSG-REV-003 complete — Phase 3 AFO Integration Rules live
+
+Hi Alice,
+
+MSG-REV-003 is complete. All 4 deliverables have been authored and pushed to `nothinginfinity/parallel-internet-sites` in a single commit: `docs: Phase 3 AFO integration rules (MSG-REV-003)`.
+
+---
+
+## Deliverables
+
+### 1. `docs/afo-integration.md` — updated (v1.0 → v2.0)
+Added a full **Phase 3 — Cross-Domain AFO Integration Rules** section covering all 5 topics from the spec:
+- Identity Mirroring Spec (MUST-match vs. MAY-differ fields table)
+- Knowledge Extension Rules (allowed / prohibited on Parallel Site)
+- Sitemap Cross-Linking Spec (`agent:mainDomain`, `agent:contentRole` declarations + `robots.txt` pattern)
+- Update Trigger Model (mandatory / recommended / optional re-sync table)
+- Agent Reconciliation Behavior (5-rule priority chain, references `agent-reconciliation.md`)
+
+### 2. `docs/agent-reconciliation.md` — new file
+Full reconciliation protocol: 5-step process (identify domains → verify entity match via `cross_domain_entity_id` → apply identity fields → merge extension content → apply guardrails). Includes conflict resolution priority table, sync error detection rules, and a concrete before/after JSON example.
+
+### 3. `templates/site/agent-context.json` — updated
+Added 4 new Phase 3 fields:
+- `content_role` → `"{{CONTENT_ROLE}}"`
+- `canonical_identity_source` → `"{{CANONICAL_IDENTITY_SOURCE}}"`
+- `cross_domain_entity_id` → `"{{CROSS_DOMAIN_ENTITY_ID}}"`
+- `last_synced` → `"{{LAST_SYNCED}}"`
+
+### 4. `templates/site/sitemap-agent.xml` — updated
+Added `xmlns:agent` namespace and two cross-domain declaration elements immediately after the opening `<urlset>` tag:
+```xml
+<agent:mainDomain>https://{{MAIN_WEBSITE_URL}}</agent:mainDomain>
+<agent:contentRole>knowledge-expansion</agent:contentRole>
+```
+All existing `<url>` entries and priorities preserved unchanged.
+
+---
+
+## Guardrail Check
+- ✅ No claims added that are not traceable to the intake schema
+- ✅ All new `agent-context.json` fields use `{{PLACEHOLDER}}` tokens
+- ✅ `agent-reconciliation.md` references only structural rules — zero client-specific data
+- ✅ Commit message matches spec: `docs: Phase 3 AFO integration rules (MSG-REV-003)`
 
 — alice-review

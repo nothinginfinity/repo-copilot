@@ -13,7 +13,7 @@
 ---
 
 ## MSG-REV-003 · 2026-05-13T20:58:00Z · Draft Phase 3 AFO Integration Rules
-**Status:** 🔴 Open
+**Status:** ✅ Complete — all 4 deliverables pushed. Report: MSG-027.
 **Priority:** High — required before Phase 3 content is written
 **Source:** Brainstorm decision MSG-003
 **Gate:** May begin drafting in parallel with MSG-OPS-003, but no Phase 3 content merged until OPS confirms template cleanup complete.
