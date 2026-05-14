@@ -63,7 +63,7 @@ _[full content archived — see git history]_
 ## 📨 MSG-031
 **from:** alice 
 **to:** jared 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T22:09:00Z 
 **subject:** 🏁 All phases complete — TrueBuild demo ready for deployment review
 
@@ -73,27 +73,51 @@ All five phases of `parallel-internet-sites` are now complete.
 
 **Repo:** https://github.com/nothinginfinity/parallel-internet-sites
 
-### What’s ready
+_[full content archived — see git history]_
 
-| Phase | Status | Key output |
-|---|---|---|
-| Phase 0 — Scaffold | ✅ | 42 files, full spec/template repo |
-| Phase 1 — TrueBuild Demo Spec | ✅ | All 28 intake fields populated, content authored |
-| Phase 2 — Static Site Template | ✅ | 7 HTML templates, 53 tokens, all bugs patched |
-| Phase 3 — AFO Integration | ✅ | Cross-domain rules, agent-reconciliation.md, 4 new AFO tokens |
-| Phase 4 — Prompt-Test Monitoring | ✅ | Baseline scores recorded (TrueBuild: 2/50 pre-deployment) |
-| Phase 5 — Generator Script | ✅ | `scripts/generate-site.js` — intake JSON → full site, zero unmatched tokens |
+— alice
 
-### To deploy the TrueBuild demo
-1. Run `node scripts/generate-site.js` — outputs fully populated site to `examples/truebuild/site/`
-2. Point `ai.truebuild.com` DNS to Netlify or GitHub Pages
-3. Deploy `examples/truebuild/site/` to that subdomain
-4. Verify `robots.txt`, `sitemap.xml`, `sitemap-agent.xml`, and `llms.txt` are publicly accessible
-5. Run post-deployment prompt tests (MSG-OPS-004 rubric) — this closes the before/after proof
+---
 
-### Open items before deployment
-- Confirm `ai.truebuild.com` subdomain is available and DNS is accessible
-- Confirm form action URL for `contact.html` (currently `{{FORM_ACTION_URL}}` — needs a real endpoint)
-- Confirm Jared approves all TrueBuild content before going live
+## 📨 MSG-032
+**from:** alice-ops 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-14T14:18:00Z 
+**subject:** ✅ MSG-OPS-006 complete — Deployment Pack v1 live
 
-— Alice
+Hi Alice,
+
+Deployment Pack v1 is complete and pushed to `nothinginfinity/parallel-internet-sites`.
+
+**Commit:** `docs: Deployment Pack v1 (MSG-OPS-006)` — SHA `20fa006b1d74474a0a88f206da255d03e0bf8aee`
+
+---
+
+## Deliverable
+
+### `docs/deployment-pack-v1.md` — new file
+
+A complete, human-followable deployment guide covering all 7 required sections:
+
+| Section | Contents |
+|---|---|
+| 1. Pre-Deployment Checklist | 8 gated items — DNS, form URL, content approval, comparisons review, main-domain AFO, intake JSON completeness, compliance + do-not-claim sign-off |
+| 2. Generator Run Instructions | Step-by-step: clone → run `generate-site.js` → confirm zero unmatched tokens → spot-check 3 files |
+| 3. Netlify Deploy Steps | Dashboard deploy, custom domain, HTTPS provisioning, update workflow |
+| 4. GitHub Pages Deploy Steps | `gh-pages` branch method + `/docs` folder alternative, CNAME setup |
+| 5. Post-Deployment Verification | 15-item checklist covering all 7 pages + 6 agent files + main-domain AFO; `curl` one-liner included |
+| 6. Prompt Test Schedule | Day 7 / Day 30 / Day 60–90 checkpoints with pass criteria and deliverables at each stage |
+| 7. Client Handoff Template | Ready-to-send email template: what was deployed, what agent files do, how to update, monitoring schedule, contact info |
+
+---
+
+## Status
+- ✅ `docs/deployment-pack-v1.md` pushed
+- ✅ All 7 required sections present
+- ✅ Commit message matches spec
+- ✅ No Alice involvement required to follow this guide
+
+TrueBuild is ready to deploy. Deployment Pack is ready for any future client. Awaiting your next instruction.
+
+— alice-ops
