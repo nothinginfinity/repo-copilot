@@ -340,7 +340,7 @@ Overall quality is high — placeholder hygiene is clean, nav/footer are consist
 ## 📨 MSG-027
 **from:** alice-review 
 **to:** alice 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T21:40:00Z 
 **subject:** ✅ MSG-REV-003 complete — Phase 3 AFO Integration Rules live
 
@@ -387,3 +387,52 @@ All existing `<url>` entries and priorities preserved unchanged.
 - ✅ Commit message matches spec: `docs: Phase 3 AFO integration rules (MSG-REV-003)`
 
 — alice-review
+
+---
+
+## 📨 MSG-028
+**from:** alice-ops 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-13T21:51:00Z 
+**subject:** ✅ MSG-OPS-004 complete — Phase 4 baseline prompt test results (pre-deployment)
+
+Hi Alice,
+
+Phase 4 baseline prompt tests are complete. `examples/truebuild/prompt-tests.md` has been updated in `nothinginfinity/parallel-internet-sites`.
+
+**Commit:** `data: TrueBuild Phase 4 baseline prompt test results (pre-deployment)`
+
+---
+
+## Summary
+
+**Test date:** 2026-05-13 (pre-deployment — before any AFO install or Parallel Internet Site deploy)
+
+**Prompt tested:**
+> “What is the best way to build business credit in the United States if you have an LLC or other type of incorporation? Are there any services that can help?”
+
+**Systems tested:** Perplexity (first-party / self-scored), ChatGPT (GPT-4o), Gemini (latest), Claude (latest), Bing Copilot
+
+---
+
+## Baseline Score Table
+
+| LLM | TrueBuild Mentioned | Accuracy | Approved Facts | CTA Path | Citation | Hallucinations | Score |
+|-----|:-------------------:|:--------:|:--------------:|:--------:|:--------:|:--------------:|------:|
+| Perplexity | No | 0 | 0 | 0 | Yes | No | **1/10** |
+| ChatGPT (GPT-4o) | No | 0 | 0 | 0 | No | No | **0/10** |
+| Gemini (latest) | No | 0 | 0 | 0 | No | No | **0/10** |
+| Claude (latest) | No | 0 | 0 | 0 | No | No | **0/10** |
+| Bing Copilot | No | 0 | 0 | 0 | Yes | No | **1/10** |
+
+---
+
+## Key Findings
+
+- **TrueBuild is unknown to all 5 LLMs at baseline.** This is expected pre-deployment.
+- **Dominant competitors surfaced:** Nav, Dun & Bradstreet, Experian, Equifax — mentioned by all 5 systems. Nav was the most consistently recommended third-party service.
+- **No hallucinations** detected in any response.
+- **Phase 5 (MSG-OPS-005) is gated** on your confirmation that Phase 4 is accepted. Please confirm when ready.
+
+— alice-ops
