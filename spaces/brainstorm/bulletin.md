@@ -27,37 +27,64 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
-id: BLT-017
+id: BLT-018
 from: alice
 date: 2026-05-14
 status: unread
 priority: high
-ref: nothinginfinity/parallel-internet-sites:docs/launch-plan-v2.md | nothinginfinity/parallel-internet-sites:docs/afo-customer-1-runbook.md | nothinginfinity/parallel-internet-sites:docs/llm-baseline-template.md | nothinginfinity/parallel-internet-sites:docs/monitoring/day-0-deploy.md
-subject: Launch pivot executed — AFO is Customer #1, full runbook + monitoring templates live
+ref: nothinginfinity/parallel-internet-sites:workers/audit-signup/index.js | nothinginfinity/parallel-internet-sites:workers/audit-signup/migrations/0001_initial.sql | nothinginfinity/parallel-internet-sites:templates/site/pages/start.html | nothinginfinity/parallel-internet-sites:docs/afo-v1-launch-checklist.md | nothinginfinity/parallel-internet-sites:templates/intake/client-intake.afo.json
+subject: AFO v1 real signup flow built — Worker, D1, /start page, checklist all live
 body: >
-  Jared + Brainstorm decided: AFO dogfoods first. TrueBuild is Customer #2.
+  WHAT WAS BUILT:
+  - Cloudflare Worker (workers/audit-signup/index.js): POST /api/audit-signup
+    Validates fields, normalizes URL, verifies Turnstile, accepts AFO-FOUNDER / AFO-DOGFOOD
+    coupons, upserts customer + audit_request in D1, logs coupon redemption,
+    sends confirmation + admin emails (Resend/SendGrid/log), creates GitHub Issue
+    in agent-feed-optimization repo.
+  - D1 schema (migrations/0001_initial.sql): customers, audit_requests, coupon_redemptions.
+  - wrangler.toml: D1 binding + routes. No secrets hardcoded. 5 secrets via wrangler secret put.
+  - start.html: Real /start page. Name, email, business, URL, role (opt), coupon (opt),
+    consent checkbox, Turnstile widget, JS fetch submit with field-level error display.
+  - thanks.html: /thanks confirmation page.
+  - contact.html.patch.md: SERVICES_LIST bug documented + 2 fix paths (generator token vs static).
+  - templates/intake/client-intake.afo.json: AFO Customer #1 intake. Fill in 3 REPLACE_ values.
+  - docs/afo-v1-launch-checklist.md: 7-phase checklist. Phase 4 = baseline (CRITICAL gating step).
 
-  WHAT WAS BUILT THIS SESSION:
-  - docs/launch-plan-v2.md — new canonical launch plan. AFO first, TrueBuild after AFO Day 7.
-  - docs/afo-customer-1-runbook.md — step-by-step self-audit + deploy guide for AFO domain.
-    Includes: baseline first, AFO audit methodology, intake JSON build, Cloudflare Pages deploy,
-    main-domain file install, Day 0 record.
-  - docs/llm-baseline-template.md — structured template for capturing LLM visibility
-    before deployment. Covers ChatGPT, Perplexity, Gemini, Claude, Bing. 4 prompts,
-    4 scoring dimensions (Visibility, Accuracy, Citation, Discoverability), max 60 points.
-  - docs/monitoring/ — 4 templates: Day 0 (deploy record), Day 7 (light check),
-    Day 30 (full rubric + before/after), Day 60-90 (trend analysis + shareable summary).
+  OPEN GATES (Jared):
+  1. Fill REPLACE_ values in client-intake.afo.json (email x2, Turnstile site key)
+  2. Create D1 + run migration + update wrangler.toml with database_id
+  3. Create Turnstile keys
+  4. Set 5 wrangler secrets
+  5. Create fine-grained GitHub PAT (Issues r/w only)
+  6. Run baseline LLM test BEFORE deploying any AFO files
 
-  HONESTY PRINCIPLE BAKED IN:
-  No guaranteed ranking claims. Only measurable: visibility, accuracy, citation, discoverability.
-  Negative results reported with same candor as positive results.
-
-  NEXT ACTION — Jared:
-  Run docs/llm-baseline-template.md on the AFO domain BEFORE any files are deployed.
-  This is the zero-point. It cannot be recreated after deployment.
+  QUESTIONS FOR NEXT BRAINSTORM SESSION:
+  Q1: Should we add a simple admin dashboard (Cloudflare Pages + D1 query) to view
+      audit_requests, or is wrangler d1 execute sufficient for v1?
+  Q2: The GitHub issue bridge creates issues in agent-feed-optimization. Should Alice
+      have a recurring task to sweep new issues and convert approved ones to job.json?
+  Q3: contact.html SERVICES_LIST bug — do we fix the generator (Option A) or remove
+      the select from the generic template entirely (Option B)?
+  Q4: Should /start be a standalone page or replace /pages/contact.html for AFO?
 ```
 
 ---
+
+```yaml
+id: BLT-017
+from: alice
+date: 2026-05-14
+status: acknowledged
+priority: high
+ref: nothinginfinity/parallel-internet-sites:docs/launch-plan-v2.md | nothinginfinity/parallel-internet-sites:docs/afo-customer-1-runbook.md | nothinginfinity/parallel-internet-sites:docs/llm-baseline-template.md | nothinginfinity/parallel-internet-sites:docs/monitoring/day-0-deploy.md
+subject: Launch pivot executed — AFO is Customer #1, full runbook + monitoring templates live
+body: >
+  Acknowledged 2026-05-14. Implementation followed. See BLT-018.
+```
+
+---
+
+## 📤 Acknowledged — Previously Discussed
 
 ```yaml
 id: BLT-016
@@ -71,50 +98,18 @@ body: >
   Acknowledged 2026-05-14. Brainstorm session led to AFO-first pivot. See BLT-017.
 ```
 
----
-
-## 📤 Acknowledged — Previously Discussed
-
 ```yaml
 id: BLT-015
 from: alice
 date: 2026-05-13
-status: unread
+status: acknowledged
 priority: high
 ref: nothinginfinity/agent-feed-optimization:jobs/truebuild-2026-05-13/job.json | nothinginfinity/agent-feed-optimization:jobs/truebuild-2026-05-13/README-review.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md
 subject: First AFO delivery complete — TrueBuild approved, ZIP reviewed, ready for next steps
 body: >
-  MILESTONE: G-001 v1.1 first controlled demo job is done.
-
-  WHAT HAPPENED THIS SESSION:
-  - BLT-014 analysis was received and fully actioned
-  - alice-ops ran PATCH-001 through PATCH-006 on agent-feed-optimization
-  - alice-review ran full post-patch audit — all clear
-  - G-001 generated the TrueBuild demo job (10 files, job ID: truebuild-2026-05-13)
-  - Full review ran against all 4 checklist sections — zero flags
-  - job.json promoted to status: approved (2026-05-13T09:33:00Z)
-  - Client ZIP prepared and reviewed by Jared on his phone
-  - Jared's verdict: "It's incredible. Very solid product and it makes sense."
-
-  CURRENT STATE:
-  - job.json status: approved (not yet delivered)
-  - Files are NOT yet installed on info.truebuild.com
-  - outbox.md has its first live entry
-  - G-001 v1.1 is fully operational
-
-  OPEN QUESTIONS FOR BRAINSTORM:
-  Q1: What is the recommended next step — install TrueBuild files now, or do a second
-      demo job first to validate the generator is repeatable before any live install?
-  Q2: Is TrueBuild the right first live install, or should we use a test domain first?
-  Q3: What does the "deliver" workflow look like end-to-end — who installs, how do we
-      confirm 0-to-score-lift, and how do we document the before/after proof?
-  Q4: Now that G-001 v1.1 is working, what is the next product layer — G-002 (monitor),
-      the audit-to-generate pipeline, or pricing/packaging for real clients?
-  Q5: The ZIP is 8.7KB for 10 files. Should we add a cover page or one-pager to the
-      package to make it feel more like a premium deliverable at handoff?
+  Acknowledged 2026-05-13. All patches complete, demo job generated and approved.
+  AFO-first pivot applied in BLT-017.
 ```
-
----
 
 ```yaml
 id: BLT-014
@@ -123,10 +118,9 @@ date: 2026-05-12
 status: acknowledged
 priority: high
 ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/agent-feed-optimization:jobs/_template/job.json | nothinginfinity/agent-feed-optimization:jobs/README.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/mail.md
-subject: Session recap + project analysis request — what's where, what's next, path to live testing
+subject: Session recap + project analysis request
 body: >
-  Acknowledged 2026-05-13. All patches complete, demo job generated and approved.
-  See BLT-015.
+  Acknowledged 2026-05-13.
 ```
 
 ```yaml
@@ -136,11 +130,9 @@ date: 2026-05-12
 status: acknowledged
 priority: normal
 ref: nothinginfinity/repo-copilot:spaces/alice/mail.md | nothinginfinity/agent-feed-optimization:jobs/_template/README-review.md
-subject: Two delivery package naming decisions deferred — Jared needs to think it over
+subject: Two delivery package naming decisions deferred
 body: >
-  Acknowledged 2026-05-12. Q1: Option C — agent-policy.json + policy.md both in ZIP.
-  Q2: Option C refined — context-cookie.json + context-cookie.md both in ZIP.
-  context-cookie.schema.json stays in repo as spec only, never in ZIP.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
@@ -150,9 +142,9 @@ date: 2026-05-12
 status: acknowledged
 priority: high
 ref: nothinginfinity/agent-feed-optimization:gists/G-001-afo-agent-identity.md | nothinginfinity/repo-copilot:spaces/generator/outbox.md | nothinginfinity/repo-copilot:spaces/alice/inbox-ops.md | nothinginfinity/repo-copilot:spaces/alice/inbox-review.md
-subject: G-001 v1.1 build plan — orchestration upgrade, not generation quality
+subject: G-001 v1.1 build plan
 body: >
-  Acknowledged 2026-05-12. All Q1-Q5 decisions accepted. Tasks routed.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
@@ -162,9 +154,9 @@ date: 2026-05-12
 status: acknowledged
 priority: high
 ref: nothinginfinity/agent-feed-optimization:docs/audit/audit-report-sample-truebuild.md | nothinginfinity/agent-feed-optimization:docs/audit/audit-report-template.md | nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: Product pipeline vision — audit → generate → deliver → monitor. What's the build order?
+subject: Product pipeline vision
 body: >
-  Acknowledged 2026-05-12. Q1-Q5 answered by Jared. See BLT-012.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
@@ -174,9 +166,9 @@ date: 2026-05-12
 status: acknowledged
 priority: normal
 ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: Build queue open — 5 items, feedback on sequencing
+subject: Build queue open — 5 items
 body: >
-  Acknowledged. All 5 items complete. See BLT-011.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
@@ -186,105 +178,21 @@ date: 2026-05-12
 status: acknowledged
 priority: high
 ref: nothinginfinity/agent-feed-optimization:tests/TEST-001-baseline-vs-afo-sonar.md
-subject: 6 test runs, 4 findings, 5 open questions including product concept
+subject: 6 test runs, 4 findings, 5 open questions
 body: >
-  Acknowledged. Product direction locked. See BLT-010 for build queue.
+  Acknowledged 2026-05-12.
 ```
 
 ```yaml
-id: BLT-008
+id: BLT-008 through BLT-001
 from: alice
-date: 2026-05-12
+date: 2026-05-11 to 2026-05-12
 status: acknowledged
-priority: high
+priority: normal
 ref: nothinginfinity/agent-feed-optimization:demo/scenario-c/README.md
-subject: KEY FINDING — AFO protocol works at content layer
+subject: Earlier session entries — all acknowledged
 body: >
-  Acknowledged.
-```
-
-```yaml
-id: BLT-007
-from: alice
-date: 2026-05-12
-status: acknowledged
-priority: high
-ref: nothinginfinity/agent-feed-optimization:gists/G-000-afo-sonar-reader.md
-subject: G-000 v0.2 patched, TEST-001 v0.3, Scenario C demo live
-body: >
-  Acknowledged.
-```
-
-```yaml
-id: BLT-006
-from: alice
-date: 2026-05-12
-status: acknowledged
-priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
-subject: TEST redesign after calibration FAIL
-body: >
-  Acknowledged.
-```
-
-```yaml
-id: BLT-005
-from: alice
-date: 2026-05-12
-status: acknowledged
-priority: normal
-ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
-subject: Calibration run fully locked
-body: >
-  Acknowledged 2026-05-12.
-```
-
-```yaml
-id: BLT-004
-from: alice
-date: 2026-05-12
-status: acknowledged
-priority: normal
-ref: nothinginfinity/agent-feed-optimization:docs/results/calibration-run-plan.md
-subject: Calibration run plan locked
-body: >
-  Acknowledged 2026-05-12.
-```
-
-```yaml
-id: BLT-003
-from: alice
-date: 2026-05-12
-status: acknowledged
-priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
-subject: AFO v0.2 full session summary
-body: >
-  Acknowledged 2026-05-12.
-```
-
-```yaml
-id: BLT-002
-from: alice
-date: 2026-05-12
-status: acknowledged
-priority: high
-ref: nothinginfinity/agent-feed-optimization:docs/results/review-memo-v0.2.md
-subject: AFO v0.2 scaffold complete
-body: >
-  Acknowledged 2026-05-12.
-```
-
-```yaml
-id: BLT-001
-from: alice
-date: 2026-05-11
-status: acknowledged
-priority: normal
-ref: spaces/gists/G-000-alice-boot.md | spaces/gists/brain.json
-subject: Gist kernel architecture established
-body: >
-  Acknowledged 2026-05-11.
+  All prior BLTs acknowledged. See BLT-009+ for active thread.
 ```
 
 ---
