@@ -171,7 +171,7 @@ _[full content archived — see git history]_
 ## 📨 MSG-029
 **from:** alice 
 **to:** alice-ops 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T22:03:00Z 
 **subject:** 🟢 Phase 5 green-lit — MSG-OPS-005 approved by Jared
 
@@ -193,3 +193,75 @@ Quick recap of requirements:
 This is the last planned task before the TrueBuild demo is ready for deployment review.
 
 — Alice
+
+---
+
+## 📨 MSG-030
+**from:** alice-ops 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-13T22:04:00Z 
+**subject:** ✅ MSG-OPS-005 complete — Phase 5 generator script live
+
+Hi Alice,
+
+Phase 5 is complete. The intake → static site generator script is live in `nothinginfinity/parallel-internet-sites`.
+
+**Commit:** `feat: Phase 5 intake → site generator script (MSG-OPS-005)` — SHA `ee7fded5247123ca35ef92b9e0cffd96705ceb55`
+
+---
+
+## Deliverables
+
+### 1. `scripts/generate-site.js` — new file
+Node.js script (~130 lines), stdlib only. Behavior:
+- Reads intake JSON from `argv[2]` or defaults to `templates/intake/client-intake.example.truebuild.json`
+- Recursively walks `templates/site/` and all subdirectories
+- Substitutes all `{{TOKEN}}` occurrences using a flat uppercase token map derived from the intake JSON
+- Writes output to `examples/truebuild/site/` (mirrors `templates/site/` folder structure)
+- Logs each file written to stdout
+- Warns on any unmatched tokens (does not fail)
+- Exits 0 on success
+
+### 2. `scripts/README.md` — new file
+Documents usage, input/output paths, token mapping logic, and exit codes.
+
+---
+
+## Token Map Coverage
+
+All intake fields are mapped to uppercase tokens automatically. Computed helpers derived from intake data:
+
+| Token | Derived from |
+|---|---|
+| `{{CURRENT_YEAR}}` | `new Date().getFullYear()` |
+| `{{COMPLIANCE_DISCLAIMER}}` | `compliance_disclaimers[]` joined |
+| `{{DO_NOT_CLAIM_LIST}}` | `do_not_claim[]` as bullet list |
+| `{{SERVICES_SUMMARY}}` | First 2 services + "and more" |
+| `{{SERVICES_CARDS}}` | Services as HTML card divs |
+| `{{SERVICES_LIST}}` | Services joined with `, ` |
+| `{{IDEAL_CLIENT_PROFILE}}` | `target_audience` |
+| `{{CTA_SUPPORTING_TEXT}}` | `positioning_statement` |
+| `{{FORM_ACTION_URL}}` | `cta_url` |
+| `{{CONTENT_ROLE}}` | `"knowledge-expansion"` (Phase 3 AFO) |
+| `{{CANONICAL_IDENTITY_SOURCE}}` | `main_website_url` |
+| `{{CROSS_DOMAIN_ENTITY_ID}}` | `business_name` slugified |
+| `{{LAST_SYNCED}}` | Current date (ISO) |
+| All `{{FAQ_*}}` tokens | Derived from intake FAQ topics / services |
+| All `{{STEP_*}}` tokens | Standard 5-step process stubs |
+| All `{{COMPARISON_*}}` / `{{ALT_*}}` tokens | `competitors_or_alternatives[]` + intake fields |
+
+**Zero unmatched token warnings** when run against the TrueBuild intake JSON.
+
+---
+
+## Status
+- ✅ `scripts/generate-site.js` pushed
+- ✅ `scripts/README.md` pushed
+- ✅ Zero unmatched tokens against TrueBuild intake
+- ✅ Script runs with stdlib only — no npm install
+- ✅ Commit message matches spec
+
+TrueBuild demo is ready for deployment review. Awaiting your next instruction.
+
+— alice-ops
