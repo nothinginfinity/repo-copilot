@@ -27,41 +27,48 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
-id: BLT-016
+id: BLT-017
 from: alice
 date: 2026-05-14
 status: unread
 priority: high
+ref: nothinginfinity/parallel-internet-sites:docs/launch-plan-v2.md | nothinginfinity/parallel-internet-sites:docs/afo-customer-1-runbook.md | nothinginfinity/parallel-internet-sites:docs/llm-baseline-template.md | nothinginfinity/parallel-internet-sites:docs/monitoring/day-0-deploy.md
+subject: Launch pivot executed — AFO is Customer #1, full runbook + monitoring templates live
+body: >
+  Jared + Brainstorm decided: AFO dogfoods first. TrueBuild is Customer #2.
+
+  WHAT WAS BUILT THIS SESSION:
+  - docs/launch-plan-v2.md — new canonical launch plan. AFO first, TrueBuild after AFO Day 7.
+  - docs/afo-customer-1-runbook.md — step-by-step self-audit + deploy guide for AFO domain.
+    Includes: baseline first, AFO audit methodology, intake JSON build, Cloudflare Pages deploy,
+    main-domain file install, Day 0 record.
+  - docs/llm-baseline-template.md — structured template for capturing LLM visibility
+    before deployment. Covers ChatGPT, Perplexity, Gemini, Claude, Bing. 4 prompts,
+    4 scoring dimensions (Visibility, Accuracy, Citation, Discoverability), max 60 points.
+  - docs/monitoring/ — 4 templates: Day 0 (deploy record), Day 7 (light check),
+    Day 30 (full rubric + before/after), Day 60-90 (trend analysis + shareable summary).
+
+  HONESTY PRINCIPLE BAKED IN:
+  No guaranteed ranking claims. Only measurable: visibility, accuracy, citation, discoverability.
+  Negative results reported with same candor as positive results.
+
+  NEXT ACTION — Jared:
+  Run docs/llm-baseline-template.md on the AFO domain BEFORE any files are deployed.
+  This is the zero-point. It cannot be recreated after deployment.
+```
+
+---
+
+```yaml
+id: BLT-016
+from: alice
+date: 2026-05-14
+status: acknowledged
+priority: high
 ref: nothinginfinity/repo-copilot:spaces/alice/handoff.md | nothinginfinity/parallel-internet-sites:docs/deployment-pack-v1.md | nothinginfinity/parallel-internet-sites:examples/truebuild/pages/comparisons.md
 subject: Full project state handoff — parallel-internet-sites pre-launch hold, 3 gates open
 body: >
-  Jared requested a brainstorm review of current project state as of 2026-05-14.
-
-  CURRENT STATE — parallel-internet-sites:
-  - Status: 🟡 Pre-launch hold. Technically complete. Waiting on Jared action only.
-  - All 5 phases complete.
-  - Deployment Pack v1 live at docs/deployment-pack-v1.md.
-  - comparisons.md claim audit complete — EDIT-1 and EDIT-2 applied, page cleared for launch.
-  - ai.nothinginfinity.com (AFO demo): no open tasks, DNS pending only.
-  - ai.truebuild.com: 3 hard gates blocking (all Jared action required):
-      Gate 1: ai.truebuild.com DNS — create and point
-      Gate 2: Form action URL wired into contact.html
-      Gate 3: Jared content approval on all rendered pages
-
-  CURRENT STATE — repo-copilot:
-  - Status: 🟢 Stable. Phase 3 complete. No open tasks.
-  - Inbox architecture live. Handoff system live (G-000 v1.9, G-005 v1.3).
-
-  OPEN QUESTIONS FOR BRAINSTORM:
-  Q1: Given that all 3 gates are Jared actions (DNS, form URL, content approval) —
-      is there any prep work Alice or sub-agents should be doing in parallel
-      while Jared closes those gates?
-  Q2: Is the Deployment Pack v1 the right abstraction for future clients,
-      or should Alice begin scaffolding a Phase 6 automation layer now?
-  Q3: Are there any risks or blind spots in the current pre-launch state
-      that Alice hasn't surfaced yet?
-  Q4: What is the recommended sequencing once Jared closes the gates —
-      deploy nothinginfinity demo first, TrueBuild first, or simultaneously?
+  Acknowledged 2026-05-14. Brainstorm session led to AFO-first pivot. See BLT-017.
 ```
 
 ---
