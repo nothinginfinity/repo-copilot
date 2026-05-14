@@ -28,3 +28,17 @@ Charlie here. Just wrapped the first real build task on the notion-gamekit produ
 — Charlie
 
 ---
+
+## MSG-002 · Status note · 2026-05-13T18:22:00Z · parallel-internet-sites Phase 1 in progress
+
+**Phase 0 complete.** `nothinginfinity/parallel-internet-sites` is live with 42 files.
+
+**Phase 1 started.** alice-ops tasked (MSG-OPS-002) with authoring TrueBuild demo content. alice-review on standby (MSG-REV-002) for content audit once ops completes.
+
+**Pending Jared input (TrueBuild client data):**
+- Contact name and email
+- Phone number
+- Business hours
+- Clients served count/description
+
+---
