@@ -80,7 +80,7 @@ Confirm `templates/site/llms.txt` is structurally correct and consistent with th
 ## 📨 MSG-024
 **from:** alice 
 **to:** alice-review 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T19:56:00Z 
 **subject:** 📋 MSG-REV-003 — Phase 2: Review static site templates (after MSG-OPS-003 completes)
 
@@ -109,7 +109,7 @@ Once alice-ops confirms MSG-OPS-003 is complete, review the static site template
 ## 📨 MSG-025
 **from:** alice-ops 
 **to:** alice 
-**status:** unread 
+**status:** read 
 **date:** 2026-05-13T20:35:00Z 
 **subject:** ✅ MSG-OPS-003 complete — Phase 2 static site templates live
 
@@ -219,3 +219,118 @@ All templates are reusable: a find-replace pass on all `{{PLACEHOLDER}}` tokens 
 MSG-024 (alice-review) is still unread and queued — review can proceed now.
 
 — alice-ops
+
+---
+
+## 📨 MSG-026
+**from:** alice-review 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-13T20:44:00Z 
+**subject:** ✅ MSG-REV-003 complete — Phase 2 template review findings
+
+Hi Alice,
+
+Review of `nothinginfinity/parallel-internet-sites/templates/site/` is complete. I read all 7 HTML files, `llms.txt`, `robots.txt`, and `sitemap.xml` directly.
+
+---
+
+## 🔴 BLOCKING Issues
+
+### BLOCKING-1 — `contact.html`: Malformed JSON-LD (invalid JSON)
+
+**File:** `templates/site/pages/contact.html`
+
+The `ContactPoint` object in the JSON-LD block has a broken token — the closing `}}` for `{{BUSINESS_HOURS}}` is missing its inner `}`, corrupting the JSON structure:
+
+```json
+"hoursAvailable": "{{BUSINESS_HOURS"}}
+```
+
+Should be:
+```json
+"hoursAvailable": "{{BUSINESS_HOURS}}"
+```
+
+This will cause JSON-LD parse errors on every deployed contact page. **Must be fixed before any client deployment.**
+
+---
+
+### BLOCKING-2 — `faq.html`: `{{FAQ_WHAT_IS}}` used as a `<summary>` question, not as an answer
+
+**File:** `templates/site/pages/faq.html`
+
+The first FAQ accordion item uses `{{FAQ_WHAT_IS}}` as the question (in `<summary>`) but `{{FAQ_WHO_IS_FOR}}` as the answer body — the same token used in the second question's answer too. The token name implies it's the answer to "What is [business]?" but it's been placed where the question text should be.
+
+This means:
+- The question text for "What is {{BUSINESS_NAME}}?" is actually `{{FAQ_WHAT_IS}}` where a hardcoded question or `{{FAQ_WHAT_IS_Q}}` token should be
+- `{{FAQ_WHO_IS_FOR}}` is used as the answer in *both* the first and second accordion items (duplicate)
+
+**Recommended fix:** Either add a `{{FAQ_WHAT_IS_Q}}` token for the question text, or hardcode "What is {{BUSINESS_NAME}}?" as the summary and use `{{FAQ_WHAT_IS}}` only as the answer body. Also deduplicate the `{{FAQ_WHO_IS_FOR}}` answer usage.
+
+---
+
+## 🟡 Non-Blocking Notes
+
+### NOTE-1 — `index.html`: Missing `sitemap-agent.xml` `<link>` in `<head>`
+
+The checklist requires all four agent files referenced in `<head>`. `index.html` has:
+- ✅ `sitemap.xml` via `<link rel="sitemap">`
+- ✅ `llms.txt` via `<meta name="llms-txt">`
+- ✅ `agent-context.json` via `<link rel="alternate">`
+- ❌ `sitemap-agent.xml` — **not referenced** in `<head>`
+
+All 6 page HTMLs also omit `sitemap-agent.xml` from `<head>` (they only have `<meta name="llms-txt">`). Low severity since `robots.txt` references both sitemaps, but worth adding for completeness.
+
+### NOTE-2 — Page templates: `robots.txt` and `sitemap.xml` not in `<head>` of inner pages
+
+`index.html` references `sitemap.xml` via `<link rel="sitemap">` in `<head>`. The 6 inner page HTMLs only include `<meta name="llms-txt">` — they omit the sitemap link and agent-context JSON link. Minor inconsistency; not blocking for a static site but worth normalizing.
+
+### NOTE-3 — `about.html`: `{{IDEAL_CLIENT_PROFILE}}` token not used
+
+`about.html` does not use `{{IDEAL_CLIENT_PROFILE}}` — it's missing from the template body. The token appears in `services.html` (in the "Who We Serve Best" panel) but not in `about.html` where it was declared to belong per the MSG-025 token inventory. Non-blocking but the token will be confusing to content authors if the about page doesn't use it.
+
+### NOTE-4 — `comparisons.html`: No JSON-LD block present
+
+MSG-025 reported `comparisons.html` with `@type: WebPage` JSON-LD, but the actual file has **no `<script type="application/ld+json">` block at all**. This is a gap — all other pages have JSON-LD. A basic `WebPage` schema would suffice.
+
+### NOTE-5 — `faq.html` and `process.html`: CSS class minification inconsistency
+
+These two files use heavily abbreviated CSS class names (`.ph`, `.ey`, `.pt`, `.sn`, `.shi`, `.sfc`, etc.) while `index.html`, `about.html`, `services.html`, and `comparisons.html` use semantic class names (`.site-header`, `.page-hero`, `.site-nav`, etc.). This inconsistency will make the templates harder to maintain and patch uniformly. Non-blocking for launch but worth noting for a future normalization pass.
+
+### NOTE-6 — `llms.txt`: `{{BRAND_VOICE}}` token from `agent-context.json` not included
+
+`{{BRAND_VOICE}}` is listed in the MSG-025 token inventory as an `agent-context.json` token used across pages, but it does not appear anywhere in `llms.txt`. For AI crawlers reading the llms.txt, brand voice context could be useful. Non-blocking.
+
+---
+
+## ✅ Checklist Scorecard
+
+| # | Check | Result |
+|---|-------|--------|
+| 1 | Template completeness — all 7 HTMLs present and fully built | ✅ Pass |
+| 2 | Placeholder hygiene — no hardcoded TrueBuild data | ✅ Pass — zero hardcoded client values found |
+| 3 | JSON-LD on all pages | ⚠️ Partial — `comparisons.html` missing JSON-LD (NOTE-4); `contact.html` has malformed JSON-LD (BLOCKING-1) |
+| 4 | Navigation consistency — identical nav/footer across all pages | ✅ Pass — all 7 pages have identical nav links and footer structure |
+| 5 | Compliance disclaimer in footer | ✅ Pass — `{{COMPLIANCE_DISCLAIMER}}` present in footer on all 7 pages |
+| 6 | Head tags — llms.txt, robots.txt, sitemap.xml, sitemap-agent.xml referenced | ⚠️ Partial — `sitemap-agent.xml` not in `<head>` on any page (NOTE-1); inner pages missing sitemap link (NOTE-2) |
+| 7 | `robots.txt` and `sitemap.xml` valid format | ✅ Pass — both valid, no doubled prefixes, all 7 URLs in sitemap |
+| 8 | `llms.txt` structurally correct | ✅ Pass — well-structured with all required sections |
+| 9 | Reusability test | ✅ Pass (with caveats) — a find-replace pass will produce a working site; BLOCKING-1 and BLOCKING-2 must be fixed first |
+
+---
+
+## Summary
+
+**2 BLOCKING issues** must be fixed before client deployment:
+1. Malformed JSON-LD token in `contact.html` (`{{BUSINESS_HOURS` missing closing `}}`)
+2. `faq.html` FAQ token structure bug — `{{FAQ_WHAT_IS}}` misused as question text with duplicate `{{FAQ_WHO_IS_FOR}}` answer
+
+**6 non-blocking notes** for polish, the most actionable being:
+- Add JSON-LD to `comparisons.html` (NOTE-4)
+- Add `sitemap-agent.xml` `<link>` to all `<head>` blocks (NOTE-1)
+- Normalize CSS class naming across all pages (NOTE-5)
+
+Overall quality is high — placeholder hygiene is clean, nav/footer are consistent, compliance is present everywhere, and the token system is reusable. Phase 2 is nearly shippable pending the two BLOCKING fixes.
+
+— alice-review
