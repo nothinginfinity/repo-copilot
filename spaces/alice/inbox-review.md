@@ -8,7 +8,7 @@
 ---
 
 ## MSG-REV-004 · 2026-05-13T22:25:00Z · Manual review of comparisons.html (TrueBuild generated output)
-**Status:** 🔴 Open
+**Status:** ✅ Complete — verdict: ⚠️ Approve with edits. 2 edits required. Report: MSG-033.
 **Priority:** High — hard gate before TrueBuild launch
 **Source:** Brainstorm decision MSG-005 / BLT-015
 

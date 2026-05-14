@@ -121,3 +121,80 @@ A complete, human-followable deployment guide covering all 7 required sections:
 TrueBuild is ready to deploy. Deployment Pack is ready for any future client. Awaiting your next instruction.
 
 — alice-ops
+
+---
+
+## 📨 MSG-033
+**from:** alice-review 
+**to:** alice 
+**status:** unread 
+**date:** 2026-05-14T14:29:00Z 
+**subject:** ⚠️ MSG-REV-004 complete — comparisons.md claim audit — Approve with edits
+
+Hi Alice,
+
+Manual claim audit of `examples/truebuild/pages/comparisons.md` is complete per MSG-REV-004.
+
+**Verdict: ⚠️ Approve with edits** — 2 specific edits required before launch. All other claims are clean.
+
+---
+
+## Audit Summary
+
+**Source of truth used:** `examples/truebuild/agent-context.json` + `examples/truebuild/agent-policy.json`
+
+**Total claims reviewed:** 14 distinct claims across 3 sections + structural/framing checks.
+
+**Result breakdown:**
+- ✅ 12 claims approved
+- ⚠️ 2 claims flagged (overstated — no intake source)
+- ❌ 0 claims blocked
+- ✅ 0 `do_not_claim` violations
+- ✅ Competitor name check: no competitor names used — N/A
+- ✅ Disclosure and compliance disclaimer: present and correct
+- ✅ CTA URL: correct (`https://truebuild.com/get-started`)
+
+---
+
+## 🔴 Required Edits (must fix before launch)
+
+### EDIT-1 — Section 1 table: Remove "Protects personal credit from business liabilities"
+
+**Claim:** `Protects | Personal credit from business liabilities | N/A`
+
+**Issue:** Implies legal liability protection. This is not in the intake JSON. `agent-context.json` only states credit is "separate from personal credit" — it makes no liability claims. This could be read as a legal guarantee and violates the spirit of `do_not_claim` (no unverified benefit claims).
+
+**Fix:** Replace that row with a neutral educational row:
+```
+| Separates | Business liabilities from personal credit history | N/A |
+```
+Or remove the row entirely.
+
+---
+
+### EDIT-2 — Section 1 summary paragraph: Soften absolute claim
+
+**Claim:** "A business with strong business credit can access financing, favorable vendor terms, and credit products based on its own history — **without the owner's personal credit being the deciding factor.**"
+
+**Issue:** "Without the owner's personal credit being the deciding factor" is an absolute, unqualified claim. Intake JSON only supports that business credit is "separate from personal credit" — it does not state that personal credit becomes irrelevant. Lenders may still pull personal credit even for businesses with strong profiles.
+
+**Fix:** Replace with:
+> "A business with strong business credit can access financing, favorable vendor terms, and credit products based on its own history — reducing reliance on the owner's personal credit profile."
+
+---
+
+## ✅ Clean Sections
+
+- **Section 2 (Program vs. DIY):** All 5 claims fully traceable to `services[]` and `positioning` fields. Disclaimer "no rankings or guarantees implied" is correctly applied. ✅
+- **Section 3 (Bureau Comparison):** All claims are public financial facts — bureau names, score names, D-U-N-S requirement. Educational content permitted under Phase 3 Knowledge Extension Rules. ✅
+- **Structural checks:** Disclosure, compliance disclaimer, CTA, do_not_claim list — all pass. ✅
+
+---
+
+## Recommended action
+
+1. Apply EDIT-1 and EDIT-2 to `examples/truebuild/pages/comparisons.md`
+2. After edits, page is **✅ cleared for launch**
+3. No other comparisons page content requires removal
+
+— alice-review
