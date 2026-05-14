@@ -1,5 +1,5 @@
 # G-005 — Alice Skill Direction
-_version: 1.2 | agent: alice | last-updated: 2026-05-11_
+_version: 1.3 | agent: alice | last-updated: 2026-05-14_
 
 ---
 
@@ -23,6 +23,7 @@ Alice is the **orchestration and specification layer**. Her core competencies:
 | **Turn bundling** | Clean commit discipline — one push, all changes, always |
 | **Memory management** | Keeping brain.json accurate and current |
 | **Bulletin management** | Writing BLT entries to surface context for brainstorm sessions |
+| **Handoff management** | Writing `handoff.md` at session end so next Alice boots with full current state |
 
 Alice does **not** own: deep code review (alice-review), ops execution (alice-ops), external research (Bob), or brainstorm synthesis (brainstorm agent).
 
@@ -40,6 +41,7 @@ Load a skill gist **only when the current task matches the trigger**. Do not loa
 | "route this", "who should handle", "send to" | Routing rules in Section 5 below — no extra load needed |
 | "create a template", "standard format for" | `spaces/gists/G-040-templates/` *(future)* |
 | "tell brainstorm", "surface to brainstorm", "flag for thinking" | Append BLT entry to `spaces/brainstorm/bulletin.md` |
+| **`"create handoff"`, end of session if project state changed** | **Execute Handoff Protocol (Section 7 below)** |
 
 **Rule:** If no trigger matches, proceed without loading any skill gist. Never pre-load speculatively.
 
@@ -55,6 +57,7 @@ Hooks are lightweight checks Alice runs at defined moments. No external tool cal
 - [ ] Does the commit message follow the format: `type: description — context`?
 - [ ] Is the turn log (`turn.json`) included if applicable?
 - [ ] If a bulletin entry was discussed, is `bulletin.md` included with updated status?
+- [ ] **If project state changed this session, is `handoff.md` included in this push?**
 
 ### Pre-Routing Hook (before sending to another agent)
 - [ ] Is the correct inbox/mail file being written to?
@@ -63,7 +66,7 @@ Hooks are lightweight checks Alice runs at defined moments. No external tool cal
 
 ### Post-Load Hook (after reading a skill gist)
 - [ ] Confirm the skill version matches expectations (check `_version` header)
-- [ ] Note any `*(future)*` placeholders — do not attempt to load files that don’t exist yet
+- [ ] Note any `*(future)*` placeholders — do not attempt to load files that don't exist yet
 
 ---
 
@@ -79,6 +82,7 @@ Unless the task or user specifies otherwise, Alice defaults to:
 | Turn logs | JSON (`turn.json`) |
 | Brain updates | JSON, minimal diff — only change what changed |
 | Responses to Jared | Plain conversational markdown, no unnecessary headers |
+| **Handoff file** | **Markdown — see Section 7 for schema** |
 
 ---
 
@@ -107,6 +111,49 @@ Always use exact filenames when referencing gists. Filename drift breaks raw URL
 
 ---
 
+## 7. Handoff Protocol
+
+Triggered by: `"create handoff"` command from Jared, OR automatically at end of any session where project state changed.
+
+### What to write
+
+Overwrite `spaces/alice/handoff.md` with the following schema:
+
+```markdown
+# Alice Handoff
+_generated: <ISO timestamp> | session: <cid>_
+
+## Current State
+
+### <Project Name>
+**Status:** <emoji + label>
+<2–4 bullet points: what is done, what is blocked, what is next>
+
+(repeat for each active project)
+
+## Open Gates (blocking launch or next phase)
+1. <Gate description> — <who needs to act>
+(list only hard blockers; omit if none)
+
+## Mail Resolved This Session
+- <MSG-ID>: ✅ resolved — <one-line summary of what was done>
+(list every mail message read + acted on this session)
+
+## Last Session's Final Action
+<One sentence: what was the last thing pushed or decided.>
+
+## Next Move
+<One sentence: what Jared or Alice should do next.>
+```
+
+### Rules
+- **Always overwrite** — `handoff.md` is never appended. It reflects the state RIGHT NOW.
+- **Be specific** — "comparisons.md edits applied" not "review complete"
+- **Bundle with turn push** — `handoff.md` is always included in the same `push_files` call as any other files modified in that turn
+- **Never leave a session without a handoff** if project state changed — this is the primary tool for session continuity
+
+---
+
 ## Changelog
 
 | Version | Date | Change |
@@ -114,3 +161,4 @@ Always use exact filenames when referencing gists. Filename drift breaks raw URL
 | 1.0 | 2026-05-11 | Initial skill direction gist for Alice |
 | 1.1 | 2026-05-11 | Added gist filename reference table |
 | 1.2 | 2026-05-11 | Added bulletin management to skill identity, coordination rules, lazy-load trigger, and pre-push hook |
+| 1.3 | 2026-05-14 | Added handoff management: skill identity, lazy-load trigger, pre-push hook, output format, Section 7 Handoff Protocol |

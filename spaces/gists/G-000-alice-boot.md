@@ -1,5 +1,5 @@
 # G-000 — Alice Boot Instructions
-_version: 1.8 | agent: alice | last-updated: 2026-05-11_
+_version: 1.9 | agent: alice | last-updated: 2026-05-14_
 
 ---
 
@@ -16,10 +16,11 @@ On every session start, load these files **in order**:
 1. `spaces/gists/G-000-alice-boot.md` ← this file
 2. `spaces/gists/brain.json` ← live memory (skip if error)
 3. `spaces/alice/inbox.md` ← Jared's messages to Alice
-4. `spaces/alice/mail.md` ← internal Alice mail — scan for `to: alice`, `status: unread`
-5. `spaces/gists/G-005-alice-skills.md` ← skill direction + lazy-load triggers + hook rules
+4. **`spaces/alice/handoff.md`** ← last session's resolved state (skip if file missing; treat as authoritative if present — inbox and mail are supplementary context only)
+5. `spaces/alice/mail.md` ← internal Alice mail — scan for `to: alice`, `status: unread`
+6. `spaces/gists/G-005-alice-skills.md` ← skill direction + lazy-load triggers + hook rules
 
-After loading, summarize what each file contains. Report any unread mail from `mail.md`.
+After loading, summarize what each file contains. If `handoff.md` is present, open your status report with its **Current State** section — do not re-report mail items already marked resolved in the handoff. Report any unread mail from `mail.md` that is **not** already resolved in `handoff.md`.
 
 ---
 
@@ -63,11 +64,14 @@ If any files were modified during a turn, the **last action** must be `push_file
 | `spaces/alice/inbox-review.md` | Jared → alice-review | alice-review |
 | `spaces/alice/mail.md` | Alice ↔ Alice internal mail | all Alice agents |
 | `spaces/alice/outbox.md` | Alice → Bob / external agents | alice |
+| `spaces/alice/handoff.md` | Alice → next Alice session (state snapshot) | alice (on boot) |
 | `spaces/brainstorm/bulletin.md` | All agents → Brainstorm (write here to surface context) | brainstorm |
 
 **Routing rule:** When sending a message to another Alice agent, always append to `spaces/alice/mail.md` with the correct `to:` field. Never write replies into your own inbox.
 
 **Bulletin rule:** When something is worth surfacing to a brainstorm session — a key decision, open question, or architecture shift — append a BLT-XXX entry to `spaces/brainstorm/bulletin.md`. Use the next sequential BLT ID.
+
+**Handoff rule:** At the end of any session where project state changed, run `create handoff` (see G-005) to overwrite `spaces/alice/handoff.md` with the current state snapshot. The handoff is the authoritative "where we are" document for the next session.
 
 ---
 
@@ -80,6 +84,7 @@ If any files were modified during a turn, the **last action** must be `push_file
 | `spaces/gists/G-005-alice-skills.md` | Skill router — lazy-load triggers + hooks |
 | `spaces/gists/G-010-skill-specs.md` | Lazy-loaded skill: spec writing |
 | `spaces/gists/brain.json` | Compressed live memory |
+| `spaces/alice/handoff.md` | Live session handoff — overwritten each session |
 
 ---
 
@@ -102,3 +107,4 @@ Currently in **Phase 3** — Inbox Architecture (SPEC-001 complete as of 2026-05
 | 1.6 | 2026-05-11 | Added G-005-alice-skills.md as startup step 5 |
 | 1.7 | 2026-05-11 | Added gist registry with exact filenames |
 | 1.8 | 2026-05-11 | Added bulletin.md to inbox architecture + bulletin rule for Alice |
+| 1.9 | 2026-05-14 | Added handoff.md as boot step 3b; handoff rule; gist registry entry |
