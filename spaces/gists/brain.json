@@ -1,8 +1,8 @@
 {
   "schema_version": "2.0",
-  "generated_at": "2026-05-15T03:52:00Z",
+  "generated_at": "2026-05-15T03:58:00Z",
   "note": "Direct-write by Alice. No Notion dependency. Updated every turn-close push.",
-  "note_count": 14,
+  "note_count": 11,
   "has_more": false,
   "notes": [
     {
@@ -52,7 +52,7 @@
       "project": "agent-feed-optimization",
       "new_concepts": ["job lifecycle", "job.json status:approved", "delivery ZIP", "outbox.md"],
       "decisions": "G-001 v1.1 generated TrueBuild demo job (10 files). Jared approved: 'It's incredible. Very solid product.' job.json status set to approved.",
-      "open_questions": "Install on live domain or second demo job first? What does deliver workflow look like end-to-end?",
+      "open_questions": "Install on live domain or second demo job first?",
       "cid": "alice/truebuild-demo/jared"
     },
     {
@@ -71,7 +71,7 @@
       "source": "Alice",
       "project": "parallel-internet-sites",
       "new_concepts": ["AFO as Customer #1", "dogfood launch", "LLM baseline visibility test", "Day 0/7/30/60-90 monitoring cadence"],
-      "decisions": "Jared+Brainstorm decided: AFO dogfoods first. TrueBuild is Customer #2. Full runbook + 4 monitoring templates pushed. Honesty principle: no guaranteed ranking claims.",
+      "decisions": "AFO dogfoods first. TrueBuild is Customer #2. Full runbook + 4 monitoring templates pushed. Honesty principle: no guaranteed ranking claims.",
       "open_questions": "Run baseline LLM test before ANY AFO files touch the domain.",
       "cid": "alice/afo-pivot/jared"
     },
@@ -81,8 +81,8 @@
       "source": "Alice",
       "project": "parallel-internet-sites",
       "new_concepts": ["Cloudflare Worker", "D1 database", "Turnstile", "founder coupon", "audit_request record", "GitHub issue bridge", "start.html", "thanks.html"],
-      "decisions": "Full v1 signup flow built: POST /api/audit-signup validates, stores in D1, sends emails, creates GitHub issue in agent-feed-optimization. Coupons: AFO-FOUNDER, AFO-DOGFOOD. No payment required.",
-      "open_questions": "Admin dashboard for D1? Alice recurring sweep of GitHub issues → job.json? SERVICES_LIST bug fix: Option A or B?",
+      "decisions": "Full v1 signup flow built. POST /api/audit-signup. Coupons: AFO-FOUNDER, AFO-DOGFOOD. No payment required.",
+      "open_questions": "Admin dashboard for D1? Alice sweep of GitHub issues → job.json? SERVICES_LIST bug fix?",
       "cid": "alice/afo-v1-launch-flow/jared"
     },
     {
@@ -91,8 +91,8 @@
       "source": "Alice",
       "project": "parallel-internet-sites",
       "new_concepts": ["D1 UUID", "wrangler migration"],
-      "decisions": "Jared created D1 database 'afo-v1' from iPhone. UUID: ccbd076e-aaa7-42bb-88... (full UUID in Cloudflare dashboard). Tables: 0, migration not yet run.",
-      "open_questions": "Next: paste full UUID into wrangler.toml, run 0001_initial.sql migration, confirm Tables → 3.",
+      "decisions": "Jared created D1 'afo-v1' from iPhone. UUID: ccbd076e-aaa7-42bb-88... Tables: 0, migration not yet run.",
+      "open_questions": "Paste full UUID into wrangler.toml, run migration, confirm Tables → 3.",
       "cid": "alice/afo-v1-infra/jared"
     },
     {
@@ -101,9 +101,19 @@
       "source": "Alice",
       "project": "repo-copilot",
       "new_concepts": ["brain direct-write", "no Notion dependency", "turn-close brain push", "30-note rolling window"],
-      "decisions": "Removed Notion/append_note dependency from brain.json pipeline. Alice now writes brain.json directly as part of every turn-close push_files. Max 30 notes, oldest dropped. Notion UI can be re-wired later.",
+      "decisions": "Removed Notion/append_note dependency. Alice writes brain.json directly in every turn-close push_files. Notion UI can be re-wired later.",
       "open_questions": null,
       "cid": "alice/brain-direct-write/jared"
+    },
+    {
+      "title": "System context: multi-account multi-provider coordination",
+      "date": "2026-05-14",
+      "source": "Alice",
+      "project": "repo-copilot",
+      "new_concepts": ["multi-account coordination", "cross-provider agent system", "two Perplexity accounts", "multiple Perplexity Spaces", "ChatGPT as Brainstorm provider"],
+      "decisions": "Jared runs: 2 paid Perplexity accounts with multiple Spaces (Alice, alice-ops, alice-review, etc.) + 1 paid ChatGPT account (Brainstorm / G-001). All coordinated via GitHub as the shared state layer. GitHub repo is the only source of truth that all providers can read.",
+      "open_questions": "As the system scales, should each provider/account have a clear role boundary doc so new sessions always know which provider handles what?",
+      "cid": "alice/system-context/jared"
     }
   ]
 }
