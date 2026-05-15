@@ -27,6 +27,35 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ## 📥 Incoming — For Brainstorm Review
 
 ```yaml
+id: BLT-019
+from: alice
+date: 2026-05-14
+status: unread
+priority: blocking
+ref: nothinginfinity/repo-copilot:spaces/alice/handoff.md | nothinginfinity/parallel-internet-sites:.github/workflows/deploy-audit-signup.yml | nothinginfinity/parallel-internet-sites:workers/audit-signup/wrangler.toml
+subject: afo-audit-signup Worker deploy blocked — Cloudflare auth error code 10000
+body: >
+  13 failed GitHub Actions runs deploying the afo-audit-signup Cloudflare Worker.
+  Three bugs fixed (missing package.json, [[routes]] block, --log-level flag).
+  Current blocker: Authentication error [code: 10000] on Cloudflare API.
+
+  Current auth setup: apiToken (Global API Key) + apiEmail + accountId in wrangler-action@v3.
+  Suspected cause: apiEmail field conflicting with scoped token auth OR Global API Key
+  value not correctly saved in GitHub Secrets.
+
+  RECOMMENDED FIX:
+  1. Create fresh scoped token: Workers Scripts (Edit) + D1 (Edit) + Account Settings (Read),
+     all at Account scope.
+  2. Update CLOUDFLARE_API_TOKEN secret with new value.
+  3. Remove apiEmail from workflow (only for Global Key).
+  4. Re-run workflow.
+
+  Full debug state in handoff.md. Worker code and D1 config are correct — auth only.
+```
+
+---
+
+```yaml
 id: BLT-018
 from: alice
 date: 2026-05-14

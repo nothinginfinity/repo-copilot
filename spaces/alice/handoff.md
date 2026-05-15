@@ -1,45 +1,105 @@
 # Alice Handoff
-_generated: 2026-05-14T20:00:00Z | session: alice/afo-v1-infra/jared_
+_session: 2026-05-14 | status: blocked | next-action: fix Cloudflare auth_
+
+---
 
 ## Current State
 
-### parallel-internet-sites
-**Status:** 🟡 Infrastructure in progress — Jared setting up from iPhone
+Deploying `afo-audit-signup` Cloudflare Worker via GitHub Actions. Blocked on **authentication error (code: 10000)** after 13 failed runs. Three prior bugs were fixed. Worker code and D1 config are correct — only auth is broken.
 
-**AFO v1 Signup Flow — all code committed:**
-- ✅ `workers/audit-signup/index.js` — Cloudflare Worker
-- ✅ `workers/audit-signup/wrangler.toml` — needs `database_id` filled in
-- ✅ `workers/audit-signup/migrations/0001_initial.sql` — ready to run
-- ✅ `templates/site/pages/start.html` — /start form page
-- ✅ `templates/site/pages/thanks.html` — /thanks page
-- ✅ `templates/intake/client-intake.afo.json` — AFO Customer #1 intake
-- ✅ `docs/afo-v1-launch-checklist.md` — 7-phase checklist
+---
 
-**Infrastructure progress (Jared — doing from iPhone):**
-- ✅ D1 database `afo-v1` created — UUID: `ccbd076e-aaa7-42bb-88...` (full UUID in Cloudflare dashboard)
-- ❌ Migration not yet run (`0001_initial.sql` — Tables still shows 0)
-- ❌ `database_id` not yet pasted into `wrangler.toml`
-- ❌ Turnstile keys not yet created
-- ❌ Worker secrets not yet set
-- ❌ Worker not yet deployed
-- ❌ Email provider not yet configured
-- ❌ GitHub fine-grained PAT not yet created
+## Repo
+`nothinginfinity/parallel-internet-sites`  
+Worker path: `workers/audit-signup/`
 
-## Immediate Next Steps (in order)
-1. Get full D1 UUID from Cloudflare dashboard (tap `afo-v1` to see full ID)
-2. Paste UUID into `workers/audit-signup/wrangler.toml` — `database_id` field
-3. Run migration: `wrangler d1 execute afo-v1 --file=workers/audit-signup/migrations/0001_initial.sql`
-4. Confirm Tables count goes 0 → 3
-5. Continue `docs/afo-v1-launch-checklist.md` Phase 2
+---
 
-## Baseline LLM Test — Still Required Before AFO Files Deploy
-- ❌ `examples/afo/prompt-tests/day-0-baseline.md` not yet created
-- **Do not deploy AFO context files until baseline is committed**
+## What Was Fixed This Session
 
-## Open Gates — TrueBuild (still on hold)
-1. DNS for `ai.truebuild.com`
-2. Form action URL
-3. Jared content approval
+| Fix | File |
+|-----|------|
+| Added missing `package.json` | `workers/audit-signup/package.json` |
+| Removed `[[routes]]` block (caused code 7003) | `workers/audit-signup/wrangler.toml` |
+| Removed unsupported `--log-level debug` flag | `.github/workflows/deploy-audit-signup.yml` |
+| Added `apiEmail` for Global API Key auth attempt | `.github/workflows/deploy-audit-signup.yml` |
 
-## Last Session
-Jared confirmed D1 `afo-v1` created correctly from Cloudflare dashboard on iPhone. UUID visible, Tables: 0, Size: 8.19k. All correct pre-migration. Next: paste UUID + run migration.
+---
+
+## Current Error
+
+```
+ERROR A request to the Cloudflare API (/accounts/***/workers/services/afo-audit-signup) failed
+Authentication error [code: 10000]
+Please ensure it has the correct permissions for this operation.
+```
+
+---
+
+## Current wrangler.toml
+```toml
+name = "afo-audit-signup"
+main = "index.js"
+compatibility_date = "2024-09-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "afo-v1"
+database_id = "ccbd076e-aaa7-42bb-8808-a20bd83569e2"
+
+[vars]
+EMAIL_PROVIDER = "log"
+GITHUB_REPO_OWNER = "nothinginfinity"
+GITHUB_REPO_NAME = "agent-feed-optimization"
+```
+
+---
+
+## Current Workflow
+```yaml
+- name: Deploy Worker
+  uses: cloudflare/wrangler-action@v3
+  with:
+    apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    apiEmail: ${{ secrets.CLOUDFLARE_API_EMAIL }}
+    accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    workingDirectory: workers/audit-signup
+```
+
+---
+
+## GitHub Secrets (as of session end)
+
+| Secret | Status |
+|--------|--------|
+| `CLOUDFLARE_API_TOKEN` | Set to Global API Key (last updated ~5:05 PM 2026-05-14) |
+| `CLOUDFLARE_API_EMAIL` | `getfitdoc@me.com` |
+| `CLOUDFLARE_ACCOUNT_ID` | Full 32-char UUID |
+
+---
+
+## Hypothesis
+
+Most likely cause: `apiEmail` + Global API Key combo is conflicting with wrangler-action@v3. The `apiEmail` field is a legacy Global API Key signal — when both `apiToken` and `apiEmail` are present, wrangler may be treating the token as a Global Key but the value isn't correct format, or the token was never actually saved as the Global Key.
+
+---
+
+## Recommended Next Steps (priority order)
+
+1. **Create a fresh scoped API token** on Cloudflare with:
+   - Workers Scripts: Edit (Account scope)
+   - D1: Edit (Account scope)
+   - Account Settings: Read (Account scope)
+   - Scope set to **Account** (not Zone, not User)
+2. **Update `CLOUDFLARE_API_TOKEN`** in GitHub Secrets with the new token value
+3. **Remove `apiEmail`** from the workflow (only needed for Global Key, conflicts with scoped tokens)
+4. Re-run the workflow
+
+If still failing after above — try upgrading to `wrangler-action@v4`.
+
+---
+
+## Still Pending After Deploy
+
+- Run D1 migration via Cloudflare console (`workers/audit-signup/migrations/0001_initial.sql`)
+- Set 5 Worker secrets: `TURNSTILE_SECRET`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL`, `GITHUB_TOKEN`
