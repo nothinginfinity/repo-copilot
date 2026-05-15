@@ -1,70 +1,68 @@
 # Alice Handoff
-_session: 2026-05-14 | status: waiting-on-jared | next-action: Jared updates CLOUDFLARE_API_TOKEN secret_
+_session: 2026-05-14 | status: deploy-green | next-action: Jared runs D1 migration + sets Worker secrets_
 
 ---
 
 ## Current State
 
-**Auth patch applied.** `apiEmail` has been removed from `.github/workflows/deploy-audit-signup.yml` in `nothinginfinity/parallel-internet-sites`. The workflow now uses scoped API token mode only (`apiToken` + `accountId`).
+**Worker deployed successfully. ✅** Run #15 went green (32s, manually triggered). Auth blocker is resolved.
 
-Blocked on Jared updating `CLOUDFLARE_API_TOKEN` in GitHub Secrets to a **fresh scoped token** (not Global API Key).
+Two post-deploy steps remain — both are Jared-only Cloudflare console actions. No code changes needed.
 
 ---
 
 ## Repo
 `nothinginfinity/parallel-internet-sites`  
+Worker name: `afo-audit-signup`  
 Worker path: `workers/audit-signup/`
 
 ---
 
-## What Was Fixed This Session
+## ✅ All Fixes Applied
 
 | Fix | File |
 |-----|------|
 | Added missing `package.json` | `workers/audit-signup/package.json` |
-| Removed `[[routes]]` block (caused code 7003) | `workers/audit-signup/wrangler.toml` |
-| Removed unsupported `--log-level debug` flag | `.github/workflows/deploy-audit-signup.yml` |
-| Added `apiEmail` for Global API Key auth attempt ← caused 10000 | `.github/workflows/deploy-audit-signup.yml` |
-| **Removed `apiEmail`** — scoped token mode only ✅ | `.github/workflows/deploy-audit-signup.yml` |
+| Removed `[[routes]]` block (code 7003) | `workers/audit-signup/wrangler.toml` |
+| Removed `--log-level debug` flag | `.github/workflows/deploy-audit-signup.yml` |
+| Removed `apiEmail` (code 10000 fix) | `.github/workflows/deploy-audit-signup.yml` |
 
 ---
 
-## Current Workflow (patched)
-```yaml
-- name: Deploy Worker
-  uses: cloudflare/wrangler-action@v3
-  with:
-    apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    workingDirectory: workers/audit-signup
+## 🔴 Jared's Remaining Actions
+
+### 1. Run D1 Migration
+
+Database: `afo-v1` | ID: `ccbd076e-aaa7-42bb-8808-a20bd83569e2`
+
+**Option A — Cloudflare Console (recommended for one-time run):**
+1. Cloudflare Dashboard → D1 → `afo-v1` → Console tab
+2. Paste and run the contents of `workers/audit-signup/migrations/0001_initial.sql`
+
+**Option B — Wrangler CLI (from repo root):**
+```bash
+npx wrangler d1 execute afo-v1 --file=workers/audit-signup/migrations/0001_initial.sql --remote
 ```
 
----
-
-## Jared's Required Action (BLOCKING)
-
-1. Go to **Cloudflare Dashboard → My Profile → API Tokens → Create Token**
-2. Use "Create Custom Token"
-3. Set permissions:
-   - **Account / Workers Scripts / Edit**
-   - **Account / D1 / Edit**
-   - **Account / Account Settings / Read**
-4. Account Resources: Include **your specific account** (not "All accounts")
-5. Copy the token value (shown only once)
-6. Go to **GitHub → nothinginfinity/parallel-internet-sites → Settings → Secrets → Actions**
-7. Update `CLOUDFLARE_API_TOKEN` with the new scoped token value
-8. Re-run the `Deploy audit-signup Worker` workflow
+**Creates 3 tables:** `customers`, `audit_requests`, `coupon_redemptions` + 3 indexes.
 
 ---
 
-## Still Pending After Deploy
+### 2. Set 5 Worker Secrets
 
-- Run D1 migration via Cloudflare console (`workers/audit-signup/migrations/0001_initial.sql`)
-- Set 5 Worker secrets: `TURNSTILE_SECRET`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL`, `GITHUB_TOKEN`
+Cloudflare Dashboard → Workers & Pages → `afo-audit-signup` → Settings → Variables → Add Secret
+
+| Secret | Description |
+|--------|-------------|
+| `TURNSTILE_SECRET` | Cloudflare Turnstile secret key (from Turnstile dashboard) |
+| `EMAIL_API_KEY` | Email provider API key |
+| `EMAIL_FROM` | Sender email address |
+| `ADMIN_EMAIL` | Admin notification address |
+| `GITHUB_TOKEN` | PAT with repo write access to `agent-feed-optimization` |
 
 ---
 
-## wrangler.toml (unchanged — correct)
+## wrangler.toml (reference)
 ```toml
 name = "afo-audit-signup"
 main = "index.js"
