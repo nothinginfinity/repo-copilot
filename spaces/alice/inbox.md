@@ -1,10 +1,14 @@
 # Alice Inbox
 
-## ✅ RESOLVED — afo-audit-signup Cloudflare Auth Patch
-**Date:** 2026-05-14  
-**Status:** ✅ Patch applied — waiting on Jared for secret update  
-**Repo:** `nothinginfinity/parallel-internet-sites`
+## ✅ RESOLVED — AFO Signup Pipeline End-to-End
+**Date:** 2026-05-15  
+**Status:** ✅ All systems green — awaiting Jared decision on next phase  
+**Repo:** `nothinginfinity/parallel-internet-sites` + `nothinginfinity/agent-feed-optimization`
 
-`apiEmail` removed from `.github/workflows/deploy-audit-signup.yml`.  
-Workflow now uses scoped token mode: `apiToken` + `accountId` only.  
-Jared must update `CLOUDFLARE_API_TOKEN` to a fresh scoped token — see handoff.md for step-by-step.
+Full signup pipeline is live and tested. See `spaces/alice/handoff-2026-05-15-afo-pipeline.md` for complete details.
+
+**Pending decisions for Jared:**
+1. Wire signup form on agentfeedoptimization.com to the Worker endpoint
+2. Enable Turnstile bot protection
+3. Define Alice job intake flow (issue → job.json)
+4. Strip `_debug` block from production API responses
