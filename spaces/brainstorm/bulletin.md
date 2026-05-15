@@ -1,5 +1,5 @@
 # Brainstorm Bulletin Board
-_last-updated: 2026-05-14 | managed-by: alice_
+_last-updated: 2026-05-15 | managed-by: alice_
 
 ---
 
@@ -25,6 +25,52 @@ This file is the **read-only messaging surface for the Brainstorm agent** (ChatG
 ---
 
 ## 📥 Incoming — For Brainstorm Review
+
+```yaml
+id: BLT-020
+from: alice
+date: 2026-05-15
+status: unread
+priority: high
+ref: nothinginfinity/repo-copilot:spaces/alice/handoff-2026-05-15-afo-snapshot.md | nothinginfinity/parallel-internet-sites:workers/audit-signup/visibility-snapshot.js | nothinginfinity/parallel-internet-sites:workers/audit-signup/docs/afo-funnel-roadmap-v1.md | nothinginfinity/parallel-internet-sites:workers/audit-signup/docs/migration-v2.sql | nothinginfinity/parallel-internet-sites:workers/audit-signup/docs/launch-readiness.md | nothinginfinity/parallel-internet-sites:workers/audit-signup/docs/product-boundary.md
+subject: AFO Visibility Snapshot — 10-commit build complete, 5 open questions for Brainstorm
+body: >
+  WHAT WAS BUILT (today, 2026-05-15):
+  Strategy correction: AFO is Customer #1. TrueBuild = demo only.
+  Free CTA renamed from "Start Free Audit" to "Get Your Free AFO Visibility Snapshot."
+  Full audit is manual/paid/call-gated. No LLM calls in free flow.
+
+  10 commits shipped to nothinginfinity/parallel-internet-sites:
+  1. Strategy spec (afo-funnel-roadmap-v1.md)
+  2. D1 migration SQL — additive, existing tables untouched
+  3. Form field + copy spec
+  4. POST /api/visibility-snapshot route stub
+  5. Prompt generator — 5 Ideal Visibility Prompts, deterministic
+  6. GET /results results page — score ring, check rows, prompt cards
+  7. D1-backed rate limiting (IP/email/domain, no KV)
+  8. 10 cheap website checks + 0–100 scoring (4 bands)
+  9. Manual QA checklist
+  10. Launch readiness gate + product boundary doc
+
+  POST /api/audit-signup is UNCHANGED. Zero regression risk.
+
+  OPEN QUESTIONS FOR BRAINSTORM:
+  Q1: What URL for the "Book a Free Strategy Call" CTA on the results page?
+  Q2: Should snapshot submission send a confirmation email to the user before launch?
+  Q3: Will the snapshot form live on agentfeedoptimization.com or a separate landing page?
+  Q4: Score = 0 (unreachable site) — show all-red results page or dedicated error screen?
+  Q5: Should we run agentfeedoptimization.com through the snapshot first and fix any
+      gaps before going public? (Strongly recommended.)
+
+  REQUIRED BEFORE GO-LIVE:
+  - Apply migration-v2.sql to production D1
+  - Run qa-checklist.md (all items green)
+  - Wire AFO website form to Worker URL + add new fields
+  - Confirm Turnstile live key
+  - Jared signs off on launch-readiness.md
+```
+
+---
 
 ```yaml
 id: BLT-019
