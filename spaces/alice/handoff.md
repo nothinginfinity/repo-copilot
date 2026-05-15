@@ -1,11 +1,13 @@
 # Alice Handoff
-_session: 2026-05-14 | status: blocked | next-action: fix Cloudflare auth_
+_session: 2026-05-14 | status: waiting-on-jared | next-action: Jared updates CLOUDFLARE_API_TOKEN secret_
 
 ---
 
 ## Current State
 
-Deploying `afo-audit-signup` Cloudflare Worker via GitHub Actions. Blocked on **authentication error (code: 10000)** after 13 failed runs. Three prior bugs were fixed. Worker code and D1 config are correct — only auth is broken.
+**Auth patch applied.** `apiEmail` has been removed from `.github/workflows/deploy-audit-signup.yml` in `nothinginfinity/parallel-internet-sites`. The workflow now uses scoped API token mode only (`apiToken` + `accountId`).
+
+Blocked on Jared updating `CLOUDFLARE_API_TOKEN` in GitHub Secrets to a **fresh scoped token** (not Global API Key).
 
 ---
 
@@ -22,21 +24,47 @@ Worker path: `workers/audit-signup/`
 | Added missing `package.json` | `workers/audit-signup/package.json` |
 | Removed `[[routes]]` block (caused code 7003) | `workers/audit-signup/wrangler.toml` |
 | Removed unsupported `--log-level debug` flag | `.github/workflows/deploy-audit-signup.yml` |
-| Added `apiEmail` for Global API Key auth attempt | `.github/workflows/deploy-audit-signup.yml` |
+| Added `apiEmail` for Global API Key auth attempt ← caused 10000 | `.github/workflows/deploy-audit-signup.yml` |
+| **Removed `apiEmail`** — scoped token mode only ✅ | `.github/workflows/deploy-audit-signup.yml` |
 
 ---
 
-## Current Error
-
-```
-ERROR A request to the Cloudflare API (/accounts/***/workers/services/afo-audit-signup) failed
-Authentication error [code: 10000]
-Please ensure it has the correct permissions for this operation.
+## Current Workflow (patched)
+```yaml
+- name: Deploy Worker
+  uses: cloudflare/wrangler-action@v3
+  with:
+    apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    workingDirectory: workers/audit-signup
 ```
 
 ---
 
-## Current wrangler.toml
+## Jared's Required Action (BLOCKING)
+
+1. Go to **Cloudflare Dashboard → My Profile → API Tokens → Create Token**
+2. Use "Create Custom Token"
+3. Set permissions:
+   - **Account / Workers Scripts / Edit**
+   - **Account / D1 / Edit**
+   - **Account / Account Settings / Read**
+4. Account Resources: Include **your specific account** (not "All accounts")
+5. Copy the token value (shown only once)
+6. Go to **GitHub → nothinginfinity/parallel-internet-sites → Settings → Secrets → Actions**
+7. Update `CLOUDFLARE_API_TOKEN` with the new scoped token value
+8. Re-run the `Deploy audit-signup Worker` workflow
+
+---
+
+## Still Pending After Deploy
+
+- Run D1 migration via Cloudflare console (`workers/audit-signup/migrations/0001_initial.sql`)
+- Set 5 Worker secrets: `TURNSTILE_SECRET`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL`, `GITHUB_TOKEN`
+
+---
+
+## wrangler.toml (unchanged — correct)
 ```toml
 name = "afo-audit-signup"
 main = "index.js"
@@ -52,54 +80,3 @@ EMAIL_PROVIDER = "log"
 GITHUB_REPO_OWNER = "nothinginfinity"
 GITHUB_REPO_NAME = "agent-feed-optimization"
 ```
-
----
-
-## Current Workflow
-```yaml
-- name: Deploy Worker
-  uses: cloudflare/wrangler-action@v3
-  with:
-    apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-    apiEmail: ${{ secrets.CLOUDFLARE_API_EMAIL }}
-    accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-    workingDirectory: workers/audit-signup
-```
-
----
-
-## GitHub Secrets (as of session end)
-
-| Secret | Status |
-|--------|--------|
-| `CLOUDFLARE_API_TOKEN` | Set to Global API Key (last updated ~5:05 PM 2026-05-14) |
-| `CLOUDFLARE_API_EMAIL` | `getfitdoc@me.com` |
-| `CLOUDFLARE_ACCOUNT_ID` | Full 32-char UUID |
-
----
-
-## Hypothesis
-
-Most likely cause: `apiEmail` + Global API Key combo is conflicting with wrangler-action@v3. The `apiEmail` field is a legacy Global API Key signal — when both `apiToken` and `apiEmail` are present, wrangler may be treating the token as a Global Key but the value isn't correct format, or the token was never actually saved as the Global Key.
-
----
-
-## Recommended Next Steps (priority order)
-
-1. **Create a fresh scoped API token** on Cloudflare with:
-   - Workers Scripts: Edit (Account scope)
-   - D1: Edit (Account scope)
-   - Account Settings: Read (Account scope)
-   - Scope set to **Account** (not Zone, not User)
-2. **Update `CLOUDFLARE_API_TOKEN`** in GitHub Secrets with the new token value
-3. **Remove `apiEmail`** from the workflow (only needed for Global Key, conflicts with scoped tokens)
-4. Re-run the workflow
-
-If still failing after above — try upgrading to `wrangler-action@v4`.
-
----
-
-## Still Pending After Deploy
-
-- Run D1 migration via Cloudflare console (`workers/audit-signup/migrations/0001_initial.sql`)
-- Set 5 Worker secrets: `TURNSTILE_SECRET`, `EMAIL_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL`, `GITHUB_TOKEN`
