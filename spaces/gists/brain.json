@@ -1,11 +1,28 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-15T23:55:00.000Z",
+  "generated_at": "2026-05-16T01:00:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 9,
+  "note_count": 10,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 9 sessions distilled. Latest: 2026-05-15. Projects: repo-copilot, parallel-internet-sites. Top concepts: AFO Visibility Snapshot decisions resolved, CTA URL confirmed, unreachable-site error screen, /start page required, post-launch email, AFO self-test gate.",
+  "fortune_decode": "Agent second brain. 10 sessions distilled. Latest: 2026-05-15 evening. Projects: repo-copilot, parallel-internet-sites. Top concepts: AFO site architecture confirmed (Worker not Pages), /start route not yet live, 146 visitors with broken CTA, TrueBuild still shown as real, BLT-021 filed.",
   "notes": [
+    {
+      "title": "AFO site architecture confirmed — Worker not Pages, /start not yet live",
+      "date": "2026-05-15",
+      "source": "Alice",
+      "project": "parallel-internet-sites",
+      "new_concepts": [
+        "afo-site Worker serves agentfeedoptimization.com directly",
+        "no separate Pages project",
+        "no separate site repo",
+        "start.html exists as template but /start route not wired",
+        "146 unique visitors with broken CTA",
+        "TrueBuild still shown as real case study on homepage"
+      ],
+      "decisions": "Worker name: afo-site. Custom domain: agentfeedoptimization.com. Source repo: parallel-internet-sites. /start must be wired as a route in the Worker handler. Turnstile key injected at serve time. CTA URL = agentfeedoptimization.com/start?source=snapshot-results. BLT-021 filed.",
+      "open_questions": "Booking link URL for results page CTA. Score=0 error screen copy. AFO self-test runner (Jared or Alice).",
+      "cid": "alice/2026-05-15-evening/jared"
+    },
     {
       "title": "Brainstorm Q&A resolved — all 5 AFO snapshot open questions answered",
       "date": "2026-05-15",

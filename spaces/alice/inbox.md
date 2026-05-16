@@ -9,37 +9,40 @@ Full signup pipeline live and tested. See `spaces/alice/handoff-2026-05-15-afo-p
 
 ---
 
-## 🟡 READY FOR REVIEW — AFO Visibility Snapshot Build
+## ✅ RESOLVED — AFO Visibility Snapshot Build (10/10 commits)
 **Date:** 2026-05-15  
-**Status:** 🟡 10/10 commits complete — awaiting Jared + Brainstorm review  
+**Status:** ✅ Build complete — blocked on wiring, not reviewed yet  
 **Repo:** `nothinginfinity/parallel-internet-sites`  
-**Branch:** `main`
 
 See full handoff: `spaces/alice/handoff-2026-05-15-afo-snapshot.md`
 
-### What was built
-- `POST /api/visibility-snapshot` — new free snapshot endpoint (rate-limited, Turnstile-gated)
-- `GET /results` — results page with score ring, check rows, prompt cards, copy-to-clipboard
-- `website-checker.js` — 10 cheap HTTP checks, 0–100 score, 4 score bands
-- `rate-limit.js` — D1-backed rate limiting (IP/email/domain, no KV needed)
-- `prompt-generator.js` — 5 Ideal Visibility Prompts, deterministic, no LLM API
-- `docs/` — strategy spec, D1 migration SQL, form spec, QA checklist, launch readiness, product boundary
+---
 
-### What was NOT changed
-- `POST /api/audit-signup` — zero changes, fully intact
-- `wrangler.toml` — no new bindings
-- Existing D1 tables — migration is additive only
+## 🔴 BLOCKED — BLT-021: Wire /start route + go-live gate
+**Date:** 2026-05-15  
+**Status:** 🔴 Blocked — awaiting Jared review + open questions answered  
+**Repo:** `nothinginfinity/parallel-internet-sites`  
+**Branch:** `main`
 
-### Required before go-live
-1. Apply `docs/migration-v2.sql` to production D1
-2. Run `docs/qa-checklist.md` — all items ✅
-3. Wire AFO website form to Worker URL + add new fields
-4. Confirm Turnstile live key is set
-5. Fill out `docs/launch-readiness.md` — Jared signs off
+See full handoff: `spaces/alice/handoff-2026-05-15-afo-site-architecture.md`
 
-### Open questions for Brainstorm
-1. What URL for the “Book a Free Strategy Call” button on the results page?
-2. Should a snapshot confirmation email send to the user on submission?
-3. Will the form live on `agentfeedoptimization.com` or a separate landing page?
-4. Score = 0 (unreachable site) — show error or show results with all red?
-5. Run AFO site through the snapshot first — fix any AFO signals before public launch.
+### Architecture confirmed this session
+- `agentfeedoptimization.com` = served by Worker `afo-site` in THIS repo — no separate Pages project, no separate repo
+- `start.html` template exists but `/start` route is NOT live
+- 146 unique visitors yesterday — CTA button is broken (no destination)
+- TrueBuild still shown as real case study on homepage — needs demo label
+
+### Blocking items before go-live
+1. Wire `/start` route in Worker + inject Turnstile key
+2. Wire CTA URL in results-page.js → `/start?source=snapshot-results`
+3. Add unreachable-site error screen (score=0)
+4. Apply migration-v2.sql to production D1
+5. Run QA checklist
+6. Mark TrueBuild as demo in homepage copy
+7. AFO self-test (run snapshot on agentfeedoptimization.com)
+8. Jared signs off on launch-readiness.md
+
+### Open questions (must resolve before wiring)
+1. "Book a Free Strategy Call" button URL — what booking link?
+2. Score=0 error screen copy — what message?
+3. AFO self-test — Jared runs or Alice runs?
