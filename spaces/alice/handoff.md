@@ -1,80 +1,79 @@
-# Alice Handoff
-_session: 2026-05-14 | status: deploy-green | next-action: Jared runs D1 migration + sets Worker secrets_
+# Alice Handoff — 2026-05-15 Evening (Session 3)
+_Authoritative state snapshot. Overrides inbox and mail for current status._
 
 ---
 
 ## Current State
 
-**Worker deployed successfully. ✅** Run #15 went green (32s, manually triggered). Auth blocker is resolved.
+**Phase:** AFO v1 dogfood launch — code complete, blocked on Cloudflare domain wiring only.
 
-Two post-deploy steps remain — both are Jared-only Cloudflare console actions. No code changes needed.
+**What's done:**
+- All 10 roadmap commits shipped to `nothinginfinity/parallel-internet-sites`
+- `workers/visibility-snapshot/` Worker is complete:
+  - `index.js` — serves `GET /start`, `GET /results`, `POST /api/visibility-snapshot`
+  - `start.html` — full 8-field form + Turnstile + `{{TURNSTILE_SITE_KEY}}` placeholder (injected at serve time)
+  - `results.html` — score ring, 10-check list, 5 prompts, platform links, CTA card
+  - `wrangler.toml` — Worker name `afo-visibility-snapshot`, D1 binding `afo-v1`
+  - Booking URL **hardcoded** in `results.html`: `https://cal.com/jared-edwards-gscxmo`
+  - Booking URL also in `index.js` const `BOOKING_URL` (for API unreachable response only)
+- `db/migrations/002_visibility_snapshot_fields.sql` — additive migration ready to apply
+  - Adds columns to `audit_requests`
+  - Creates `visibility_snapshots` table + 3 indexes
+- `.github/workflows/deploy-visibility-snapshot.yml` — deploys on push to `workers/visibility-snapshot/**`
+- `TURNSTILE_SECRET` injected as secret by the workflow
+
+**What is NOT done (Cloudflare dashboard steps — Jared must do):**
+1. Apply migration to production D1:
+   ```
+   wrangler d1 execute afo-v1 --file=db/migrations/002_visibility_snapshot_fields.sql --remote
+   ```
+2. Add `TURNSTILE_SITE_KEY` to Worker `[vars]` in dashboard OR in `wrangler.toml` (needed for `/start` form)
+3. Wire custom domain route: `agentfeedoptimization.com/*` → Worker `afo-visibility-snapshot`
+4. Trigger deploy: push any change to `workers/visibility-snapshot/**` OR run workflow manually
+
+**TrueBuild homepage label** — homepage copy still shows TrueBuild as a real case study. Needs a "Demo" label. Deferred — not blocking launch.
+
+**AFO self-test** — Jared or Alice runs snapshot on `agentfeedoptimization.com` after launch as go/no-go gate.
 
 ---
 
-## Repo
-`nothinginfinity/parallel-internet-sites`  
-Worker name: `afo-audit-signup`  
-Worker path: `workers/audit-signup/`
+## Open Questions
+
+1. **Migration apply** — Has Jared run `002_visibility_snapshot_fields.sql` against production D1 yet?
+2. **TURNSTILE_SITE_KEY** — Is the site key var set in the Worker? (Secret is set by workflow; site key is a public var.)
+3. **Custom domain route** — Is `agentfeedoptimization.com` routing to the `afo-visibility-snapshot` Worker yet?
+4. **TrueBuild demo label** — Low priority, needs a one-line copy edit on the homepage.
 
 ---
 
-## ✅ All Fixes Applied
+## Repo Structure (as audited this session)
 
-| Fix | File |
-|-----|------|
-| Added missing `package.json` | `workers/audit-signup/package.json` |
-| Removed `[[routes]]` block (code 7003) | `workers/audit-signup/wrangler.toml` |
-| Removed `--log-level debug` flag | `.github/workflows/deploy-audit-signup.yml` |
-| Removed `apiEmail` (code 10000 fix) | `.github/workflows/deploy-audit-signup.yml` |
-
----
-
-## 🔴 Jared's Remaining Actions
-
-### 1. Run D1 Migration
-
-Database: `afo-v1` | ID: `ccbd076e-aaa7-42bb-8808-a20bd83569e2`
-
-**Option A — Cloudflare Console (recommended for one-time run):**
-1. Cloudflare Dashboard → D1 → `afo-v1` → Console tab
-2. Paste and run the contents of `workers/audit-signup/migrations/0001_initial.sql`
-
-**Option B — Wrangler CLI (from repo root):**
-```bash
-npx wrangler d1 execute afo-v1 --file=workers/audit-signup/migrations/0001_initial.sql --remote
+```
+nothinginfinity/parallel-internet-sites
+├── .github/workflows/
+│   ├── deploy-audit-signup.yml
+│   └── deploy-visibility-snapshot.yml
+├── db/migrations/
+│   ├── 002_visibility_snapshot_fields.sql  ✅ ready to apply
+│   └── README.md
+├── docs/
+│   └── afo-funnel-roadmap-v1.md           ✅ committed
+├── workers/
+│   ├── audit-signup/                       ✅ untouched — live
+│   └── visibility-snapshot/
+│       ├── index.js                        ✅ complete
+│       ├── start.html                      ✅ complete
+│       ├── results.html                    ✅ complete (booking URL hardcoded)
+│       ├── wrangler.toml                   ✅ complete
+│       ├── package.json                    ✅
+│       └── README.md                       ✅
 ```
 
-**Creates 3 tables:** `customers`, `audit_requests`, `coupon_redemptions` + 3 indexes.
-
 ---
 
-### 2. Set 5 Worker Secrets
+## Next Session Start Checklist
 
-Cloudflare Dashboard → Workers & Pages → `afo-audit-signup` → Settings → Variables → Add Secret
-
-| Secret | Description |
-|--------|-------------|
-| `TURNSTILE_SECRET` | Cloudflare Turnstile secret key (from Turnstile dashboard) |
-| `EMAIL_API_KEY` | Email provider API key |
-| `EMAIL_FROM` | Sender email address |
-| `ADMIN_EMAIL` | Admin notification address |
-| `GITHUB_TOKEN` | PAT with repo write access to `agent-feed-optimization` |
-
----
-
-## wrangler.toml (reference)
-```toml
-name = "afo-audit-signup"
-main = "index.js"
-compatibility_date = "2024-09-23"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "afo-v1"
-database_id = "ccbd076e-aaa7-42bb-8808-a20bd83569e2"
-
-[vars]
-EMAIL_PROVIDER = "log"
-GITHUB_REPO_OWNER = "nothinginfinity"
-GITHUB_REPO_NAME = "agent-feed-optimization"
-```
+1. Ask Jared: Have the 4 Cloudflare dashboard steps above been completed?
+2. If yes to all 4 → run AFO self-test and mark launch-ready
+3. If no → identify which step is stuck and unblock
+4. TrueBuild demo label — 5-minute copy edit, bundle with next push

@@ -1,11 +1,28 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-16T01:00:00.000Z",
+  "generated_at": "2026-05-16T01:44:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 10,
+  "note_count": 11,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 10 sessions distilled. Latest: 2026-05-15 evening. Projects: repo-copilot, parallel-internet-sites. Top concepts: AFO site architecture confirmed (Worker not Pages), /start route not yet live, 146 visitors with broken CTA, TrueBuild still shown as real, BLT-021 filed.",
+  "fortune_decode": "Agent second brain. 11 sessions distilled. Latest: 2026-05-15 evening session 3. Full code audit complete. Worker routes /start /results /api/visibility-snapshot all wired. results.html has booking URL hardcoded. migration-v2 = 002_visibility_snapshot_fields.sql exists and ready. 4 Cloudflare dashboard steps remain for Jared.",
   "notes": [
+    {
+      "title": "Full Worker audit — all code complete, 4 Cloudflare dashboard steps remain",
+      "date": "2026-05-15",
+      "source": "Alice",
+      "project": "parallel-internet-sites",
+      "new_concepts": [
+        "Worker afo-visibility-snapshot serves agentfeedoptimization.com",
+        "/start /results /api/visibility-snapshot all wired in index.js",
+        "results.html booking URL hardcoded = cal.com/jared-edwards-gscxmo",
+        "002_visibility_snapshot_fields.sql = migration-v2, exists and ready",
+        "TURNSTILE_SITE_KEY is a public var — not injected by workflow",
+        "4 dashboard steps: run migration, set site key var, wire domain, trigger deploy"
+      ],
+      "decisions": "No code changes needed. All routes, HTML, booking URL, error screens, and migration are in place. Remaining blockers are Cloudflare dashboard actions Jared must perform.",
+      "open_questions": "Has Jared run migration-v2 on production D1? Is TURNSTILE_SITE_KEY set? Is domain routed?",
+      "cid": "alice/2026-05-15-evening-s3/jared"
+    },
     {
       "title": "AFO site architecture confirmed — Worker not Pages, /start not yet live",
       "date": "2026-05-15",
