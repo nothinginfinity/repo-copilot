@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-18T07:41:24.537Z",
+  "generated_at": "2026-05-18T14:50:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 6,
+  "note_count": 7,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 6 sessions distilled. Latest: 2026-05-09. Projects: repo-copilot. Top concepts: archive_block, notion-ops-soft-delete, unarchive-support, cleanup-audit, notion-ops-result-write-verified, multi-user provisioning, bootstrap URL pattern, gist template with placeholders, provision GitHub Action, Notion Roadmap DB.",
+  "fortune_decode": "Agent second brain. 7 sessions distilled. Latest: 2026-05-18. Projects: repo-copilot, parallel-internet-sites (AFO). Top concepts: archive_block, notion-ops-soft-delete, unarchive-support, cleanup-audit, notion-ops-result-write-verified, multi-user provisioning, bootstrap URL pattern, gist template with placeholders, provision GitHub Action, Notion Roadmap DB, AFO Visibility Snapshot Worker, Quick Edit drift, source recovery, deploy pipeline.",
   "notes": [
     {
       "title": "archive_block op added to notion-ops",
@@ -118,6 +118,24 @@
       "cid": "bob/c1/jared",
       "gist_snapshot": "https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92",
       "notion_url": "https://www.notion.so/gitzip-hardening-Path-A-Agent-Notes-DB-live-35bd927c979281c9b4c8ff1e37edf5d3"
+    },
+    {
+      "title": "AFO index.js source recovery — Quick Edit drift resolved",
+      "date": "2026-05-18",
+      "source": "Perplexity",
+      "project": "parallel-internet-sites / AFO",
+      "new_concepts": [
+        "Quick Edit drift",
+        "Cloudflare Worker source recovery",
+        "git commit SHA recovery",
+        "deploy pipeline gap",
+        "Worker source-of-truth discipline"
+      ],
+      "decisions": "Recovered full index.js from commit e2df086 (blob 9a2ea75) — pushed to main in nothinginfinity/parallel-internet-sites. Worker contains two inlined HTML pages (START_HTML, RESULTS_HTML), router, handleSnapshot POST handler with 10-signal scoring, D1 rate limiting, Turnstile verification, MailChannels lead notification. BOOKING_URL = https://cal.com/jared-edwards-gscxmo. Documented in handoff.md, mail.md (Bob thread), brainstorm bulletin, and brain.json.",
+      "open_questions": "Deploy pipeline (GitHub Action → Cloudflare Workers) not yet wired. D1 schema.sql presence in repo unverified. Branch protection on parallel-internet-sites main not confirmed.",
+      "cid": "alice/c3/jared",
+      "gist_snapshot": null,
+      "notion_url": null
     }
   ]
 }
