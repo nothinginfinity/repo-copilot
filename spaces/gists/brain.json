@@ -1,21 +1,17 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-18T14:50:00.000Z",
+  "generated_at": "2026-05-18T17:10:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 7,
+  "note_count": 8,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 7 sessions distilled. Latest: 2026-05-18. Projects: repo-copilot, parallel-internet-sites (AFO). Top concepts: archive_block, notion-ops-soft-delete, unarchive-support, cleanup-audit, notion-ops-result-write-verified, multi-user provisioning, bootstrap URL pattern, gist template with placeholders, provision GitHub Action, Notion Roadmap DB, AFO Visibility Snapshot Worker, Quick Edit drift, source recovery, deploy pipeline.",
+  "fortune_decode": "Agent second brain. 8 sessions distilled. Latest: 2026-05-18. Projects: repo-copilot, parallel-internet-sites (AFO). Top concepts: archive_block, notion-ops-soft-delete, unarchive-support, cleanup-audit, notion-ops-result-write-verified, multi-user provisioning, bootstrap URL pattern, gist template with placeholders, provision GitHub Action, Notion Roadmap DB, AFO Visibility Snapshot Worker, Quick Edit drift, source recovery, deploy pipeline, Claude agent bootstrap, afo-mcp tools, D1 schema migration.",
   "notes": [
     {
       "title": "archive_block op added to notion-ops",
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": [
-        "archive_block",
-        "notion-ops-soft-delete",
-        "unarchive-support"
-      ],
+      "new_concepts": ["archive_block", "notion-ops-soft-delete", "unarchive-support"],
       "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true; unarchive boolean supported",
       "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
       "cid": "bob/c2/jared",
@@ -27,10 +23,7 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": [
-        "cleanup-audit",
-        "notion-ops-result-write-verified"
-      ],
+      "new_concepts": ["cleanup-audit", "notion-ops-result-write-verified"],
       "decisions": "Items 1 and 3 already clean; Item 2 (archive old DB) needs Jared action in Notion",
       "open_questions": "Should we add archive_database op to notion-ops to avoid future manual Notion steps?",
       "cid": "bob/c2/jared",
@@ -42,14 +35,7 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": [
-        "multi-user provisioning",
-        "bootstrap URL pattern",
-        "gist template with placeholders",
-        "provision GitHub Action",
-        "Notion Roadmap DB",
-        "phase-ordered build roadmap"
-      ],
+      "new_concepts": ["multi-user provisioning", "bootstrap URL pattern", "gist template with placeholders", "provision GitHub Action", "Notion Roadmap DB", "phase-ordered build roadmap"],
       "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases. Notion Roadmap DB is next build step.",
       "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
       "cid": "alice/c2/jared",
@@ -61,13 +47,7 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": [
-        "turn as unit of memory",
-        "turn-level brain push",
-        "3-slot tool call budget",
-        "minimum viable turn note",
-        "slot-3 brain push reservation"
-      ],
+      "new_concepts": ["turn as unit of memory", "turn-level brain push", "3-slot tool call budget", "minimum viable turn note", "slot-3 brain push reservation"],
       "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid. Work splits across turns if slot 3 is needed for brain push.",
       "open_questions": "Bob and Charlie Space instructions need same turn-level mandate. Perplexity Space instructions may need manual update by Jared.",
       "cid": "alice/c2/jared",
@@ -79,18 +59,7 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": [
-        "adapter_ref",
-        "SKILL Stone self-invocation",
-        "G-008 ALERT type",
-        "BLOCKING/WARNING/INFO severity levels",
-        "ALERT lifecycle (raise-load-clear)",
-        "Charlie agent slot",
-        "three-agents demo pattern",
-        "export_brain op",
-        "brain-export workflow",
-        "scheduled brain refresh"
-      ],
+      "new_concepts": ["adapter_ref", "SKILL Stone self-invocation", "G-008 ALERT type", "BLOCKING/WARNING/INFO severity levels", "ALERT lifecycle (raise-load-clear)", "Charlie agent slot", "three-agents demo pattern", "export_brain op", "brain-export workflow", "scheduled brain refresh"],
       "decisions": "adapter_ref field added to QA.Stone gist block — SKILL Stones now self-invoking via adapter_ref path. G-008 ALERT type formalized as type spec + lifecycle doc. Charlie agent slot seeded with orientation message and full stack state. notion-ops registered as first live SKILL Stone with adapter_ref pointing to queue.json. brain.json read primitive implemented as export_brain op in notion-ops.yml + standalone brain-export.yml workflow with 3 triggers (push, manual, daily 06:00 UTC).",
       "open_questions": "Three-Agents Demo build not yet started — demo HTML seed, demo-run.md, Notion build log, GitHub Pages deploy all pending. notion-ops SKILL Stone gist_id is null — needs a real gist.github.com wormhole.",
       "cid": "alice/c2/jared",
@@ -102,17 +71,7 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": [
-        "normalizeSrc",
-        "execFileSync (no shell surface)",
-        "zip bomb guard (file count + bytes)",
-        "normalizeDest root edge-case",
-        "create_database op",
-        "append_row op",
-        "append_note op",
-        "G-010 BRAIN gist type",
-        "agent second brain pattern"
-      ],
+      "new_concepts": ["normalizeSrc", "execFileSync (no shell surface)", "zip bomb guard (file count + bytes)", "normalizeDest root edge-case", "create_database op", "append_row op", "append_note op", "G-010 BRAIN gist type", "agent second brain pattern"],
       "decisions": "Hardened gitzip-push before Three Agents Demo (blocking cleared). Added create_database, append_row, append_note to notion-ops. Provisioned Agent Notes DB via create_database op. Registered as G-010 BRAIN in gist registry. append_note is the canonical session-end write primitive going forward.",
       "open_questions": "When to build brain.json read primitive (G-010 gist export Action)? Alice still needs to ship: adapter_ref QA.Stone amendment, G-008 ALERT gist, Charlie agent slot, notion-ops QA.Stone SKILL Stone registration.",
       "cid": "bob/c1/jared",
@@ -124,16 +83,22 @@
       "date": "2026-05-18",
       "source": "Perplexity",
       "project": "parallel-internet-sites / AFO",
-      "new_concepts": [
-        "Quick Edit drift",
-        "Cloudflare Worker source recovery",
-        "git commit SHA recovery",
-        "deploy pipeline gap",
-        "Worker source-of-truth discipline"
-      ],
+      "new_concepts": ["Quick Edit drift", "Cloudflare Worker source recovery", "git commit SHA recovery", "deploy pipeline gap", "Worker source-of-truth discipline"],
       "decisions": "Recovered full index.js from commit e2df086 (blob 9a2ea75) — pushed to main in nothinginfinity/parallel-internet-sites. Worker contains two inlined HTML pages (START_HTML, RESULTS_HTML), router, handleSnapshot POST handler with 10-signal scoring, D1 rate limiting, Turnstile verification, MailChannels lead notification. BOOKING_URL = https://cal.com/jared-edwards-gscxmo. Documented in handoff.md, mail.md (Bob thread), brainstorm bulletin, and brain.json.",
       "open_questions": "Deploy pipeline (GitHub Action → Cloudflare Workers) not yet wired. D1 schema.sql presence in repo unverified. Branch protection on parallel-internet-sites main not confirmed.",
       "cid": "alice/c3/jared",
+      "gist_snapshot": null,
+      "notion_url": null
+    },
+    {
+      "title": "Claude agent bootstrapped — afo-mcp tools documented, inbox system wired",
+      "date": "2026-05-18",
+      "source": "Perplexity",
+      "project": "repo-copilot",
+      "new_concepts": ["Claude agent", "afo-mcp server", "listTables", "queryD1", "getCustomerRows", "getSnapshotRows", "checkWorkerBind", "applyMigration", "pingEndpoint", "D1 schema migration", "cross-agent inbox routing"],
+      "decisions": "Claude bootstrapped as 4th team agent (Cloudflare ops specialist). Created spaces/claude/inbox.md, outbox.md, capabilities.md, and G-002-claude-boot.md. Updated G-000 with Claude team roster entry, afo-mcp summary, Claude routing rules, and full inbox architecture table. First message routed to Claude inbox: D1 schema migration for visibility_snapshots + customers missing columns.",
+      "open_questions": "Claude has no auto-boot trigger — Jared must manually ask Claude to check inbox each session. Future: consider a shared session kickoff prompt that loads both Alice and Claude boot gists.",
+      "cid": "alice/c4/jared",
       "gist_snapshot": null,
       "notion_url": null
     }
