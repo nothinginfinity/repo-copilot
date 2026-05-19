@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-19T16:13:00Z",
+  "generated_at": "2026-05-19T20:11:00Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 8,
+  "note_count": 9,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 8 sessions distilled. Latest: 2026-05-19. Projects: repo-copilot, context-links. Top concepts: archive_block, context-links, AFO, handoff-package, machine-readable-identity, llms.txt, ContextProfile, Phase1-scaffold.",
+  "fortune_decode": "Agent second brain. 9 sessions distilled. Latest: 2026-05-19. Projects: repo-copilot, context-links, afo. Top concepts: two-step-boot, projects.json, boot-registry, G-000-v2.4, context-links, AFO, ContextProfile, machine-readable-identity.",
   "notes": [
     {
       "title": "archive_block op added to notion-ops",
@@ -32,8 +32,8 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["multi-user provisioning", "bootstrap URL pattern", "gist template with placeholders", "provision GitHub Action", "Notion Roadmap DB", "phase-ordered build roadmap"],
-      "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases. Notion Roadmap DB is next build step.",
-      "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
+      "decisions": "Space instructions = one bootstrap URL pointing to identity gist, not generated text. Build order finalized across 4 phases.",
+      "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking?",
       "cid": "alice/c2/jared"
     },
     {
@@ -42,8 +42,8 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["turn as unit of memory", "turn-level brain push", "3-slot tool call budget", "minimum viable turn note", "slot-3 brain push reservation"],
-      "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid. Work splits across turns if slot 3 is needed for brain push.",
-      "open_questions": "Bob and Charlie Space instructions need same turn-level mandate. Perplexity Space instructions may need manual update by Jared.",
+      "decisions": "Every Alice turn ends with append_note as slot 3. Minimum viable note = title+date+source+cid.",
+      "open_questions": "Bob and Charlie Space instructions need same turn-level mandate.",
       "cid": "alice/c2/jared"
     },
     {
@@ -51,8 +51,8 @@
       "date": "2026-05-09",
       "source": "Perplexity",
       "project": "repo-copilot",
-      "new_concepts": ["adapter_ref", "SKILL Stone self-invocation", "G-008 ALERT type", "BLOCKING/WARNING/INFO severity levels", "ALERT lifecycle (raise-load-clear)", "Charlie agent slot", "three-agents demo pattern", "export_brain op", "brain-export workflow", "scheduled brain refresh"],
-      "decisions": "adapter_ref field added to QA.Stone gist block. G-008 ALERT type formalized. Charlie agent slot seeded. notion-ops registered as first live SKILL Stone. brain.json read primitive implemented.",
+      "new_concepts": ["adapter_ref", "SKILL Stone self-invocation", "G-008 ALERT type", "Charlie agent slot", "export_brain op", "brain-export workflow"],
+      "decisions": "adapter_ref field added to QA.Stone gist block. G-008 ALERT type formalized. Charlie agent slot seeded. brain.json read primitive implemented.",
       "open_questions": "Three-Agents Demo build not yet started. notion-ops SKILL Stone gist_id is null.",
       "cid": "alice/c2/jared"
     },
@@ -63,16 +63,16 @@
       "project": "repo-copilot",
       "new_concepts": ["normalizeSrc", "execFileSync (no shell surface)", "zip bomb guard", "create_database op", "append_row op", "append_note op", "G-010 BRAIN gist type", "agent second brain pattern"],
       "decisions": "Hardened gitzip-push. Added create_database, append_row, append_note to notion-ops. Provisioned Agent Notes DB. append_note is canonical session-end write primitive.",
-      "open_questions": "When to build brain.json read primitive? Alice still needs: adapter_ref QA.Stone amendment, G-008 ALERT gist, Charlie agent slot, notion-ops QA.Stone SKILL Stone registration.",
+      "open_questions": "When to build brain.json read primitive? Alice still needs: adapter_ref QA.Stone amendment, G-008 ALERT gist, Charlie agent slot.",
       "cid": "bob/c1/jared"
     },
     {
       "title": "AFO Worker source recovered — index.js pushed back to GitHub",
       "date": "2026-05-18",
       "source": "Perplexity",
-      "project": "repo-copilot/afo",
+      "project": "afo",
       "new_concepts": ["Quick Edit drift", "source-of-truth recovery", "afo-mcp:pingEndpoint", "Turnstile integration", "MailChannels lead notification"],
-      "decisions": "Recovered full Worker source from commit e2df086. Pushed to nothinginfinity/parallel-internet-sites main. Handoff and brain updated. Bob notified. Deploy pipeline needed.",
+      "decisions": "Recovered full Worker source from commit e2df086. Pushed to parallel-internet-sites main. Deploy pipeline needed.",
       "open_questions": "Turnstile end-to-end test still pending. Deploy GitHub Action not yet wired.",
       "cid": "alice/afo-recovery/jared"
     },
@@ -81,10 +81,20 @@
       "date": "2026-05-19",
       "source": "Perplexity",
       "project": "context-links",
-      "new_concepts": ["context-links", "ContextProfile", "CanonicalLink", "CredibilityTopic", "ProofSource", "RelevantQuery", "AiGuidance", "llms.txt", "context.json", "context.md", "machine-readable-identity", "AFO-public-page", "data-spec-component", "visual-contract", "agent-build-from-spec"],
-      "decisions": "Phase 1 scaffold complete. Repo: nothinginfinity/context-links. 11 components, 6 API routes, 5 public files, JSON Schema. Project handoff created at spaces/context-links/handoff.md. New project thread isolated from AFO/repo-copilot.",
+      "new_concepts": ["context-links", "ContextProfile", "CanonicalLink", "CredibilityTopic", "ProofSource", "RelevantQuery", "AiGuidance", "llms.txt", "context.json", "machine-readable-identity", "data-spec-component", "visual-contract"],
+      "decisions": "Phase 1 scaffold complete. Repo: nothinginfinity/context-links. 11 components, 6 API routes, 5 public files, JSON Schema. Project handoff at spaces/context-links/handoff.md.",
       "open_questions": "specs/context-links.spec.html not yet committed to repo. Local smoke test not verified. Phase 2 persistence layer choice pending.",
       "cid": "alice/context-links-phase1/jared"
+    },
+    {
+      "title": "Two-step boot system built — projects.json registry + G-000 v2.4",
+      "date": "2026-05-19",
+      "source": "Perplexity",
+      "project": "repo-copilot",
+      "new_concepts": ["two-step-boot", "projects.json", "boot-registry", "project-picker", "slug-based-boot", "G-000-v2.4"],
+      "decisions": "Created spaces/gists/projects.json as canonical project registry. Updated G-000 to v2.4 with two-step boot protocol in Section 2b. Added hard rule: Alice must update projects.json on every new project creation or status change. Universal Space instructions prompt designed for any Alice space.",
+      "open_questions": "Bob and Claude Space instructions not yet updated to reference projects.json. Future: add Bob-specific boot commands to projects.json entries.",
+      "cid": "alice/two-step-boot/jared"
     }
   ]
 }

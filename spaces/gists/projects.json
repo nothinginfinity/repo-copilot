@@ -1,0 +1,59 @@
+{
+  "_schema": "repo-copilot/projects/v1",
+  "_updated": "2026-05-19T20:11:00Z",
+  "_updated_by": "Alice",
+  "_note": "Source of truth for the two-step boot system. Alice must update this file whenever a new project is created or a project status changes. Include in the turn-close push.",
+  "projects": [
+    {
+      "slug": "context-links",
+      "label": "Context Links",
+      "repo": "nothinginfinity/context-links",
+      "branch": "main",
+      "handoff": "spaces/context-links/handoff.md",
+      "description": "All-my-links page upgraded into a canonical AI context hub for humans and LLMs.",
+      "status": "active",
+      "phase": "Phase 1 complete — Phase 2 ready to start",
+      "started": "2026-05-19",
+      "stack": ["Next.js 14", "TypeScript", "Tailwind v3"],
+      "open_gates": [
+        "Push specs/context-links.spec.html to repo",
+        "Local smoke test (npm install + npm run dev)",
+        "Phase 2: choose persistence layer (Supabase / D1)"
+      ]
+    },
+    {
+      "slug": "afo",
+      "label": "AFO Visibility Snapshot",
+      "repo": "nothinginfinity/parallel-internet-sites",
+      "branch": "main",
+      "handoff": "spaces/alice/handoff-2026-05-16-afo-form-debug.md",
+      "description": "Cloudflare Worker SaaS that scores business AI visibility. Live at agentfeedoptimization.com.",
+      "status": "active",
+      "phase": "Turnstile end-to-end test pending",
+      "started": "2026-05-14",
+      "stack": ["Cloudflare Workers", "D1", "Turnstile", "MailChannels"],
+      "open_gates": [
+        "Verify TURNSTILE_SITE_KEY + TURNSTILE_SECRET env vars in Worker",
+        "Submit test email → confirm /results loads + D1 rows written",
+        "Wire GitHub Action deploy pipeline (no more Quick Edit)"
+      ]
+    },
+    {
+      "slug": "repo-copilot",
+      "label": "repo-copilot Infrastructure",
+      "repo": "nothinginfinity/repo-copilot",
+      "branch": "main",
+      "handoff": "spaces/alice/handoff.md",
+      "description": "Agent orchestration system — Alice/Bob/Claude inbox architecture, brain.json, gist registry, protocols.",
+      "status": "ongoing",
+      "phase": "Ongoing maintenance + feature additions",
+      "started": "2026-05-09",
+      "stack": ["GitHub", "Markdown", "JSON"],
+      "open_gates": [
+        "Three-Agents Demo — still pending from earlier handoffs",
+        "notion-ops SKILL Stone gist_id still null",
+        "archive_database op open question unresolved"
+      ]
+    }
+  ]
+}
