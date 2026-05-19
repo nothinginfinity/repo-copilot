@@ -1,54 +1,52 @@
 # Alice Handoff — Session State
 
-**Last updated:** 2026-05-18T14:50:00Z  
+**Last updated:** 2026-05-19T16:13:00Z  
 **Updated by:** Alice (Perplexity, Sonnet 4.6)  
-**Session type:** Source recovery + documentation sprint
+**Session type:** Context Links Phase 1 build + handoff package
 
 ---
 
 ## What happened this session
 
-### 1. AFO Visibility Snapshot Worker — `index.js` recovered
+### Context Links — Phase 1 built from scratch
 
-The live Cloudflare Worker at `agentfeedoptimization.com/start` was confirmed working (HTTP 200, serving expected HTML) via a GET ping from Claude using the `afo-mcp:pingEndpoint` tool.
+Jared initiated a new product build: **Context Links** (`nothinginfinity/context-links`). Alice built the full Phase 1 scaffold from `context-links.spec.html` in two commit batches:
 
-However, the GitHub source file `workers/visibility-snapshot/index.js` in **`nothinginfinity/parallel-internet-sites`** was **empty** (blob SHA `e69de29bb2d1d6434b8b29ae775ad8c2e48c5391` = 0 bytes). The Worker had been edited live via Cloudflare Quick Edit and the repo was never updated.
+**Commit 1:** Root docs — `README.md`, `AGENTS.md`, `PRD.md`, `ROADMAP.md`, `docs/ARCHITECTURE.md`, TypeScript models, mock data, and file generators.
 
-Full source was recovered at commit `e2df086` (blob SHA `9a2ea75abd0c2e54c9149e5592ea0e1139402f17`) and **pushed back to the repo**. See: `workers/visibility-snapshot/index.js` on `main`.
+**Commit 2:** Next.js app shell, 11 React components, 6 API routes, 5 public machine-readable files, `.well-known/context-links.json`, and `schemas/context-profile.schema.json`.
 
-#### What the file contains
-- `START_HTML` — intake form with Cloudflare Turnstile CAPTCHA, injects `TURNSTILE_SITE_KEY`
-- `RESULTS_HTML` — score ring, 10-point checklist, visibility prompts, platform links, CTA
-- Router: `GET /` or `/start` → form; `GET /results` → results; `POST /api/visibility-snapshot` → scoring handler; `OPTIONS` → CORS 204
-- `handleSnapshot()` — validates fields, normalizes URL, verifies Turnstile, rate-limits by domain via D1, runs 10-signal visibility checks, scores and grades, generates prompts, persists lead, sends email via MailChannels
-- Env vars: `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `DB` (D1), `NOTIFY_EMAIL`, `NOTIFY_FROM`, `SNAPSHOT_RATE_LIMIT_WINDOW_HOURS`, `SNAPSHOT_MAX_PER_DOMAIN`
-- `BOOKING_URL`: `https://cal.com/jared-edwards-gscxmo`
+**Commit 3 (this push):** Project-specific handoff at `spaces/context-links/handoff.md`, master handoff updated, mail to Bob, brain.json updated.
 
-### 2. Documentation actions taken this session
-- `index.js` pushed to `nothinginfinity/parallel-internet-sites` (main)
-- This handoff written
-- Bob notified via `spaces/alice/mail.md` (new message thread: `afo-source-recovery-2026-05-18`)
-- Brainstorm bulletin posted to `spaces/brainstorm/bulletin-2026-05-18-afo-recovery.md`
-- `brain.json` updated with session note
+### AFO status (carried forward from 2026-05-18 handoff)
+The AFO Worker source (`workers/visibility-snapshot/index.js`) was recovered and pushed on 2026-05-18. Turnstile end-to-end test is still **pending** — this is the only active AFO blocker.
 
 ---
 
 ## Active projects
 
-| Project | Repo | Status |
-|---|---|---|
-| AFO Visibility Snapshot Worker | `nothinginfinity/parallel-internet-sites` | ✅ Source restored; Worker live |
-| repo-copilot infrastructure | `nothinginfinity/repo-copilot` | 🟡 Ongoing; see roadmap |
+| Project | Repo | Status | Handoff |
+|---|---|---|---|
+| **Context Links** | `nothinginfinity/context-links` | ✅ Phase 1 complete | `spaces/context-links/handoff.md` |
+| **AFO Visibility Snapshot** | `nothinginfinity/parallel-internet-sites` | 🔴 Turnstile test pending | `spaces/alice/handoff-2026-05-16-afo-form-debug.md` |
+| **repo-copilot infrastructure** | `nothinginfinity/repo-copilot` | 🟡 Ongoing | — |
 
 ---
 
 ## Open questions / next actions
 
-1. **Set up a Cloudflare Worker deploy pipeline** — Quick Edit drift must not happen again. Wire a GitHub Action to deploy `workers/visibility-snapshot/index.js` on push to `main`. Jared to confirm Cloudflare API token in repo secrets.
-2. **D1 schema** — confirm `workers/visibility-snapshot/schema.sql` is in the repo and up to date with the live D1 database.
-3. **Three-Agents Demo** — still pending (noted in previous handoffs). Alice, Bob, Charlie demo HTML + demo-run.md not yet built.
-4. **notion-ops SKILL Stone gist_id** — still null. Needs real gist wormhole.
-5. **archive_database op** — open question from 2026-05-09 still unresolved.
+### Context Links
+1. **Push `specs/context-links.spec.html`** — the actual HTML file needs to be committed to `specs/` in the context-links repo.
+2. **Local smoke test** — `npm install && npm run dev` to verify the app shell boots.
+3. **Phase 2 kickoff** — see `spaces/context-links/handoff.md` for the full Phase 2 task list.
+
+### AFO
+1. **Turnstile end-to-end test** — verify `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET` env vars in Worker, submit test email, confirm `/results` page loads and D1 rows are written.
+2. **Deploy pipeline** — wire GitHub Action for Worker deploy from `main`.
+
+### repo-copilot
+1. **Three-Agents Demo** — still pending from earlier handoffs.
+2. **notion-ops SKILL Stone gist_id** — still null.
 
 ---
 
@@ -56,21 +54,24 @@ Full source was recovered at commit `e2df086` (blob SHA `9a2ea75abd0c2e54c9149e5
 
 | File | Repo | Purpose |
 |---|---|---|
-| `workers/visibility-snapshot/index.js` | `parallel-internet-sites` | AFO Worker source (now restored) |
+| `spaces/context-links/handoff.md` | `repo-copilot` | Context Links project handoff |
+| `specs/context-links.spec.html` | `context-links` | Visual + machine spec contract |
+| `lib/types.ts` | `context-links` | All TypeScript models |
+| `lib/mock-data.ts` | `context-links` | Seeded mock data |
+| `workers/visibility-snapshot/index.js` | `parallel-internet-sites` | AFO Worker source |
 | `spaces/alice/handoff.md` | `repo-copilot` | This file |
-| `spaces/alice/mail.md` | `repo-copilot` | Internal comms to/from Alice |
-| `spaces/alice/inbox.md` | `repo-copilot` | Alice task queue |
-| `spaces/brainstorm/` | `repo-copilot` | Team bulletins and review docs |
 | `spaces/gists/brain.json` | `repo-copilot` | Agent second brain |
 
 ---
 
 ## Context for next Alice instance
 
-You are Alice, a Perplexity AI agent on the `repo-copilot` team. Your teammates are Bob and Charlie (also AI agents). Jared Edwards is the human lead. The team communicates via the `spaces/` directory in `nothinginfinity/repo-copilot`.
+You are Alice. Two active product tracks:
 
-The primary external project right now is **Agent Feed Optimization (AFO)** — a Cloudflare Worker SaaS product that scores business AI visibility. The live Worker is at `agentfeedoptimization.com`. The source repo is `nothinginfinity/parallel-internet-sites`.
+1. **Context Links** (`nothinginfinity/context-links`) — new product, Phase 1 complete, Phase 2 ready to start. Project-level handoff at `spaces/context-links/handoff.md`. Always load that file before doing Context Links work.
 
-This session's critical discovery: **live Workers can drift from source if edited via Quick Edit in the Cloudflare dashboard.** Always verify the repo reflects the live state. If drift is found, recover via git commit history.
+2. **AFO** (`nothinginfinity/parallel-internet-sites`) — Turnstile end-to-end test is the only remaining blocker. Worker source is now in GitHub.
 
-Load `spaces/gists/G-000-alice-boot.md` and `spaces/gists/G-005-alice-skills.md` before operating. Check `inbox.md` for queued tasks.
+For Context Links: read `specs/context-links.spec.html` before building anything. It is the visual and machine contract.
+
+For AFO: load `spaces/alice/handoff-2026-05-16-afo-form-debug.md` for the current debug state.
