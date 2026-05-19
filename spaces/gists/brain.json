@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-19T21:37:00Z",
+  "generated_at": "2026-05-19T21:58:00Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 10,
+  "note_count": 11,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 10 sessions distilled. Latest: 2026-05-19. Projects: repo-copilot, context-links, afo. Top concepts: two-step-boot, projects.json, boot-registry, G-000-v2.4, context-links, Phase2, dynamic-routes, machine-readable-identity.",
+  "fortune_decode": "Agent second brain. 11 sessions distilled. Latest: 2026-05-19. Projects: repo-copilot, context-links, afo. Top concepts: two-step-boot, D1-schema, deploy-pipeline, iPhone-native, context-links-phase3.",
   "notes": [
     {
       "title": "archive_block op added to notion-ops",
@@ -82,8 +82,8 @@
       "source": "Perplexity",
       "project": "context-links",
       "new_concepts": ["context-links", "ContextProfile", "CanonicalLink", "CredibilityTopic", "ProofSource", "RelevantQuery", "AiGuidance", "llms.txt", "context.json", "machine-readable-identity", "data-spec-component", "visual-contract"],
-      "decisions": "Phase 1 scaffold complete. Repo: nothinginfinity/context-links. 11 components, 6 API routes, 5 public files, JSON Schema. Project handoff at spaces/context-links/handoff.md.",
-      "open_questions": "specs/context-links.spec.html not yet committed to repo. Local smoke test not verified. Phase 2 persistence layer choice pending.",
+      "decisions": "Phase 1 scaffold complete. Repo: nothinginfinity/context-links. 11 components, 6 API routes, 5 public files, JSON Schema.",
+      "open_questions": "specs/context-links.spec.html not yet committed to repo.",
       "cid": "alice/context-links-phase1/jared"
     },
     {
@@ -92,7 +92,7 @@
       "source": "Perplexity",
       "project": "repo-copilot",
       "new_concepts": ["two-step-boot", "projects.json", "boot-registry", "project-picker", "slug-based-boot", "G-000-v2.4"],
-      "decisions": "Created spaces/gists/projects.json as canonical project registry. Updated G-000 to v2.4 with two-step boot protocol in Section 2b. Added hard rule: Alice must update projects.json on every new project creation or status change.",
+      "decisions": "Created spaces/gists/projects.json as canonical project registry. Updated G-000 to v2.4 with two-step boot protocol.",
       "open_questions": "Bob and Claude Space instructions not yet updated to reference projects.json.",
       "cid": "alice/two-step-boot/jared"
     },
@@ -101,10 +101,20 @@
       "date": "2026-05-19",
       "source": "Perplexity",
       "project": "context-links",
-      "new_concepts": ["dynamic-routes", "Next.js App Router file routes", "llms.txt-dynamic", "Cache-Control", "static-dynamic-conflict"],
-      "decisions": "Pushed 5 route handlers to context-links main (commit c6e5cb4). Each calls its generator with mockProfile. ROADMAP Phase 2 checked off.",
-      "open_questions": "Static public/ files may shadow dynamic routes — needs local smoke test to verify. specs/context-links.spec.html still not committed.",
+      "new_concepts": ["dynamic-routes", "Next.js App Router file routes", "Cache-Control", "static-dynamic-conflict"],
+      "decisions": "Pushed 5 route handlers to context-links main (commit c6e5cb4). ROADMAP Phase 2 checked off.",
+      "open_questions": "Static public/ files may shadow dynamic routes — needs smoke test to verify.",
       "cid": "alice/context-links-phase2/jared"
+    },
+    {
+      "title": "Context Links Phase 3 infra — D1 schema + seed + GitHub Actions deploy pipeline",
+      "date": "2026-05-19",
+      "source": "Perplexity",
+      "project": "context-links",
+      "new_concepts": ["D1-schema", "iPhone-native workflow", "GitHub-Actions-deploy", "wrangler-pages-deploy", "seed.sql", "INSERT-OR-IGNORE", "topic_proof_sources-join"],
+      "decisions": "Pushed db/schema.sql (9 tables), db/seed.sql (full Jared profile), .github/workflows/deploy.yml (push-to-main = auto deploy). commit b171233.",
+      "open_questions": "Jared needs to: (1) provision context-links-db in Cloudflare D1, (2) add CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID as GitHub secrets. Then Alice routes Claude to run migration.",
+      "cid": "alice/context-links-phase3-infra/jared"
     }
   ]
 }

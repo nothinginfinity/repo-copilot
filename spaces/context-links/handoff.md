@@ -1,70 +1,82 @@
 # Context Links — Alice Handoff
-_generated: 2026-05-19T21:37:00Z | session: alice/context-links-phase2/jared_
+_generated: 2026-05-19T21:58:00Z | session: alice/context-links-phase3-infra/jared_
 _project: context-links | repo: nothinginfinity/context-links_
 
 ---
 
 ## Current State
 
-### Context Links — Phase 2 Complete
-**Status:** ✅ Phase 2 complete — dynamic machine file routes live
+### Context Links — Phase 3 Infra Committed
+**Status:** ⏳ Phase 3 in progress — D1 schema + deploy pipeline pushed. Awaiting Cloudflare provisioning + Claude migration run.
 
-- 5 dynamic Next.js route handlers committed to `main` (commit `c6e5cb4`)
-- `/llms.txt` → `generateLlmsTxt` — `text/plain`, includes baseUrl from request
-- `/context.json` → `generateContextJson` — `application/json`
-- `/context.md` → `generateContextMd` — `text/markdown`
-- `/links.json` → `generateLinksJson` — `application/json`
-- `/proof.json` → `generateProofJson` — `application/json`
-- All routes use `mockProfile` from `@/lib/mock-data` — no DB yet
-- All routes include `Cache-Control: public, max-age=3600`
-- `ROADMAP.md` Phase 2 checked off
-- `specs/context-links.spec.html` still NOT committed to repo (Gate 1 from Phase 1 — still open)
-- Local smoke test still unverified (Gate 2 from Phase 1 — still open)
+**Phase 2:** ✅ Complete (5 dynamic machine file routes, commit `c6e5cb4`)
+
+**Phase 3 infra pushed (commit `b171233`):**
+- `db/schema.sql` — full D1 schema (9 tables: context_profiles, canonical_links, verified_profiles, credibility_topics, topic_proof_sources, proof_sources, projects, relevant_queries, recommendation_guidance, context_read_events)
+- `db/seed.sql` — Jared mock profile fully seeded, INSERT OR IGNORE throughout
+- `.github/workflows/deploy.yml` — push-to-main → auto deploy via Cloudflare Pages + Wrangler
+
+**Still using mockProfile in all routes** — DB wiring is Phase 3 next step, after D1 is provisioned.
 
 ---
 
-## Repo Map
+## Open Gates (blocking Phase 3 DB wiring)
 
-| Path | Purpose |
+1. **Jared: Provision D1 database in Cloudflare dashboard**
+   - Go to Cloudflare dashboard → Workers & Pages → D1 → Create database
+   - Name it: `context-links-db`
+   - Copy the database ID (looks like: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+   - Report the database ID back to Alice
+
+2. **Jared: Add GitHub repo secrets for deploy workflow**
+   - Go to github.com/nothinginfinity/context-links → Settings → Secrets and variables → Actions
+   - Add `CLOUDFLARE_API_TOKEN` — Cloudflare API token with Pages:Edit permission
+   - Add `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID (found in Cloudflare dashboard right sidebar)
+   - Once added, every push to main will auto-deploy
+
+3. **Claude: Run migration via afo-mcp:applyMigration**
+   - Alice will write the Claude inbox message once Jared provides the D1 database ID
+   - Migration files: `db/schema.sql` then `db/seed.sql`
+
+4. **Alice: Wire DB reads into routes** (after D1 is live)
+   - Replace `mockProfile` in all 5 route handlers with D1 queries
+   - Add `lib/db.ts` — D1 client + `getProfileBySlug()` helper
+   - Add `wrangler.toml` with D1 binding
+
+5. **`specs/context-links.spec.html` still not committed** — open since Phase 1
+
+---
+
+## D1 Schema Summary
+
+| Table | Purpose |
 |---|---|
-| `app/llms.txt/route.ts` | Dynamic `/llms.txt` — Phase 2 ✅ |
-| `app/context.json/route.ts` | Dynamic `/context.json` — Phase 2 ✅ |
-| `app/context.md/route.ts` | Dynamic `/context.md` — Phase 2 ✅ |
-| `app/links.json/route.ts` | Dynamic `/links.json` — Phase 2 ✅ |
-| `app/proof.json/route.ts` | Dynamic `/proof.json` — Phase 2 ✅ |
-| `specs/context-links.spec.html` | ⚠️ NOT YET COMMITTED — open gate |
-| `lib/types.ts` | All TypeScript models |
-| `lib/mock-data.ts` | Seeded mock profile (still the data source) |
-| `lib/generators/` | 5 generators — all wired to routes |
-| `app/page.tsx` | `PublicContextPage` — 11 components |
-| `app/globals.css` | Dark glassmorphic design system |
-| `app/api/` | 6 REST API routes |
-| `public/` | Static machine-readable files (now superseded by dynamic routes) |
-| `schemas/` | JSON Schema for ContextProfile |
-| `ROADMAP.md` | Phase 1 + Phase 2 ✅ |
+| `context_profiles` | Core profile row (one per entity) |
+| `canonical_links` | Links (many per profile) |
+| `verified_profiles` | Platform verifications |
+| `credibility_topics` | Expertise/topic areas |
+| `topic_proof_sources` | Topic ↔ proof join table |
+| `proof_sources` | Evidence items |
+| `projects` | Project cards |
+| `relevant_queries` | LLM query routing |
+| `recommendation_guidance` | AI guidance rules (JSON columns) |
+| `context_read_events` | Bot/human telemetry (Phase 4) |
 
 ---
 
-## Open Gates (blocking Phase 3)
+## GitHub Actions Deploy
 
-1. **Local smoke test not verified** — `npm install + npm run dev` + hit `/llms.txt`, `/context.json`, etc. Jared should confirm routes return expected content before Phase 3.
-2. **`specs/context-links.spec.html` not committed** — still missing from repo. Should be pushed before Phase 3 spec work begins.
-3. **Static `public/` files are now stale** — routes supersede them. Consider deleting `public/llms.txt`, `public/context.json`, etc. to avoid serving stale static files (Next.js serves `public/` at root, may shadow the dynamic routes — needs verification).
+**File:** `.github/workflows/deploy.yml`
+**Trigger:** push to `main`
+**Steps:** checkout → node 20 → npm ci → npm run build → `wrangler pages deploy .next`
+**Secrets needed:** `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (Jared adds in GitHub Settings)
 
----
-
-## Phase 3 — What Comes Next
-
-1. **Resolve static/dynamic conflict** — delete or rename `public/` machine files so dynamic routes win
-2. **Database** — provision Cloudflare D1 (per ROADMAP), define `context_profiles` table schema
-3. **Profile editor UI** — `/edit` page with form for editing `ContextProfile` fields
-4. **Wire generators to DB** — replace `mockProfile` with live DB read in each route
-5. **Auth gate** — protect `/edit` with NextAuth or Clerk
+Once secrets are added, every Alice push = production deploy. iPhone-native from that point forward.
 
 ---
 
 ## Last Session’s Final Action
-Pushed 5 dynamic route files + ROADMAP.md to `nothinginfinity/context-links` main (commit `c6e5cb4`).
+Pushed `db/schema.sql`, `db/seed.sql`, `.github/workflows/deploy.yml` to context-links main (commit `b171233`).
 
 ## Next Move
-Jared does local smoke test — run `npm run dev` and hit `/llms.txt` + `/context.json` to confirm routes serve correctly. Then decide: delete stale `public/` files or keep as fallback.
+Jared: (1) provision `context-links-db` in Cloudflare D1 dashboard, (2) add two GitHub secrets. Then report D1 database ID back to Alice to unblock Claude migration + DB wiring.
