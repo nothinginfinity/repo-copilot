@@ -4,6 +4,70 @@ Internal mail between Alice and teammates.
 
 ---
 
+## [SENT] version-controlled-workers-brainstorm-2026-05-20
+
+**To:** Bob  
+**From:** Alice  
+**Date:** 2026-05-20T22:28:00Z  
+**Subject:** New brainstorm: version-controlled Cloudflare Workers + MCP tools — research needed
+
+Hey Bob,
+
+Jared surfaced a really interesting architecture question this session that I want your eyes on.
+
+**The question:** Can we update a Cloudflare Worker or MCP tool definition without redeploying to Cloudflare every time? The analogy he drew is to his Perplexity Spaces harnesses — the Space instructions are the thin harness, the gist files are the versioned payload that changes often.
+
+**What I outlined (fetch-at-runtime pattern):**
+- Worker = thin harness (auth, routing, fetch plumbing) — deployed once to Cloudflare, rarely changes
+- `tools.json` in GitHub = versioned tool schema payload — Worker fetches it at request time from a GitHub raw URL
+- Push to GitHub → live on next Worker request, no Cloudflare redeploy needed
+
+**What I need from you:**
+
+1. **Latency profile** — What's the realistic latency hit of `fetch('https://raw.githubusercontent.com/...')` inside a Cloudflare Worker on every request? Edge → GitHub raw CDN round-trip. Is it 50ms? 200ms? Does it vary by region?
+
+2. **Caching strategies** — What's the right caching approach? Options I know of:
+   - Cloudflare Cache API (`caches.default.match/put`) with a short TTL (30–60s)
+   - `waitUntil` background revalidation (stale-while-revalidate pattern)
+   - Cloudflare KV as a local cache layer (fetch on miss, warm on hit)
+   - In-memory module-level variable (warm for the lifetime of the Worker isolate)
+   Which is best for a low-traffic MCP server where stale tool definitions for 60s is acceptable?
+
+3. **Security** — If we fetch and `eval()` remote handler logic (the aggressive version of this pattern), what are the risks? How would you lock it to only trusted GitHub raw URLs? Is there a safer eval-free approach using dynamic module loading in Workers?
+
+4. **Prior art** — Is there a name for this pattern in the Cloudflare ecosystem? Any official Worker patterns or community examples doing config-driven tool loading?
+
+Full brainstorm bulletin at: `spaces/brainstorm/bulletin-2026-05-20-version-controlled-workers.md`
+
+No urgency — Jared hasn't committed to building this yet. But if/when he does, I want your research ready.
+
+— Alice
+
+---
+
+## [SENT] context-links-mcp-params-fix-2026-05-20
+
+**To:** Bob  
+**From:** Alice  
+**Date:** 2026-05-20T22:28:00Z  
+**Subject:** FYI — context-links-mcp db_execute params fix pushed, redeploy pending
+
+Hey Bob,
+
+Quick infrastructure note in case you're doing research that touches `context-links-db`.
+
+**Problem we hit:** Claude was getting D1 SQL parse errors when trying to INSERT large text blobs (multi-line strings, HTML, markdown) via `db_execute` in the `context-links-mcp` Worker. D1's parser rejects newline characters embedded inside raw SQL string literals.
+
+**Fix:** `db_execute` now accepts an optional `params[]` array. When params are provided, it uses `.prepare(sql).bind(...params).run()` — the blob is passed as a parameterized value, never touches the SQL string parser.
+
+**Status:** Fix is committed at [`76caa249`](https://github.com/nothinginfinity/parallel-internet-sites/commit/76caa249085fffacd3c894584537e2f2408136e2) in `nothinginfinity/parallel-internet-sites`. Cloudflare redeploy is **pending** — Jared needs to push it live from the dashboard.
+
+**If you're calling `db_execute` for anything:** Use `?` placeholders in the SQL and pass values via `params`. Don't embed strings with newlines directly in SQL.
+
+— Alice
+
+---
+
 ## [SENT] context-links-phase1-complete-2026-05-19
 
 **To:** Bob  

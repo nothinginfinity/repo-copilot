@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-20T18:58:00.000Z",
+  "generated_at": "2026-05-20T22:28:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 7,
+  "note_count": 8,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 7 sessions distilled. Latest: 2026-05-20. Projects: repo-copilot, context-links, afo. Top concepts: claude-d1-comms, gateway-mcp, context-links-db, claude-boot-table, claude-inbox-table, claude-outbox-table, claude-memory-table.",
+  "fortune_decode": "Agent second brain. 8 sessions distilled. Latest: 2026-05-20. Projects: repo-copilot, context-links, afo, context-links-mcp. Top concepts: claude-d1-comms, gateway-mcp, context-links-db, db_execute-params-fix, version-controlled-workers, fetch-at-runtime-pattern, harness-payload-split.",
   "notes": [
     {
       "title": "archive_block op added to notion-ops",
@@ -75,6 +75,16 @@
       "decisions": "afo-mcp confirmed as gateway MCP server (11 tools). Claude comms layer specced and Phase 1 migration SQL pushed to spaces/claude/migrations/001-claude-comms-layer.sql. Target DB: context-links-db. Claude boot sequence is 3 SQL queries replacing GitHub file reads.",
       "open_questions": "Phase 2: seed claude_boot table with current instructions + 11-tool registry. Phase 3: add writeClaudeInbox + readClaudeOutbox tools to Worker.",
       "cid": "alice/c5/jared"
+    },
+    {
+      "title": "context-links-mcp db_execute params fix + version-controlled Workers brainstorm",
+      "date": "2026-05-20",
+      "source": "Alice",
+      "project": "context-links-mcp",
+      "new_concepts": ["db_execute-params-fix", "D1-newline-parse-error", "version-controlled-workers", "fetch-at-runtime-pattern", "harness-payload-split", "tools.json-versioned-payload", "Cloudflare-Cache-API", "Quick-Edit-drift-risk"],
+      "decisions": "Fixed db_execute to accept params[] — D1 parse errors for multi-line blobs resolved. Commit 76caa249 pushed; Cloudflare redeploy pending. Version-controlled Workers pattern brainstormed but not yet built — waiting on Bob's latency/caching research before committing.",
+      "open_questions": "Did Jared redeploy context-links-mcp v1.1.0? Was Claude's original failing INSERT retried? Version-controlled Workers: latency acceptable with Cloudflare Cache API?",
+      "cid": "alice/c6/jared"
     }
   ]
 }
