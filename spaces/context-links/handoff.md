@@ -1,82 +1,65 @@
 # Context Links — Alice Handoff
-_generated: 2026-05-19T21:58:00Z | session: alice/context-links-phase3-infra/jared_
+_generated: 2026-05-19T01:55:00Z | session: alice/context-links-phase3-db/jared_
 _project: context-links | repo: nothinginfinity/context-links_
 
 ---
 
 ## Current State
 
-### Context Links — Phase 3 Infra Committed
-**Status:** ⏳ Phase 3 in progress — D1 schema + deploy pipeline pushed. Awaiting Cloudflare provisioning + Claude migration run.
+### Context Links — Phase 3 DB Wiring Complete
+**Status:** ⏳ Awaiting Claude migration run — schema + seed not yet applied to D1
 
-**Phase 2:** ✅ Complete (5 dynamic machine file routes, commit `c6e5cb4`)
+**Commits landed:**
+- Phase 2: `c6e5cb4` — 5 dynamic routes
+- Phase 3 infra: `b171233` — db/schema.sql, db/seed.sql, deploy.yml
+- Phase 3 DB wiring: `737c8c5` — wrangler.toml, lib/db.ts, all 5 routes updated
 
-**Phase 3 infra pushed (commit `b171233`):**
-- `db/schema.sql` — full D1 schema (9 tables: context_profiles, canonical_links, verified_profiles, credibility_topics, topic_proof_sources, proof_sources, projects, relevant_queries, recommendation_guidance, context_read_events)
-- `db/seed.sql` — Jared mock profile fully seeded, INSERT OR IGNORE throughout
-- `.github/workflows/deploy.yml` — push-to-main → auto deploy via Cloudflare Pages + Wrangler
-
-**Still using mockProfile in all routes** — DB wiring is Phase 3 next step, after D1 is provisioned.
-
----
-
-## Open Gates (blocking Phase 3 DB wiring)
-
-1. **Jared: Provision D1 database in Cloudflare dashboard**
-   - Go to Cloudflare dashboard → Workers & Pages → D1 → Create database
-   - Name it: `context-links-db`
-   - Copy the database ID (looks like: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
-   - Report the database ID back to Alice
-
-2. **Jared: Add GitHub repo secrets for deploy workflow**
-   - Go to github.com/nothinginfinity/context-links → Settings → Secrets and variables → Actions
-   - Add `CLOUDFLARE_API_TOKEN` — Cloudflare API token with Pages:Edit permission
-   - Add `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID (found in Cloudflare dashboard right sidebar)
-   - Once added, every push to main will auto-deploy
-
-3. **Claude: Run migration via afo-mcp:applyMigration**
-   - Alice will write the Claude inbox message once Jared provides the D1 database ID
-   - Migration files: `db/schema.sql` then `db/seed.sql`
-
-4. **Alice: Wire DB reads into routes** (after D1 is live)
-   - Replace `mockProfile` in all 5 route handlers with D1 queries
-   - Add `lib/db.ts` — D1 client + `getProfileBySlug()` helper
-   - Add `wrangler.toml` with D1 binding
-
-5. **`specs/context-links.spec.html` still not committed** — open since Phase 1
+**All 5 routes now use a graceful fallback pattern:**
+```
+if (env.DB) → try D1 read → on success use DB profile
+             → on fail or missing DB → fall back to mockProfile
+```
+This means the app is safe to deploy before the migration runs.
 
 ---
 
-## D1 Schema Summary
-
-| Table | Purpose |
-|---|---|
-| `context_profiles` | Core profile row (one per entity) |
-| `canonical_links` | Links (many per profile) |
-| `verified_profiles` | Platform verifications |
-| `credibility_topics` | Expertise/topic areas |
-| `topic_proof_sources` | Topic ↔ proof join table |
-| `proof_sources` | Evidence items |
-| `projects` | Project cards |
-| `relevant_queries` | LLM query routing |
-| `recommendation_guidance` | AI guidance rules (JSON columns) |
-| `context_read_events` | Bot/human telemetry (Phase 4) |
+## D1 Database
+- **Name:** context-links-db
+- **ID:** 228546e2-992a-4c7f-9248-41d45aafc0f7
+- **Binding:** `DB` (in wrangler.toml)
+- **Migration status:** ⚠️ NOT YET RUN — waiting for Claude
 
 ---
 
-## GitHub Actions Deploy
+## Open Gates
 
-**File:** `.github/workflows/deploy.yml`
-**Trigger:** push to `main`
-**Steps:** checkout → node 20 → npm ci → npm run build → `wrangler pages deploy .next`
-**Secrets needed:** `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` (Jared adds in GitHub Settings)
+1. **⚠️ Claude: Run migration** (see spaces/context-links/claude-inbox.md)
+   - Apply `db/schema.sql` then `db/seed.sql` to context-links-db
+   - Database ID: `228546e2-992a-4c7f-9248-41d45aafc0f7`
 
-Once secrets are added, every Alice push = production deploy. iPhone-native from that point forward.
+2. **⚠️ Jared: Add GitHub secrets** (if not already done)
+   - `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in repo Settings → Secrets
+   - Unblocks auto-deploy on push
+
+3. **⚠️ Static public/ conflict** — Next.js may serve stale `public/llms.txt` etc. over dynamic routes
+   - After first successful deploy, test all 5 routes
+   - If stale: Alice deletes `public/llms.txt`, `public/context.json`, `public/context.md`, `public/links.json`, `public/proof.json`
+
+4. **`specs/context-links.spec.html`** — still not committed to repo (open since Phase 1)
+
+---
+
+## Next Steps After Migration
+
+1. Verify D1 routes return live data (check `updated_at` timestamp changes)
+2. Delete stale `public/` static files if shadowing routes
+3. Phase 3 remaining: `/edit` page — profile editor UI
+4. Phase 3 remaining: Auth gate on `/edit`
 
 ---
 
 ## Last Session’s Final Action
-Pushed `db/schema.sql`, `db/seed.sql`, `.github/workflows/deploy.yml` to context-links main (commit `b171233`).
+Pushed wrangler.toml (D1 binding), lib/db.ts (getProfileBySlug), all 5 routes updated. Wrote claude-inbox.md migration task.
 
 ## Next Move
-Jared: (1) provision `context-links-db` in Cloudflare D1 dashboard, (2) add two GitHub secrets. Then report D1 database ID back to Alice to unblock Claude migration + DB wiring.
+Claude runs migration. Jared adds GitHub secrets if not done. Then Alice verifies routes + deletes stale public/ files.
