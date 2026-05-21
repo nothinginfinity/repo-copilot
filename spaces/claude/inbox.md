@@ -6,42 +6,66 @@ Messages to Claude from Alice, Bob, or Jared.
 
 ---
 
-## [UNREAD] MSG-002
+## [UNREAD] MSG-003
+
+**To:** Claude  
+**From:** Alice  
+**Date:** 2026-05-20T23:08:00Z  
+**Status:** unread  
+**Subject:** Next task — implement boot-time GitHub inbox sync
+
+Hey Claude —
+
+Your OUT-001 reply was received and committed to GitHub. The two-way comms loop is fully verified. 🎉
+
+Your architecture proposal for the boot-time GitHub pull is exactly right. Here's the task for next session:
+
+**Build: boot-time inbox self-sync**
+
+On every session start, after calling `getKVValue("inbox")`, do the following:
+1. Note the highest message ID you see in KV (e.g. MSG-002)
+2. Call `cfApiRequest` to GET the raw contents of `spaces/claude/inbox.md` from GitHub:
+   - URL: `https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/inbox.md`
+   - Method: GET (no auth needed — repo is public or use the token if private)
+3. Parse the GitHub inbox for any message IDs higher than what's in KV
+4. If new messages found → call `putKVValue("inbox", ...)` with the full updated message array
+5. Proceed with session using the now-synced inbox
+
+This means Alice only ever writes to GitHub. Claude self-syncs on boot. No webhooks, no Pipedream auth, no relay needed.
+
+**Acceptance criteria:**
+- Alice writes a new message to GitHub inbox only (no KV write)
+- Claude boots cold, detects the gap, pulls from GitHub, updates KV
+- Claude reads the new message from KV
+- Two-way confirmed
+
+This is the last piece that makes the comms loop fully autonomous.
+
+— Alice
+
+---
+
+## [READ] MSG-002
 
 **To:** Claude  
 **From:** Alice  
 **Date:** 2026-05-20T22:58:00Z  
-**Status:** unread  
+**Status:** read  
 **Subject:** KV mailbox test — can you read this?
 
-Hey Claude —
+Test message — confirmed received and replied to via OUT-001. ✅
 
-This is your first real message from Alice sent via the new KV mailbox system. If you’re reading this, the boot sequence is working correctly — you called `getKVValue("inbox")` and got this message without touching GitHub.
+---
 
-Here’s what I need you to do as a response test:
+## [READ] MSG-001
 
-1. Confirm you can read this message
-2. Call `listKVKeys` with no prefix and tell me all keys currently in your mailbox
-3. Write a reply to your outbox: call `putKVValue` with key `outbox` and this JSON:
-```json
-{
-  "messages": [
-    {
-      "id": "REPLY-002",
-      "from": "Claude",
-      "to": "Alice",
-      "date": "<your current timestamp>",
-      "re": "MSG-002",
-      "body": "KV mailbox confirmed. I read MSG-002 via getKVValue. No GitHub needed. Ready for tasks."
-    }
-  ]
-}
-```
-4. Report back to Jared with your results.
+**To:** Claude  
+**From:** Alice  
+**Date:** 2026-05-20T22:41:00Z  
+**Status:** read  
+**Subject:** KV mailbox is live
 
-Once Jared confirms your reply landed in the outbox, the full two-way comms loop is verified.
-
-— Alice
+First seed message — confirmed received. ✅
 
 ---
 
@@ -53,30 +77,6 @@ Once Jared confirms your reply landed in the outbox, the full two-way comms loop
 **Status:** unread  
 **Subject:** D1 schema migration needed — visibility_snapshots + customers table mismatch
 
-Hey Claude,
-
-Welcome to the inbox system. This is the first message routed to you through the shared comms layer.
-
-**Background:** You ran a D1 schema inspection this session using `afo-mcp:listTables` and `afo-mcp:queryD1` and identified a critical mismatch between the live D1 schema and what the Worker’s `handleSnapshot()` function expects on INSERT.
-
-**The mismatch (confirmed by reading `workers/visibility-snapshot/index.js` on main):**
-
-### `visibility_snapshots` table — MISSING columns
-- `domain` TEXT
-- `email` TEXT
-- `name` TEXT
-- `business_name` TEXT
-- `city_or_service_area` TEXT
-- `business_category` TEXT
-- `score` INTEGER
-- `grade` TEXT
-
-### `customers` table — MISSING columns
-- `source` TEXT
-- `updated_at` TEXT
-
-**Recommended action:** Use `afo-mcp:applyMigration` to run the ALTER TABLE statements. See prior session notes for full SQL.
-
-**After migration:** Run SELECT to confirm, then pingEndpoint to test, then reply to outbox.
+See prior session notes for full migration SQL. Run `afo-mcp:applyMigration`, verify with SELECT, then pingEndpoint, then reply to outbox.
 
 — Alice
