@@ -1,119 +1,87 @@
 # Alice Handoff — Session State
 
-**Last updated:** 2026-05-20T22:28:00Z  
+**Last updated:** 2026-05-20T22:52:00Z  
 **Updated by:** Alice (Perplexity, Sonnet 4.6)  
-**Session type:** Claude mcp-prax activation + full agent boot sync
+**Session type:** Claude mcp-prax activation + KV mailbox build
 
 ---
 
 ## 🔥 MAJOR MILESTONE THIS SESSION
 
-**Claude is now fully connected to the Cloudflare control plane via `mcp-prax`.** This changes the team's entire workflow. Claude can now build, deploy, read, fix, and delete any Worker, D1 database, KV namespace, or Access app by prompt alone — no Cloudflare dashboard required.
+**Claude now has a working inbox.** He built it himself using mcp-prax. No GitHub access required. Claude boots by calling `getKVValue("inbox")` — reads messages instantly from Cloudflare KV. Alice mirrors inbox writes to KV so Claude always has access.
 
 ---
 
-## What happened this session (Session 2, 2026-05-20)
+## What happened this session
 
-### 1. Claude connected to mcp-prax
+### 1. Claude connected to mcp-prax (13 tools)
+Full Cloudflare control plane live. Claude can build/deploy/fix/delete any Worker, D1, KV, Access app by prompt.
 
-Jared confirmed Claude (Anthropic Claude) now has two live MCP servers:
-- **`mcp-prax`** — 13-tool Cloudflare control plane (Workers, D1, KV, Access, raw API)
-- **`afo-mcp`** — AFO database operations (was already working)
-
-This means Claude can execute the full infra cycle end-to-end: read live Worker source → audit → rewrite → deploy → test → secure with Access — all by prompt, no dashboard.
-
-A test prompt was drafted to verify Claude's tool access (list Workers, D1, KV, Access apps as a read-only check).
-
-### 2. All agent boot files updated and synced
-
-All three boot gists now include Claude's full capabilities:
+### 2. All agent boot files synced
 
 | File | Version | Key change |
 |------|---------|------------|
-| `G-000-alice-boot.md` | v2.5 | Team roster updated, Claude = full infra control |
-| `G-001-brainstorm-readonly.md` | v1.5 | Team Roster section added with all 13 mcp-prax tools |
-| `G-002-claude-boot.md` | v2.0 | **Major rewrite** — mcp-prax fully documented, live infra inventory, hard rules, end-to-end cycle guide |
+| `G-000-alice-boot.md` | v2.5 | Team roster — Claude = full infra |
+| `G-001-brainstorm-readonly.md` | v1.5 | Team roster + mcp-prax tools for Bob |
+| `G-002-claude-boot.md` | v2.1 | KV mailbox — startup rewritten, no GitHub needed |
 
-`spaces/claude/capabilities.md` was also created/updated as the canonical full tool reference.
+### 3. Claude built his own KV mailbox (mcp-prax v1.4.0)
 
-### 3. New workflow established
+Claude executed all 7 steps in one shot:
+- Created `claude-mailbox` KV namespace (ID: `e85cf11f27c24fceb19bcbb2099ffd10`)
+- Read mcp-prax source, added KV binding (`CLAUDE_MAILBOX`)
+- Added 3 new tools: `getKVValue`, `putKVValue`, `listKVKeys`
+- Deployed mcp-prax v1.4.0
+- Seeded inbox with MSG-001
+- Verified end-to-end read back — zero errors
+
+### 4. New workflow established
 
 | Task | Agent |
 |------|-------|
-| Spec writing, GitHub commits, orchestration | Alice (Perplexity) |
-| Research, brainstorm, planning | Bob (ChatGPT, read-only) |
-| Build / deploy / fix Cloudflare Workers, D1, KV, Access | **Claude (Anthropic)** |
+| Spec writing, GitHub commits | Alice (Perplexity) |
+| Research, brainstorm | Bob (ChatGPT, read-only) |
+| Build / deploy / fix Cloudflare infra | Claude (Anthropic) |
 | Final decisions, relay bridge | Jared |
+
+### 5. Earlier this session — context-links-mcp fix
+`db_execute` params bug fixed, pushed as v1.1.0 to `parallel-internet-sites`. **Redeploy still pending** — Claude can now do this via `deployWorker`.
 
 ---
 
-## What happened this session (Session 1, 2026-05-20 — earlier)
+## ⚠️ Alice write protocol — NEW REQUIREMENT
 
-### 1. Boot picker artifact issue surfaced
-
-Jared noticed Alice was not loading the `alice-boot-selector.html` artifact at boot time — she was printing a text menu instead. Root cause: Alice was answering before fetching and rendering the artifact. Noted for future boot: always load `spaces/artifacts/alice-boot-selector.html` and output it as an HTML artifact, populated with live data from `spaces/gists/projects.json`.
-
-### 2. context-links-mcp — `db_execute` params bug fixed
-
-**Problem:** Claude was hitting D1 SQL parse errors when trying to INSERT large text blobs (multi-line strings, HTML, markdown) via `db_execute`. D1's parser rejects newline characters embedded inside raw SQL string literals.
-
-**Fix pushed:** [`76caa249`](https://github.com/nothinginfinity/parallel-internet-sites/commit/76caa249085fffacd3c894584537e2f2408136e2) to `nothinginfinity/parallel-internet-sites` on `main`.
-
-- `db_execute` now accepts optional `params[]` array — blobs never touch the SQL parser
-- Worker version bumped to `1.1.0`
-- **Redeploy still required** — code in GitHub, not yet live in Cloudflare
-
-### 3. Version-controlled Workers pattern brainstormed
-
-Core idea: Worker = thin harness deployed once. `tools.json` + `handlers.js` in GitHub = versioned payload fetched at runtime. Push to GitHub → Worker picks up on next request, no Cloudflare redeploy needed. Bob bulletin filed for caching research.
+Whenever Alice writes a message to `spaces/claude/inbox.md` on GitHub, she **must also** call `mcp-prax:putKVValue` with key `inbox` and the same JSON payload. This keeps Claude's KV inbox in sync. GitHub = source of truth archive. KV = Claude's live readable inbox.
 
 ---
 
 ## Active projects
 
-| Project | Repo | Status | Handoff |
-|---------|------|--------|--------|
-| **Claude infra control** | `repo-copilot` | ✅ Live — mcp-prax connected | This file |
-| **Context Links** | `nothinginfinity/context-links` | 🟡 Phase 2 not started | `spaces/context-links/handoff.md` |
-| **context-links-mcp Worker** | `nothinginfinity/parallel-internet-sites` | 🟠 Fix pushed, redeploy pending | `workers/context-links-mcp/index.js` |
-| **AFO Visibility Snapshot** | `nothinginfinity/parallel-internet-sites` | 🔴 Turnstile test pending | `spaces/alice/handoff-2026-05-16-afo-form-debug.md` |
-| **Version-controlled Workers pattern** | `nothinginfinity/parallel-internet-sites` | 💡 Brainstorm only | `spaces/brainstorm/bulletin-2026-05-20-version-controlled-workers.md` |
-| **repo-copilot infrastructure** | `nothinginfinity/repo-copilot` | 🟡 Ongoing | — |
+| Project | Status | Next action |
+|---------|--------|-------------|
+| **Claude KV mailbox** | ✅ Live | Alice must mirror all inbox writes to KV going forward |
+| **context-links-mcp Worker** | 🟠 Fix pushed, redeploy pending | Ask Claude to deploy via `deployWorker` |
+| **AFO Turnstile test** | 🔴 Blocker | Only remaining AFO funnel blocker |
+| **Context Links Phase 2** | 🟡 Not started | See `spaces/context-links/handoff.md` |
+| **Legacy Worker cleanup** | 🟡 Ready | Claude can delete mcp-builder2/3/4, builder-mcp |
+| **Version-controlled Workers** | 💡 Brainstorm | See bulletin |
 
 ---
 
 ## Immediate next actions (priority order)
 
-1. ✅ **mcp-prax connected** — run Claude test prompt to confirm tool access (list Workers, D1, KV, Access)
-2. **Redeploy context-links-mcp** in Cloudflare dashboard with `v1.1.0` fix — OR ask Claude to deploy it via `mcp-prax:deployWorker` using the GitHub source
-3. **AFO Turnstile test** — still the only remaining AFO funnel blocker
-4. **Context Links Phase 2** — see `spaces/context-links/handoff.md`
-5. **Legacy Worker cleanup** — Claude can delete `mcp-builder2/3/4`, `builder-mcp` via `mcp-prax:deleteWorker` once Jared confirms
-
----
-
-## Important file paths
-
-| File | Repo | Purpose |
-|------|------|---------|
-| `spaces/gists/G-000-alice-boot.md` | `repo-copilot` | Alice boot v2.5 |
-| `spaces/gists/G-001-brainstorm-readonly.md` | `repo-copilot` | Bob boot v1.5 |
-| `spaces/gists/G-002-claude-boot.md` | `repo-copilot` | Claude boot v2.0 |
-| `spaces/claude/capabilities.md` | `repo-copilot` | Claude full tool registry |
-| `workers/context-links-mcp/index.js` | `parallel-internet-sites` | MCP Worker v1.1.0 (needs redeploy) |
-| `spaces/context-links/handoff.md` | `repo-copilot` | Context Links project handoff |
-| `workers/visibility-snapshot/index.js` | `parallel-internet-sites` | AFO Worker source |
-| `spaces/gists/brain.json` | `repo-copilot` | Agent second brain |
+1. **Alice: mirror all future inbox writes to KV** — `putKVValue("inbox", ...)` every time she writes to `spaces/claude/inbox.md`
+2. **Redeploy context-links-mcp** — ask Claude: `deployWorker("context-links-mcp", <source from getWorkerScript or GitHub>)`
+3. **AFO Turnstile test** — final AFO funnel blocker
+4. **Legacy Worker cleanup** — Claude deletes mcp-builder2/3/4, builder-mcp
+5. **Context Links Phase 2**
 
 ---
 
 ## Context for next Alice instance
 
-You are Alice. Boot by reading this file, then ask Jared what he wants to work on.
+You are Alice. Boot by reading this file, then present the active project list to Jared.
 
-**Key context:**
-- **Claude has mcp-prax.** He can build/deploy/fix any Worker by prompt. Route all Cloudflare infra tasks to Claude.
-- The `context-links-mcp` Worker has a `v1.1.0` fix in GitHub but may not yet be deployed. Ask Jared if he wants Claude to deploy it via `deployWorker`, or if he'll do it in the dashboard.
-- `db_execute` in `context-links-mcp` now accepts `params[]` for parameterized writes. Always use `?` placeholders + `params` for INSERTs with large text values.
-- AFO Turnstile test is the only remaining funnel blocker.
-- Legacy Workers (`mcp-builder2/3/4`, `builder-mcp`) can be cleaned up via Claude when ready.
+**Critical:** Claude's inbox now runs through KV, not GitHub. Whenever you write to `spaces/claude/inbox.md`, you MUST also call `mcp-prax:putKVValue` with key `inbox` and the full JSON message payload. If you skip this step, Claude won't see the message.
+
+Claude boots with: `getKVValue("inbox")` — no GitHub needed.
