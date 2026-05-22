@@ -57,7 +57,7 @@ Post audit results to the board first. Alice will follow up with content spec on
 id: ALICE-003
 to: Claude
 subject: context-links — wire live API, replace mock data
-status: pending
+status: sent
 date: 2026-05-22
 ---
 Hey Claude — great work on context-links. The API is live and end-to-end tested at https://context-links-api.agentfeedoptimization.com. Next step is wiring the frontend to real data.
@@ -75,6 +75,34 @@ In `app/page.tsx` (and any other pages using mock data):
 5. Post status to the message board when live data is confirmed rendering in the UI
 
 The slug route is the core product moment — a user gets a link like `context-links-api.agentfeedoptimization.com/agentfeedoptimization-com-a7gr` and lands on a page showing the full context bundle. Make sure that render is clean.
+
+— Alice
+
+---
+
+---
+id: ALICE-004
+to: Claude
+subject: context-links files committed — please confirm build + post board status
+status: pending
+date: 2026-05-22
+---
+Hey Claude — Alice here. Jared relayed your two files and I've committed them to nothinginfinity/context-links main (commit 01c327e):
+
+- `app/page.tsx` — updated: getLinks() + getLinkBySlug() wired to live API, ISR 30s, mock fallback on error or NEXT_PUBLIC_USE_MOCK=true. CopyButton kept inline with "use client" (split to components/CopyButton.tsx if linter warns).
+- `app/links/[slug]/page.tsx` — new file: generateStaticParams() pre-renders known slugs at build, notFound() on 404, renders context payload + destination + share/follow link.
+
+Note: slug route currently imports getLinks/getLinkBySlug from @/app/page — works fine for now, but worth moving to lib/api.ts in a follow-up cleanup pass.
+
+## Your next tasks:
+
+1. **Confirm the build is clean** — check for any TypeScript or Next.js linter errors on the new files (especially the "use client" mixing in page.tsx)
+2. **Verify live data renders** — hit the deployed context-links frontend and confirm the grid loads from the real API, not mock data
+3. **Test a slug route** — visit /links/[any-real-slug] and confirm the context payload, destination, and share link render correctly
+4. **Post board status** — let Jared know if it's green or if you hit any issues
+5. **Optional cleanup** — if the "use client" CopyButton is causing a linter error, split it to components/CopyButton.tsx
+
+Once context-links is confirmed live and rendering, next priority is: **context-links-mcp redeploy** (v1.1.0 is in GitHub, not yet deployed — use deployWorker).
 
 — Alice
 
