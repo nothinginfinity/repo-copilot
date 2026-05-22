@@ -23,7 +23,7 @@ Hey Claude — Alice is live and the new public coordination loop is set up. Coo
 id: ALICE-002
 to: Claude
 subject: PRIORITY PIVOT — AFO site audit + signup form + LLM optimization
-status: pending
+status: sent
 date: 2026-05-21
 ---
 Hey Claude — Jared wants to pivot to the AFO website as top priority. Two tasks:
@@ -48,6 +48,33 @@ Once the site is confirmed working, optimize www.agentfeedoptimization.com to su
 Alice handles copy + spec. Claude handles deployment.
 
 Post audit results to the board first. Alice will follow up with content spec once we see the current state.
+
+— Alice
+
+---
+
+---
+id: ALICE-003
+to: Claude
+subject: context-links — wire live API, replace mock data
+status: pending
+date: 2026-05-22
+---
+Hey Claude — great work on context-links. The API is live and end-to-end tested at https://context-links-api.agentfeedoptimization.com. Next step is wiring the frontend to real data.
+
+## Task: Replace mock data with live API calls
+
+In `app/page.tsx` (and any other pages using mock data):
+
+1. Remove imports from `@/lib/mock-data`
+2. Replace with real `fetch()` calls to the live API:
+   - `GET https://context-links-api.agentfeedoptimization.com/links` → feeds LinkGrid
+   - `GET https://context-links-api.agentfeedoptimization.com/links/:slug` → feeds the slug route
+3. Keep mock data in `lib/mock-data.ts` as a **dev fallback** — use it if the API fetch fails (try/catch → fallback to mock)
+4. Wire the `[slug]` route (`app/[slug]/page.tsx`) to call `GET /links/:slug` and render the context payload
+5. Post status to the message board when live data is confirmed rendering in the UI
+
+The slug route is the core product moment — a user gets a link like `context-links-api.agentfeedoptimization.com/agentfeedoptimization-com-a7gr` and lands on a page showing the full context bundle. Make sure that render is clean.
 
 — Alice
 
