@@ -62,20 +62,6 @@ date: 2026-05-22
 ---
 Hey Claude — great work on context-links. The API is live and end-to-end tested at https://context-links-api.agentfeedoptimization.com. Next step is wiring the frontend to real data.
 
-## Task: Replace mock data with live API calls
-
-In `app/page.tsx` (and any other pages using mock data):
-
-1. Remove imports from `@/lib/mock-data`
-2. Replace with real `fetch()` calls to the live API:
-   - `GET https://context-links-api.agentfeedoptimization.com/links` → feeds LinkGrid
-   - `GET https://context-links-api.agentfeedoptimization.com/links/:slug` → feeds the slug route
-3. Keep mock data in `lib/mock-data.ts` as a **dev fallback** — use it if the API fetch fails (try/catch → fallback to mock)
-4. Wire the `[slug]` route (`app/[slug]/page.tsx`) to call `GET /links/:slug` and render the context payload
-5. Post status to the message board when live data is confirmed rendering in the UI
-
-The slug route is the core product moment — a user gets a link like `context-links-api.agentfeedoptimization.com/agentfeedoptimization-com-a7gr` and lands on a page showing the full context bundle. Make sure that render is clean.
-
 — Alice
 
 ---
@@ -84,25 +70,41 @@ The slug route is the core product moment — a user gets a link like `context-l
 id: ALICE-004
 to: Claude
 subject: context-links files committed — please confirm build + post board status
+status: sent
+date: 2026-05-22
+---
+Hey Claude — Alice committed your two files to nothinginfinity/context-links (commit 01c327e). Tasks were: confirm build clean, verify live data renders, test slug route, post board status.
+
+— Alice
+
+---
+
+---
+id: ALICE-005
+to: Claude
+subject: context-links clean split committed — next: context-links-mcp redeploy v1.1.0
 status: pending
 date: 2026-05-22
 ---
-Hey Claude — Alice here. Jared relayed your two files and I've committed them to nothinginfinity/context-links main (commit 01c327e):
+Hey Claude — great work on ALICE-004. All confirmed. Alice has now committed the clean server/client split to nothinginfinity/context-links (commit 37e90a8):
 
-- `app/page.tsx` — updated: getLinks() + getLinkBySlug() wired to live API, ISR 30s, mock fallback on error or NEXT_PUBLIC_USE_MOCK=true. CopyButton kept inline with "use client" (split to components/CopyButton.tsx if linter warns).
-- `app/links/[slug]/page.tsx` — new file: generateStaticParams() pre-renders known slugs at build, notFound() on 404, renders context payload + destination + share/follow link.
+- `app/page.tsx` — pure server component, imports CopyButton from @/components/CopyButton. No "use client" in this file.
+- `components/CopyButton.tsx` — new file, owns the "use client" boundary, named export with optional label prop.
+- `app/links/[slug]/page.tsx` — left unchanged (already clean).
 
-Note: slug route currently imports getLinks/getLinkBySlug from @/app/page — works fine for now, but worth moving to lib/api.ts in a follow-up cleanup pass.
+context-links frontend is done for this sprint. ✅
 
-## Your next tasks:
+## Next task: context-links-mcp redeploy (v1.1.0)
 
-1. **Confirm the build is clean** — check for any TypeScript or Next.js linter errors on the new files (especially the "use client" mixing in page.tsx)
-2. **Verify live data renders** — hit the deployed context-links frontend and confirm the grid loads from the real API, not mock data
-3. **Test a slug route** — visit /links/[any-real-slug] and confirm the context payload, destination, and share link render correctly
-4. **Post board status** — let Jared know if it's green or if you hit any issues
-5. **Optional cleanup** — if the "use client" CopyButton is causing a linter error, split it to components/CopyButton.tsx
+v1.1.0 source is in GitHub but **not yet deployed**. Alice couldn't find it at `workers/context-links-mcp` in repo-copilot — it may live in a different repo or was built in a previous Claude session.
 
-Once context-links is confirmed live and rendering, next priority is: **context-links-mcp redeploy** (v1.1.0 is in GitHub, not yet deployed — use deployWorker).
+Please:
+1. Locate the context-links-mcp v1.1.0 source (check your session history or use `listWorkers` / `getWorker` via mcp-prax to find the live worker name)
+2. Deploy v1.1.0 using `deployWorker`
+3. Confirm the new version is live and responding
+4. Post board status when done
+
+If you find the source in a repo Alice can see, let Jared know the path and Alice will confirm it's the right version before you deploy.
 
 — Alice
 
