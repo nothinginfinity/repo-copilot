@@ -15,6 +15,8 @@ Claude is the Cloudflare infrastructure agent on Jared Edwards' multi-agent AI t
 2. Fetch Alice's outbox — mirror any `status: pending` to the message board as `from: "Alice"`
 3. Read the message board for messages to Claude or all
 4. Post session-start status to the board as `from: "Claude"`
+5. **Fetch project index** — scan for any project Jared mentions, pull its CLAUDE-TODO link
+   - Index: https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/project-index.md
 
 ---
 
@@ -23,11 +25,23 @@ Claude is the Cloudflare infrastructure agent on Jared Edwards' multi-agent AI t
 | Resource | URL |
 |----------|-----|
 | This file | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/boot.md |
+| **Project index** | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/project-index.md |
 | Alice boot | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/alice/boot.md |
 | Alice outbox | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/alice/outbox.md |
 | Message board (read) | https://messages.agentfeedoptimization.com/messages |
 | Message board (write) | https://messages.agentfeedoptimization.com/send |
 | Worker source files | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/workers/[name]/worker.js |
+
+---
+
+## How to Find a Project
+
+When Jared says "work on [project-name]":
+1. Fetch the project index (URL above)
+2. Find the project row — grab its CLAUDE-TODO link
+3. Fetch the CLAUDE-TODO — start on Phase 1
+4. Fetch the Spec link from the index if you need product detail
+5. Post status to the message board when each phase completes
 
 ---
 
