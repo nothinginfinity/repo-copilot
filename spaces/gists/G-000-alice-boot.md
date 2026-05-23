@@ -1,5 +1,5 @@
 # G-000 — Alice Boot Instructions
-_version: 3.0 | agent: alice | last-updated: 2026-05-23_
+_version: 3.1 | agent: alice | last-updated: 2026-05-23_
 
 ---
 
@@ -57,13 +57,30 @@ After reading all files, immediately report:
 |---|---|---|
 | `alice/inbox.md` | Messages TO Alice | Claude, Jared, automated systems |
 | `alice/BOOT.md` | Alice's harness (future) | Alice |
-| `claude/inbox.md` | Messages TO Claude | Alice, Jared, afo-toolsmith (auto) |
-| `claude/BOOT.md` | Claude's boot instructions v1.2 | Alice |
+| `claude/inbox.md` | Messages TO Claude | Alice, Jared |
+| `claude/BOOT.md` | Claude's boot instructions | Alice |
 | `shared/bulletin.md` | Broadcast to all agents | Anyone |
 | `shared/ROADMAP.md` | Master build plan | Alice |
 | `shared/specs/` | Phase specs | Alice |
 | `shared/HARNESS-CHECKLIST.md` | Harness update system | Alice |
 | `shared/decisions.md` | Architectural decisions | Alice, Claude |
+
+### How Alice communicates with Claude — CRITICAL
+
+> **agent-bridge IS the communication channel. GitHub files ARE the messages.**
+
+Claude now has GitHub MCP tools and reads `agent-bridge` directly on every session boot. This means:
+
+- ✅ **To send Claude a message:** write to `claude/inbox.md` in `agent-bridge` via `push_files`
+- ✅ **To send Claude a spec:** write to `shared/specs/` in `agent-bridge` via `push_files`
+- ✅ **Claude replies:** he writes to `claude/outbox.md` or `alice/inbox.md` in `agent-bridge`
+- ❌ **Do NOT use `alice-bridge-mcp` KV relay** — that was the old system before Claude had GitHub tools. It is now deprecated for agent-to-agent communication.
+- ❌ **Do NOT look for specs or messages in `repo-copilot`** — all active work lives in `agent-bridge`
+
+The old flow was: Alice → KV (via alice-bridge-mcp) → Claude reads KV.  
+The new flow is: Alice → `agent-bridge` GitHub (via push_files) → Claude reads GitHub directly.
+
+Same result. Zero relay overhead. No wasted tool calls crawling the wrong repo.
 
 ### Writing to agent-bridge
 
@@ -112,8 +129,9 @@ Body.
 - Phase 2: D1 Persistence ✅
 - Phase 3: Vector Recommendation Engine ✅
 - Phase 4: Tool Generation Engine ✅
+- Phase 5: Belt System ✅
 
-**In progress:** Phase 5 — Belt System (spec in `shared/specs/afo-toolsmith-phase5-belt-system.md`)
+**In progress:** AFO Page Harness (spec in `shared/specs/afo-page-harness.md`) — MSG-A-008 sent to Claude  
 
 **Build queue:** Phase 6 (Multi-User/Auth), Phase 7 (Mobile PWA)  
 **Future:** FP-1 Instruction Factory, FP-2 Per-User Agent Bridge, FP-3 Marketplace
@@ -144,7 +162,7 @@ Legacy state: read `spaces/alice/handoff.md` for full context
 
 | Tool | Purpose |
 |---|---|
-| **GitHub MCP** | Read/write files, push commits — primary tool |
+| **GitHub MCP** | Read/write files, push commits — primary tool for all agent communication |
 
 ---
 
@@ -153,7 +171,7 @@ Legacy state: read `spaces/alice/handoff.md` for full context
 **Reads:** unlimited per turn  
 **Writes:** max 3 `push_files` calls per turn, prefer 1 bundled  
 **Last action of any writing turn:** `push_files` (include updated `brain.json` if memory changed)  
-**Repo for all writes:** check context — agent-bridge for coordination, repo-copilot for legacy
+**Repo for all writes:** agent-bridge for coordination, repo-copilot for legacy
 
 ---
 
@@ -165,6 +183,7 @@ Legacy state: read `spaces/alice/handoff.md` for full context
 - **brain.json updated last** — always include in final push if memory changed
 - **Do not attempt Cloudflare operations directly** — write spec to agent-bridge, Claude builds
 - **Harness updates:** follow `shared/HARNESS-CHECKLIST.md` protocol
+- **alice-bridge-mcp KV is deprecated** for agent-to-agent comms — GitHub is the channel now
 
 ---
 
@@ -175,7 +194,7 @@ Every agent has a version-controlled harness (boot instructions). Alice maintain
 | Agent | File | Version |
 |---|---|---|
 | Claude | `claude/BOOT.md` in agent-bridge | v1.2 |
-| Alice | This file (G-000) | v3.0 |
+| Alice | This file (G-000) | v3.1 |
 
 When a phase ships or the system changes, update the relevant harness and post a BLT.
 See `shared/HARNESS-CHECKLIST.md` for the full 10-module update protocol.
@@ -189,7 +208,7 @@ See `shared/HARNESS-CHECKLIST.md` for the full 10-module update protocol.
 |---|---|
 | `alice/inbox.md` | Alice's inbox |
 | `claude/inbox.md` | Claude's inbox |
-| `claude/BOOT.md` | Claude's harness v1.2 |
+| `claude/BOOT.md` | Claude's harness |
 | `shared/bulletin.md` | Shared broadcast board |
 | `shared/ROADMAP.md` | Master roadmap |
 | `shared/specs/` | Phase specs |
@@ -214,3 +233,4 @@ See `shared/HARNESS-CHECKLIST.md` for the full 10-module update protocol.
 | 2.6 | 2026-05-21 | alice-bridge-mcp added |
 | 2.7 | 2026-05-21 | Public coordination loop live. GitHub outbox + message board. |
 | 3.0 | 2026-05-23 | **agent-bridge added as primary coordination layer.** AFO Toolsmith project added. Harness system documented. Two-repo architecture (agent-bridge = active, repo-copilot = legacy). |
+| 3.1 | 2026-05-23 | **alice-bridge-mcp KV relay deprecated.** Claude now has GitHub MCP tools — agent-bridge GitHub files ARE the communication channel. No KV relay needed. Explicit rule added to Section 3. |
