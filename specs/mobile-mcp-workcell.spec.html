@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mobile MCP Workcell Spec — AFO Toolsmith</title>
+  <meta name="description" content="HTML spec for Mobile MCP Workcells: tool belts plus instructions, inboxes, identity, routing, and manifests for coordinated mobile agent development." />
+  <style>
+    :root {
+      --bg: #050706;
+      --panel: #101611;
+      --panel2: #151c16;
+      --ink: #f3f6ee;
+      --muted: #8d978e;
+      --line: #283226;
+      --hot: #eaff18;
+      --cyan: #49e7ff;
+      --green: #35f5a0;
+      --orange: #ffb84a;
+      --red: #ff5f75;
+      --radius: 24px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(234, 255, 24, .16), transparent 28rem),
+        radial-gradient(circle at 95% 12%, rgba(73, 231, 255, .09), transparent 22rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.5;
+    }
+    a { color: var(--cyan); }
+    code, pre, .mono { font-family: var(--mono); }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(20px);
+      background: rgba(5, 7, 6, .78);
+      border-bottom: 1px solid rgba(234, 255, 24, .22);
+    }
+    .bar {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--mono);
+      letter-spacing: .14em;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: var(--hot);
+      box-shadow: 0 0 28px rgba(234, 255, 24, .9);
+    }
+    .badge {
+      border: 1px solid rgba(234, 255, 24, .45);
+      color: var(--hot);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-weight: 800;
+      background: rgba(234, 255, 24, .05);
+      white-space: nowrap;
+    }
+    main { max-width: 1160px; margin: 0 auto; padding: 44px 20px 90px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.08fr .92fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-bottom: 34px;
+    }
+    h1 {
+      font-size: clamp(44px, 8vw, 92px);
+      line-height: .9;
+      margin: 20px 0;
+      letter-spacing: -.06em;
+    }
+    h2 {
+      font-size: clamp(28px, 4vw, 48px);
+      letter-spacing: -.04em;
+      line-height: 1;
+      margin: 0 0 18px;
+    }
+    h3 {
+      font-size: 18px;
+      text-transform: uppercase;
+      font-family: var(--mono);
+      letter-spacing: .16em;
+      color: var(--hot);
+      margin: 0 0 16px;
+    }
+    p.lead { font-size: clamp(20px, 2.4vw, 30px); color: #d9ded6; max-width: 760px; }
+    .subtle { color: var(--muted); }
+    .panel {
+      background: linear-gradient(180deg, rgba(21, 28, 22, .94), rgba(9, 12, 10, .96));
+      border: 1px solid rgba(234, 255, 24, .18);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 20px 60px rgba(0,0,0,.28);
+    }
+    .panel.cyan { border-color: rgba(73, 231, 255, .32); }
+    .panel.green { border-color: rgba(53, 245, 160, .28); }
+    .grid { display: grid; gap: 20px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 24px; }
+    .kpi { background: #0b100c; border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+    .kpi strong { color: var(--hot); font-family: var(--mono); font-size: 30px; display: block; }
+    .step { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .step:last-child { border-bottom: 0; }
+    .num { width: 32px; height: 32px; border-radius: 999px; background: var(--hot); color: #030403; display: grid; place-items: center; font-family: var(--mono); font-weight: 900; flex: none; }
+    .pillrow { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+    .pill { border: 1px solid var(--line); background: #0a0f0b; border-radius: 999px; padding: 8px 12px; color: #cbd2ca; font-family: var(--mono); font-size: 13px; }
+    .pill.hot { color: var(--hot); border-color: rgba(234,255,24,.35); }
+    .pill.green { color: var(--green); border-color: rgba(53,245,160,.35); }
+    .pill.cyan { color: var(--cyan); border-color: rgba(73,231,255,.35); }
+    pre {
+      overflow: auto;
+      padding: 18px;
+      border-radius: 18px;
+      background: #030504;
+      border: 1px solid #263126;
+      color: #8fffc1;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .phone {
+      border-radius: 38px;
+      border: 1px solid rgba(234,255,24,.35);
+      background: #040604;
+      padding: 18px;
+      box-shadow: 0 0 0 8px rgba(234,255,24,.04), 0 32px 80px rgba(0,0,0,.42);
+    }
+    .phone-screen { border-radius: 28px; background: #080b08; border: 1px solid #1d281d; padding: 20px; min-height: 520px; }
+    .mobile-title { font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--hot); font-weight: 900; margin-bottom: 22px; }
+    .card { border: 1px solid #253025; background: #111711; border-radius: 18px; padding: 16px; margin: 12px 0; }
+    .card b { color: #fff; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 18px; border-radius: 16px; background: var(--hot); color: #050705; font-weight: 900; text-decoration: none; font-family: var(--mono); }
+    .button.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 16px; }
+    th, td { text-align: left; border-bottom: 1px solid rgba(255,255,255,.08); padding: 13px 10px; vertical-align: top; }
+    th { color: var(--hot); font-family: var(--mono); text-transform: uppercase; font-size: 12px; letter-spacing: .12em; }
+    section { margin-top: 28px; }
+    .footer { margin-top: 42px; color: var(--muted); font-family: var(--mono); text-align: center; }
+    @media (max-width: 860px) {
+      .hero, .grid.two, .grid.three { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      main { padding-top: 28px; }
+      .bar { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <div class="brand"><span class="dot"></span> AFO Toolsmith / Workcell Spec</div>
+      <div class="badge">v0.1 · mobile-first</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="panel">
+        <div class="pillrow">
+          <span class="pill hot">HTML.SPEC</span>
+          <span class="pill green">MCP Workcell</span>
+          <span class="pill cyan">Agent Bridge</span>
+        </div>
+        <h1>Tools are not enough.</h1>
+        <p class="lead">A Workcell packages everything an AI agent instance needs to stay useful, scoped, and coordinated on mobile: <b>tool belt + boot instructions + inbox + identity + routing.</b></p>
+        <div class="kpis">
+          <div class="kpi"><strong>1</strong><span class="subtle">MCP URL</span></div>
+          <div class="kpi"><strong>1</strong><span class="subtle">boot link</span></div>
+          <div class="kpi"><strong>3</strong><span class="subtle">mail files</span></div>
+          <div class="kpi"><strong>∞</strong><span class="subtle">agent lanes</span></div>
+        </div>
+      </div>
+
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="mobile-title">Create Workcell</div>
+          <div class="card"><b>Role</b><br><span class="subtle">ChatGPT Product Architect</span></div>
+          <div class="card"><b>Project</b><br><span class="subtle">afo-toolsmith</span></div>
+          <div class="card"><b>Tool Belt</b><br><span class="subtle">github.read_file · github.commit_file · bridge.send_message · cloudflare.ping_endpoint</span></div>
+          <div class="card"><b>Instructions</b><br><span class="subtle">Generated version-controlled boot URL</span></div>
+          <div class="card"><b>Inbox</b><br><span class="subtle">projects/afo-toolsmith/workcells/chatgpt-product-architect/inbox.md</span></div>
+          <a class="button" href="#outputs">Generate Workcell →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel cyan">
+      <h2>Product Definition</h2>
+      <p>A <b>Workcell</b> is a project-scoped runtime package for one AI agent instance. It is designed for mobile development where Jared may run several ChatGPT projects, Claude projects, and Perplexity spaces at once. Each instance gets only the tools, instructions, and inbox it needs for its lane.</p>
+      <div class="pillrow">
+        <span class="pill hot">Tool = one capability</span>
+        <span class="pill hot">Tool Belt = coordinated tools</span>
+        <span class="pill hot">Workcell = belt + instructions + inbox</span>
+        <span class="pill hot">Project Mesh = multiple workcells</span>
+      </div>
+    </section>
+
+    <section class="grid two">
+      <div class="panel">
+        <h3>Why Workcells Exist</h3>
+        <div class="step"><div class="num">1</div><div><b>Models need tools.</b><br><span class="subtle">The MCP belt gives the agent hands.</span></div></div>
+        <div class="step"><div class="num">2</div><div><b>Tools need rules.</b><br><span class="subtle">Boot instructions tell the agent when and how to use those hands.</span></div></div>
+        <div class="step"><div class="num">3</div><div><b>Agents need lanes.</b><br><span class="subtle">Identity and responsibilities keep multiple sessions from colliding.</span></div></div>
+        <div class="step"><div class="num">4</div><div><b>Lanes need mail.</b><br><span class="subtle">Inbox/outbox/log files let ChatGPT, Claude, Alice, and Jared coordinate asynchronously.</span></div></div>
+      </div>
+      <div class="panel green">
+        <h3>Mobile Setup Block</h3>
+        <p>The user should get one simple setup card they can paste into a ChatGPT project, Claude project, Perplexity space, or future Cursor mobile project.</p>
+<pre>Use this Workcell for this chat/project.
+
+Role:
+ChatGPT Product Architect for AFO Toolsmith
+
+Instructions:
+Follow this boot file first:
+https://raw.githubusercontent.com/.../boot.md
+
+Tools:
+Connect this MCP Tool Belt:
+https://.../mcp
+
+Inbox:
+Read/write bridge mail here:
+https://github.com/.../inbox.md
+
+Priority:
+Project instructions override generic model behavior.</pre>
+      </div>
+    </section>
+
+    <section class="panel" id="outputs">
+      <h2>Generated Outputs</h2>
+      <table>
+        <thead><tr><th>Output</th><th>Purpose</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>MCP Connector URL</td><td>Connects the agent to the exact tool belt.</td><td><code>https://.../belt/blt_abc/mcp</code></td></tr>
+          <tr><td>Boot Instruction URL</td><td>Version-controlled role + operating rules generated from selected tools.</td><td><code>https://raw.githubusercontent.com/.../boot.md</code></td></tr>
+          <tr><td>Workcell Manifest</td><td>Agent-readable JSON describing identity, tools, authority, routing, and expiration.</td><td><code>workcell.json</code></td></tr>
+          <tr><td>Inbox / Outbox / Log</td><td>Project-specific communication files.</td><td><code>projects/afo/workcells/chatgpt-architect/inbox.md</code></td></tr>
+          <tr><td>Setup Card</td><td>Human-readable copy/paste instructions for mobile setup.</td><td><code>setup.md</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="grid two">
+      <div class="panel">
+        <h2>Workcell Manifest Schema</h2>
+<pre>{
+  "workcell_id": "wc_afo_chatgpt_architect",
+  "name": "AFO Toolsmith Architect",
+  "project": "afo-toolsmith",
+  "agent": {
+    "platform": "chatgpt",
+    "role": "product-architect",
+    "lane": "specs-review-routing",
+    "authority": "may_commit_specs_no_destructive_ops"
+  },
+  "tool_belt": {
+    "belt_id": "blt_hdewr4xttb6sgg63",
+    "mcp_url": "https://afo-toolsmith.../mcp",
+    "tools": [
+      "github.read_file",
+      "github.commit_file",
+      "bridge.send_message"
+    ]
+  },
+  "instructions": {
+    "boot_url": "https://raw.githubusercontent.com/.../boot.md",
+    "priority": "project overrides general"
+  },
+  "mailbox": {
+    "inbox": ".../inbox.md",
+    "outbox": ".../outbox.md",
+    "log": ".../log.md"
+  },
+  "routing": {
+    "cloudflare_deploys": "claude-deployer",
+    "repo_builds": "allis-repo-builder",
+    "human_decisions": "jared"
+  },
+  "expires_at": "2026-06-22T00:00:00Z"
+}</pre>
+      </div>
+      <div class="panel">
+        <h2>Tool → Instruction Fragments</h2>
+        <p>Each selected tool contributes operating rules into the generated boot file.</p>
+<pre>github.commit_file:
+- Read before overwriting.
+- Commit small reviewable changes.
+- Report path and commit SHA.
+
+cloudflare.deploy_worker:
+- Deploy only when explicitly asked.
+- Verify /health after deploy.
+- Check bindings before debugging code.
+
+bridge.send_message:
+- Use the standard message header.
+- Include from, to, project, priority, requires.
+- Route blockers to the correct inbox.</pre>
+      </div>
+    </section>
+
+    <section class="panel green">
+      <h2>Recommended Repo Layout</h2>
+<pre>agent-bridge/
+  projects/
+    afo-toolsmith/
+      workcells/
+        chatgpt-product-architect/
+          boot.md
+          manifest.json
+          setup.md
+          inbox.md
+          outbox.md
+          log.md
+        claude-cloudflare-deployer/
+          boot.md
+          manifest.json
+          setup.md
+          inbox.md
+          outbox.md
+          log.md
+        allis-repo-builder/
+          boot.md
+          manifest.json
+          setup.md
+          inbox.md
+          outbox.md
+          log.md
+      decisions.md
+      bulletin.md
+      status.md</pre>
+      <p class="subtle">Global agent inboxes may still exist, but project work should prefer workcell-specific inboxes. The mailbox belongs to the role instance, not only the model brand.</p>
+    </section>
+
+    <section class="grid three">
+      <div class="panel">
+        <h3>Generator Inputs</h3>
+        <ul>
+          <li>Project name</li>
+          <li>Assistant target</li>
+          <li>Role / lane</li>
+          <li>Selected tool belt</li>
+          <li>Instruction style</li>
+          <li>Mailbox location</li>
+          <li>Expiration / safety level</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Safety Rules</h3>
+        <ul>
+          <li>Small scoped tool lists.</li>
+          <li>No destructive defaults.</li>
+          <li>Explicit approval for deletes, drops, secrets, and billing.</li>
+          <li>Every workcell has expiration and revocation.</li>
+          <li>Logs and message trail are mandatory.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>UX Principle</h3>
+        <ul>
+          <li>One MCP link.</li>
+          <li>One boot link.</li>
+          <li>One inbox path.</li>
+          <li>One role card.</li>
+          <li>Everything copy/pasteable from iPhone.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel cyan">
+      <h2>Implementation Plan</h2>
+      <div class="step"><div class="num">1</div><div><b>Add Workcell object to AFO Toolsmith D1.</b><br><span class="subtle">Store role, belt ID, instruction URL, mailbox paths, status, and expiration.</span></div></div>
+      <div class="step"><div class="num">2</div><div><b>Add Generate Workcell flow.</b><br><span class="subtle">After selecting a belt, user chooses agent target and role. Toolsmith generates boot/inbox/manifest.</span></div></div>
+      <div class="step"><div class="num">3</div><div><b>Generate instruction fragments from tools.</b><br><span class="subtle">Each tool contributes usage rules and safety boundaries.</span></div></div>
+      <div class="step"><div class="num">4</div><div><b>Commit workcell files to GitHub.</b><br><span class="subtle">Use GitHub MCP or bridge worker to create boot.md, setup.md, manifest.json, inbox.md, outbox.md, log.md.</span></div></div>
+      <div class="step"><div class="num">5</div><div><b>Expose copy/paste setup card.</b><br><span class="subtle">The mobile user can configure ChatGPT, Claude, Perplexity, or Cursor with one instruction link and one MCP URL.</span></div></div>
+    </section>
+
+    <section class="panel">
+      <h2>Alice / Claude / ChatGPT Handoff Prompt</h2>
+<pre>Alice, build the Mobile MCP Workcell layer for AFO Toolsmith.
+
+Goal:
+A Workcell packages a Tool Belt with generated boot instructions, an inbox/outbox/log, a manifest, and a mobile setup card.
+
+Deliverables:
+- Add Workcell data model.
+- Add Generate Workcell UI.
+- Add instruction generator that composes fragments from selected tools.
+- Add repo output format for agent-bridge project workcells.
+- Add setup card with MCP URL + boot URL + inbox path.
+- Add manifest.json schema.
+
+Important:
+Tool Belts are the capability layer. Workcells are the operating layer.</pre>
+    </section>
+
+    <div class="footer">AFO Toolsmith — Workcell Spec — tools + instructions + inbox + identity + routing</div>
+  </main>
+</body>
+</html>
