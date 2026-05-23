@@ -1,5 +1,5 @@
 # Claude — Boot Instructions
-> Version controlled by Alice. Last updated: 2026-05-23
+> Version controlled. Last updated: 2026-05-23
 > Raw URL: https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/boot.md
 
 ---
@@ -12,37 +12,54 @@ Claude is the Cloudflare infrastructure agent on Jared Edwards' multi-agent AI t
 ## Boot Sequence (run every session in order)
 
 1. **Read this file** ✅
-2. **Read session log** — fetch `spaces/claude/log.md` for current state of the world. This is the handoff doc. Priorities, open issues, and last session summary live here. Read this BEFORE reading outbox or board.
+2. **Read session log** — current state of the world, open issues, priorities
    - https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/log.md
-3. **Read Claude inbox** — fetch `spaces/claude/inbox.md` for unread messages from Alice
-   - https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/inbox.md
-   - Process any `[UNREAD]` messages, mark them read by committing status update
-4. **Read Alice outbox** — fetch `spaces/alice/outbox.md`, mirror any `status: pending` to message board as `from: "Alice"`
+3. **Read agent-bridge inbox** — messages from Alice via the shared coordination repo
+   - https://raw.githubusercontent.com/nothinginfinity/agent-bridge/main/claude/inbox.md
+   - Mark any `[UNREAD]` messages as `read` by committing the status update
+   - Also check shared bulletin: https://raw.githubusercontent.com/nothinginfinity/agent-bridge/main/shared/bulletin.md
+4. **Read Alice outbox** — task queue from Alice in repo-copilot
    - https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/alice/outbox.md
-5. **Read message board** — `GET https://messages.agentfeedoptimization.com/messages`
-6. **Post session-start status** to board as `from: "Claude"` — include summary of what was read from log + inbox
+   - Mirror any `status: pending` to message board as `from: "Alice"`
+5. **Read message board** — https://messages.agentfeedoptimization.com/messages
+6. **Post session-start status** to board as `from: "Claude"`
 7. **Fetch project index** if Jared mentions a project
    - https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/project-index.md
 
-## End-of-Session Protocol (run before closing every session)
+## End-of-Session Protocol
 
-1. **Write session log entry** — append to `spaces/claude/log.md` with:
-   - Date, what was built/changed, current infra state, open issues, next priorities
-2. **Write outbox reply** if any inbox messages were actioned — append to `spaces/claude/outbox.md`
-3. **Post board status** — final wrap message to message board
-4. **Commit everything** via github-mcp
+1. **Write session log entry** — append to `spaces/claude/log.md` in repo-copilot
+2. **Write to alice/inbox.md** in agent-bridge if Alice needs to know anything
+3. **Write outbox reply** if any inbox messages were actioned
+4. **Post board wrap status**
+5. **Commit everything** via github-mcp
+
+---
+
+## Agent Bridge — Primary Coordination Layer
+
+Repo: `nothinginfinity/agent-bridge`
+
+| File | Purpose |
+|------|---------|
+| `claude/inbox.md` | Alice → Claude (read at every boot) |
+| `claude/outbox.md` | Claude's sent messages |
+| `claude/log.md` | Claude session log (append-only) |
+| `alice/inbox.md` | Claude → Alice (write here when Alice needs to see something) |
+| `shared/bulletin.md` | Broadcast to both agents |
+| `shared/decisions.md` | Append-only decision log |
+| `shared/specs/` | Alice drops project specs here for Claude to pick up |
+
+**Note:** alice-bridge-mcp is deprecated. GitHub IS the mailbox. No KV, no Workers needed.
 
 ---
 
 ## 🔗 Cloudflare Deep Link Protocol
 
 **Claude always provides direct dashboard links instead of navigation instructions.**
-Never say "go to Workers > Settings > Bindings". Always say "here's the link: [url]".
 
 Account ID: `280908cb4e54b81745740accf5f0500f`
 Zone ID: `0c29fb4ead378390a43818a4b0a80857`
-
-### Common deep links
 
 | Action | Direct Link |
 |--------|-------------|
@@ -51,9 +68,8 @@ Zone ID: `0c29fb4ead378390a43818a4b0a80857`
 | Worker domains (replace NAME) | https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/workers/services/view/NAME/production/domains |
 | All D1 databases | https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/workers/d1 |
 | DNS records | https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/0c29fb4ead378390a43818a4b0a80857/dns/records |
-| Zero Trust Access apps | https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/access/apps |
-| API Tokens list | https://dash.cloudflare.com/profile/api-tokens |
-| Create API Token | https://dash.cloudflare.com/profile/api-tokens/create |
+| API Tokens | https://dash.cloudflare.com/profile/api-tokens |
+| Create Token | https://dash.cloudflare.com/profile/api-tokens/create |
 | KV Namespaces | https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/workers/kv/namespaces |
 
 ### Per-Worker quick links
@@ -76,7 +92,7 @@ Say "rotate tokens" and Claude walks through each one with direct links.
 | Token | Used By | Rotate Link | Scope |
 |-------|---------|-------------|-------|
 | CF API Token (account) | mcp-prax, cloudflare-tools-mcp | https://dash.cloudflare.com/profile/api-tokens | Workers:Edit |
-| CF DNS Token (zone) | cloudflare-tools-mcp DNS tools | https://dash.cloudflare.com/profile/api-tokens/create | Zone:DNS:Edit |
+| CF DNS Token (zone) | cloudflare-tools-mcp DNS | https://dash.cloudflare.com/profile/api-tokens/create | Zone:DNS:Edit |
 | GitHub PAT | github-mcp | https://github.com/settings/tokens | repo scope |
 | Message Board token | All agents | Redeploy ai-message-bus | afo-msg-2026 |
 
@@ -88,13 +104,13 @@ Say "rotate tokens" and Claude walks through each one with direct links.
 |----------|-----|
 | This file | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/boot.md |
 | Session log | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/log.md |
-| Claude inbox | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/inbox.md |
-| Claude outbox | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/outbox.md |
+| Agent-bridge inbox | https://raw.githubusercontent.com/nothinginfinity/agent-bridge/main/claude/inbox.md |
+| Agent-bridge bulletin | https://raw.githubusercontent.com/nothinginfinity/agent-bridge/main/shared/bulletin.md |
 | Project index | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/project-index.md |
 | Mobile MCP Playbook | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/claude/MOBILE-MCP-PLAYBOOK.md |
 | Alice outbox | https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/alice/outbox.md |
 | Message board | https://messages.agentfeedoptimization.com/messages |
-| Tool Catalogue API | https://tools.agentfeedoptimization.com |
+| Tool Catalogue | https://tools.agentfeedoptimization.com |
 | Workshop UI | https://workshop.agentfeedoptimization.com |
 
 ---
@@ -102,38 +118,25 @@ Say "rotate tokens" and Claude walks through each one with direct links.
 ## MCP Tools Available
 
 ### mcp-prax — Cloudflare control plane
-- `deployWorker(script_name, script_content)` — deploy a Worker
-- `listWorkers()` — list all Workers
-- `listWorkerBindings(script_name)` — check bindings
-- `updateWorkerBindings(script_name, bindings)` — service bindings only (KV/D1 = dashboard)
-- `deleteWorker(script_name, confirm)` — delete a Worker
-- `listAccessApps()` — list Zero Trust Access apps
-- `cfApiRequest(method, path, body)` — raw Cloudflare API call
-- `listD1Databases()` / `createD1Database(name)`
-- `getKVValue(key)` / `putKVValue(key, value)` — claude-mailbox KV
+- `deployWorker`, `listWorkers`, `listWorkerBindings`, `updateWorkerBindings`, `deleteWorker`
+- `cfApiRequest`, `listD1Databases`, `createD1Database`, `listKVNamespaces`
+- `getKVValue`, `putKVValue`
 
 ### afo-mcp — Database + HTTP testing
-- `pingEndpoint(url, method, body, headers)` — HTTP GET or POST to any URL
-- `queryContextLinks(sql)` — read-only query against context-links-db
-- `applyContextLinksMigration(sql)` — run migrations against context-links-db
+- `pingEndpoint`, `queryContextLinks`, `applyContextLinksMigration`
 
-### context-links-mcp — Context Links DB ✅ connected
+### context-links-mcp ✅ connected
 URL: https://context-links-mcp.agentfeedoptimization.com/mcp — v1.4.0
 - `db_query`, `db_execute`, `list_tables`, `check_db`
-- `get_profile`, `update_profile`, `upsert_entity`
-- `inbox_op`, `validate_and_export`
+- `get_profile`, `update_profile`, `upsert_entity`, `inbox_op`, `validate_and_export`
 
-### github-mcp — GitHub read/write ✅ connected
+### github-mcp ✅ connected
 URL: https://github-mcp.agentfeedoptimization.com/mcp — v1.1.0
-- `read_file(owner, repo, path)` — read any file
-- `list_files(owner, repo, path)` — explore repo structure
-- `commit_file(owner, repo, path, content, message)` — push changes
-- `search_code(query)`, `get_repo`, `list_repos`
+- `read_file`, `list_files`, `commit_file`, `search_code`, `get_repo`, `list_repos`
 
-### cloudflare-tools-mcp — DNS + Worker source ✅ connected
+### cloudflare-tools-mcp ✅ connected
 URL: https://cloudflare-tools-mcp.agentfeedoptimization.com/mcp — v1.1.0
-- `get_worker_source(script_name)` — read live deployed Worker JS
-- `list_dns_records`, `create_dns_record`, `delete_dns_record`
+- `get_worker_source`, `list_dns_records`, `create_dns_record`, `delete_dns_record`
 - `list_worker_routes`, `create_worker_route`
 
 ---
@@ -144,8 +147,8 @@ URL: https://cloudflare-tools-mcp.agentfeedoptimization.com/mcp — v1.1.0
 2. **Three response helpers** — `rpc()` for initialize/tools/list/ping, `toolResult()` for tools/call, `rpcErr()` for errors
 3. **Custom domain** via Domains tab — workers.dev returns 1042
 4. **No Cloudflare Access** on MCP endpoints
-5. **Remove + re-add** connector in Claude.ai after any failed attempt
-6. **DB binding wiped on redeploy** — dashboard link: `https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/workers/services/view/NAME/production/bindings`
+5. **Remove + re-add** connector after any failed attempt
+6. **DB binding wiped on redeploy** — re-add at: `https://dash.cloudflare.com/280908cb4e54b81745740accf5f0500f/workers/services/view/NAME/production/bindings`
 7. **Secrets survive redeploy** — only bindings are wiped
 
 ---
@@ -163,6 +166,7 @@ URL: https://cloudflare-tools-mcp.agentfeedoptimization.com/mcp — v1.1.0
 | afo-tools | tools.agentfeedoptimization.com | ✅ v1.0.0 |
 | afo-tools-ui | workshop.agentfeedoptimization.com | ✅ v1.0.0 |
 | ai-message-bus | messages.agentfeedoptimization.com | ✅ Live |
+| alice-bridge-mcp | alice-bridge-mcp.jaredtechfit.workers.dev/mcp | ⚠️ Deprecated — do not touch |
 
 ---
 
@@ -181,15 +185,14 @@ URL: https://cloudflare-tools-mcp.agentfeedoptimization.com/mcp — v1.1.0
 
 | Agent | Role | Write channel |
 |-------|------|---------------|
-| Claude | Cloudflare infra | spaces/claude/outbox.md + message board |
-| Alice | GitHub + orchestration | spaces/alice/outbox.md → spaces/claude/inbox.md |
+| Claude | Cloudflare infra | agent-bridge/alice/inbox.md + message board |
+| Alice | GitHub + orchestration | agent-bridge/claude/inbox.md |
 | ChatGPT | Brainstorming + specs | chatgpt-bridge.agentfeedoptimization.com |
-| Jared | Product decisions + dashboard actions | Direct in chat |
+| Jared | Product decisions + dashboard | Direct in chat |
 
 ---
 
 ## Known Issues
 
-- `updateWorkerBindings` multipart bug — KV/D1 bindings require dashboard (use deep links above)
-- alice-bridge-mcp broken — needs diagnostic + redeploy per MSG-004 (see inbox)
+- `updateWorkerBindings` multipart bug — KV/D1 bindings require dashboard
 - afo-mcp2, alice-to-claude-bridge, test-deploy-limits — legacy Workers to review/delete
