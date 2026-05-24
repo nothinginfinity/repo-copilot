@@ -1,0 +1,31 @@
+{
+  "registry_version": "0.1",
+  "artifacts": [
+    {
+      "id": "spec_mobile_mcp_workcell",
+      "title": "Mobile MCP Workcell Spec",
+      "type": "html.spec",
+      "category": "agent-infrastructure",
+      "tags": ["mcp", "mobile", "workcell", "agent-bridge", "tool-belt"],
+      "summary": "Defines Workcells as tool belts plus generated boot instructions, inboxes, identity, routing, manifests, and setup cards.",
+      "repo": "nothinginfinity/repo-copilot",
+      "path": "specs/mobile-mcp-workcell.spec.html",
+      "raw_url": "https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/specs/mobile-mcp-workcell.spec.html",
+      "use_cases": ["generate workcell specs", "design coordinated mobile agent systems", "create setup cards"],
+      "related_tools": ["search_specs", "fetch_spec", "commit_file"]
+    },
+    {
+      "id": "boot_chatgpt_mcp_enabled",
+      "title": "ChatGPT MCP-Enabled Boot Instructions",
+      "type": "boot.instructions",
+      "category": "agent-boot",
+      "tags": ["chatgpt", "boot", "mcp", "github", "cloudflare", "agent-bridge"],
+      "summary": "Version-controlled ChatGPT boot file defining GitHub MCP, mcp-prax, AFO MCP, agent-bridge, and Toolsmith operating rules.",
+      "repo": "nothinginfinity/repo-copilot",
+      "path": "spaces/gists/G-002-chatgpt-boot.md",
+      "raw_url": "https://raw.githubusercontent.com/nothinginfinity/repo-copilot/main/spaces/gists/G-002-chatgpt-boot.md",
+      "use_cases": ["boot ChatGPT workcells", "sync instructions across spaces", "define routing rules"],
+      "related_tools": ["read_file", "commit_file"]
+    }
+  ]
+}
