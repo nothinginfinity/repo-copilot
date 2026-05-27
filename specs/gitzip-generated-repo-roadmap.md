@@ -7,7 +7,7 @@ GitZip should evolve from a repo downloader/materializer into a typed repo gener
 The target is not only `parse -> files`; it is:
 
 ```txt
-source -> parse -> normalize -> classify -> generate -> index -> publish -> deploy
+source -> parse -> normalize -> classify -> generate -> index -> publish -> deploy -> verify -> repair
 ```
 
 This roadmap defines how GitZip can create these product types:
@@ -48,7 +48,21 @@ A user should be able to say:
 
 > Parse these 10 websites and generate a Cloudflare Pages knowledge base with D1 indexes, search, landing pages, article summaries, source citations, and deploy instructions.
 
-GitZip should then produce a valid repo with templates, content, data indexes, migrations, configuration, and deployment instructions.
+GitZip should then produce a valid repo with templates, content, data indexes, migrations, configuration, deployment instructions, and a feedback loop that confirms whether the generated project actually built and deployed.
+
+## MVP Flow
+
+The MVP should materialize three outputs in one clean generation transaction:
+
+1. **Core Data (`parsed-artifact`)**: clean, structured, token-stripped source material that acts as the agent memory bank.
+2. **Human Interface (`cloudflare-pages-blog`)**: a static frontend built from the parsed/generated data so humans can browse it.
+3. **Agent Interface (`worker-api-lite`)**: a lightweight API so other LLMs, MCP tools, and chatbots can query the same material without loading the entire repo.
+
+This is the first practical product loop:
+
+```txt
+parse websites -> commit structured data -> generate blog -> generate API -> deploy -> verify
+```
 
 ## Core Concepts
 
@@ -62,6 +76,7 @@ Initial repo types:
 parsed-artifact
 cloudflare-pages-blog
 cloudflare-worker-api
+worker-api-lite
 d1-content-database
 searchable-knowledge-base
 generated-article-hub
@@ -79,11 +94,17 @@ Every generated repo should include a manifest:
 ```json
 {
   "schema_version": "0.1",
+  "generator": "gitzip",
   "repo_type": "cloudflare-pages-blog",
+  "template_id": "cloudflare-pages-blog/v0.1",
   "source_count": 10,
   "generated_at": "ISO_DATE",
   "targets": ["cloudflare-pages"],
   "features": ["articles", "tags", "sitemap", "rss", "search-index"],
+  "safety": {
+    "copyright_mode": "abstractive",
+    "overwrite_mode": "protected"
+  },
   "inputs": [
     {
       "source_url": "https://example.com",
@@ -94,7 +115,13 @@ Every generated repo should include a manifest:
 }
 ```
 
-Suggested path:
+Canonical path:
+
+```txt
+.afo/gitzip/generation-manifest.json
+```
+
+Compatibility alias:
 
 ```txt
 .gitzip/generation-manifest.json
@@ -118,7 +145,8 @@ Each runnable repo type should declare:
 ```txt
 package.json
 README.md
-.gitzip/generation-manifest.json
+.afo/config.json
+.afo/gitzip/generation-manifest.json
 ```
 
 Cloudflare deployable repo types should also include:
@@ -133,6 +161,402 @@ D1-backed repo types should include:
 migrations/0001_init.sql
 ```
 
+## System Safeguards and Protocols
+
+These protocols are mandatory before GitZip becomes a high-throughput agentic generator. Without them, agents can thrash GitHub, break deploys silently, or produce inconsistent layouts that downstream tools cannot consume.
+
+### 1. Commit Thrashing Prevention Protocol
+
+Problem: agents can make decisions file-by-file faster than GitHub and CI/CD systems should receive commits. A single scrape/generation session may modify 10, 50, or 500 files. Pushing each file separately causes noisy history, API pressure, partial states, and unnecessary Cloudflare builds.
+
+Required fix: GitZip must include a batching / transaction layer.
+
+Protocol:
+
+```txt
+agent intent
+  -> virtual workspace
+  -> generated file manifest
+  -> validation gates
+  -> atomic multi-file commit
+  -> deployment status check
+```
+
+The agent should build the entire desired repo state in memory or in a virtual workspace first. GitZip should then execute one atomic multi-file commit per logical generation transaction.
+
+Transaction object:
+
+```json
+{
+  "transaction_id": "txn_abc123",
+  "repo_type": "cloudflare-pages-blog",
+  "base_sha": "optional-current-head-sha",
+  "files": [
+    {
+      "path": "src/content/posts/example.md",
+      "operation": "upsert",
+      "content_sha256": "..."
+    },
+    {
+      "path": "data/sources.json",
+      "operation": "upsert",
+      "content_sha256": "..."
+    }
+  ],
+  "commit": {
+    "message": "Generate Cloudflare Pages blog from 10 parsed sources",
+    "atomic": true
+  }
+}
+```
+
+Rules:
+
+- One user/generation task should normally produce one commit.
+- File-by-file commits are allowed only for emergency repair or very small manual edits.
+- Every transaction should have an ID.
+- Every transaction should produce a manifest.
+- Validation must happen before commit.
+- If validation fails, no commit should be pushed.
+- If a commit is pushed, it must represent a complete usable state.
+
+Acceptance criteria:
+
+- Ten generated files push as one commit.
+- A generated Cloudflare project is never committed halfway.
+- The commit response returns changed file count, transaction ID, commit SHA, and build/deploy tracking metadata when available.
+
+### 2. Concrete Folder Convention
+
+Problem: if every repo type invents its own layout, downstream tools such as Cloudflare deployers, Toolsmith, search indexers, and AI agents will have to guess where files live.
+
+Required fix: all generated repos must use a strict top-level convention.
+
+Canonical top-level layout:
+
+```txt
+repo-root/
+  .afo/
+    config.json
+    gitzip/
+      generation-manifest.json
+      transaction-log.jsonl
+      validation-report.json
+      source-map.json
+    deploy/
+      status.json
+      cloudflare.json
+  .gitzip/
+    generation-manifest.json        # compatibility mirror or pointer
+  src/
+    ...                             # app/source code for runnable repos
+  content/
+    ...                             # generated human-readable content
+  data/
+    ...                             # JSON indexes, registries, normalized data
+  public/
+    ...                             # static assets for Pages/site output
+  specs/
+    ...                             # agent instructions, roadmaps, contracts
+  scripts/
+    ...                             # build, seed, index, migration scripts
+  migrations/
+    ...                             # D1 migrations when needed
+  README.md
+  package.json                      # required for runnable JS/TS repos
+  wrangler.toml                     # required for Cloudflare targets
+```
+
+`.afo/config.json` schema:
+
+```json
+{
+  "schema_version": "0.1",
+  "project": "generated-sports-blog",
+  "mode": "cloudflare-pages-blog",
+  "generator": "gitzip",
+  "template_id": "cloudflare-pages-blog/v0.1",
+  "deploy_target": "cloudflare-pages",
+  "created_at": "ISO_DATE",
+  "updated_at": "ISO_DATE",
+  "paths": {
+    "manifest": ".afo/gitzip/generation-manifest.json",
+    "sources": "data/sources.json",
+    "content": "content",
+    "public": "public",
+    "status": ".afo/deploy/status.json"
+  }
+}
+```
+
+Rules:
+
+- `.afo/config.json` is the first place downstream tools should look.
+- `.afo/gitzip/generation-manifest.json` describes what was generated.
+- `data/sources.json` is the canonical source registry.
+- `content/` contains human-readable generated content.
+- `src/` contains executable app or Worker source.
+- `public/` contains static assets.
+- `specs/` contains instructions and contracts, not generated runtime data.
+- Existing-site injection mode must preserve the host repo layout and put GitZip metadata under `.afo/`.
+
+Acceptance criteria:
+
+- Any downstream tool can identify repo mode by reading `.afo/config.json`.
+- Any downstream tool can find source data, generated content, and deploy status without guessing.
+- All MVP repo types follow the same top-level convention.
+
+### 3. CI/CD Feedback Loop
+
+Problem: GitZip can push code that Cloudflare cannot build. Without a feedback loop, the agent believes the task succeeded even if the deployment failed.
+
+Required fix: add a Deployment Status MCP tool, webhook listener, or GitZip deploy-status adapter.
+
+Pipeline:
+
+```txt
+GitZip commit
+  -> Cloudflare build starts
+  -> deploy status captured
+  -> agent checks status
+  -> if failed, agent reads logs
+  -> agent patches repo in a new repair transaction
+  -> status rechecked
+```
+
+Deploy status object:
+
+```json
+{
+  "provider": "cloudflare",
+  "project": "generated-sports-blog",
+  "commit_sha": "abc123",
+  "status": "success|failed|pending|unknown",
+  "deployment_url": "https://example.pages.dev",
+  "build_id": "cf_build_x",
+  "logs_url": "https://dash.cloudflare.com/...",
+  "checked_at": "ISO_DATE",
+  "summary": "Build failed: missing npm script build"
+}
+```
+
+Required files:
+
+```txt
+.afo/deploy/status.json
+.afo/deploy/cloudflare.json
+```
+
+Required MCP/tool capabilities:
+
+```txt
+check_deployment_status(owner, repo, commit_sha)
+read_deployment_logs(build_id)
+record_deployment_status(repo, commit_sha, status)
+```
+
+Rules:
+
+- Runnable repo generation is not complete until build/deploy status is known or explicitly marked `unknown`.
+- If build fails, the agent should create a repair transaction rather than editing randomly.
+- Deployment logs should be summarized into `.afo/deploy/status.json`.
+- Repeated failed repair loops should stop after a configured limit.
+
+Acceptance criteria:
+
+- A generated repo can be traced from source parse to commit SHA to Cloudflare deployment.
+- Failed deploys produce actionable status files.
+- Agents can auto-correct missing scripts, bad Wrangler config, or broken imports.
+
+### 4. Validation and Locking Protocol
+
+Problem: multiple agents may attempt to modify the same generated repo at the same time.
+
+Required fix: optimistic locking and validation reports.
+
+Rules:
+
+- Transactions should include expected `base_sha` when possible.
+- If the remote branch head changed, GitZip should rebase or reject with a conflict report.
+- Validation reports should be written before deploy status checks.
+
+Required file:
+
+```txt
+.afo/gitzip/validation-report.json
+```
+
+Validation report shape:
+
+```json
+{
+  "transaction_id": "txn_abc123",
+  "status": "passed",
+  "checks": [
+    { "name": "manifest_exists", "status": "passed" },
+    { "name": "json_valid", "status": "passed" },
+    { "name": "required_files", "status": "passed" },
+    { "name": "source_lineage", "status": "passed" }
+  ]
+}
+```
+
+## MVP Directory Schemas
+
+### A. `parsed-artifact`
+
+Purpose: preserve parsed source material in a stable, reusable form.
+
+```txt
+repo-root/
+  .afo/
+    config.json
+    gitzip/
+      generation-manifest.json
+      transaction-log.jsonl
+      validation-report.json
+      source-map.json
+  data/
+    sources.json
+    documents.json
+  content/
+    raw/
+      <doc_id>.json
+    markdown/
+      <slug>.md
+    extracted/
+      <slug>.txt
+  specs/
+    prompts/
+      article.md
+      summarize.md
+  README.md
+```
+
+Required `.afo/config.json` values:
+
+```json
+{
+  "mode": "parsed-artifact",
+  "deploy_target": null,
+  "paths": {
+    "sources": "data/sources.json",
+    "raw": "content/raw",
+    "markdown": "content/markdown"
+  }
+}
+```
+
+### B. `cloudflare-pages-blog`
+
+Purpose: generate a static human-readable site from parsed/generated content.
+
+```txt
+repo-root/
+  .afo/
+    config.json
+    gitzip/
+      generation-manifest.json
+      validation-report.json
+      source-map.json
+    deploy/
+      status.json
+      cloudflare.json
+  src/
+    pages/
+      index.html
+      blog.html
+    styles/
+      main.css
+  content/
+    posts/
+      <slug>.md
+    pages/
+      about.md
+  data/
+    sources.json
+    posts.json
+    tags.json
+    search-index.json
+  public/
+    sitemap.xml
+    rss.xml
+    robots.txt
+  specs/
+    generation-notes.md
+  package.json
+  wrangler.toml
+  README.md
+```
+
+Minimum `package.json` scripts:
+
+```json
+{
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public"
+  }
+}
+```
+
+### C. `worker-api-lite`
+
+Purpose: expose generated/parsed content through a lightweight Cloudflare Worker API.
+
+```txt
+repo-root/
+  .afo/
+    config.json
+    gitzip/
+      generation-manifest.json
+      validation-report.json
+      source-map.json
+    deploy/
+      status.json
+      cloudflare.json
+  src/
+    index.ts
+    routes/
+      health.ts
+      sources.ts
+      articles.ts
+      search.ts
+  data/
+    sources.json
+    content.json
+    search-index.json
+  specs/
+    api-contract.md
+  package.json
+  wrangler.toml
+  README.md
+```
+
+Minimum endpoints:
+
+```txt
+GET /health
+GET /sources
+GET /sources/:id
+GET /articles
+GET /articles/:slug
+GET /search?q=
+```
+
+Minimum `/health` response:
+
+```json
+{
+  "ok": true,
+  "repo_type": "worker-api-lite",
+  "source_count": 10,
+  "content_count": 10,
+  "manifest": ".afo/gitzip/generation-manifest.json"
+}
+```
+
 ## Phased Roadmap
 
 ## Phase 0 — Stabilize Parsed Artifact Output
@@ -142,17 +566,20 @@ Goal: make the current repo artifact format stable and reusable.
 Deliverables:
 
 - Define `parsed-artifact` as the canonical baseline repo type.
-- Add `.gitzip/generation-manifest.json` to every materialized artifact.
+- Add `.afo/gitzip/generation-manifest.json` to every materialized artifact.
+- Add `.afo/config.json` to identify the generated repo mode.
 - Add `data/sources.json` to track source URLs, doc IDs, parse confidence, and timestamps.
 - Add `content/raw/<doc_id>.json` as the preserved parse result.
 - Add `content/markdown/<doc_id>.md` as the human-readable extracted text.
 - Add deterministic slugs for every source.
+- Add transaction batching so one logical generation produces one commit.
 
 Acceptance criteria:
 
 - A parse result can be pushed to GitHub in a stable folder layout.
 - The output can be consumed by a later generator without manual cleanup.
 - Every generated file can be traced back to source parse data.
+- Ten generated files can be pushed atomically in a single commit.
 
 ## Phase 1 — Repo Type System
 
@@ -170,6 +597,7 @@ generators/
   parsed-artifact/
   cloudflare-pages-blog/
   cloudflare-worker-api/
+  worker-api-lite/
   d1-content-database/
   searchable-knowledge-base/
   generated-article-hub/
@@ -190,7 +618,11 @@ Example API shape:
   "branch": "main",
   "base_path": "",
   "inputs": ["doc_1", "doc_2"],
-  "features": ["tags", "rss", "sitemap", "search-index"]
+  "features": ["tags", "rss", "sitemap", "search-index"],
+  "transaction": {
+    "atomic": true,
+    "commit_strategy": "single_commit"
+  }
 }
 ```
 
@@ -198,31 +630,11 @@ Acceptance criteria:
 
 - The same parse result can generate at least two different repo shapes.
 - Generated repos include clear metadata about their type and template.
+- All repo types follow the `.afo/` structural convention.
 
 ## Phase 2 — Cloudflare Pages Blog
 
 Goal: generate a deployable static blog from parsed websites or documents.
-
-Repo output:
-
-```txt
-package.json
-wrangler.toml
-README.md
-.gitzip/generation-manifest.json
-src/
-  content/
-    posts/
-      <slug>.md
-  data/
-    sources.json
-  pages/
-    index.html
-    blog.html
-public/
-  sitemap.xml
-  rss.xml
-```
 
 Features:
 
@@ -232,40 +644,18 @@ Features:
 - Home page and blog index.
 - Sitemap and RSS.
 - Cloudflare Pages deployment instructions.
+- Deployment status feedback loop.
 
 Acceptance criteria:
 
 - Repo can be installed and built.
 - Repo can be deployed to Cloudflare Pages.
 - Each post has title, description, date, tags, and source metadata.
+- `.afo/deploy/status.json` records deployment state.
 
-## Phase 3 — Cloudflare Worker API
+## Phase 3 — Cloudflare Worker API / Worker API Lite
 
 Goal: generate a Worker that exposes parsed content through HTTP endpoints.
-
-Repo output:
-
-```txt
-package.json
-wrangler.toml
-src/index.ts
-src/routes/articles.ts
-src/routes/sources.ts
-src/routes/search.ts
-data/content.json
-README.md
-```
-
-API endpoints:
-
-```txt
-GET /health
-GET /sources
-GET /sources/:id
-GET /articles
-GET /articles/:slug
-GET /search?q=
-```
 
 Features:
 
@@ -273,29 +663,18 @@ Features:
 - Basic query search over local JSON.
 - Optional D1 mode later.
 - CORS configuration.
+- `/health` confirms manifest and content count.
 
 Acceptance criteria:
 
 - Worker runs locally with Wrangler.
 - Worker returns generated articles and source records.
 - `/health` confirms manifest and content count.
+- Failed Worker deploys produce an actionable status file.
 
 ## Phase 4 — D1-Indexed Content Database
 
 Goal: create a D1-backed content repo with schema, migrations, seed data, and query APIs.
-
-Repo output:
-
-```txt
-package.json
-wrangler.toml
-migrations/0001_init.sql
-src/index.ts
-src/db.ts
-seeds/content.seed.sql
-scripts/seed.ts
-README.md
-```
 
 Initial schema:
 
@@ -356,17 +735,6 @@ Acceptance criteria:
 
 Goal: produce a documentation-style knowledge base from many parsed sources.
 
-Repo output:
-
-```txt
-src/content/docs/
-src/pages/docs/
-src/components/SearchBox.tsx
-data/search-index.json
-data/topics.json
-public/sitemap.xml
-```
-
 Features:
 
 - Topic extraction.
@@ -392,16 +760,6 @@ Acceptance criteria:
 
 Goal: turn parsed sources into editorial content: summaries, explainers, roundups, evergreen pages, and newsletters.
 
-Repo output:
-
-```txt
-content/articles/
-content/roundups/
-content/explainers/
-data/editorial-calendar.json
-data/source-map.json
-```
-
 Features:
 
 - Article generation from parsed sources.
@@ -419,17 +777,6 @@ Acceptance criteria:
 ## Phase 7 — Game / Wiki / Media Catalog
 
 Goal: classify parsed data into entity pages for games, videos, songs, artists, products, characters, items, quests, episodes, or topics.
-
-Repo output:
-
-```txt
-content/entities/
-content/collections/
-content/wiki/
-data/entities.json
-data/relationships.json
-data/media.json
-```
 
 Supported entity types:
 
@@ -467,17 +814,6 @@ Acceptance criteria:
 
 Goal: generate marketing or topic landing pages from parsed data and AI synthesis.
 
-Repo output:
-
-```txt
-src/pages/index.tsx
-src/pages/<landing-slug>.tsx
-src/components/Hero.tsx
-src/components/FeatureGrid.tsx
-src/components/SourceCards.tsx
-src/components/CTA.tsx
-```
-
 Features:
 
 - AI-generated positioning.
@@ -495,16 +831,6 @@ Acceptance criteria:
 ## Phase 9 — Semantic Index
 
 Goal: build semantic search artifacts and optional Cloudflare Vectorize integration.
-
-Repo output:
-
-```txt
-data/chunks.json
-data/embeddings-manifest.json
-scripts/chunk.ts
-scripts/embed.ts
-src/routes/semantic-search.ts
-```
 
 Features:
 
@@ -566,21 +892,6 @@ Acceptance criteria:
 
 Goal: generate an entire deployable website from parsed sources and a user prompt.
 
-Repo output:
-
-```txt
-package.json
-wrangler.toml
-src/
-  pages/
-  components/
-  content/
-  data/
-public/
-README.md
-.gitzip/generation-manifest.json
-```
-
 Features:
 
 - Site map generation.
@@ -632,6 +943,7 @@ mirror: explicit site reconstruction mode only when allowed
 Before pushing, run validators:
 
 - manifest exists
+- `.afo/config.json` exists
 - required files exist
 - JSON is valid
 - slugs are unique
@@ -639,6 +951,7 @@ Before pushing, run validators:
 - build files exist for runnable repo types
 - D1 schema exists for D1 repo types
 - no accidental overwrite unless mode allows it
+- transaction is complete and atomic
 
 ### Template Packs
 
@@ -646,8 +959,9 @@ Templates should be versioned:
 
 ```txt
 templates/
+  parsed-artifact/v0.1/
   cloudflare-pages-blog/v0.1/
-  worker-api/v0.1/
+  worker-api-lite/v0.1/
   d1-content-db/v0.1/
   knowledge-base/v0.1/
 ```
@@ -664,6 +978,7 @@ prompts/
   build-taxonomy.md
   generate-landing-page.md
   classify-repo-type.md
+  repair-failed-deploy.md
 ```
 
 ### Generated Repo README Contract
@@ -677,22 +992,25 @@ Every generated repo should explain:
 - how to build
 - how to deploy
 - how to update with new parses
+- how deployment status is checked
 - safety/copyright mode
 
 ## Suggested Implementation Order
 
 1. Stabilize `parsed-artifact` output.
-2. Add `.gitzip/generation-manifest.json`.
-3. Add `repo_type` parameter.
-4. Implement `cloudflare-pages-blog`.
-5. Implement `cloudflare-worker-api`.
-6. Add D1 schema and seed generation.
-7. Add searchable knowledge base template.
-8. Add article hub generation.
-9. Add entity extraction for game/wiki/media catalogs.
-10. Add semantic chunk/index generation.
-11. Add existing-site content injection.
-12. Add full AI website generation.
+2. Add `.afo/config.json` and `.afo/gitzip/generation-manifest.json`.
+3. Add transaction batching / atomic multi-file commit protocol.
+4. Add `repo_type` parameter.
+5. Implement `cloudflare-pages-blog`.
+6. Implement `worker-api-lite`.
+7. Add Cloudflare deployment status feedback loop.
+8. Add D1 schema and seed generation.
+9. Add searchable knowledge base template.
+10. Add article hub generation.
+11. Add entity extraction for game/wiki/media catalogs.
+12. Add semantic chunk/index generation.
+13. Add existing-site content injection.
+14. Add full AI website generation.
 
 ## MVP Recommendation
 
@@ -707,6 +1025,12 @@ This gives GitZip three clear modes:
 1. Save the parse results.
 2. Generate a deployable blog.
 3. Generate an API over the parsed content.
+
+The MVP must also include three safeguards:
+
+1. Single-transaction multi-file commits.
+2. Standard `.afo/` repo metadata and folder convention.
+3. Deployment status feedback from Cloudflare or an explicit `unknown` status file.
 
 Once those work, D1, knowledge base, semantic index, and full-site generation become incremental extensions.
 
@@ -729,7 +1053,12 @@ Once those work, D1, knowledge base, semantic index, and full-site generation be
     "search-index"
   ],
   "deploy_target": "cloudflare-pages",
-  "copyright_mode": "abstractive"
+  "copyright_mode": "abstractive",
+  "transaction": {
+    "atomic": true,
+    "commit_strategy": "single_commit"
+  },
+  "verify_deploy": true
 }
 ```
 
@@ -739,4 +1068,4 @@ GitZip should become the bridge between parsed information and deployable softwa
 
 The long-term product promise:
 
-> Bring sources. Choose a repo type. Get a deployable product.
+> Bring sources. Choose a repo type. Get a deployable product. Verify it built. Repair it if it failed.
