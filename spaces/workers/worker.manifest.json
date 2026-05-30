@@ -1,0 +1,67 @@
+{
+  "script_name": "afo-brainstorm-capture-mcp",
+  "mirrored_by": "cf-multipart-v0-1",
+  "mirror_version": "0.1.2-source-endpoint-fallbacks",
+  "cloudflare_is_runtime_source": true,
+  "github_is_versioned_mirror": true,
+  "source_endpoint": "script",
+  "source_bytes": 24451,
+  "metadata": {
+    "ok": true,
+    "script_name": "afo-brainstorm-capture-mcp",
+    "settings": {
+      "ok": true,
+      "status": 200,
+      "statusText": "OK",
+      "contentType": "application/json; charset=UTF-8",
+      "body": {
+        "result": {
+          "placement": {},
+          "compatibility_date": "",
+          "compatibility_flags": [],
+          "usage_model": "standard",
+          "tags": [],
+          "tail_consumers": [],
+          "logpush": false,
+          "annotations": {
+            "workers/triggered_by": "upload"
+          },
+          "bindings": [
+            {
+              "name": "BRAINSTORM_VERSION",
+              "text": "0.4.0",
+              "type": "plain_text"
+            },
+            {
+              "database_id": "a3d08e1b-0b02-4780-b35e-5e407e8d6fb5",
+              "id": "a3d08e1b-0b02-4780-b35e-5e407e8d6fb5",
+              "name": "DB",
+              "type": "d1"
+            },
+            {
+              "name": "ENVIRONMENT",
+              "text": "production",
+              "type": "plain_text"
+            }
+          ]
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    "routes": {
+      "ok": true,
+      "status": 200,
+      "statusText": "OK",
+      "contentType": "application/json; charset=UTF-8",
+      "body": {
+        "result": [],
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    }
+  },
+  "mirrored_at": "2026-05-30T01:49:00.630Z"
+}
