@@ -1,0 +1,1697 @@
+{
+  "generated_at": "2026-05-30T19:19:43.122Z",
+  "count": 112,
+  "rows": [
+    {
+      "worker": "afo-admin-gateway-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-admin-gateway-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://afo-admin-gateway-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "afo-admin-gateway-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-agent-action-page-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-agent-action-page-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-agent-action-page-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-agent-boot-gateway-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-agent-boot-gateway-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-agent-boot-gateway-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-agent-feed-audit-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-agent-feed-audit-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-agent-feed-audit-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-agent-feed-web",
+      "type": "web",
+      "cluster": "other",
+      "purpose": "other web",
+      "primary_url": "https://afo-agent-feed-web.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-apps",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://afo-apps.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-article-assets-mcp",
+      "type": "mcp",
+      "cluster": "articles",
+      "purpose": "articles mcp",
+      "primary_url": "https://afo-article-assets-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-article-assets-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-article-format-mcp",
+      "type": "mcp",
+      "cluster": "articles",
+      "purpose": "Format articles/content into AFO-ready structure",
+      "primary_url": "https://afo-article-format-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://afo-article-format-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "afo-article-format-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-article-publisher-mcp",
+      "type": "mcp",
+      "cluster": "articles",
+      "purpose": "Publish article/content output",
+      "primary_url": "https://www.agentfeedoptimization.com/articles/",
+      "mcp_connection_url": "https://www.agentfeedoptimization.com/articles//mcp",
+      "routes": [
+        {
+          "pattern": "www.agentfeedoptimization.com/articles/*",
+          "zone": "agentfeedoptimization.com"
+        },
+        {
+          "pattern": "afo-article-publisher-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-audit-signup",
+      "type": "worker",
+      "cluster": "signup",
+      "purpose": "signup worker",
+      "primary_url": "https://afo-audit-signup.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-brainstorm-capture-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-brainstorm-capture-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-brainstorm-capture-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-catalog-mcpv02",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-catalog-mcpv02.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://afo-catalog-mcpv02.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "afo-catalog-mcpv02.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-client-site-pipeline-mcp",
+      "type": "mcp",
+      "cluster": "site/web",
+      "purpose": "AFO site/web surface or preview",
+      "primary_url": "https://afo-client-site-pipeline-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-client-site-pipeline-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-control-center-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://control.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://control.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "control.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-d1-admin-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "Cloudflare D1 database listing/create/delete admin",
+      "primary_url": "https://afo-d1-admin-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-d1-admin-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": [
+        "d1_admin_status",
+        "create_d1_database",
+        "list_d1_databases",
+        "get_d1_database",
+        "delete_d1_database"
+      ]
+    },
+    {
+      "worker": "afo-docparse-bench-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-bench-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-bench-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-evidence-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-evidence-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-evidence-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-geometry-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-geometry-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-geometry-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-kv-table-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-kv-table-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://afo-docparse-kv-table-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "afo-docparse-kv-table-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-library-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-library-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-library-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-native-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-native-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://afo-docparse-native-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "afo-docparse-native-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-orchestrator-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-orchestrator-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-orchestrator-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-public-index-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://docparse.agentfeedoptimization.com",
+      "mcp_connection_url": "https://docparse.agentfeedoptimization.com/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-public-web",
+      "type": "web",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://docparse.agentfeedoptimization.com",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-queue-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-queue-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-queue-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-result-normalizer-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-result-normalizer-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-result-normalizer-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-router-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-router-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-router-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-schema-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-schema-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-schema-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-try-api-mcp",
+      "type": "mcp",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-try-api-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-docparse-try-api-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-docparse-web-mvp",
+      "type": "web",
+      "cluster": "docparse",
+      "purpose": "Document parsing pipeline component",
+      "primary_url": "https://afo-docparse-web-mvp.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-email-automation-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-email-automation-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-email-automation-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-gitzip-push-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "Push generated repo/archive content to GitHub",
+      "primary_url": "https://afo-gitzip-push-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-gitzip-push-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-growth-dashboard-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-growth-dashboard-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-growth-dashboard-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-growth-dashboard-web",
+      "type": "web",
+      "cluster": "other",
+      "purpose": "other web",
+      "primary_url": "https://afo-growth-dashboard-web.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-harness-registry-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index mcp",
+      "primary_url": "https://afo-harness-registry-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-harness-registry-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-index-core-mcp",
+      "type": "mcp",
+      "cluster": "indexing",
+      "purpose": "indexing mcp",
+      "primary_url": "https://afo-index-core-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-index-core-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-index-dashboard-web",
+      "type": "web",
+      "cluster": "indexing",
+      "purpose": "indexing web",
+      "primary_url": "https://afo-index-dashboard-web.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-llms",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://agentfeedoptimization.com/sitemap.xml",
+      "mcp_connection_url": null,
+      "routes": [
+        {
+          "pattern": "agentfeedoptimization.com/sitemap.xml",
+          "zone": "agentfeedoptimization.com"
+        },
+        {
+          "pattern": "agentfeedoptimization.com/.well-known/*",
+          "zone": "agentfeedoptimization.com"
+        },
+        {
+          "pattern": "agentfeedoptimization.com/llms.txt",
+          "zone": "agentfeedoptimization.com"
+        },
+        {
+          "pattern": "agentfeedoptimization.com/robots.txt",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-mcp.jaredtechfit.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": "conn_afomcp",
+      "toolsmith_status": "ready",
+      "risk_profile": "dev_only",
+      "known_tools": []
+    },
+    {
+      "worker": "afo-mcp-browser-mcp",
+      "type": "mcp",
+      "cluster": "afo-browser",
+      "purpose": "AFO endpoint browser, batch tester, agent review board, inventory console",
+      "primary_url": "https://browser.agentfeedoptimization.com",
+      "mcp_connection_url": "https://browser.agentfeedoptimization.com/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": [
+        "mcp_browser_status",
+        "batch_fetch_urls",
+        "list_batch_presets",
+        "run_named_batch",
+        "submit_agent_review",
+        "list_agent_reviews",
+        "inventory_status",
+        "inventory_cloudflare_workers",
+        "inventory_d1_databases",
+        "inventory_mcp_apps",
+        "inventory_endpoint_map",
+        "inventory_tool_catalog",
+        "inventory_refresh_from_snapshot",
+        "export_inventory_json"
+      ]
+    },
+    {
+      "worker": "afo-mcp-migration-engine",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://migration.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://migration.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "migration.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-mcp2",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-mcp2.workers.dev",
+      "mcp_connection_url": "https://afo-mcp2.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-parse-to-repo-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-parse-to-repo-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-parse-to-repo-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-query",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://afo-query.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-r2-deployment-helper-mcp",
+      "type": "mcp",
+      "cluster": "r2-storage",
+      "purpose": "R2 storage/deployment helper",
+      "primary_url": "https://afo-r2-deployment-helper-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-r2-deployment-helper-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-r2-storage-mcp",
+      "type": "mcp",
+      "cluster": "r2-storage",
+      "purpose": "R2 storage/deployment helper",
+      "primary_url": "https://afo-r2-storage-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-r2-storage-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-repo-composer-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-repo-composer-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-repo-composer-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-runtime-bridge-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Agent bridge / cross-agent messaging",
+      "primary_url": "https://afo-runtime-bridge-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-runtime-bridge-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-runtime-queue-mcp",
+      "type": "mcp",
+      "cluster": "runtime",
+      "purpose": "runtime mcp",
+      "primary_url": "https://afo-runtime-queue-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-runtime-queue-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-semantic-index-mcp",
+      "type": "mcp",
+      "cluster": "indexing",
+      "purpose": "Semantic indexing / vector discovery",
+      "primary_url": "https://afo-semantic-index-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-semantic-index-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-semantic-index-web",
+      "type": "web",
+      "cluster": "indexing",
+      "purpose": "Semantic indexing / vector discovery",
+      "primary_url": "https://afo-semantic-index-web.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-shortcut-plan-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://afo-shortcut-plan-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-shortcut-plan-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-signup-router-mcp",
+      "type": "mcp",
+      "cluster": "signup",
+      "purpose": "signup mcp",
+      "primary_url": "https://afo-signup-router-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-signup-router-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-signup-router-test-web",
+      "type": "web",
+      "cluster": "signup",
+      "purpose": "signup web",
+      "primary_url": "https://afo-signup-router-test-web.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-site",
+      "type": "web",
+      "cluster": "site/web",
+      "purpose": "AFO site/web surface or preview",
+      "primary_url": "https://agentfeedoptimization.com",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-site-catalog-mcp",
+      "type": "mcp",
+      "cluster": "site/web",
+      "purpose": "AFO site/web surface or preview",
+      "primary_url": "https://afo-site-catalog-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://afo-site-catalog-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "afo-site-catalog-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-site-preview-mcp",
+      "type": "mcp",
+      "cluster": "site/web",
+      "purpose": "AFO site/web surface or preview",
+      "primary_url": "https://ccs-services-group.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://ccs-services-group.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "ccs-services-group.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tool-index-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Index and catalog tools/MCP apps",
+      "primary_url": "https://afo-tool-index-mcp.workers.dev",
+      "mcp_connection_url": "https://afo-tool-index-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools",
+      "type": "worker",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index worker",
+      "primary_url": "https://afo-tools.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools-ui",
+      "type": "web",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index web",
+      "primary_url": "https://afo-tools-ui.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools-ui-2",
+      "type": "web",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index web",
+      "primary_url": "https://afo-tools-ui-2.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools-ui-3",
+      "type": "web",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index web",
+      "primary_url": "https://afo-tools-ui-3.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools-ui-4",
+      "type": "web",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index web",
+      "primary_url": "https://afo-tools-ui-4.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools-ui-5",
+      "type": "web",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index web",
+      "primary_url": "https://afo-tools-ui-5.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-tools-ui-6",
+      "type": "web",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index web",
+      "primary_url": "https://afo-tools-ui-6.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-toolsmith",
+      "type": "worker",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://afo-toolsmith.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "afo-visibility-snapshot",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://agentfeedoptimization.com/",
+      "mcp_connection_url": null,
+      "routes": [
+        {
+          "pattern": "agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "agent-bridge-comms-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Agent bridge / cross-agent messaging",
+      "primary_url": "https://agent-bridge-comms-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://agent-bridge-comms-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "agent-bridge-comms-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "ai-message-bus",
+      "type": "worker",
+      "cluster": "message-os / bridges",
+      "purpose": "message-os / bridges worker",
+      "primary_url": "https://messages.agentfeedoptimization.com/",
+      "mcp_connection_url": null,
+      "routes": [
+        {
+          "pattern": "messages.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "alice-bridge-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Agent bridge / cross-agent messaging",
+      "primary_url": "https://alice-bridge-mcp.workers.dev",
+      "mcp_connection_url": "https://alice-bridge-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "alice-mcp",
+      "type": "mcp",
+      "cluster": "agent-bridge",
+      "purpose": "agent-bridge mcp",
+      "primary_url": "https://alice-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://alice-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "alice-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "alice-to-claude-bridge",
+      "type": "worker",
+      "cluster": "message-os / bridges",
+      "purpose": "Agent bridge / cross-agent messaging",
+      "primary_url": "https://alice-to-claude-bridge.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "cf-multipart-v0-1",
+      "type": "worker",
+      "cluster": "cloudflare-admin",
+      "purpose": "Cloudflare Worker deployer and binding manager",
+      "primary_url": "https://cf-multipart-v0-1.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "cf-multipart-vnext-r2",
+      "type": "worker",
+      "cluster": "cloudflare-admin",
+      "purpose": "Cloudflare Worker deployer and binding manager",
+      "primary_url": "https://cf-multipart-vnext-r2.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "chat-gpt-custom",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://chat-gpt-custom.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "chatgpt-afo-bridge",
+      "type": "worker",
+      "cluster": "message-os / bridges",
+      "purpose": "Agent bridge / cross-agent messaging",
+      "primary_url": "https://chatgpt-bridge.agentfeedoptimization.com/",
+      "mcp_connection_url": null,
+      "routes": [
+        {
+          "pattern": "chatgpt-bridge.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "chatgpt-gateway",
+      "type": "worker",
+      "cluster": "agent-bridge",
+      "purpose": "agent-bridge worker",
+      "primary_url": "https://chatgpt-gateway.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "claude-inbox-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "message-os / bridges mcp",
+      "primary_url": "https://claude-inbox-mcp.workers.dev",
+      "mcp_connection_url": "https://claude-inbox-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "cloudflare-auditor-mcp",
+      "type": "mcp",
+      "cluster": "cloudflare-admin",
+      "purpose": "cloudflare-admin mcp",
+      "primary_url": "https://cloudflare-auditor-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://cloudflare-auditor-mcp.agentfeedoptimization.com/mcp",
+      "routes": [
+        {
+          "pattern": "cloudflare-auditor-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": "conn_cloudflare_auditor",
+      "toolsmith_status": "ready",
+      "risk_profile": "safe",
+      "known_tools": [
+        "deployment_status",
+        "health_check",
+        "afo_harness_validate"
+      ]
+    },
+    {
+      "worker": "cloudflare-domain-manager-mcp",
+      "type": "mcp",
+      "cluster": "cloudflare-admin",
+      "purpose": "cloudflare-admin mcp",
+      "primary_url": "https://cloudflare-domain-manager-mcp.workers.dev",
+      "mcp_connection_url": "https://cloudflare-domain-manager-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "cloudflare-multipart-mcp",
+      "type": "mcp",
+      "cluster": "cloudflare-admin",
+      "purpose": "Cloudflare Worker deployer and binding manager",
+      "primary_url": "https://cloudflare-multipart-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://cloudflare-multipart-mcp.agentfeedoptimization.com/mcp",
+      "routes": [
+        {
+          "pattern": "cloudflare-multipart-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": "conn_cloudflare_multipart",
+      "toolsmith_status": "ready",
+      "risk_profile": "dev-only",
+      "known_tools": [
+        "deployment_status",
+        "list_workers",
+        "get_worker_source",
+        "deploy_worker_with_bindings",
+        "update_worker_bindings_multipart",
+        "query_d1_sql",
+        "execute_d1_sql",
+        "list_d1_tables"
+      ]
+    },
+    {
+      "worker": "cloudflare-tools-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index mcp",
+      "primary_url": "https://cloudflare-tools-mcp.workers.dev",
+      "mcp_connection_url": "https://cloudflare-tools-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "context-links-api",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://context-links-api.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "context-links-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://context-links-mcp.workers.dev",
+      "mcp_connection_url": "https://context-links-mcp.agentfeedoptimization.com/mcp",
+      "routes": [],
+      "toolsmith_connector_id": "conn_ctxlinks",
+      "toolsmith_status": "ready",
+      "risk_profile": "safe",
+      "known_tools": []
+    },
+    {
+      "worker": "gateway-tool-order-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index mcp",
+      "primary_url": "https://gateway-tool-order-mcp.workers.dev",
+      "mcp_connection_url": "https://gateway-tool-order-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "generated-belt-builder-belt-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index mcp",
+      "primary_url": "https://generated-belt-builder-belt-mcp.workers.dev",
+      "mcp_connection_url": "https://generated-belt-builder-belt-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "github-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://github-mcp.workers.dev",
+      "mcp_connection_url": "https://github-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "mcp-prax",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://mcp-prax.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://mcp-prax.jaredtechfit.workers.dev/mcp",
+      "routes": [
+        {
+          "pattern": "mcp-prax.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": "conn_prax",
+      "toolsmith_status": "ready",
+      "risk_profile": "dev_only",
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-cloud",
+      "type": "worker",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-cloud.agentfeedoptimization.com/",
+      "mcp_connection_url": null,
+      "routes": [
+        {
+          "pattern": "message-os-cloud.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-cloud-dashboard",
+      "type": "web",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-cloud-dashboard.agentfeedoptimization.com/",
+      "mcp_connection_url": null,
+      "routes": [
+        {
+          "pattern": "message-os-cloud-dashboard.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-cloud-social-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-cloud-social-mcp.workers.dev",
+      "mcp_connection_url": "https://message-os-cloud-social-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v02-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v02-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v02-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v02-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v02-vnext-test",
+      "type": "worker",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v02-vnext-test.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v03-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v03-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v03-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v03-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v04-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v04-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v04-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v04-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v05-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v05-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v05-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v05-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v06-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v06-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v06-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v06-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v07-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v07-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v07-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v07-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "message-os-v08-mcp",
+      "type": "mcp",
+      "cluster": "message-os / bridges",
+      "purpose": "Message OS inbox/comms/social layer",
+      "primary_url": "https://message-os-v08-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://message-os-v08-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "message-os-v08-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "spec-worker-generator-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://spec-worker-generator-mcp.workers.dev",
+      "mcp_connection_url": "https://spec-worker-generator-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "stage-03-cloudflare-domain-route-mcp",
+      "type": "mcp",
+      "cluster": "cloudflare-admin",
+      "purpose": "cloudflare-admin mcp",
+      "primary_url": "https://stage-03-cloudflare-domain-route-mcp.workers.dev",
+      "mcp_connection_url": "https://stage-03-cloudflare-domain-route-mcp.agentfeedoptimization.com/mcp",
+      "routes": [],
+      "toolsmith_connector_id": "conn_stage_03_cloudflare_domain_route",
+      "toolsmith_status": "ready",
+      "risk_profile": "dev-only",
+      "known_tools": [
+        "deployment_status",
+        "list_dns_records",
+        "create_dns_record",
+        "list_worker_routes",
+        "create_worker_route",
+        "create_custom_domain",
+        "smoke_test_url",
+        "smoke_test_mcp",
+        "register_connector_from_url",
+        "generate_belt_manifest",
+        "promote_candidate_belt"
+      ]
+    },
+    {
+      "worker": "stage-04-toolsmith-belt-generator-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://stage-04-toolsmith-belt-generator-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://stage-04-toolsmith-belt-generator-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "stage-04-toolsmith-belt-generator-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "stage-05-toolsmith-belt-recommender-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://stage-05-toolsmith-belt-recommender-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://stage-05-toolsmith-belt-recommender-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "stage-05-toolsmith-belt-recommender-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "test-deploy-limits",
+      "type": "worker",
+      "cluster": "other",
+      "purpose": "other worker",
+      "primary_url": "https://test-deploy-limits.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "tool-notes",
+      "type": "worker",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "toolsmith / tool-index worker",
+      "primary_url": "https://tool-notes.workers.dev",
+      "mcp_connection_url": null,
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "toolsmith-admin-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://toolsmith-admin-mcp.workers.dev",
+      "mcp_connection_url": "https://toolsmith-admin-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "toolsmith-admin-v02-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://toolsmith-admin-v02-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://toolsmith-admin-v02-mcp.agentfeedoptimization.com//mcp",
+      "routes": [
+        {
+          "pattern": "toolsmith-admin-v02-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "toolsmith-gateway-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://toolsmith-gateway-mcp.workers.dev",
+      "mcp_connection_url": "https://toolsmith-gateway-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "toolsmith-token-tank-belt-mcp",
+      "type": "mcp",
+      "cluster": "toolsmith / tool-index",
+      "purpose": "Toolsmith generator/admin/recommender utilities",
+      "primary_url": "https://toolsmith-token-tank-belt-mcp.workers.dev",
+      "mcp_connection_url": "https://toolsmith-token-tank-belt-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    },
+    {
+      "worker": "vector-lab-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://vector-lab-mcp.agentfeedoptimization.com/",
+      "mcp_connection_url": "https://vector-lab-mcp.agentfeedoptimization.com/mcp",
+      "routes": [
+        {
+          "pattern": "vector-lab-mcp.agentfeedoptimization.com/*",
+          "zone": "agentfeedoptimization.com"
+        }
+      ],
+      "toolsmith_connector_id": "conn_vector_lab",
+      "toolsmith_status": "blocked",
+      "risk_profile": "dev-only",
+      "known_tools": [
+        "deployment_status",
+        "chunk_text",
+        "embedding_generate",
+        "vectorize_query",
+        "vectorize_upsert_documents",
+        "vectorize_reindex_from_d1",
+        "hybrid_search_d1_vectorize"
+      ]
+    },
+    {
+      "worker": "workshop-ui-debug-mcp",
+      "type": "mcp",
+      "cluster": "other",
+      "purpose": "other mcp",
+      "primary_url": "https://workshop-ui-debug-mcp.workers.dev",
+      "mcp_connection_url": "https://workshop-ui-debug-mcp.workers.dev/mcp",
+      "routes": [],
+      "toolsmith_connector_id": null,
+      "toolsmith_status": null,
+      "risk_profile": null,
+      "known_tools": []
+    }
+  ]
+}
