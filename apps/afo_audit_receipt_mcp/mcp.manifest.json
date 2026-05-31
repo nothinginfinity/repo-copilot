@@ -1,0 +1,11 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo_audit_receipt_mcp",
+  "worker_name": "afo_audit_receipt_mcp",
+  "plane": "Audit / Receipt Plane",
+  "risk_profile": "safe_read",
+  "purpose": "Independent verification and audit receipts.",
+  "tools": ["audit_status", "verify_bindings_match_plan", "verify_health_url", "write_audit_receipt"],
+  "source_path": "apps/afo_audit_receipt_mcp/worker.js",
+  "status": "v0_scaffold"
+}
