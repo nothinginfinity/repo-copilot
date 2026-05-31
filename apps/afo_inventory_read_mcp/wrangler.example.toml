@@ -1,0 +1,9 @@
+name = "afo-inventory-read-mcp"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+# wrangler secret put CF_API_TOKEN
+# wrangler secret put GITHUB_TOKEN
+
+[vars]
+DEFAULT_OWNER = "nothinginfinity"
