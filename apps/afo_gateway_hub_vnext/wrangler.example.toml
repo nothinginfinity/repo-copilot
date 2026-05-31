@@ -1,0 +1,10 @@
+name = "afo-gateway-hub-vnext"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+[vars]
+READ_MCP_URL = "https://afo-inventory-read-mcp.agentfeedoptimization.com/mcp"
+STATE_MCP_URL = "https://afo-github-state-mcp.agentfeedoptimization.com/mcp"
+PLAN_MCP_URL = "https://afo-plan-diff-mcp.agentfeedoptimization.com/mcp"
+APPLY_MCP_URL = "https://afo-cloudflare-apply-mcp.agentfeedoptimization.com/mcp"
+AUDIT_MCP_URL = "https://afo-audit-receipt-mcp.agentfeedoptimization.com/mcp"
