@@ -1,0 +1,11 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo_plan_diff_mcp",
+  "worker_name": "afo_plan_diff_mcp",
+  "plane": "Planning / Diff Plane",
+  "risk_profile": "plan_only",
+  "purpose": "Creates inspectable plans from snapshots and desired state. No Cloudflare writes.",
+  "tools": ["plan_status", "make_binding_patch_plan", "validate_plan", "sign_plan_hash", "diff_live_vs_github", "explain_plan_risk"],
+  "source_path": "apps/afo_plan_diff_mcp/worker.js",
+  "status": "v0_scaffold"
+}
