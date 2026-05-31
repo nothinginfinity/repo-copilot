@@ -1,0 +1,18 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo_inventory_read_mcp",
+  "worker_name": "afo_inventory_read_mcp",
+  "plane": "Inventory / Read Plane",
+  "risk_profile": "safe_read",
+  "purpose": "Read-only Cloudflare/D1/R2/tool inventory plus GitHub snapshots.",
+  "tools": [
+    "inventory_read_status",
+    "list_workers",
+    "get_worker_source",
+    "inspect_worker_bindings",
+    "get_worker_settings",
+    "write_worker_snapshot_to_github"
+  ],
+  "source_path": "apps/afo_inventory_read_mcp/worker.js",
+  "status": "v0_scaffold"
+}
