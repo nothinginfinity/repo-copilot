@@ -1,0 +1,21 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-inventory-read-mcp",
+  "created_at": "2026-05-31T22:33:16.083Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo_inventory_read_mcp",
+  "source_path": "apps/afo_inventory_read_mcp/worker.js",
+  "source_sha256": "sha256:1c8074d2495cc8a07c00982ad1d7a8316144b58134585fd11b686a8f87d81c27",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-inventory-read-mcp",
+    "binding_count": 1,
+    "bindings": [
+      {
+        "name": "DEFAULT_OWNER",
+        "type": "plain_text"
+      }
+    ],
+    "deployed_at": "2026-05-31T22:33:16.011Z"
+  }
+}
