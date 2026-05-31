@@ -1,0 +1,8 @@
+name = "afo-audit-receipt-mcp"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+# wrangler secret put GITHUB_TOKEN
+
+[vars]
+DEFAULT_OWNER = "nothinginfinity"
