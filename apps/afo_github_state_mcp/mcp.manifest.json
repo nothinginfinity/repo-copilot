@@ -1,0 +1,11 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo_github_state_mcp",
+  "worker_name": "afo_github_state_mcp",
+  "plane": "GitHub State Plane",
+  "risk_profile": "safe_github_write",
+  "purpose": "GitHub source-of-truth for snapshots, specs, plans, receipts, and generated source.",
+  "tools": ["state_status", "read_state_file", "write_state_file", "commit_state_bundle", "list_state_tree", "compare_state_versions"],
+  "source_path": "apps/afo_github_state_mcp/worker.js",
+  "status": "v0_scaffold"
+}
