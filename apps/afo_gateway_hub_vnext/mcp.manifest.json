@@ -1,0 +1,11 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo_gateway_hub_vnext",
+  "worker_name": "afo_gateway_hub_vnext",
+  "plane": "Gateway Layer",
+  "risk_profile": "write_gated_router",
+  "purpose": "Thin router over the five planes.",
+  "tools": ["gateway_status", "list_planes", "recommend_plane_for_task", "route_read_call", "route_state_call", "route_plan_call", "route_apply_call", "route_audit_call"],
+  "source_path": "apps/afo_gateway_hub_vnext/worker.js",
+  "status": "v0_scaffold"
+}
