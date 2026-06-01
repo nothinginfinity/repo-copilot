@@ -1,0 +1,16 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-cloudflare-apply-mcp",
+  "created_at": "2026-06-01T00:47:51.912Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo_cloudflare_apply_mcp",
+  "source_path": "apps/afo_cloudflare_apply_mcp/worker.js",
+  "source_sha256": "sha256:98cbdb585d82537996e8ce0324e6b6c8e2ff98193d8ec38519b394b06f803677",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-cloudflare-apply-mcp",
+    "binding_count": 0,
+    "bindings": [],
+    "deployed_at": "2026-06-01T00:47:51.820Z"
+  }
+}
