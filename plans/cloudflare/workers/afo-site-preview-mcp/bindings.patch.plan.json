@@ -1,0 +1,32 @@
+{
+  "schema": "afo.deployment.plan.v1",
+  "plan_id": "plan_65d8e339-9deb-4f96-bda2-1509b82180f2",
+  "created_at": "2026-06-01T00:33:03.269Z",
+  "plan_type": "worker_binding_patch",
+  "script_name": "afo-site-preview-mcp",
+  "preserve_existing": true,
+  "existing_binding_names": [
+    "ADMIN_KEY",
+    "AFO_ASSISTANT_MODEL",
+    "AFO_ASSISTANT_PROVIDER",
+    "ASSISTANT_SYSTEM_PROMPT",
+    "CCS_MICRO_SEO_SITE",
+    "DB"
+  ],
+  "add_or_update": [
+    {
+      "name": "SITE_CONTENT",
+      "type": "r2_bucket",
+      "bucket_name": "afo-site-content"
+    },
+    {
+      "name": "CCS_MICRO_SEO_SITE",
+      "type": "r2_bucket",
+      "bucket_name": "v1.7-r2-live-knowledge"
+    }
+  ],
+  "remove": [],
+  "risk": "medium",
+  "requires_confirmation": true,
+  "plan_hash": "sha256:bb63395bd9596108633340aff0ca237b1c9384e6f356047c9985af47560a9008"
+}
