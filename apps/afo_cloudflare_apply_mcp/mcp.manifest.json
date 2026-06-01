@@ -4,8 +4,13 @@
   "worker_name": "afo_cloudflare_apply_mcp",
   "plane": "Cloudflare Apply Plane",
   "risk_profile": "cloudflare_write_gated",
-  "purpose": "Applies versioned plans to Cloudflare. Does not invent changes.",
-  "tools": ["apply_status", "apply_worker_binding_plan", "apply_worker_source_plan", "rollback_worker_from_snapshot"],
+  "purpose": "Applies versioned plans to Cloudflare while preserving existing Worker bindings internally.",
+  "tools": [
+    "apply_status",
+    "validate_apply_plan",
+    "explain_apply_requirements",
+    "apply_worker_binding_plan_preserve_existing"
+  ],
   "source_path": "apps/afo_cloudflare_apply_mcp/worker.js",
-  "status": "v0_scaffold"
+  "status": "v1_preserve_existing"
 }
