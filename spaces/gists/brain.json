@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-06-02T07:54:42.574Z",
+  "generated_at": "2026-06-03T07:58:02.286Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
   "note_count": 6,
   "has_more": false,
@@ -20,7 +20,7 @@
       "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
-      "notion_url": "https://www.notion.so/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62"
+      "notion_url": "https://app.notion.com/p/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62"
     },
     {
       "title": "Cleanup audit — 3 Alice items resolved",
@@ -35,7 +35,7 @@
       "open_questions": "Should we add archive_database op to notion-ops to avoid future manual Notion steps?",
       "cid": "bob/c2/jared",
       "gist_snapshot": null,
-      "notion_url": "https://www.notion.so/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1"
+      "notion_url": "https://app.notion.com/p/Cleanup-audit-3-Alice-items-resolved-35bd927c97928165acb1dd409de70aa1"
     },
     {
       "title": "Full build order + roadmap + Bob message sent",
@@ -54,7 +54,7 @@
       "open_questions": "Provision Action design: GitHub App vs PAT for multi-user repo forking? space-card backend: serverless function or GitHub Action?",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
-      "notion_url": "https://www.notion.so/Full-build-order-roadmap-Bob-message-sent-35bd927c979281f98bebfc7419967cb9"
+      "notion_url": "https://app.notion.com/p/Full-build-order-roadmap-Bob-message-sent-35bd927c979281f98bebfc7419967cb9"
     },
     {
       "title": "Turn-level brain push mandate wired",
@@ -72,7 +72,7 @@
       "open_questions": "Bob and Charlie Space instructions need same turn-level mandate. Perplexity Space instructions may need manual update by Jared.",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
-      "notion_url": "https://www.notion.so/Turn-level-brain-push-mandate-wired-35bd927c97928138920bdc7f89ad6e16"
+      "notion_url": "https://app.notion.com/p/Turn-level-brain-push-mandate-wired-35bd927c97928138920bdc7f89ad6e16"
     },
     {
       "title": "adapter_ref + G-008 ALERT + Charlie slot + notion-ops SKILL Stone + brain.json read primitive",
@@ -95,7 +95,7 @@
       "open_questions": "Three-Agents Demo build not yet started — demo HTML seed, demo-run.md, Notion build log, GitHub Pages deploy all pending. notion-ops SKILL Stone gist_id is null — needs a real gist.github.com wormhole.",
       "cid": "alice/c2/jared",
       "gist_snapshot": null,
-      "notion_url": "https://www.notion.so/adapter_ref-G-008-ALERT-Charlie-slot-notion-ops-SKILL-Stone-brain-json-read-primitive-35bd927c97928139a6e7d87abe769efb"
+      "notion_url": "https://app.notion.com/p/adapter_ref-G-008-ALERT-Charlie-slot-notion-ops-SKILL-Stone-brain-json-read-primitive-35bd927c97928139a6e7d87abe769efb"
     },
     {
       "title": "gitzip hardening + Path A: Agent Notes DB live",
@@ -117,7 +117,7 @@
       "open_questions": "When to build brain.json read primitive (G-010 gist export Action)? Alice still needs to ship: adapter_ref QA.Stone amendment, G-008 ALERT gist, Charlie agent slot, notion-ops QA.Stone SKILL Stone registration.",
       "cid": "bob/c1/jared",
       "gist_snapshot": "https://gist.github.com/nothinginfinity/fb001a1ece0a750f857c4f90a1130f92",
-      "notion_url": "https://www.notion.so/gitzip-hardening-Path-A-Agent-Notes-DB-live-35bd927c979281c9b4c8ff1e37edf5d3"
+      "notion_url": "https://app.notion.com/p/gitzip-hardening-Path-A-Agent-Notes-DB-live-35bd927c979281c9b4c8ff1e37edf5d3"
     }
   ]
 }
