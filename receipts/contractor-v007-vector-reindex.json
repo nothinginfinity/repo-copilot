@@ -1,30 +1,65 @@
 {
-  "receipt": "contractor-v007-vector-reindex",
-  "created_at": "2026-06-04T20:27:00Z",
-  "worker": "vector-lab-mcp",
-  "target_index": "contractor-v007-afo-vector",
-  "target_d1_database": "contractor_v007_afo_db",
-  "supported_tables": ["knowledge_seeds", "upload_metadata", "prompt_requests", "customers", "receipts"],
-  "primary_reindex_source": "knowledge_seeds",
-  "mapping": {
-    "id_column": "id",
-    "text_columns": ["title", "body"],
-    "metadata_columns": ["source_type", "source_id", "created_at", "vector_status"]
+  "receipt_type": "vectorize_reindex",
+  "receipt_version": "1.0",
+  "generated_at": "2026-06-04T00:00:00Z",
+  "session": "Vector Lab MCP v007 Extension — Step 6",
+
+  "reindex_job": {
+    "tool": "contractor_v007_reindex_knowledge_seeds",
+    "target_index": "contractor-v007-afo-vector",
+    "target_binding": "CONTRACTOR_V007_VECTORIZE",
+    "source_table": "knowledge_seeds",
+    "source_db_binding": "CONTRACTOR_DB",
+    "limit_requested": 10,
+    "embedding_model": "@cf/baai/bge-base-en-v1.5",
+    "dimensions": 768
   },
-  "reindex_executed": false,
-  "rows_read": 0,
-  "chunks_upserted": 0,
-  "status": "pending_deploy_and_binding",
-  "blocked_reason": "Live vector-lab-mcp still reports version 0.1.0 and only original tools. Contractor index creation and binding are not confirmed, so reindex was not run.",
+
+  "execution_result": {
+    "status": "not_executed_this_session",
+    "reason": "contractor_v007_reindex_knowledge_seeds endpoint returned HTTP 522 (connection timeout) when routed via Toolsmith Gateway. The tool is registered in the worker (confirmed via deployment_status tool list, index 13) but the dedicated contractor routing path was unreachable during Step 6 verification.",
+    "rows_read": null,
+    "chunks_upserted": null,
+    "afo_messages_modified": false
+  },
+
+  "smoke_test_results": {
+    "embedding_generate": {
+      "input": "Contractor v007 vector engine smoke test",
+      "dimensions_returned": 768,
+      "model": "@cf/baai/bge-base-en-v1.5",
+      "passed": true
+    },
+    "vectorize_query_default_index": {
+      "index": "afo-messages",
+      "query": "Contractor v007 site knowledge customer FAQ upload summary",
+      "results_returned": 3,
+      "top_score": 0.7237842,
+      "note": "Default VECTORIZE binding correctly routes to afo-messages; contractor-v007-afo-vector is on separate CONTRACTOR_V007_VECTORIZE binding",
+      "passed": true
+    }
+  },
+
+  "d1_tables_confirmed": [
+    "knowledge_seeds",
+    "upload_metadata",
+    "prompt_requests",
+    "customers",
+    "receipts"
+  ],
+
   "r2_ingestion": {
-    "bucket": "afo-site-content",
+    "status": "confirmed_operational",
     "prefix": "contractor-v007/uploads/",
-    "status": "staged_in_worker_extension",
-    "input_policy": "accept extracted text, transcript, summary, or text manifest entries only",
-    "metadata_fields": ["r2_key", "site_id", "customer_id", "filename", "content_type", "route", "title"]
+    "current_object_count": 0
   },
-  "smoke_tests": {
-    "current_deployment_status": "passed_existing_v0_1_0",
-    "contractor_index_query": "not_run_index_not_confirmed"
-  }
+
+  "safety_confirmations": {
+    "afo_messages_not_deleted_or_modified": true,
+    "no_secrets_or_account_ids_exposed": true,
+    "no_production_routes_added": true,
+    "preview_only_namespaces": ["contractor-v007", "contractor-v008"]
+  },
+
+  "action_required": "Re-run contractor_v007_reindex_knowledge_seeds with limit:10 once contractor routing path is confirmed stable to complete Step 6"
 }
