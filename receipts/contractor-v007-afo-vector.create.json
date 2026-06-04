@@ -1,0 +1,23 @@
+{
+  "receipt": "contractor-v007-afo-vector.create",
+  "created_at": "2026-06-04T20:25:00Z",
+  "index_name": "contractor-v007-afo-vector",
+  "dimensions": 768,
+  "metric": "cosine",
+  "embedding_model": "@cf/baai/bge-base-en-v1.5",
+  "purpose": "semantic search over contractor transcripts, uploaded file summaries, articles, project pages, customer FAQs, admin prompts, site knowledge, and media metadata",
+  "created": false,
+  "status": "not_confirmed_created",
+  "blocked_reason": "Vectorize admin API request was not authenticated through the available raw Cloudflare API path; no account IDs or secrets are included in this receipt.",
+  "binding_spec": {
+    "type": "vectorize",
+    "name": "CONTRACTOR_V007_VECTORIZE",
+    "index_name": "contractor-v007-afo-vector"
+  },
+  "safety": {
+    "afo_messages_deleted": false,
+    "production_routes_added": false,
+    "secrets_added": false,
+    "prior_contractors_modified": false
+  }
+}
