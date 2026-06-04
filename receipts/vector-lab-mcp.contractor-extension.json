@@ -1,0 +1,56 @@
+{
+  "receipt": "vector-lab-mcp.contractor-extension",
+  "created_at": "2026-06-04T00:00:00-07:00",
+  "status": "blocked_auth_read_only",
+  "worker": "vector-lab-mcp",
+  "requested_extension": "shared AFO vector engine for Contractor v007/v008",
+  "default_index_preserved": "afo-messages",
+  "new_index_requested": {
+    "index_name": "contractor-v007-afo-vector",
+    "dimensions": 768,
+    "metric": "cosine",
+    "embedding_model": "@cf/baai/bge-base-en-v1.5",
+    "purpose": "semantic search over contractor transcripts, uploaded file summaries, articles, project pages, customer FAQs, admin prompts, site knowledge, and media metadata"
+  },
+  "tools_to_extend_with_index_name": [
+    "vectorize_query",
+    "vectorize_upsert_documents",
+    "vectorize_reindex_from_d1",
+    "hybrid_search_d1_vectorize"
+  ],
+  "admin_tools_to_add": [
+    "list_vectorize_indexes",
+    "create_vectorize_index",
+    "get_vectorize_index",
+    "validate_vectorize_index",
+    "create_vectorize_binding_spec",
+    "vectorize_admin_status"
+  ],
+  "contractor_d1": {
+    "database_name": "contractor_v007_afo_db",
+    "tables": ["knowledge_seeds", "upload_metadata", "prompt_requests", "customers", "receipts"],
+    "primary_reindex_source": "knowledge_seeds",
+    "mapping": {
+      "id_column": "id",
+      "text_columns": ["title", "body"],
+      "metadata_columns": ["source_type", "source_id", "created_at", "vector_status"]
+    }
+  },
+  "r2_ingestion": {
+    "bucket": "afo-site-content",
+    "prefix": "contractor-v007/uploads/",
+    "binary_vectorization_policy": "do_not_vectorize_binary_blobs_directly",
+    "required_text_inputs": ["extracted_text", "transcript", "summary"],
+    "metadata_fields": ["r2_key", "site_id", "customer_id", "filename", "content_type", "route", "title"]
+  },
+  "safety_rules": {
+    "do_not_delete_existing_index": "afo-messages",
+    "do_not_overwrite_existing_vectors_unless_explicit": true,
+    "do_not_expose_account_ids": true,
+    "do_not_add_secrets": true,
+    "do_not_add_production_routes": true,
+    "do_not_modify_prior_contractors": ["contractor-v004-afo", "contractor-v005-afo", "contractor-v006-afo"],
+    "preview_only": ["contractor-v007", "contractor-v008"]
+  },
+  "implementation_note": "Cloudflare live source read for vector-lab-mcp was blocked by API auth scheme HTTP 405, so this receipt records the requested extension contract rather than a confirmed deployed implementation."
+}
