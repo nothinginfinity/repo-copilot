@@ -1,0 +1,30 @@
+{
+  "receipt": "contractor-v007-vector-reindex",
+  "created_at": "2026-06-04T20:27:00Z",
+  "worker": "vector-lab-mcp",
+  "target_index": "contractor-v007-afo-vector",
+  "target_d1_database": "contractor_v007_afo_db",
+  "supported_tables": ["knowledge_seeds", "upload_metadata", "prompt_requests", "customers", "receipts"],
+  "primary_reindex_source": "knowledge_seeds",
+  "mapping": {
+    "id_column": "id",
+    "text_columns": ["title", "body"],
+    "metadata_columns": ["source_type", "source_id", "created_at", "vector_status"]
+  },
+  "reindex_executed": false,
+  "rows_read": 0,
+  "chunks_upserted": 0,
+  "status": "pending_deploy_and_binding",
+  "blocked_reason": "Live vector-lab-mcp still reports version 0.1.0 and only original tools. Contractor index creation and binding are not confirmed, so reindex was not run.",
+  "r2_ingestion": {
+    "bucket": "afo-site-content",
+    "prefix": "contractor-v007/uploads/",
+    "status": "staged_in_worker_extension",
+    "input_policy": "accept extracted text, transcript, summary, or text manifest entries only",
+    "metadata_fields": ["r2_key", "site_id", "customer_id", "filename", "content_type", "route", "title"]
+  },
+  "smoke_tests": {
+    "current_deployment_status": "passed_existing_v0_1_0",
+    "contractor_index_query": "not_run_index_not_confirmed"
+  }
+}
