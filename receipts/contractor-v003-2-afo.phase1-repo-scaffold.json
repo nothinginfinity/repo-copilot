@@ -1,0 +1,10 @@
+{
+  "receipt_type": "contractor-v003-2-afo.phase1-repo-scaffold",
+  "created_at": "2026-06-05T00:00:00-07:00",
+  "status": "repo_scaffold_committed",
+  "worker": "contractor-v003-2-afo",
+  "repo": "nothinginfinity/repo-copilot",
+  "files": [
+    "workers/contractor-v003-2-afo/worker.js",
+    "workers/contractor-v003-2-afo/schema.sql",
+    "workers/contractor-v003-2-afo
