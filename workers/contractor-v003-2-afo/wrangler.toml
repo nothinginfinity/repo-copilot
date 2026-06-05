@@ -1,0 +1,18 @@
+name = "contractor-v003-2-afo"
+main = "worker.js"
+compatibility_date = "2026-06-05"
+
+# contractor-v003-2-afo target bindings.
+# Fill database_id after creating contractor_v003_2_afo_db with afo-d1-admin-mcp/cloudflare-multipart-mcp.
+
+[[d1_databases]]
+binding = "V003_2_DB"
+database_name = "contractor_v003_2_afo_db"
+database_id = "TODO_CREATE_D1_DATABASE_ID"
+
+[[vectorize]]
+binding = "V003_2_VECTORIZE"
+index_name = "contractor-v003-2-afo-vector"
+
+[[r2_buckets]]
+binding =
