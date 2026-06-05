@@ -1,1 +1,1 @@
-{"task":"contractor-v003-2-afo","status":"smoke_attempted","routes":["/","/admin","/api/status","/leads","/callback","/chat","/articles"],"result":"not_confirmed_from_sandbox","reason":"sandbox_dns_fetch_failed_after_successful_deploy"}
+{"task":"contractor-v003-2-afo","status":"smoke_passed","verified_by":"manual_user_verification","routes":["/","/admin","/api/status","/leads","/callback","/chat","/articles"],"result":"passed"}
