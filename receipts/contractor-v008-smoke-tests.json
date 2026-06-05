@@ -1,0 +1,100 @@
+{
+  "receipt_type": "smoke_tests",
+  "worker": "contractor-v008-afo",
+  "preview_url": "https://contractor-v008-afo.jaredtechfit.workers.dev",
+  "tested_at": "2026-06-05T03:54:00Z",
+  "tests": [
+    {
+      "id": 1,
+      "name": "GET /api/status",
+      "result": "PASS",
+      "details": {
+        "d1_connected": true,
+        "vectorize_connected": true,
+        "r2_connected": true,
+        "seed_count": 6,
+        "article_count": 2,
+        "receipt_count": 7
+      }
+    },
+    {
+      "id": 2,
+      "name": "GET /api/knowledge/search - emergency roof leaks Simi Valley",
+      "result": "PASS",
+      "details": {
+        "results": 5,
+        "top_match": {"id": "ks-001", "score": 0.8168, "title": "Emergency Roof Repair Services"}
+      }
+    },
+    {
+      "id": 3,
+      "name": "POST /api/chat - roof leaking after storm",
+      "result": "PASS",
+      "details": {
+        "model": "@cf/meta/llama-3.1-8b-instruct",
+        "fallback": false,
+        "prompt_request_stored": true,
+        "receipt_stored": true,
+        "receipt_id": "v8-mq0e2fat-4rxt7"
+      }
+    },
+    {
+      "id": 4,
+      "name": "POST /api/generate-article - Emergency Roof Repair in Simi Valley",
+      "result": "PASS",
+      "details": {
+        "article_stored": true,
+        "article_id": "v8-mq0e3jq3-n1lbq",
+        "receipt_stored": true
+      }
+    },
+    {
+      "id": 5,
+      "name": "Confirm article stored in D1",
+      "result": "PASS",
+      "details": {"article_count": 2}
+    },
+    {
+      "id": 6,
+      "name": "Confirm prompt_request stored",
+      "result": "PASS",
+      "details": {"prompt_request_id": "v8-mq0e2e7i-zzp9e"}
+    },
+    {
+      "id": 7,
+      "name": "Confirm receipt stored",
+      "result": "PASS",
+      "details": {"receipt_count": 7}
+    },
+    {
+      "id": 8,
+      "name": "Confirm contractor-v008-afo-vector returns matches",
+      "result": "PASS",
+      "details": {
+        "query": "emergency roof leak storm Simi Valley",
+        "match_count": 5,
+        "top_score": 0.8168
+      }
+    },
+    {
+      "id": 9,
+      "name": "Confirm v004/v005/v006/v007 unchanged",
+      "result": "PASS",
+      "details": {
+        "contractor_v004_http": 200,
+        "contractor_v005_http": 200,
+        "contractor_v006_http": 200,
+        "contractor_v007_http": 200
+      }
+    }
+  ],
+  "all_passed": true,
+  "blockers": "None - all smoke tests passed",
+  "notes": [
+    "workers.dev subdomain required PATCH via afo-worker-binding-manager-mcp (not auto-enabled by deploy API)",
+    "faqs and service_areas required indexed_at column added via ALTER TABLE",
+    "Vector search returns 5 relevant results with scores 0.66-0.83",
+    "Chat uses live @cf/meta/llama-3.1-8b-instruct (not fallback)",
+    "Article generation works with live AI and stores to D1"
+  ]
+}
