@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS site_config (
 -- Email notification routing
 CREATE TABLE IF NOT EXISTS notification_routes (
   id TEXT PRIMARY KEY,
-  event_type TEXT NOT NULL,  -- 'new_lead', 'new_upload', 'new_chat_lead'
+  event_type TEXT NOT NULL,  -- 'new_lead', 'new_upload', 'new_chat_lead', 'new_callback'
   email TEXT NOT NULL,
   active INTEGER DEFAULT 1,
   created_at TEXT NOT NULL
@@ -81,6 +81,22 @@ CREATE TABLE IF NOT EXISTS service_configs (
   display_order INTEGER DEFAULT 0,
   created_at TEXT NOT NULL
 );
+
+-- Callback requests
+CREATE TABLE IF NOT EXISTS callback_requests (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  preferred_time TEXT,        -- e.g. 'morning', 'afternoon', 'evening', or a specific time string
+  preferred_date TEXT,        -- YYYY-MM-DD, optional
+  project_type TEXT,
+  notes TEXT,
+  status TEXT DEFAULT 'pending',  -- 'pending', 'called', 'no_answer', 'scheduled'
+  source TEXT DEFAULT 'chat',     -- 'chat', 'form'
+  lead_section TEXT,              -- which section triggered it (see lead source tracking)
+  notified INTEGER DEFAULT 0,
+  created_at TEXT NOT NULL
+);
 ```
 
 ---
@@ -89,8 +105,9 @@ CREATE TABLE IF NOT EXISTS service_configs (
 
 ### 1. Dashboard (already exists — enhance it)
 - System status cards: D1, Vectorize, R2, AI, leads count, articles count
-- **Add:** New leads since last visit (badge), unread chat leads, storage used
-- **Add:** Quick action buttons: "View new leads", "Publish pending articles"
+- **Add:** New leads since last visit (badge), unread chat leads, pending callbacks, storage used
+- **Add:** Quick action buttons: "View new leads", "View pending callbacks", "Publish pending articles"
+- **Add:** Simple conversion summary — leads by source this week (form vs chat vs callback vs upload)
 
 ---
 
@@ -113,33 +130,108 @@ CREATE TABLE IF NOT EXISTS service_configs (
 **What exists in v003-1:** Leads saved to D1, no UI to see them.
 
 **What v003-2 needs:**
-- **Leads table** — sortable columns: name, email, phone, project type, budget, location, date, source (form vs chat vs upload), status
+- **Leads table** — sortable columns: name, email, phone, project type, budget, location, date, source, lead_section, status
 - **Status workflow** — New → Contacted → Quoted → Won / Lost (dropdown per lead)
-- **Lead detail view** — expand row or modal: all fields, notes field, attached uploads (R2 links), chat transcript if available
+- **Lead detail view** — expand row or modal: all fields, notes field, attached uploads (R2 links), chat transcript if available, source section label
 - **Notes** — free text notes per lead, timestamped
-- **Search leads** — by name, email, phone, project type, date range
-- **Export** — CSV download of leads (filtered or all)
+- **Search leads** — by name, email, phone, project type, date range, source
+- **Export** — CSV download of leads (filtered or all), includes source and lead_section columns
 - **Mark as notified** — sets `notified=1` in D1
+- **Callback requests tab** — separate view for callback_requests table with status workflow (Pending → Called → No Answer → Scheduled), preferred time/date displayed, click to mark as called
 
 ---
 
-### 4. Email Notification Routing
+### 4. Lead Source Tracking
+
+**What exists in v003-1:** `source` field captures 'form', 'chat', 'upload' — but not which section of the page triggered it.
+
+**What v003-2 adds:**
+- A `lead_section` field on every lead and callback, capturing exactly where the conversion happened
+- Populated automatically by the frontend — each button/form passes a `section` parameter to the backend
+
+**Section labels to track:**
+| Section | label |
+|---|---|
+| Hero "Estimate / Chat" button | `hero_chat` |
+| Hero "Call" button (tap-to-call, not a lead, just FYI) | n/a |
+| Service panel "Get Free Estimate" button | `services_{type}` e.g. `services_kitchen` |
+| Project card lightbox "Get a Similar Estimate" | `portfolio_{id}` e.g. `portfolio_p1` |
+| Nav "Free Estimate" link | `nav_cta` |
+| Lead form (footer section) | `lead_form` |
+| Chat — estimate flow completed | `chat_estimate` |
+| Chat — QA flow converted to estimate | `chat_qa` |
+| Callback request widget | `callback_widget` |
+
+**Implementation:**
+- Add `section` as a hidden field or JS variable that gets passed with every `/leads`, `/chat`, and `/callback` POST
+- Store in `lead_section` column in D1
+- Admin CRM table shows lead_section as a readable label
+- Dashboard shows a breakdown: "This week's leads by section" — tells the owner which parts of the site are actually converting
+
+---
+
+### 5. Callback Scheduling
+
+**What exists in v003-1:** Chat flow ends at "Call us now" (tap-to-call) or "Upload photos." No middle ground for people who want a callback but won't call themselves.
+
+**What v003-2 adds:**
+
+**In the chat estimate flow** — after location step, add a third option alongside "Call now" and "Upload photos":
+- Button: "Request a callback" → chat asks for name, phone, preferred time → saves to `callback_requests` table → triggers email notification → confirms in chat
+
+**Chat flow for callback path:**
+```
+State: estimate_contact
+→ "Call us now" (tap-to-call)
+→ "Upload photos/video" (existing)
+→ "Request a callback" (new)
+
+State: callback_name  → "What's your name?"
+State: callback_phone → "Best phone number to reach you?"
+State: callback_time  → "Any preference for time of day?"
+  Quick buttons: Morning | Afternoon | Evening | Anytime
+State: callback_done  → confirmation message + email notification sent
+```
+
+**Standalone callback widget on public page** (optional, add to lead form section or as a floating element):
+- Simple form: Name, Phone, Preferred time (dropdown), Optional note
+- Submits to `POST /callback`
+- Triggers email notification with `event_type = 'new_callback'`
+
+**Admin callback manager:**
+- Table: Name, Phone, Preferred time/date, Project type, Notes, Status, Date submitted
+- Status dropdown per row: Pending → Called → No Answer → Scheduled
+- Click "Called" → marks status, timestamps it
+- Email notification on new callback (uses same notification_routes system as leads)
+- Export callbacks as CSV alongside leads
+
+**`POST /callback` route:**
+```javascript
+// Saves to callback_requests table
+// Fires notification email if routes configured
+// Returns { ok: true, callback_id: id, message: 'We will call you...' }
+```
+
+---
+
+### 6. Email Notification Routing
 
 **What exists in v003-1:** `notified=0` flag on leads, no actual sending.
 
 **What v003-2 needs:**
 - **Email config UI** — Add one or multiple email addresses per event type
-  - Event types: `new_lead` (form submit), `new_chat_lead` (chat estimate complete), `new_upload` (file uploaded)
+  - Event types: `new_lead` (form submit), `new_chat_lead` (chat estimate complete), `new_upload` (file uploaded), `new_callback` (callback request)
 - **Test button** — sends a test email to the configured address
 - **Email sending:** Use Resend API (simplest) or a Cloudflare Email Worker
   - Store Resend API key in a D1 `site_config` row (never in source code)
   - Admin UI has a field to paste the API key — saved to D1, never exposed
-  - On lead save → fetch active notification routes for that event type → POST to Resend
+  - On lead/callback save → fetch active notification routes for that event type → POST to Resend
 - **Per-lead notification log** — show if email was sent, when, to whom
+- **Note for builder:** Resend requires a verified sending domain. The workers.dev subdomain cannot send email. This feature requires a custom domain to be configured before it will work in production. Document this clearly in the admin UI.
 
 ---
 
-### 5. Media Library & File Manager
+### 7. Media Library & File Manager
 
 **What exists in v003-1:** File upload to R2 via chat, no UI to view or manage files.
 
@@ -156,7 +248,7 @@ CREATE TABLE IF NOT EXISTS service_configs (
 
 ---
 
-### 6. Article Manager (upgrade from generate-only)
+### 8. Article Manager (upgrade from generate-only)
 
 **What exists in v003-1:** Generate article via AI, view list in admin, no public display.
 
@@ -172,7 +264,7 @@ CREATE TABLE IF NOT EXISTS service_configs (
 
 ---
 
-### 7. Site Customizer
+### 9. Site Customizer
 
 **What exists in v003-1:** Company name, phone, colors are hardcoded constants in the worker source.
 
@@ -195,6 +287,7 @@ CREATE TABLE IF NOT EXISTS service_configs (
 - Opening message text
 - Estimate flow: add/remove/reorder project type buttons (Kitchen, Bathroom, ADU, etc.)
 - Estimate flow: add/remove/reorder location quick-select buttons
+- Callback option: enable/disable the "Request a callback" step in estimate flow
 - QA system prompt (the instructions sent to the AI)
 
 **Hero Section**
@@ -223,17 +316,19 @@ CREATE TABLE IF NOT EXISTS service_configs (
 
 ---
 
-### 8. Admin Chat (build last, after all manual UI works)
+### 10. Admin Chat (build last, after all manual UI works)
 
 A chat interface inside the admin panel, powered by Cloudflare AI (Llama) with tool-calling capability. The owner types natural language and the AI executes admin actions.
 
 **Example commands it should handle:**
 - "Add a new FAQ: question is X, answer is Y" → inserts to D1 + embeds to Vectorize
 - "Show me all leads from this week" → queries D1, formats as a table in the chat
+- "Show me all pending callbacks" → queries callback_requests, formatted list
 - "Change the hero headline to 'LA's #1 Contractor'" → updates site_config
 - "Generate an article about kitchen remodels in Pasadena and publish it" → runs generate + sets published=1
 - "Add Encino to the service areas" → inserts to service_configs
 - "Send a test email to joseph@ccs.com" → triggers notification test
+- "Which section of the site is getting the most leads this month?" → queries lead_section breakdown from D1
 
 **Implementation:**
 - The admin chat POST endpoint gets a system prompt that describes all available D1 tables, R2 structure, and available "tool" functions
@@ -258,27 +353,31 @@ Build in this sequence — each phase is independently testable:
 **Phase 2 — Public Site**
 6. Port v003-1 public frontend exactly (same design)
 7. Add `site_config` loading — phone, company name, hero text all come from D1
-8. Add `/articles` and `/articles/{slug}` public routes
-9. Add "From Our Blog" section to homepage (shows last 3 published articles)
-10. Verify chat, lead form, file upload all work
+8. Add lead source tracking — `lead_section` passed from every CTA button and form
+9. Add callback option to chat estimate flow
+10. Add standalone callback widget to lead form section
+11. Add `/articles` and `/articles/{slug}` public routes
+12. Add "From Our Blog" section to homepage (shows last 3 published articles)
+13. Verify chat, lead form, callback, file upload all work
 
 **Phase 3 — Admin Core**
-11. Admin auth (keep sessionStorage password for now)
-12. Dashboard with live stats
-13. Knowledge Base Manager (view/add/edit/delete seeds, FAQs, service areas)
-14. Leads CRM (table, search, status workflow, detail view, export CSV)
-15. Media Library (upload, grid, alt text, copy URL, delete)
+14. Admin auth (keep sessionStorage password for now)
+15. Dashboard with live stats + lead source breakdown + pending callbacks badge
+16. Knowledge Base Manager (view/add/edit/delete seeds, FAQs, service areas)
+17. Leads CRM (table with lead_section column, search, status workflow, detail view, export CSV)
+18. Callback Manager (table, status workflow, export)
+19. Media Library (upload, grid, alt text, copy URL, delete)
 
 **Phase 4 — Admin Advanced**
-16. Article Manager (list, edit body, hero image picker, publish toggle)
-17. Email Notification Routing (config UI, Resend integration, test button)
-18. Site Customizer (business info, service areas, chat config, hero, reviews)
+20. Article Manager (list, edit body, hero image picker, publish toggle)
+21. Email Notification Routing (config UI, Resend integration, test button, new_callback event type)
+22. Site Customizer (business info, service areas, chat config incl. callback toggle, hero, reviews)
 
 **Phase 5 — Admin Chat**
-19. Admin chat UI (message input, conversation display)
-20. Tool definitions for all admin actions
-21. Cloudflare AI tool-calling backend
-22. Optional: external API key support (Claude / GPT-4)
+23. Admin chat UI (message input, conversation display)
+24. Tool definitions for all admin actions (including callback and lead_section queries)
+25. Cloudflare AI tool-calling backend
+26. Optional: external API key support (Claude / GPT-4)
 
 ---
 
@@ -293,6 +392,45 @@ async function loadConfig(env) {
 // In fetch handler:
 const config = await loadConfig(env);
 // Pass config into buildPublic(config), buildAdmin(config)
+```
+
+**Lead source tracking — frontend pattern:**
+Every CTA button passes a `section` param. In the JS:
+```javascript
+// Hero button
+'<button onclick="openChat(\'estimate_start\', \'hero_chat\')">Estimate / Chat</button>'
+
+// Service panel button
+'<button onclick="openChat(\'estimate_start\', \'services_kitchen\')">Get Free Estimate</button>'
+
+// openChat stores it:
+'var leadSection = "";'
+'function openChat(initAction, section) {'
+'  leadSection = section || "";'
+'  // ... rest of openChat'
+'}'
+
+// sendChatMsg includes it in the POST body:
+'body: JSON.stringify({ message: msg, state: chatState, section: leadSection })'
+
+// Lead form also passes it:
+'body: JSON.stringify({ name, email, ..., lead_section: "lead_form" })'
+```
+
+On the backend, `handleChat` and `handleLeads` save `body.section` to the `lead_section` column.
+
+**Callback route:**
+```javascript
+async function handleCallback(req, env) {
+  const body = await parseBody(req);
+  const { name, phone, preferred_time, preferred_date, project_type, notes, section } = body;
+  if (!name || !phone) return jsonRes({ ok: false, error: 'Name and phone required' }, 400);
+  const id = uid();
+  await dbRun(env, 'INSERT INTO callback_requests (id,name,phone,preferred_time,preferred_date,project_type,notes,status,source,lead_section,notified,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,0,?)',
+    [id, name, phone, preferred_time||'anytime', preferred_date||'', project_type||'', notes||'', 'pending', 'form', section||'callback_widget', now()]);
+  // fire notification email here
+  return jsonRes({ ok: true, callback_id: id, message: 'Got it! We will call you ' + (preferred_time ? 'in the ' + preferred_time : 'soon') + '.' });
+}
 ```
 
 **R2 media serving:**
@@ -315,16 +453,25 @@ async function sendEmail(apiKey, to, subject, html) {
   });
 }
 // API key stored in site_config table, fetched at runtime
+// Resend requires a verified sending domain — document this in admin UI
 ```
 
 **CSV export:**
 ```javascript
 function leadsToCSV(leads) {
-  const headers = ['ID','Name','Email','Phone','Project','Budget','Timeline','Source','Status','Date'];
-  const rows = leads.map(l => [l.id,l.name,l.email,l.phone,l.project_type,l.budget_range,l.timeline,l.source,l.status,l.created_at]);
+  const headers = ['ID','Name','Email','Phone','Project','Budget','Timeline','Source','Section','Status','Date'];
+  const rows = leads.map(l => [l.id,l.name,l.email,l.phone,l.project_type,l.budget_range,l.timeline,l.source,l.lead_section,l.status,l.created_at]);
   return [headers, ...rows].map(r => r.map(v => '"'+(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
 }
-// Return as: new Response(csv, { headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="leads.csv"' } })
+```
+
+**Lead source breakdown query (for dashboard):**
+```sql
+SELECT lead_section, COUNT(*) as count
+FROM customers
+WHERE created_at >= date('now', '-7 days')
+GROUP BY lead_section
+ORDER BY count DESC;
 ```
 
 ---
