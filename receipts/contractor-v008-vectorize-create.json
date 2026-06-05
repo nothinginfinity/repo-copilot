@@ -1,0 +1,9 @@
+{
+  "receipt_type": "vectorize_index_create",
+  "index_name": "contractor-v008-afo-vector",
+  "dimensions": 768,
+  "metric": "cosine",
+  "embedding_model": "@cf/baai/bge-base-en-v1.5",
+  "created_at": "2026-06-05T03:07:06.938597Z",
+  "notes": "Index pre-existed from prior session. Confirmed operational."
+}
