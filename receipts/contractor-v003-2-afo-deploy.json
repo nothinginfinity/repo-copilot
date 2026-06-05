@@ -1,5 +1,6 @@
 {
   "receipt_type": "contractor-v003-2-afo-deploy",
+  "status": "deployed",
   "worker": {
     "name": "contractor-v003-2-afo",
     "target_url": "https://contractor-v003-2-afo.jaredtechfit.workers.dev",
@@ -9,6 +10,3 @@
   },
   "cloudflare": {
     "account_id": "280908cb4e54b81745740accf5f0500f"
-  },
-  "bindings": {
-    "d1": {
