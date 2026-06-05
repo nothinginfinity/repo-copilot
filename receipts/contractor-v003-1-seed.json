@@ -1,0 +1,1 @@
+{"worker":"contractor-v003-1-afo","seeded_at":"2026-06-05T19:54:00Z","tables":{"knowledge_seeds":{"rows":7,"ok":7},"faqs":{"rows":6,"ok":6},"service_areas":{"rows":4,"ok":4}},"total_vectors":17,"index":"contractor-v003-1-afo-vector","model":"@cf/baai/bge-base-en-v1.5","dims":768}
