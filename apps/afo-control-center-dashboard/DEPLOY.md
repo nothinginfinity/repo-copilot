@@ -1,18 +1,20 @@
 # Deploy AFO Control Center Dashboard
 
-This folder now contains a GitHub-first scaffold for the Control Center Dashboard.
+This folder contains the GitHub-first scaffold for the AFO Control Center Dashboard.
 
 ## Files
 
-- `README.md` — product intent and route plan.
-- `index.html` — polished standalone dashboard UI.
-- `package.json` — Wrangler scripts.
-- `wrangler.toml` — Cloudflare Worker config.
-- `worker.js` — deployable Worker shell with API proxy routes.
+- `README.md` - product intent and route plan.
+- `index.html` - polished standalone dashboard UI.
+- `worker.js` - source Worker shell with API proxy routes and fallback HTML marker.
+- `build-inline.mjs` - generates `worker.generated.js` by inlining `index.html` into `worker.js`.
+- `worker.generated.js` - generated deploy target. Do not edit by hand.
+- `package.json` - build, dev, check, and deploy scripts.
+- `wrangler.toml` - Cloudflare Worker config. Its `main` points at `worker.generated.js`.
 
 ## Current behavior
 
-`worker.js` serves a lightweight fallback shell and exposes these routes:
+The generated Worker serves the polished dashboard at `/` and exposes these routes:
 
 - `/api/status`
 - `/api/workers`
@@ -27,20 +29,14 @@ This folder now contains a GitHub-first scaffold for the Control Center Dashboar
 
 The inventory routes proxy to `https://browser.agentfeedoptimization.com` using `AFO_BROWSER_URL` from `wrangler.toml`.
 
-## Next patch
-
-Serve the polished `index.html` from the Worker. There are two clean options:
-
-1. Inline the contents of `index.html` into the Worker response.
-2. Convert this folder to a Cloudflare Workers static-assets project and serve `index.html` as an asset.
-
-Option 2 is preferred once the repo deployment flow is settled.
+Queue, audit, and repair routes are placeholders until wired to the runtime queue, audit receipt, and Toolsmith repair surfaces.
 
 ## Local commands
 
 ```bash
 cd apps/afo-control-center-dashboard
 npm install
+npm run build
 npm run dev
 npm run check
 npm run deploy
@@ -51,3 +47,7 @@ npm run deploy
 ```text
 https://control.agentfeedoptimization.com/
 ```
+
+## Next patch
+
+Add CI/CD for this subfolder and decide whether production deploy should stay as generated single-file Worker or move to Cloudflare Workers static assets.
