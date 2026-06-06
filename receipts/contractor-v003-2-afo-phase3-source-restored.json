@@ -1,0 +1,55 @@
+{
+  "worker": "contractor-v003-2-afo",
+  "phase": "phase3-source-restored-prepatch",
+  "created_at": "2026-06-05T00:00:00-07:00",
+  "created_by": "ChatGPT",
+  "status": "source_restored_db_ready_code_patch_pending",
+  "summary": "Jared restored the live v0.2.0 Worker source into GitHub as workers/contractor-v003-2-afo/contractor-v003-2-afo.js and replaced worker.js with a conventional re-export entrypoint. ChatGPT verified the source file exists and is 64066 bytes, but did not patch/redeploy because the available GitHub read output is truncated and commit_file requires full-file replacement.",
+  "github_files_verified": {
+    "workers/contractor-v003-2-afo/worker.js": {
+      "size": 343,
+      "sha": "a3867ac4cdc761b32da9f78dee56c6bb2f82eadd",
+      "role": "standard entrypoint that re-exports default from ./contractor-v003-2-afo.js"
+    },
+    "workers/contractor-v003-2-afo/contractor-v003-2-afo.js": {
+      "size": 64066,
+      "sha": "0c9971138a05674d4c93d5d2d87fa29bb0977bca",
+      "detected_version": "0.2.0",
+      "role": "restored full Worker source copied from Cloudflare"
+    }
+  },
+  "live_d1_state_verified": {
+    "database_id": "c0743318-ee23-4d08-9bd7-0d2b3cc36018",
+    "tables": ["articles", "callbacks", "chats", "leads"],
+    "counts": {
+      "leads": 1,
+      "callbacks": 1,
+      "articles": 12
+    },
+    "leads_columns_present": ["lead_section", "status", "budget_range", "timeline"],
+    "callbacks_columns_present": ["lead_section", "status"],
+    "backfills_verified": {
+      "lead_id_1_lead_section": "lead_form",
+      "lead_id_1_status": "new",
+      "callback_id_1_lead_section": "callback_widget",
+      "callback_id_1_status": "pending"
+    }
+  },
+  "phase3_code_gaps_seen_in_restored_source_preview": [
+    "handleLeads destructures lead_section but INSERT statement still writes only name,email,phone,service,message,source,created_at and does not save lead_section, budget_range, or timeline.",
+    "handleCallback destructures preferred_time/preferred_date/project_type/notes but does not destructure lead_section and INSERT statement does not save lead_section/status directly.",
+    "Chat callback_time path inserts callback rows with source chat_estimate but does not save lead_section.",
+    "Admin route helpers currently show handleAdminLeads and handleAdminCallbacks list endpoints; PATCH status endpoints and CSV endpoints were not visible in the restored-source preview/search results."
+  ],
+  "safe_next_steps": [
+    "Use a tool capable of editing/patching a large GitHub file without replacing it from truncated output, or have Jared paste/provide the full contractor-v003-2-afo.js source into a file-edit capable environment.",
+    "Patch handleLeads to save lead_section, budget_range, and timeline into the already-existing D1 columns.",
+    "Patch handleCallback and chat callback insertions to save lead_section into callbacks.",
+    "Add PATCH /api/admin/leads/{id} and PATCH /api/admin/callbacks/{id} status workflow endpoints with allowlists.",
+    "Add GET /api/admin/leads.csv and GET /api/admin/callbacks.csv endpoints.",
+    "Update public JS/forms so each CTA passes section labels and lead form submits budget_range/timeline.",
+    "Deploy only after complete source patch is available and bindings are set: V003_2_DB, V003_2_VECTORIZE, V003_2_R2, AI."
+  ],
+  "deployment_performed": false,
+  "reason_no_deploy": "Avoided partial overwrite of a 64 KB restored Worker source because the available source display is truncated and live source-read via cloudflare get_worker_source previously returned HTTP 405."
+}
