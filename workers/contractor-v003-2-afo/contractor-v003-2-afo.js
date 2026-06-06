@@ -36,7 +36,6 @@ async function vecSearch(env, query, topK=5) {
   return r.matches || [];
 }
 
-// ── CSV helpers ──────────────────────────────────────────────────────────────
 function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
 function csvRes(filename, text) {
   return new Response(text, { headers: {
@@ -47,7 +46,6 @@ function csvRes(filename, text) {
 function validLeadStatus(s) { return ['new','contacted','quoted','won','lost'].includes(String(s||'').toLowerCase()); }
 function validCallbackStatus(s) { return ['pending','called','no_answer','scheduled'].includes(String(s||'').toLowerCase()); }
 
-// ── Route handlers ───────────────────────────────────────────────────────────
 async function handleStatus(env) {
   let db=false, vec=false, r2=false, leads=0, articles=0, callbacks=0;
   try { const r = await dbFirst(env,'SELECT COUNT(*) as c FROM leads'); leads=r?.c||0; db=true; } catch{}
@@ -82,8 +80,8 @@ async function handleCallback(req, env) {
   const notesStr = [preferred_time, preferred_date, notes].filter(Boolean).join(' | ');
   const srcSection = lead_section || section || 'callback_widget';
   await dbRun(env,
-    'INSERT INTO callbacks (name,phone,preferred_time,service,message,source,created_at,lead_section,status) VALUES (?,?,?,?,?,?,?,?,?)',
-    [name, phone, preferred_time||'', project_type||'', notesStr, source, now(), srcSection, 'pending']
+    'INSERT INTO callbacks (name,phone,preferred_time,service,message,lead_section,status,created_at) VALUES (?,?,?,?,?,?,?,?)',
+    [name, phone, preferred_time||'', project_type||'', notesStr, srcSection, 'pending', now()]
   ).catch(async () => {
     await dbRun(env, 'INSERT INTO callbacks (name,phone,created_at) VALUES (?,?,?)', [name, phone, now()]);
   });
@@ -96,7 +94,6 @@ async function handleChat(req, env) {
   const message = (b.message||'').trim();
   const state = b.state || 'init';
   const section = b.section || '';
-
   if (!message && state === 'init') {
     return j({ ok:true, state:'init',
       answer:'Hi! Welcome to CCS Services Group. Are you looking for a free estimate, or do you have a question about our services?',
@@ -152,8 +149,8 @@ async function handleChat(req, env) {
   }
   if (state==='callback_time') {
     try {
-      await dbRun(env, 'INSERT INTO callbacks (name,phone,preferred_time,service,message,source,created_at,lead_section,status) VALUES (?,?,?,?,?,?,?,?,?)',
-        ['Chat lead','',message,'','Preferred: '+message,'chat_estimate',now(),section||'chat_estimate','pending']);
+      await dbRun(env, 'INSERT INTO callbacks (name,phone,preferred_time,service,message,lead_section,status,created_at) VALUES (?,?,?,?,?,?,?,?)',
+        ['Chat lead','',message,'','Preferred: '+message,section||'chat_estimate','pending',now()]);
     } catch(e){}
     return j({ ok:true, state:'done',
       answer:'Perfect — we will call you '+message.toLowerCase()+'. You can also reach us anytime at '+PHONE+'.',
@@ -170,8 +167,6 @@ async function handleChat(req, env) {
       suggested_actions:[{type:'call',label:'Call '+PHONE,url:PHONE_URL}]
     });
   }
-
-  // QA / RAG
   let matches = [];
   try { matches = await vecSearch(env, message, 5); } catch(e){}
   const context = matches.map((m,i)=>'['+(i+1)+'] '+(m.metadata?.title||m.id)+': '+(m.metadata?.summary||'')).join('\n');
@@ -235,7 +230,6 @@ async function handleUpload(req, env) {
   } catch(e) { return j({ ok:false, error:e.message }, 500); }
 }
 
-// ── Admin API handlers ────────────────────────────────────────────────────────
 async function handleAdminLeads(req, env) {
   if (req.method === 'PATCH') {
     const b = await body(req);
@@ -254,7 +248,6 @@ async function handleAdminLeads(req, env) {
   const leads = await dbAll(env,'SELECT * FROM leads ORDER BY id DESC LIMIT 100');
   return j({ ok:true, leads });
 }
-
 async function handleAdminLeadById(req, env, id) {
   if (req.method === 'PATCH') {
     const b = await body(req);
@@ -265,7 +258,6 @@ async function handleAdminLeadById(req, env, id) {
   }
   return j({ ok:false, error:'method not allowed' }, 405);
 }
-
 async function handleAdminCallbacks(req, env) {
   if (req.method === 'PATCH') {
     const b = await body(req);
@@ -277,14 +269,13 @@ async function handleAdminCallbacks(req, env) {
   }
   const url = new URL(req.url);
   if (url.searchParams.get('format') === 'csv') {
-    const rows = await dbAll(env, 'SELECT id,name,phone,preferred_time,service,message,source,lead_section,status,created_at FROM callbacks ORDER BY id DESC LIMIT 1000');
-    const headers = ['id','name','phone','preferred_time','service','message','source','lead_section','status','created_at'];
+    const rows = await dbAll(env, 'SELECT id,name,phone,preferred_time,service,message,lead_section,status,created_at FROM callbacks ORDER BY id DESC LIMIT 1000');
+    const headers = ['id','name','phone','preferred_time','service','message','lead_section','status','created_at'];
     return csvRes('callbacks.csv', [headers.join(','), ...rows.map(r => headers.map(hk => csvCell(r[hk])).join(','))].join('\n'));
   }
   const callbacks = await dbAll(env,'SELECT * FROM callbacks ORDER BY id DESC LIMIT 100');
   return j({ ok:true, callbacks });
 }
-
 async function handleAdminCallbackById(req, env, id) {
   if (req.method === 'PATCH') {
     const b = await body(req);
@@ -296,7 +287,6 @@ async function handleAdminCallbackById(req, env, id) {
   return j({ ok:false, error:'method not allowed' }, 405);
 }
 
-// ── Public JS (string array — never template literals) ───────────────────────
 function buildPublicJS() {
   return [
     'var chatState="init";',
