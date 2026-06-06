@@ -1,0 +1,77 @@
+{
+  "worker": "afo-gitzip-patcher-mcp",
+  "version": "0.1.0-core",
+  "action": "apply_repo_text_patch",
+  "target": {
+    "owner": "nothinginfinity",
+    "repo": "repo-copilot",
+    "branch": "main",
+    "path": "workers/contractor-v003-2-afo/contractor-v003-2-afo.js"
+  },
+  "source_sha": "0c9971138a05674d4c93d5d2d87fa29bb0977bca",
+  "result_sha": "221e27dd799a5f373573abe1edd490203660e1ed",
+  "commit_sha": "a84885a969e0a59d95d8b181b89d00ba9bd1f8a6",
+  "diff": {
+    "before_length": 64052,
+    "after_length": 64647,
+    "delta": 595,
+    "common_prefix": 2680,
+    "common_suffix": 56829,
+    "before_fingerprint": "c700c435",
+    "after_fingerprint": "4641fb61"
+  },
+  "applied": [
+    {
+      "label": "leads_destructure_phase3_fields",
+      "type": "replace_exact",
+      "changed": true
+    },
+    {
+      "label": "leads_insert_phase3_fields",
+      "type": "replace_exact",
+      "changed": true
+    },
+    {
+      "label": "callback_destructure_phase3_fields",
+      "type": "replace_exact",
+      "changed": true
+    },
+    {
+      "label": "callback_insert_phase3_fields",
+      "type": "replace_exact",
+      "changed": true
+    },
+    {
+      "label": "chat_callback_insert_lead_section",
+      "type": "replace_exact",
+      "changed": true
+    },
+    {
+      "label": "chat_lead_insert_lead_section",
+      "type": "replace_exact",
+      "changed": true
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "results": [
+      {
+        "label": "leads_insert_has_lead_section",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "callback_insert_has_lead_section",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "callback_widget_default",
+        "ok": true,
+        "detail": "contains"
+      }
+    ],
+    "failed": []
+  },
+  "timestamp": "2026-06-06T07:14:38.761Z"
+}
