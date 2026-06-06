@@ -1,0 +1,99 @@
+{
+  "worker": "contractor-v003-2-afo",
+  "version": "0.3.0",
+  "phase": "Phase 3 — Admin Core",
+  "deployed_at": "2026-06-06T17:05:00Z",
+  "deployed_by": "Claude (claude.ai) via wrangler deploy from bash_tool",
+  "deploy_method": "wrangler 4.98.0 — direct deploy from /home/claude filesystem, bypassing MCP tool payload size limit",
+  "status": "deployed_and_verified",
+  "url": "https://contractor-v003-2-afo.jaredtechfit.workers.dev",
+  "admin": "https://contractor-v003-2-afo.jaredtechfit.workers.dev/admin",
+  "admin_password": "demo",
+  "cloudflare_version_id": "5a75341e-6082-4b65-9718-6ab5afa35c18",
+  "source_sha": "a62730b1531fa385d8b6b8cda71942494552cfb9",
+  "source_commit": "a23a42d8dc33ac9b191d629c19093bb14eb29899",
+  "source_path": "workers/contractor-v003-2-afo/contractor-v003-2-afo.js",
+  "d1": {
+    "name": "contractor_v003_2_afo_db",
+    "uuid": "c0743318-ee23-4d08-9bd7-0d2b3cc36018",
+    "binding": "V003_2_DB",
+    "tables": ["leads", "callbacks", "articles", "chats"],
+    "leads": 2,
+    "callbacks": 2,
+    "articles": 12
+  },
+  "vectorize": {
+    "name": "contractor-v003-2-afo-vector",
+    "dimensions": 768,
+    "metric": "cosine",
+    "model": "@cf/baai/bge-base-en-v1.5",
+    "binding": "V003_2_VECTORIZE",
+    "vectors_embedded": 12
+  },
+  "r2": {
+    "bucket": "afo-site-content",
+    "prefix": "contractor-v003-2/",
+    "binding": "V003_2_R2"
+  },
+  "ai_binding": "AI",
+  "phase3_changes": {
+    "schema": "lead_section, status, budget_range, timeline already existed in D1 — no migration needed",
+    "routes_added": [
+      "PATCH /api/admin/leads/{id} — update lead status (new/contacted/quoted/won/lost)",
+      "PATCH /api/admin/callbacks/{id} — update callback status (pending/called/no_answer/scheduled)",
+      "GET /api/admin/leads?format=csv — download leads as CSV",
+      "GET /api/admin/callbacks?format=csv — download callbacks as CSV"
+    ],
+    "routes_fixed": [
+      "GET /api/admin/leads — now passes req so PATCH and CSV branches are reachable",
+      "GET /api/admin/callbacks — same fix"
+    ],
+    "frontend_public": [
+      "nav_cta section label on Free Estimate link",
+      "hero_chat section label on hero CTA (already existed)",
+      "services_kitchen/bathroom/adu/newbuild/exterior on service panel CTAs (already existed)",
+      "portfolio_p1..p6 on project cards (already existed)",
+      "lead_form section label on lead form submit",
+      "Budget Range dropdown added to lead form (lfBudget)",
+      "Timeline dropdown added to lead form (lfTimeline)",
+      "Standalone callback widget added below lead form (cb-widget)",
+      "submitCallback() function wired to POST /callback with lead_section=callback_widget"
+    ],
+    "frontend_admin": [
+      "Status color badges for leads (blue/amber/purple/green/red)",
+      "Status color badges for callbacks (amber/green/red/purple)",
+      "Status dropdown per lead row — onChange calls PATCH /api/admin/leads/{id}",
+      "Status dropdown per callback row — onChange calls PATCH /api/admin/callbacks/{id}",
+      "Export CSV button on leads table",
+      "Export CSV button on callbacks table",
+      "Budget and Timeline columns in leads table",
+      "lead_section column visible in both tables"
+    ]
+  },
+  "routes_verified": [
+    "GET / — public site loads, v0.3.0 in footer",
+    "GET /admin — admin panel loads, password demo",
+    "GET /api/status — ok:true, version:0.3.0, all bindings green",
+    "POST /leads — saves lead_section=lead_form, budget_range, timeline to D1",
+    "POST /callback — saves lead_section=callback_widget, preferred_time to D1",
+    "PATCH /api/admin/leads/2 — status updated to contacted, ok:true",
+    "PATCH /api/admin/callbacks/2 — status updated to scheduled, ok:true",
+    "GET /api/admin/leads?format=csv — CSV with 12 columns including lead_section, budget_range, timeline",
+    "GET /api/admin/callbacks?format=csv — CSV with 9 columns including lead_section, status"
+  ],
+  "bugs_fixed_during_phase3": [
+    "Select string escaping: >'> was being parsed as end of JS string — fixed to >\" (proper close of html+= string)",
+    "Callbacks CSV was querying non-existent source column — removed from SELECT",
+    "Callbacks INSERT was using wrong column order (source before lead_section) — fixed to match actual schema"
+  ],
+  "deploy_tooling_note": "MCP deploy tools (cloudflare-multipart-mcp, cf-multipart-vnext-r2) cannot handle files >~10KB as JSON string parameters. Going forward, use: wrangler deploy from bash_tool with CLOUDFLARE_API_TOKEN env var. Next session should build a GitHub Action (.github/workflows/deploy-workers.yml) so git push triggers auto-deploy.",
+  "what_is_missing": {
+    "github_action_deploy": "No GitHub Action yet — each deploy still requires wrangler from bash_tool with API token",
+    "media_library": "No file upload UI in admin, no media grid, no R2 browser",
+    "article_manager": "No publish/draft toggle, no article editor, no public article HTML pages",
+    "site_customizer": "Phone, company name, colors all hardcoded — not in D1 site_config table",
+    "email_notifications": "notified flag not implemented, no Resend integration",
+    "analytics_dashboard": "No lead source breakdown chart, no weekly lead counts"
+  },
+  "next_phase": "Phase 4 — Admin Advanced: Article Manager, Email Notification Routing, Site Customizer. Also build GitHub Action for auto-deploy."
+}
