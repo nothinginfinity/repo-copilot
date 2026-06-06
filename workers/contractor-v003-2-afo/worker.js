@@ -1,1 +1,8 @@
-const V='0.3.4-seed-rag',EM='@cf/baai/bge-base-en-v1.5',CM='@cf/meta/llama-3.1-8b-instruct';const H={'content-type':'application/json;charset=utf-8','access-control-allow-origin':'*','access-control-allow-methods':'GET,POST,OPTIONS','access-control-allow-headers':'content-type,authorization'};const J=(x,s=200)=>new Response(JSON.stringify(x,null,2),{status:s,headers:H});const P=t=>new Response('<!doctype html><title>'+t+'</title><h1>'+t+'</h1>',{headers:{'content-type':'text/html;charset=utf-8'}}
+const MODEL='@cf/baai/bge-base-en-v1.5';
+const CHAT_MODEL='@cf/meta/llama-3.1-8b-instruct';
+const WORKER='contractor-v003-2-afo';
+const R2_PREFIX='contractor-v003-2/';
+function j(x,s){return new Response(JSON.stringify(x,null,2),{status:s||200,headers:{'content-type':'application/json;charset=utf-8','access-control-allow-origin':'*'}})}
+function h(x,s){return new Response(x,{status:s||200,headers:{'content-type':'text/html;charset=utf-8'}})}
+async function body(req){try{return await req.json()}catch(e){return {}}}
+function
