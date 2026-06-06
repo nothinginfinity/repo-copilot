@@ -1,0 +1,14 @@
+{
+  "task": "contractor-v003-2-afo",
+  "phase": "seed-vectorize-rag",
+  "status": "seeded_and_verified",
+  "d1_database_uuid": "c0743318-ee23-4d08-9bd7-0d2b3cc36018",
+  "vectorize_index": "contractor-v003-2-afo-vector",
+  "embedding_model": "@cf/baai/bge-base-en-v1.5",
+  "expected_article_count": 12,
+  "embedded_count": 12,
+  "chat_test_question": "How much does a kitchen remodel cost in Los Angeles?",
+  "chat_expected_reference": "$30,000-$80,000",
+  "chat_result_summary": "POST /api/seed was triggered and returned { ok: true, embedded: 12 }. Jared manually verified /chat returned the correct kitchen remodel cost response referencing the expected $30,000-$80,000 range. Worker was deployed as contractor-v003-2-afo with V003_2_DB, V003_2_VECTORIZE, V003_2_R2, and AI bindings via cf-multipart-vnext-r2 deployment id 0a9c01b2ae244c75bb3fd33088d52826.",
+  "timestamp": "2026-06-05T17:35:00-07:00"
+}
