@@ -1,0 +1,52 @@
+{
+  "worker": "afo-gitzip-patcher-mcp",
+  "version": "0.1.0-core",
+  "action": "apply_repo_text_patch",
+  "target": {
+    "owner": "nothinginfinity",
+    "repo": "repo-copilot",
+    "branch": "main",
+    "path": "workers/contractor-v003-2-afo/contractor-v003-2-afo.js"
+  },
+  "source_sha": "221e27dd799a5f373573abe1edd490203660e1ed",
+  "result_sha": "cc498b6af986aaf54029277e16633cb1c33d68fd",
+  "commit_sha": "b3b556a4b25a8a625b510621c26b4a6175312848",
+  "diff": {
+    "before_length": 64647,
+    "after_length": 66784,
+    "delta": 2137,
+    "common_prefix": 11665,
+    "common_suffix": 52982,
+    "before_fingerprint": "4641fb61",
+    "after_fingerprint": "89a07375"
+  },
+  "applied": [
+    {
+      "label": "add_phase3_admin_helpers_after_callbacks",
+      "type": "insert_after",
+      "changed": true
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "results": [
+      {
+        "label": "has_patch_lead_helper",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "has_leads_csv_helper",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "has_callbacks_csv_helper",
+        "ok": true,
+        "detail": "contains"
+      }
+    ],
+    "failed": []
+  },
+  "timestamp": "2026-06-06T07:16:54.076Z"
+}
