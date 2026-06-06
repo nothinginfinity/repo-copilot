@@ -1,0 +1,11 @@
+name = "afo-control-center-dashboard"
+main = "worker.js"
+compatibility_date = "2026-06-06"
+
+# Production route target:
+# routes = [
+#   { pattern = "control.agentfeedoptimization.com", custom_domain = true }
+# ]
+
+[vars]
+AFO_BROWSER_URL = "https://browser.agentfeedoptimization.com"
