@@ -49,26 +49,29 @@ async function handleStatus(env) {
 
 async function handleLeads(req, env) {
   const b = await body(req);
-  const { name, email, phone, service, project_type, message, lead_section, source='web' } = b;
+  const { name, email, phone, service, project_type, message, lead_section, section, budget_range, budget, timeline, source='web' } = b;
   if (!name) return j({ ok:false, error:'name required' }, 400);
   const id = uid();
   const svc = service || project_type || '';
+  const srcSection = lead_section || section || 'lead_form';
+  const budgetValue = budget_range || budget || '';
   await dbRun(env,
-    'INSERT INTO leads (name,email,phone,service,message,source,created_at) VALUES (?,?,?,?,?,?,?)',
-    [name, email||'', phone||'', svc, message||'', source, now()]
+    'INSERT INTO leads (name,email,phone,service,message,source,created_at,lead_section,status,budget_range,timeline) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+    [name, email||'', phone||'', svc, message||'', source, now(), srcSection, 'new', budgetValue, timeline||'']
   );
   return j({ ok:true, lead_id:id, message:'Thank you! CCS will follow up within one business day. You can also call '+PHONE+' directly.' });
 }
 
 async function handleCallback(req, env) {
   const b = await body(req);
-  const { name, phone, preferred_time, preferred_date, project_type, notes, source='web' } = b;
+  const { name, phone, preferred_time, preferred_date, project_type, notes, lead_section, section, source='web' } = b;
   if (!name || !phone) return j({ ok:false, error:'name and phone required' }, 400);
   const id = uid();
   const notesStr = [preferred_time, preferred_date, notes].filter(Boolean).join(' | ');
+  const srcSection = lead_section || section || 'callback_widget';
   await dbRun(env,
-    'INSERT INTO callbacks (name,phone,service,message,source,created_at) VALUES (?,?,?,?,?,?)',
-    [name, phone, project_type||'', notesStr, source, now()]
+    'INSERT INTO callbacks (name,phone,preferred_time,service,message,source,created_at,lead_section,status) VALUES (?,?,?,?,?,?,?,?,?)',
+    [name, phone, preferred_time||'', project_type||'', notesStr, source, now(), srcSection, 'pending']
   ).catch(async () => {
     await dbRun(env, 'INSERT INTO callbacks (name,phone,created_at) VALUES (?,?,?)', [name, phone, now()]);
   });
@@ -137,8 +140,8 @@ async function handleChat(req, env) {
   }
   if (state==='callback_time') {
     try {
-      await dbRun(env, 'INSERT INTO callbacks (name,phone,service,message,source,created_at) VALUES (?,?,?,?,?,?)',
-        ['Chat lead','','','Preferred: '+message,'chat_estimate',now()]);
+      await dbRun(env, 'INSERT INTO callbacks (name,phone,preferred_time,service,message,source,created_at,lead_section,status) VALUES (?,?,?,?,?,?,?,?,?)',
+        ['Chat lead','',message,'','Preferred: '+message,'chat_estimate',now(),section||'chat_estimate','pending']);
     } catch(e){}
     return j({ ok:true, state:'done',
       answer:'Perfect — we will call you '+message.toLowerCase()+'. You can also reach us anytime at '+PHONE+'.',
@@ -147,8 +150,8 @@ async function handleChat(req, env) {
   }
   if (state==='estimate_upload') {
     try {
-      await dbRun(env, 'INSERT INTO leads (name,email,phone,service,message,source,created_at) VALUES (?,?,?,?,?,?,?)',
-        ['Chat lead','','','via chat',message,'chat_estimate',now()]);
+      await dbRun(env, 'INSERT INTO leads (name,email,phone,service,message,source,created_at,lead_section,status,budget_range,timeline) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+        ['Chat lead','','','via chat',message,'chat_estimate',now(),section||'chat_estimate','new','','']);
     } catch(e){}
     return j({ ok:true, state:'done',
       answer:'Thank you! We have your info and will follow up within one business day. Call us anytime at '+PHONE+'.',
