@@ -1,0 +1,76 @@
+{
+  "worker": "contractor-v003-2-afo",
+  "version": "0.2.0",
+  "deployed_at": "2026-06-06T01:23:10Z",
+  "deployed_by": "Claude (claude.ai)",
+  "status": "hardened_and_verified",
+  "url": "https://contractor-v003-2-afo.jaredtechfit.workers.dev",
+  "admin": "https://contractor-v003-2-afo.jaredtechfit.workers.dev/admin",
+  "admin_password": "demo",
+  "d1": {
+    "name": "contractor_v003_2_afo_db",
+    "uuid": "c0743318-ee23-4d08-9bd7-0d2b3cc36018",
+    "binding": "V003_2_DB",
+    "tables": ["leads", "callbacks", "articles", "chats"],
+    "leads": 1,
+    "callbacks": 1,
+    "articles": 12
+  },
+  "vectorize": {
+    "name": "contractor-v003-2-afo-vector",
+    "dimensions": 768,
+    "metric": "cosine",
+    "model": "@cf/baai/bge-base-en-v1.5",
+    "binding": "V003_2_VECTORIZE",
+    "vectors_embedded": 12
+  },
+  "r2": {
+    "bucket": "afo-site-content",
+    "prefix": "contractor-v003-2/",
+    "binding": "V003_2_R2"
+  },
+  "ai_binding": "AI",
+  "account_id": "280908cb4e54b81745740accf5f0500f",
+  "routes_verified": [
+    "GET /",
+    "GET /admin",
+    "POST /chat",
+    "POST /leads",
+    "POST /callback",
+    "POST /upload",
+    "GET /articles",
+    "GET /articles/{slug}",
+    "GET /api/status",
+    "POST /api/seed",
+    "GET /api/admin/leads",
+    "GET /api/admin/callbacks"
+  ],
+  "what_works": {
+    "public_site": "Full site — nav, hero, services tabs, portfolio, process, reviews, lead form",
+    "chat_rag": "Working — Vectorize + Llama-3.1-8b, 5 matches returned, correct answers from indexed content",
+    "estimate_flow": "Working — init > project type > location > call/callback/upload state machine",
+    "callback_flow": "Working in chat — name > phone > preferred time > saves to D1",
+    "leads": "POST /leads saves to D1, returns lead_id",
+    "callbacks": "POST /callback saves to D1, returns callback_id",
+    "upload": "POST /upload sends to R2 under contractor-v003-2/uploads/",
+    "admin_status": "Dashboard with D1/Vectorize/R2/AI status cards, leads/callbacks/articles counts",
+    "admin_leads": "Table view of all leads from D1 via /api/admin/leads",
+    "admin_callbacks": "Table view of callbacks from D1 via /api/admin/callbacks",
+    "admin_articles": "Table view of 12 seeded articles",
+    "admin_seed": "Re-embed button triggers POST /api/seed, re-embeds all articles",
+    "admin_rag_tester": "Search box queries /chat in qa state, shows vector matches with scores"
+  },
+  "what_is_missing": {
+    "lead_source_tracking": "lead_section column not in D1 schema yet — needs ALTER TABLE or schema migration",
+    "admin_leads_crm": "No status workflow (New/Contacted/Quoted/Won/Lost), no notes field, no CSV export",
+    "admin_callbacks_crm": "No status workflow (Pending/Called/No Answer/Scheduled)",
+    "media_library": "No file upload UI in admin, no media grid, no R2 browser",
+    "article_manager": "No publish/draft toggle, no article editor, no hero image picker, no public article pages with HTML",
+    "site_customizer": "Phone, company name, colors all hardcoded — not in D1 site_config table",
+    "email_notifications": "notified flag not implemented, no Resend integration",
+    "lead_form_budget_timeline": "Lead form missing budget and timeline dropdowns vs roadmap spec",
+    "callback_widget": "No standalone callback widget on public page — only in chat flow",
+    "analytics_dashboard": "No lead source breakdown, no weekly lead counts"
+  },
+  "next_phase": "Phase 3 — Admin Core hardening: lead source tracking, CRM status workflow, CSV export, media library, standalone callback widget on public page"
+}
