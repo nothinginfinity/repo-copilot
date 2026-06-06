@@ -1,0 +1,23 @@
+{
+  "worker": "contractor-v003-2-afo",
+  "phase": "phase3-gitzip-helper",
+  "created_at": "2026-06-05T00:00:00-07:00",
+  "created_by": "ChatGPT",
+  "status": "helper_committed_no_deploy",
+  "tool_used": "AFO-gitZip.push_files_to_github",
+  "files_added": [
+    "workers/contractor-v003-2-afo/phase3-patch-helper.md",
+    "receipts/contractor-v003-2-afo-phase3-gitzip-helper.json"
+  ],
+  "what_this_does": "Documents exact Phase 3 patch targets and code snippets for a full-source patching environment.",
+  "what_this_does_not_do": "Does not patch contractor-v003-2-afo.js and does not deploy Cloudflare Worker.",
+  "reason": "GitZip can push whole files but cannot read or surgically patch the existing 64 KB source. The source is restored in GitHub, but the available read channel truncates it in this chat.",
+  "safe_live_progress_already_done": [
+    "D1 schema inspected",
+    "leads table confirmed to contain lead_section/status/budget_range/timeline",
+    "callbacks table confirmed to contain lead_section/status",
+    "existing demo lead backfilled to lead_section=lead_form and status=new",
+    "existing demo callback backfilled to lead_section=callback_widget and status=pending"
+  ],
+  "next_required_capability": "A patch-capable environment or tool that can load and rewrite workers/contractor-v003-2-afo/contractor-v003-2-afo.js completely without truncated source output."
+}
