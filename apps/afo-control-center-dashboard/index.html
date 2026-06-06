@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AFO Control Center</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #070913;
+      --panel: rgba(255,255,255,.075);
+      --panel-strong: rgba(255,255,255,.11);
+      --line: rgba(255,255,255,.14);
+      --text: #f7f9ff;
+      --muted: #aab4cc;
+      --soft: #d9e2ff;
+      --blue: #72a7ff;
+      --purple: #b993ff;
+      --green: #64f0aa;
+      --yellow: #ffd166;
+      --red: #ff6b7a;
+      --shadow: 0 24px 80px rgba(0,0,0,.35);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 14% 0%, rgba(114,167,255,.32), transparent 36rem),
+        radial-gradient(circle at 86% 8%, rgba(185,147,255,.25), transparent 34rem),
+        radial-gradient(circle at 50% 100%, rgba(100,240,170,.12), transparent 28rem),
+        linear-gradient(180deg, #070913 0%, #0a0f20 48%, #070913 100%);
+      color: var(--text);
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      border-right: 1px solid var(--line);
+      background: rgba(5, 7, 16, .58);
+      backdrop-filter: blur(18px);
+      padding: 22px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+    main { padding: 30px; max-width: 1580px; width: 100%; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      box-shadow: 0 12px 40px rgba(114,167,255,.28);
+    }
+    .brand h1 { margin: 0; font-size: 16px; letter-spacing: -.02em; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .nav { display: grid; gap: 8px; }
+    .nav button {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      color: var(--muted);
+      background: transparent;
+      border-radius: 15px;
+      padding: 12px 13px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .nav button:hover { background: rgba(255,255,255,.06); color: var(--text); }
+    .nav button.active {
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(114,167,255,.2), rgba(185,147,255,.16));
+      border-color: rgba(255,255,255,.2);
+    }
+    .side-card {
+      margin-top: 20px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,.055);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 22px;
+    }
+    .eyebrow {
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .hero h2 {
+      margin: 7px 0 8px;
+      font-size: clamp(34px, 5vw, 72px);
+      line-height: .93;
+      letter-spacing: -.06em;
+    }
+    .hero p { margin: 0; color: var(--muted); max-width: 850px; line-height: 1.55; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    button, input, select {
+      font: inherit;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255,255,255,.075);
+      border-radius: 14px;
+      padding: 11px 13px;
+    }
+    button { cursor: pointer; font-weight: 800; }
+    button.primary { background: linear-gradient(135deg, rgba(114,167,255,.32), rgba(185,147,255,.28)); }
+    button:hover { background-color: rgba(255,255,255,.13); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 13px;
+      margin: 20px 0;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 17px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    .metric-label { color: var(--muted); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; font-weight: 900; }
+    .metric-value { margin-top: 8px; font-size: 30px; font-weight: 950; letter-spacing: -.045em; }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 180px 180px auto;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .panel-title h3 { margin: 0; font-size: 18px; letter-spacing: -.025em; }
+    .panel-title .hint { color: var(--muted); font-size: 13px; }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 20px; background: rgba(255,255,255,.045); }
+    table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+    th, td { text-align: left; padding: 13px 14px; border-bottom: 1px solid rgba(255,255,255,.08); vertical-align: top; font-size: 13px; }
+    th { color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-size: 11px; background: rgba(255,255,255,.055); position: sticky; top: 0; }
+    tr:hover td { background: rgba(255,255,255,.035); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: rgba(255,255,255,.06); border-radius: 999px; padding: 5px 8px; margin: 2px; font-size: 12px; color: var(--soft); white-space: nowrap; }
+    .good { color: var(--green); }
+    .warn { color: var(--yellow); }
+    .bad { color: var(--red); }
+    .muted { color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .row-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .row-actions button { padding: 7px 9px; font-size: 12px; border-radius: 11px; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-word; color: #dfe7ff; font-size: 12px; }
+    details summary { cursor: pointer; color: var(--blue); font-weight: 800; }
+    .empty { padding: 28px; color: var(--muted); }
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      max-width: 420px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(10, 15, 32, .92);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      color: var(--soft);
+      display: none;
+      z-index: 10;
+    }
+    .toast.show { display: block; }
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { position: static; height: auto; }
+      .nav { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .hero { grid-template-columns: 1fr; }
+      .actions { justify-content: flex-start; }
+      .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .toolbar { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      main, aside { padding: 16px; }
+      .metrics, .nav { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>AFO Control Center</h1>
+          <p>Runtime visibility layer</p>
+        </div>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="side-card">
+        <strong>GitHub-first MVP.</strong><br />
+        This dashboard reads existing AFO inventory APIs and gives humans a clean operational surface before the unified shell.
+      </div>
+      <div class="side-card mono" id="apiBaseNote">API base: same origin</div>
+    </aside>
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Agent Feed Optimization</div>
+          <h2>Control Center</h2>
+          <p>Inspect workers, MCP apps, tools, D1 databases, endpoint maps, queue surfaces, audits, and repair candidates from a single human-readable UI.</p>
+        </div>
+        <div class="actions">
+          <button id="refresh" class="primary">Refresh</button>
+          <button id="copyState">Copy Snapshot</button>
+          <button id="openJson">Open JSON</button>
+        </div>
+      </section>
+
+      <section class="metrics" id="metrics"></section>
+
+      <section class="card">
+        <div class="panel-title">
+          <div>
+            <h3 id="panelTitle">Workers</h3>
+            <div class="hint" id="panelHint">Cloudflare worker inventory</div>
+          </div>
+          <div class="hint" id="lastLoaded">Not loaded</div>
+        </div>
+        <div class="toolbar">
+          <input id="search" placeholder="Search name, cluster, purpose, URL, tool..." />
+          <select id="cluster"><option value="">All clusters</option></select>
+          <select id="health"><option value="">All health</option></select>
+          <button id="clearFilters">Clear</button>
+        </div>
+        <div id="content"></div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+<script>
+const API_BASE = new URLSearchParams(location.search).get('api') || '';
+const endpoints = {
+  status: '/api/status',
+  workers: '/api/workers?limit=500&include_urls=true&include_tools=true',
+  mcp: '/api/mcp-apps?limit=500',
+  tools: '/api/tools',
+  d1: '/api/d1',
+  endpoints: '/api/endpoints?limit=500',
+  queue: '/api/queue',
+  audits: '/api/audits',
+  repairs: '/api/repairs',
+  export: '/api/export'
+};
+const tabs = [
+  ['overview', 'Overview', 'High-level status and raw capability summary'],
+  ['workers', 'Workers', 'Cloudflare worker inventory'],
+  ['mcp', 'MCP Apps', 'MCP-like apps and agent-callable services'],
+  ['tools', 'Tools', 'Known and inferred tool catalog'],
+  ['d1', 'D1 Databases', 'Database inventory'],
+  ['endpoints', 'Endpoint Map', 'Primary, MCP, llms.txt, and action URLs'],
+  ['queue', 'Queue', 'Runtime queue status'],
+  ['audits', 'Audits', 'Audit events and results'],
+  ['repairs', 'Repairs', 'Repair candidates and jobs'],
+  ['raw', 'Raw JSON', 'Full fetched state for debugging']
+];
+const state = { tab: 'overview', q: '', cluster: '', health: '', data: {}, loadedAt: null };
+function esc(v){return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function list(v){return Array.isArray(v)?v:[];}
+function api(path){return API_BASE + path;}
+function toast(msg){const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2800);}
+async function fetchJson(path){const r=await fetch(api(path),{headers:{accept:'application/json'}}); if(!r.ok) throw new Error(r.status+' '+r.statusText); return r.json();}
+async function load(){
+  document.getElementById('content').innerHTML='<div class="empty">Loading AFO control surfaces...</div>';
+  document.getElementById('apiBaseNote').textContent='API base: '+(API_BASE || 'same origin');
+  await Promise.all(Object.entries(endpoints).map(async ([k,p])=>{ try{state.data[k]=await fetchJson(p);}catch(e){state.data[k]={error:String(e), endpoint:p};} }));
+  state.loadedAt = new Date();
+  render();
+}
+function metric(label,value,cls=''){return `<div class="card"><div class="metric-label">${esc(label)}</div><div class="metric-value ${cls}">${esc(value)}</div></div>`;}
+function renderMetrics(){
+  const s=state.data.status||{};
+  const workers=state.data.workers||{};
+  const mcp=state.data.mcp||{};
+  const d1=state.data.d1||{};
+  const tools=state.data.tools||{};
+  const html=[
+    metric('Status', s.status || workers.status || 'unknown', (s.status==='ok'?'good':'warn')),
+    metric('Workers', s.worker_count_reported ?? workers.count ?? list(workers.workers).length ?? '—'),
+    metric('MCP Apps', s.mcp_count ?? mcp.count ?? list(mcp.apps).length ?? '—'),
+    metric('D1 DBs', s.d1_count ?? d1.count ?? list(d1.databases||d1.items).length ?? '—'),
+    metric('Tools', s.tool_catalog_apps ?? tools.count ?? list(tools.tools||tools.items).length ?? '—')
+  ];
+  document.getElementById('metrics').innerHTML=html.join('');
+}
+function renderNav(){
+  document.getElementById('nav').innerHTML=tabs.map(([id,label])=>`<button class="${state.tab===id?'active':''}" data-tab="${id}">${esc(label)}</button>`).join('');
+  document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{state.tab=b.dataset.tab; render();});
+}
+function collectItems(){return [...list(state.data.workers?.workers), ...list(state.data.mcp?.apps), ...list(state.data.endpoints?.endpoints), ...list(state.data.endpoints?.apps)];}
+function updateFilters(){
+  const items=collectItems();
+  const clusters=[...new Set(items.map(x=>x.cluster).filter(Boolean))].sort();
+  const health=[...new Set(items.map(x=>x.health||x.status).filter(Boolean))].sort();
+  const c=document.getElementById('cluster'); const h=document.getElementById('health'); const cv=c.value; const hv=h.value;
+  c.innerHTML='<option value="">All clusters</option>'+clusters.map(x=>`<option>${esc(x)}</option>`).join('');
+  h.innerHTML='<option value="">All health</option>'+health.map(x=>`<option>${esc(x)}</option>`).join('');
+  c.value=cv; h.value=hv;
+}
+function matches(x){
+  const hay=JSON.stringify(x).toLowerCase();
+  return (!state.q || hay.includes(state.q.toLowerCase())) && (!state.cluster || String(x.cluster||'')===state.cluster) && (!state.health || String(x.health||x.status||'')===state.health);
+}
+function firstUrl(x){return x.mcp_url || x.primary_url || x.url || (Array.isArray(x.urls)&&x.urls[0]) || '';}
+function pills(xs){return list(xs).slice(0,12).map(x=>`<span class="badge">${esc(x)}</span>`).join('') || '<span class="muted">None listed</span>';}
+function rowActions(x){const u=firstUrl(x);return `<div class="row-actions">${u?`<button onclick="window.open('${esc(u)}','_blank')">Open</button>`:''}<button onclick='inspectItem(${JSON.stringify(JSON.stringify(x))})'>Inspect</button><button onclick='copyText(${JSON.stringify(JSON.stringify(x,null,2))})'>Copy</button><button onclick='repairItem(${JSON.stringify(x.id||x.name||x.worker_id||'item')})'>Repair</button></div>`;}
+window.inspectItem=(raw)=>{state.tab='raw'; state.data.__inspect=JSON.parse(raw); render(); toast('Inspecting selected item');};
+window.copyText=async(txt)=>{await navigator.clipboard.writeText(txt); toast('Copied');};
+window.repairItem=(id)=>toast('Repair queued placeholder: '+id);
+function table(headers, rows){if(!rows.length)return '<div class="empty">No matching records.</div>'; return `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+function raw(v){return `<div class="table-wrap"><pre style="padding:18px">${esc(JSON.stringify(v,null,2))}</pre></div>`;}
+function renderOverview(){return raw({ status: state.data.status, notes: 'Use the tabs to inspect workers, MCP apps, tools, D1, endpoint maps, queues, audits, and repairs.' });}
+function renderWorkers(){const items=list(state.data.workers?.workers).filter(matches);return table(['Worker','Type','Cluster','Purpose','Health','URL','Tools','Modified','Actions'],items.map(w=>[`<strong>${esc(w.id||w.name)}</strong>`,`<span class="badge">${esc(w.type||'worker')}</span>`,esc(w.cluster||'other'),`<span class="muted">${esc(w.purpose||'')}</span>`,`<span class="${String(w.health||'').includes('listed')?'good':'warn'}">${esc(w.health||'unknown')}</span>`,firstUrl(w)?`<a href="${esc(firstUrl(w))}" target="_blank">${esc(firstUrl(w))}</a>`:'—',pills(w.known_tools),`<span class="muted">${esc(w.modified_on||'')}</span>`,rowActions(w)]));}
+function renderMcp(){const items=list(state.data.mcp?.apps).filter(matches);return table(['MCP App','Namespace','Cluster','Purpose','Health','URL','Tools','Actions'],items.map(a=>[`<strong>${esc(a.name)}</strong>`,`<span class="mono muted">${esc(a.namespace_guess||'')}</span>`,esc(a.cluster||'other'),`<span class="muted">${esc(a.purpose||'')}</span>`,`<span class="good">${esc(a.health||'unknown')}</span>`,firstUrl(a)?`<a href="${esc(firstUrl(a))}" target="_blank">${esc(firstUrl(a))}</a>`:'—',pills(a.known_tools),rowActions(a)]));}
+function renderGeneric(key){const v=state.data[key]||{}; const items=list(v.items||v.results||v.databases||v.tools||v.endpoints||v.reviews||v.repairs||v.jobs).filter(matches); if(!items.length)return raw(v); return table(['Name','Status','Cluster','Details','Actions'],items.map(x=>[`<strong>${esc(x.name||x.id||x.title||x.worker_id||'item')}</strong>`,esc(x.status||x.health||''),esc(x.cluster||''),`<details><summary>view</summary><pre>${esc(JSON.stringify(x,null,2))}</pre></details>`,rowActions(x)]));}
+function renderRaw(){return raw(state.data.__inspect || state.data);}
+function renderContent(){
+  const view={overview:renderOverview,workers:renderWorkers,mcp:renderMcp,tools:()=>renderGeneric('tools'),d1:()=>renderGeneric('d1'),endpoints:()=>renderGeneric('endpoints'),queue:()=>renderGeneric('queue'),audits:()=>renderGeneric('audits'),repairs:()=>renderGeneric('repairs'),raw:renderRaw}[state.tab] || renderOverview;
+  const meta=tabs.find(t=>t[0]===state.tab)||tabs[0];
+  document.getElementById('panelTitle').textContent=meta[1];
+  document.getElementById('panelHint').textContent=meta[2];
+  document.getElementById('content').innerHTML=view();
+  document.getElementById('lastLoaded').textContent=state.loadedAt ? 'Loaded '+state.loadedAt.toLocaleTimeString() : 'Not loaded';
+}
+function render(){renderMetrics(); renderNav(); updateFilters(); renderContent();}
+document.getElementById('refresh').onclick=load;
+document.getElementById('copyState').onclick=()=>copyText(JSON.stringify(state.data,null,2));
+document.getElementById('openJson').onclick=()=>window.open(api('/api/export'),'_blank');
+document.getElementById('search').oninput=e=>{state.q=e.target.value; renderContent();};
+document.getElementById('cluster').onchange=e=>{state.cluster=e.target.value; renderContent();};
+document.getElementById('health').onchange=e=>{state.health=e.target.value; renderContent();};
+document.getElementById('clearFilters').onclick=()=>{state.q='';state.cluster='';state.health='';document.getElementById('search').value='';document.getElementById('cluster').value='';document.getElementById('health').value='';renderContent();};
+load();
+</script>
+</body>
+</html>
