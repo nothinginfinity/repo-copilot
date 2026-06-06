@@ -1,8 +1,8 @@
-// contractor-v003-2-afo — CCS Services Group — v0.2.0
-// Full rebuild: real leads, callbacks, chat RAG, articles, admin, public site
+// contractor-v003-2-afo — CCS Services Group — v0.3.0
+// Phase 3: lead_section tracking, status workflows, CSV export, budget/timeline, callback widget
 // JS assembled via string arrays — never template literals (see handoff doc)
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const WORKER = 'contractor-v003-2-afo';
 const COMPANY = 'CCS Services Group';
 const PHONE = '(818) 624-7212';
@@ -36,6 +36,18 @@ async function vecSearch(env, query, topK=5) {
   return r.matches || [];
 }
 
+// ── CSV helpers ──────────────────────────────────────────────────────────────
+function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+function csvRes(filename, text) {
+  return new Response(text, { headers: {
+    'Content-Type': 'text/csv;charset=utf-8',
+    'Content-Disposition': 'attachment; filename="' + filename + '"'
+  }});
+}
+function validLeadStatus(s) { return ['new','contacted','quoted','won','lost'].includes(String(s||'').toLowerCase()); }
+function validCallbackStatus(s) { return ['pending','called','no_answer','scheduled'].includes(String(s||'').toLowerCase()); }
+
+// ── Route handlers ───────────────────────────────────────────────────────────
 async function handleStatus(env) {
   let db=false, vec=false, r2=false, leads=0, articles=0, callbacks=0;
   try { const r = await dbFirst(env,'SELECT COUNT(*) as c FROM leads'); leads=r?.c||0; db=true; } catch{}
@@ -222,60 +234,69 @@ async function handleUpload(req, env) {
     return j({ ok:true, r2_key:key });
   } catch(e) { return j({ ok:false, error:e.message }, 500); }
 }
-async function handleAdminLeads(envOrReq, maybeEnv) {
-  const req = maybeEnv ? envOrReq : null;
-  const env = maybeEnv || envOrReq;
-  if (req && req.method === 'PATCH') {
+
+// ── Admin API handlers ────────────────────────────────────────────────────────
+async function handleAdminLeads(req, env) {
+  if (req.method === 'PATCH') {
     const b = await body(req);
-    return handlePatchLead(req, env, b.id);
+    const status = String(b.status||'').toLowerCase();
+    if (!validLeadStatus(status)) return j({ ok:false, error:'invalid status. Valid: new,contacted,quoted,won,lost' }, 400);
+    if (!b.id) return j({ ok:false, error:'id required' }, 400);
+    await dbRun(env, 'UPDATE leads SET status=? WHERE id=?', [status, b.id]);
+    return j({ ok:true, id:b.id, status });
   }
-  if (req && new URL(req.url).searchParams.get('format') === 'csv') return handleLeadsCSV(env);
+  const url = new URL(req.url);
+  if (url.searchParams.get('format') === 'csv') {
+    const rows = await dbAll(env, 'SELECT id,name,email,phone,service,message,source,lead_section,status,budget_range,timeline,created_at FROM leads ORDER BY id DESC LIMIT 1000');
+    const headers = ['id','name','email','phone','service','message','source','lead_section','status','budget_range','timeline','created_at'];
+    return csvRes('leads.csv', [headers.join(','), ...rows.map(r => headers.map(hk => csvCell(r[hk])).join(','))].join('\n'));
+  }
   const leads = await dbAll(env,'SELECT * FROM leads ORDER BY id DESC LIMIT 100');
   return j({ ok:true, leads });
 }
-async function handleAdminCallbacks(envOrReq, maybeEnv) {
-  const req = maybeEnv ? envOrReq : null;
-  const env = maybeEnv || envOrReq;
-  if (req && req.method === 'PATCH') {
+
+async function handleAdminLeadById(req, env, id) {
+  if (req.method === 'PATCH') {
     const b = await body(req);
-    return handlePatchCallback(req, env, b.id);
+    const status = String(b.status||'').toLowerCase();
+    if (!validLeadStatus(status)) return j({ ok:false, error:'invalid status. Valid: new,contacted,quoted,won,lost' }, 400);
+    await dbRun(env, 'UPDATE leads SET status=? WHERE id=?', [status, id]);
+    return j({ ok:true, id, status });
   }
-  if (req && new URL(req.url).searchParams.get('format') === 'csv') return handleCallbacksCSV(env);
+  return j({ ok:false, error:'method not allowed' }, 405);
+}
+
+async function handleAdminCallbacks(req, env) {
+  if (req.method === 'PATCH') {
+    const b = await body(req);
+    const status = String(b.status||'').toLowerCase();
+    if (!validCallbackStatus(status)) return j({ ok:false, error:'invalid status. Valid: pending,called,no_answer,scheduled' }, 400);
+    if (!b.id) return j({ ok:false, error:'id required' }, 400);
+    await dbRun(env, 'UPDATE callbacks SET status=? WHERE id=?', [status, b.id]);
+    return j({ ok:true, id:b.id, status });
+  }
+  const url = new URL(req.url);
+  if (url.searchParams.get('format') === 'csv') {
+    const rows = await dbAll(env, 'SELECT id,name,phone,preferred_time,service,message,source,lead_section,status,created_at FROM callbacks ORDER BY id DESC LIMIT 1000');
+    const headers = ['id','name','phone','preferred_time','service','message','source','lead_section','status','created_at'];
+    return csvRes('callbacks.csv', [headers.join(','), ...rows.map(r => headers.map(hk => csvCell(r[hk])).join(','))].join('\n'));
+  }
   const callbacks = await dbAll(env,'SELECT * FROM callbacks ORDER BY id DESC LIMIT 100');
   return j({ ok:true, callbacks });
 }
 
-function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
-function csvRes(filename, text) {
-  return new Response(text, { headers: { 'Content-Type':'text/csv;charset=utf-8', 'Content-Disposition':'attachment; filename="' + filename + '"' } });
-}
-function validLeadStatus(s) { return ['new','contacted','quoted','won','lost'].includes(String(s||'').toLowerCase()); }
-function validCallbackStatus(s) { return ['pending','called','no_answer','scheduled'].includes(String(s||'').toLowerCase()); }
-async function handlePatchLead(req, env, id) {
-  const b = await body(req);
-  const status = String(b.status||'').toLowerCase();
-  if (!validLeadStatus(status)) return j({ ok:false, error:'invalid status' }, 400);
-  await dbRun(env, 'UPDATE leads SET status=? WHERE id=?', [status, id]);
-  return j({ ok:true, id, status });
-}
-async function handlePatchCallback(req, env, id) {
-  const b = await body(req);
-  const status = String(b.status||'').toLowerCase();
-  if (!validCallbackStatus(status)) return j({ ok:false, error:'invalid status' }, 400);
-  await dbRun(env, 'UPDATE callbacks SET status=? WHERE id=?', [status, id]);
-  return j({ ok:true, id, status });
-}
-async function handleLeadsCSV(env) {
-  const rows = await dbAll(env, 'SELECT id,name,email,phone,service,message,source,lead_section,status,budget_range,timeline,created_at FROM leads ORDER BY id DESC LIMIT 1000');
-  const headers = ['id','name','email','phone','service','message','source','lead_section','status','budget_range','timeline','created_at'];
-  return csvRes('leads.csv', [headers.join(','), ...rows.map(r => headers.map(h => csvCell(r[h])).join(','))].join('\n'));
-}
-async function handleCallbacksCSV(env) {
-  const rows = await dbAll(env, 'SELECT id,name,phone,preferred_time,service,message,source,lead_section,status,created_at FROM callbacks ORDER BY id DESC LIMIT 1000');
-  const headers = ['id','name','phone','preferred_time','service','message','source','lead_section','status','created_at'];
-  return csvRes('callbacks.csv', [headers.join(','), ...rows.map(r => headers.map(h => csvCell(r[h])).join(','))].join('\n'));
+async function handleAdminCallbackById(req, env, id) {
+  if (req.method === 'PATCH') {
+    const b = await body(req);
+    const status = String(b.status||'').toLowerCase();
+    if (!validCallbackStatus(status)) return j({ ok:false, error:'invalid status. Valid: pending,called,no_answer,scheduled' }, 400);
+    await dbRun(env, 'UPDATE callbacks SET status=? WHERE id=?', [status, id]);
+    return j({ ok:true, id, status });
+  }
+  return j({ ok:false, error:'method not allowed' }, 405);
 }
 
+// ── Public JS (string array — never template literals) ───────────────────────
 function buildPublicJS() {
   return [
     'var chatState="init";',
@@ -308,8 +329,8 @@ function buildPublicJS() {
     '    actions.forEach(function(a){',
     '      if(a.type==="call"){html+="<a class=\'chip call\' href=\'"+a.url+"\'>"+a.label+"</a>";}',
     '      else if(a.type==="upload"){html+="<button class=\'chip\' onclick=\'showUpload()\'>"+a.label+"</button>";}',
-    '      else if(a.type==="state"){html+="<button class=\'chip\' onclick=\'sendQuick(\""+a.value+"\")\'>"+a.label+"</button>";}',
-    '      else if(a.type==="quick"){var q=a.label.replace(/[^a-zA-Z0-9 ]/g,"");html+="<button class=\'chip\' onclick=\'sendQuick(\""+q+"\")\'>"+a.label+"</button>";}',
+    '      else if(a.type==="state"){html+="<button class=\'chip\' onclick=\'sendQuick(\\\""+a.value+"\\\")\'>"+a.label+"</button>";}',
+    '      else if(a.type==="quick"){var q=a.label.replace(/[^a-zA-Z0-9 ]/g,"");html+="<button class=\'chip\' onclick=\'sendQuick(\\\""+q+"\\\")\'>"+a.label+"</button>";}',
     '    });',
     '    html+="</div>";',
     '  }',
@@ -340,6 +361,23 @@ function buildPublicJS() {
     '  if(btn)btn.disabled=false;',
     '}',
     'function toggleMenu(){var m=document.getElementById("mobileMenu");m.style.display=m.style.display==="flex"?"none":"flex";}',
+    'function submitCallback(){',
+    '  var name=(document.getElementById("cbName").value||"").trim();',
+    '  var phone=(document.getElementById("cbPhone").value||"").trim();',
+    '  var time=document.getElementById("cbTime").value;',
+    '  var note=(document.getElementById("cbNote").value||"").trim();',
+    '  var res=document.getElementById("cbResult");',
+    '  if(!name||!phone){res.textContent="Name and phone are required.";res.className="lfr err";res.style.display="block";return;}',
+    '  res.textContent="Submitting...";res.className="lfr";res.style.display="block";',
+    '  fetch("/callback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({',
+    '    name:name,phone:phone,preferred_time:time,notes:note,lead_section:"callback_widget",source:"web"',
+    '  })}).then(function(r){return r.json();}).then(function(d){',
+    '    res.textContent=d.message||"We will call you soon!";',
+    '    res.className="lfr "+(d.ok?"ok":"err");',
+    '    res.style.display="block";',
+    '    if(d.ok){["cbName","cbPhone","cbNote"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});document.getElementById("cbTime").selectedIndex=0;}',
+    '  }).catch(function(){res.textContent="Failed. Please call (818) 624-7212.";res.className="lfr err";res.style.display="block";});',
+    '}',
     'document.addEventListener("DOMContentLoaded",function(){',
     '  document.querySelectorAll(".svc-tab").forEach(function(tab){',
     '    tab.addEventListener("click",function(){',
@@ -372,6 +410,8 @@ function buildPublicJS() {
     '      name:name,email:email,',
     '      phone:document.getElementById("lfPhone").value,',
     '      service:document.getElementById("lfIntent").value,',
+    '      budget_range:document.getElementById("lfBudget").value,',
+    '      timeline:document.getElementById("lfTimeline").value,',
     '      message:document.getElementById("lfMsg").value,',
     '      lead_section:"lead_form",source:"web"',
     '    })}).then(function(r){return r.json();}).then(function(d){',
@@ -465,8 +505,16 @@ function buildPublic() {
     '.leads-input,.leads-select,.leads-textarea{width:100%;padding:.72rem .9rem;border:1px solid var(--border);border-radius:var(--r);font-family:"Inter",sans-serif;font-size:16px;background:#fff;color:var(--text);outline:none;-webkit-appearance:none}',
     '.leads-input:focus,.leads-select:focus,.leads-textarea:focus{border-color:var(--accent)}',
     '.leads-textarea{resize:vertical;min-height:90px;grid-column:1/-1}',
+    '.leads-select-half{grid-column:span 1}',
     '.lfr{margin-top:1rem;font-size:.88rem;padding:.6rem .9rem;border-radius:var(--r);display:none}',
     '.lfr.ok{background:#dcfce7;color:#15803d}.lfr.err{background:#fee2e2;color:#b91c1c}',
+    '.cb-widget{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:2rem;margin-top:2.5rem}',
+    '.cb-widget h3{font-family:"Oswald",sans-serif;font-size:1.3rem;color:#fff;margin-bottom:.4rem}',
+    '.cb-widget p{font-size:.86rem;color:rgba(255,255,255,.6);margin-bottom:1.25rem}',
+    '.cb-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}',
+    '.cb-input,.cb-select{width:100%;padding:.7rem .9rem;border:1px solid rgba(255,255,255,.15);border-radius:var(--r);font-family:"Inter",sans-serif;font-size:16px;background:rgba(255,255,255,.07);color:#fff;outline:none;-webkit-appearance:none}',
+    '.cb-input:focus,.cb-select:focus{border-color:var(--accent)}.cb-input::placeholder{color:rgba(255,255,255,.35)}',
+    '.cb-select option{background:#1a2744;color:#fff}',
     'footer{background:#060d18;color:rgba(255,255,255,.42);padding:2rem 0;font-size:.81rem;text-align:center}',
     '#chatFab{position:fixed;bottom:1.5rem;right:1.5rem;z-index:500;background:var(--accent);color:#fff;font-family:"Oswald",sans-serif;font-size:.95rem;font-weight:600;letter-spacing:.06em;padding:.75rem 1.35rem;border-radius:50px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(200,168,75,.45);display:flex;align-items:center;gap:.5rem;transition:transform .2s}',
     '#chatFab:hover{transform:translateY(-2px)}',
@@ -493,19 +541,20 @@ function buildPublic() {
     '.upload-area{padding:.75rem 1rem;background:#f8f7f5;border-top:1px solid var(--border)}',
     '.upload-label{display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.83rem;color:var(--accent);font-weight:600;padding:.5rem .9rem;border:1.5px dashed var(--accent);border-radius:var(--r);justify-content:center}',
     '.upload-label input{display:none}',
-    '@media(max-width:768px){.nav-menu{display:none}.hamburger{display:flex}.svc-panel-inner,.proj-grid,.rev-grid,.proc-grid,.leads-grid{grid-template-columns:1fr}.svc-hi{grid-template-columns:1fr}#chatDrawer{max-width:100%;border-radius:16px 16px 0 0}}'
+    '@media(max-width:768px){.nav-menu{display:none}.hamburger{display:flex}.svc-panel-inner,.proj-grid,.rev-grid,.proc-grid,.leads-grid,.cb-grid{grid-template-columns:1fr}.svc-hi{grid-template-columns:1fr}#chatDrawer{max-width:100%;border-radius:16px 16px 0 0}}',
   ].join('');
 
   return '<!DOCTYPE html><html lang="en"><head>'
   + '<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>'
   + '<title>CCS Services Group &mdash; Licensed Construction | Los Angeles</title>'
-  + '<meta name="description" content="CCS Services Group &mdash; LA kitchen, bathroom, ADU, home addition &amp; new construction. '+LICENSE+'. Call '+PHONE+'."/>'
+  + '<meta name="description" content="CCS Services Group &mdash; LA kitchen, bathroom, ADU, home addition &amp; new construction. '+LICENSE+'. Call '+PHONE+'.">'
   + '<link rel="preconnect" href="https://fonts.googleapis.com"/>'
   + '<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>'
   + '<style>'+css+'</style></head><body>'
   + '<nav><div class="nav-inner"><a href="/" class="logo">CCS<span>.</span></a>'
   + '<div class="nav-menu"><a href="#services">Services</a><a href="#projects">Projects</a><a href="#process">Process</a><a href="#reviews">Reviews</a><a href="#contact">Contact</a>'
-  + '<a href="tel:+18186247212" class="nav-phone">'+PHONE+'</a><a href="#contact" class="nav-cta">Free Estimate</a></div>'
+  + '<a href="tel:+18186247212" class="nav-phone">'+PHONE+'</a>'
+  + '<a href="#contact" class="nav-cta" onclick="leadSection=\'nav_cta\'">Free Estimate</a></div>'
   + '<div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div></div>'
   + '<div class="mobile-menu" id="mobileMenu"><a href="#services">Services</a><a href="#projects">Projects</a><a href="#process">Process</a><a href="#reviews">Reviews</a><a href="#contact">Contact</a>'
   + '<a href="tel:+18186247212" style="color:var(--accent);font-weight:600">'+PHONE+'</a></div></nav>'
@@ -546,10 +595,27 @@ function buildPublic() {
   + '<div class="rev-card"><div class="rev-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rev-text">&ldquo;Joseph did three projects for us &mdash; each one incredible. The ADU is now rented and cash-flowing.&rdquo;</p><div class="rev-footer"><span class="rev-name">Bobby S.</span><span class="rev-proj">ADU + Kitchen &mdash; Burbank</span></div></div>'
   + '<div class="rev-card"><div class="rev-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div><p class="rev-text">&ldquo;Most timely, professional crew I&rsquo;ve worked with. Quick, clean, amazing job.&rdquo;</p><div class="rev-footer"><span class="rev-name">Silvia K.</span><span class="rev-proj">Room Addition &mdash; Glendale</span></div></div></div></div></section>'
   + '<section class="section section-darker" id="contact"><div class="container" style="max-width:680px"><div class="section-head"><h2>Get Your Free Estimate</h2><p class="section-sub">Tell us about your project and we&rsquo;ll follow up within one business day</p></div>'
-  + '<div class="leads-grid"><input class="leads-input" id="lfName" placeholder="Full Name *"/><input class="leads-input" id="lfEmail" type="email" placeholder="Email Address *"/><input class="leads-input" id="lfPhone" placeholder="Phone Number"/>'
+  + '<div class="leads-grid">'
+  + '<input class="leads-input" id="lfName" placeholder="Full Name *"/>'
+  + '<input class="leads-input" id="lfEmail" type="email" placeholder="Email Address *"/>'
+  + '<input class="leads-input" id="lfPhone" placeholder="Phone Number"/>'
   + '<select class="leads-select" id="lfIntent"><option value="">Project Type</option><option>Kitchen Remodeling</option><option>Bathroom Remodeling</option><option>ADU / Accessory Dwelling</option><option>Home Addition</option><option>New Construction</option><option>Exterior / Structural</option><option>Other</option></select>'
-  + '<textarea class="leads-textarea" id="lfMsg" placeholder="Tell us about your project..."></textarea></div>'
-  + '<button class="btn btn-primary" id="lfBtn">Send My Project Details</button><div id="lfResult" class="lfr"></div></div></section>'
+  + '<select class="leads-select leads-select-half" id="lfBudget"><option value="">Budget Range</option><option>Under $25k</option><option>$25k\u2013$50k</option><option>$50k\u2013$100k</option><option>$100k\u2013$250k</option><option>$250k+</option><option>Not sure yet</option></select>'
+  + '<select class="leads-select leads-select-half" id="lfTimeline"><option value="">Timeline</option><option>ASAP</option><option>1\u20133 months</option><option>3\u20136 months</option><option>6\u201312 months</option><option>Just exploring</option></select>'
+  + '<textarea class="leads-textarea" id="lfMsg" placeholder="Tell us about your project..."></textarea>'
+  + '</div>'
+  + '<button class="btn btn-primary" id="lfBtn">Send My Project Details</button><div id="lfResult" class="lfr"></div>'
+  + '<div class="cb-widget"><h3>Prefer a Call Back?</h3><p>Leave your number and we&rsquo;ll reach out at your preferred time &mdash; no wait on hold.</p>'
+  + '<div class="cb-grid">'
+  + '<input class="cb-input" id="cbName" placeholder="Your Name *"/>'
+  + '<input class="cb-input" id="cbPhone" placeholder="Phone Number *"/>'
+  + '<select class="cb-select" id="cbTime"><option value="">Best time to call</option><option value="morning">Morning (8am\u201312pm)</option><option value="afternoon">Afternoon (12pm\u20135pm)</option><option value="evening">Evening (5pm\u20137pm)</option><option value="anytime">Anytime</option></select>'
+  + '<input class="cb-input" id="cbNote" placeholder="Optional note"/>'
+  + '</div>'
+  + '<button class="btn btn-ghost" onclick="submitCallback()">Request a Call Back</button>'
+  + '<div id="cbResult" class="lfr"></div>'
+  + '</div>'
+  + '</div></section>'
   + '<footer><div class="container"><p style="margin-bottom:.4rem"><strong style="color:rgba(255,255,255,.7);font-family:\'Oswald\',sans-serif;letter-spacing:.04em">'+COMPANY+'</strong></p>'
   + '<p>'+LICENSE+' &nbsp;&bull;&nbsp; <a href="tel:+18186247212" style="color:var(--accent)">'+PHONE+'</a> &nbsp;&bull;&nbsp; Los Angeles County, CA</p>'
   + '<p style="margin-top:.5rem;font-size:.72rem;color:rgba(255,255,255,.25)">v'+VERSION+'</p></div></footer>'
@@ -563,9 +629,102 @@ function buildPublic() {
 }
 
 function buildAdmin() {
+  const adminJS = [
+    'var PASS="'+ADMIN_PASS+'";',
+    'var authed=sessionStorage.getItem("ccs_admin_v2")==="1";',
+    'if(authed)unlock();',
+    'function unlock(){document.getElementById("lock").style.display="none";document.getElementById("app").style.display="block";loadAll();}',
+    'function tryLogin(){var pw=document.getElementById("pw").value;if(pw===PASS){sessionStorage.setItem("ccs_admin_v2","1");unlock();}else{document.getElementById("pwErr").style.display="block";document.getElementById("pw").value="";}}',
+    'document.getElementById("pwBtn").addEventListener("click",tryLogin);',
+    'document.getElementById("pw").addEventListener("keydown",function(e){if(e.key==="Enter")tryLogin();});',
+    'document.getElementById("logoutBtn").addEventListener("click",function(){sessionStorage.removeItem("ccs_admin_v2");document.getElementById("app").style.display="none";document.getElementById("lock").style.display="flex";document.getElementById("pw").value="";});',
+    'function loadAll(){loadStatus();loadLeads();loadCallbacks();loadArticles();}',
+    'document.getElementById("refreshBtn").addEventListener("click",loadStatus);',
+    'document.getElementById("refreshLeads").addEventListener("click",loadLeads);',
+    'document.getElementById("refreshCallbacks").addEventListener("click",loadCallbacks);',
+    'document.getElementById("refreshArticles").addEventListener("click",loadArticles);',
+    'async function loadStatus(){try{var r=await fetch("/api/status");var d=await r.json();var items=[["Worker",d.worker,false],["Version",d.version,false],["D1",d.db,true],["Vectorize",d.vectorize,true],["R2",d.r2,true],["Leads",d.leads,false],["Callbacks",d.callbacks,false],["Articles",d.articles,false]];document.getElementById("statusGrid").innerHTML=items.map(function(x){var v=x[2]?(x[1]?"Yes":"No"):String(x[1]!=null?x[1]:"--");var c=x[2]?(x[1]?"ok":"err"):"";return"<div class=\'stat-box\'><h4>"+x[0]+"</h4><div class=\'stat-val "+c+"\'>" +v+"</div></div>";}).join("");}catch(e){document.getElementById("statusGrid").innerHTML="<div class=\'stat-box\'><h4>Error</h4><div class=\'stat-val err\'>"+e.message+"</div></div>";}}',
+    'function leadStatusBadge(s){var map={"new":"#3b82f6","contacted":"#f59e0b","quoted":"#8b5cf6","won":"#22c55e","lost":"#ef4444"};var c=map[s]||"#6b7280";return"<span style=\'background:"+c+";color:#fff;font-size:.68rem;font-weight:600;padding:.15rem .55rem;border-radius:10px;text-transform:uppercase;letter-spacing:.06em\'>"+s+"</span>";}',
+    'function cbStatusBadge(s){var map={"pending":"#f59e0b","called":"#22c55e","no_answer":"#ef4444","scheduled":"#8b5cf6"};var c=map[s]||"#6b7280";return"<span style=\'background:"+c+";color:#fff;font-size:.68rem;font-weight:600;padding:.15rem .55rem;border-radius:10px;text-transform:uppercase;letter-spacing:.06em\'>"+s+"</span>";}',
+    'async function loadLeads(){',
+    '  var el=document.getElementById("leadsTable");',
+    '  try{',
+    '    var r=await fetch("/api/admin/leads");',
+    '    var d=await r.json();',
+    '    if(!d.ok||!d.leads||!d.leads.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No leads yet.</p>";return;}',
+    '    var html="<div style=\'margin-bottom:.75rem\'><a href=\'/api/admin/leads?format=csv\' class=\'btn btn-outline btn-sm\' download>&#11015; Export CSV</a></div>";',
+    '    html+="<div style=\'overflow-x:auto\'><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Budget</th><th>Timeline</th><th>Section</th><th>Status</th><th>Date</th></tr></thead><tbody>";',
+    '    d.leads.forEach(function(l){',
+    '      html+="<tr>";',
+    '      html+="<td>"+l.name+"</td>";',
+    '      html+="<td>"+l.email+"</td>";',
+    '      html+="<td>"+l.phone+"</td>";',
+    '      html+="<td>"+(l.service||"")+"</td>";',
+    '      html+="<td>"+(l.budget_range||"")+"</td>";',
+    '      html+="<td>"+(l.timeline||"")+"</td>";',
+    '      html+="<td style=\'font-size:.75rem;color:var(--a)\'>"+(l.lead_section||"")+"</td>";',
+    '      html+="<td>"+leadStatusBadge(l.status||"new")+"<br><select onchange=\'updateLeadStatus("+l.id+",this.value)\' style=\'margin-top:.3rem;background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;font-size:.72rem;padding:.2rem .4rem;border-radius:4px;outline:none\'>";',
+    '      ["new","contacted","quoted","won","lost"].forEach(function(s){',
+    '        html+="<option value=\'"+s+"\'"+(l.status===s?" selected":"")+">"+s+"</option>";',
+    '      });',
+    '      html+="</select></td>";',
+    '      html+="<td>"+(l.created_at||"").slice(0,16)+"</td>";',
+    '      html+="</tr>";',
+    '    });',
+    '    html+="</tbody></table></div>";',
+    '    el.innerHTML=html;',
+    '  }catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}',
+    '}',
+    'async function updateLeadStatus(id,status){',
+    '  try{',
+    '    var r=await fetch("/api/admin/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:status})});',
+    '    var d=await r.json();',
+    '    if(!d.ok)alert("Error: "+(d.error||"unknown"));',
+    '  }catch(e){alert("Error: "+e.message);}',
+    '}',
+    'async function loadCallbacks(){',
+    '  var el=document.getElementById("callbacksTable");',
+    '  try{',
+    '    var r=await fetch("/api/admin/callbacks");',
+    '    var d=await r.json();',
+    '    if(!d.ok||!d.callbacks||!d.callbacks.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No callbacks yet.</p>";return;}',
+    '    var html="<div style=\'margin-bottom:.75rem\'><a href=\'/api/admin/callbacks?format=csv\' class=\'btn btn-outline btn-sm\' download>&#11015; Export CSV</a></div>";',
+    '    html+="<div style=\'overflow-x:auto\'><table><thead><tr><th>Name</th><th>Phone</th><th>Pref. Time</th><th>Service</th><th>Section</th><th>Status</th><th>Date</th></tr></thead><tbody>";',
+    '    d.callbacks.forEach(function(c){',
+    '      html+="<tr>";',
+    '      html+="<td>"+c.name+"</td>";',
+    '      html+="<td>"+c.phone+"</td>";',
+    '      html+="<td>"+(c.preferred_time||"")+"</td>";',
+    '      html+="<td>"+(c.service||"")+"</td>";',
+    '      html+="<td style=\'font-size:.75rem;color:var(--a)\'>"+(c.lead_section||"")+"</td>";',
+    '      html+="<td>"+cbStatusBadge(c.status||"pending")+"<br><select onchange=\'updateCallbackStatus("+c.id+",this.value)\' style=\'margin-top:.3rem;background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;font-size:.72rem;padding:.2rem .4rem;border-radius:4px;outline:none\'>";',
+    '      ["pending","called","no_answer","scheduled"].forEach(function(s){',
+    '        html+="<option value=\'"+s+"\'"+(c.status===s?" selected":"")+">"+s+"</option>";',
+    '      });',
+    '      html+="</select></td>";',
+    '      html+="<td>"+(c.created_at||"").slice(0,16)+"</td>";',
+    '      html+="</tr>";',
+    '    });',
+    '    html+="</tbody></table></div>";',
+    '    el.innerHTML=html;',
+    '  }catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}',
+    '}',
+    'async function updateCallbackStatus(id,status){',
+    '  try{',
+    '    var r=await fetch("/api/admin/callbacks/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:status})});',
+    '    var d=await r.json();',
+    '    if(!d.ok)alert("Error: "+(d.error||"unknown"));',
+    '  }catch(e){alert("Error: "+e.message);}',
+    '}',
+    'async function loadArticles(){var el=document.getElementById("articlesTable");try{var r=await fetch("/articles");var d=await r.json();if(!d.articles||!d.articles.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No articles.</p>";return;}el.innerHTML="<table><thead><tr><th>Slug</th><th>Title</th><th>Summary</th><th>Date</th></tr></thead><tbody>"+d.articles.map(function(a){return"<tr><td style=\'font-family:monospace;font-size:.75rem;color:var(--a)\'>"+a.slug+"</td><td>"+a.title+"</td><td>"+(a.summary||"").slice(0,80)+"</td><td>"+(a.created_at||"").slice(0,10)+"</td></tr>";}).join("")+"</tbody></table>";}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}}',
+    'document.getElementById("seedBtn").addEventListener("click",async function(){var log=document.getElementById("seedLog");log.style.display="block";log.textContent="Re-embedding...\\n";try{var r=await fetch("/api/seed",{method:"POST"});var d=await r.json();log.textContent+="Done: "+d.embedded+"/"+d.total+" articles embedded\\n";}catch(e){log.textContent+="Error: "+e.message+"\\n";}});',
+    'document.getElementById("searchBtn").addEventListener("click",async function(){var q=document.getElementById("searchQ").value.trim();if(!q)return;var el=document.getElementById("searchResults");el.innerHTML="<span class=\'spin\'></span> Searching...";try{var r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,state:"qa"})});var d=await r.json();if(!d.matches||!d.matches.length){el.innerHTML="<p style=\'color:var(--muted)\'>No vector matches.</p>";return;}el.innerHTML=d.matches.map(function(m){return"<div style=\'background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.75rem\'><div style=\'font-size:.72rem;color:var(--a);font-weight:600;margin-bottom:.3rem\'>Score: "+(m.score*100).toFixed(1)+"% &mdash; "+m.slug+"</div><div style=\'font-size:.9rem;font-weight:600;color:#fff;margin-bottom:.25rem\'>"+m.title+"</div><div style=\'font-size:.78rem;color:var(--muted)\'>"+m.summary+"</div></div>";}).join("");}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}});',
+    'document.getElementById("searchQ").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("searchBtn").click();});',
+  ].join('\n');
+
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>CCS Admin v2</title>'
   + '<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">'
-  + '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--p:#1a2744;--a:#c8a84b;--bg:#0f1a2e;--card:#1a2744;--border:#2a3a5c;--text:#e8eaf0;--muted:#8899aa;--r:8px}body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}#lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}.lbox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:3rem 2.5rem;max-width:380px;width:90%;text-align:center}.ltitle{font-family:"Oswald",sans-serif;font-size:1.6rem;color:#fff;letter-spacing:.06em;margin-bottom:.25rem}.ltitle span{color:var(--a)}.lsub{color:var(--muted);font-size:.85rem;margin-bottom:2rem}.linput{width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:var(--r);padding:.8rem 1rem;font-size:1rem;color:#fff;outline:none;text-align:center;letter-spacing:.2em;margin-bottom:1rem}.linput:focus{border-color:var(--a)}.lbtn{width:100%;background:var(--a);color:#fff;font-family:"Oswald",sans-serif;font-size:1rem;font-weight:600;letter-spacing:.08em;border:none;border-radius:var(--r);padding:.85rem;cursor:pointer}.lerr{color:#f87171;font-size:.82rem;margin-top:.5rem;display:none}#app{display:none}.anav{background:var(--p);border-bottom:3px solid var(--a);padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between}.alogo{font-family:"Oswald",sans-serif;color:#fff;font-size:1.25rem;letter-spacing:.06em}.alogo span{color:var(--a)}.atag{background:rgba(200,168,75,.2);color:var(--a);font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .7rem;border-radius:10px}.lout{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:var(--r);cursor:pointer}.lout:hover{border-color:var(--a);color:var(--a)}.abody{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;display:grid;gap:2rem}.acard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}.acard-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}.acard-head h2{font-family:"Oswald",sans-serif;font-size:1.1rem;color:#fff;letter-spacing:.06em}.acard-body{padding:1.5rem}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}.stat-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}.stat-box h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.4rem}.stat-val{font-size:1.2rem;font-weight:700;color:#fff}.ok{color:#4ade80}.err{color:#f87171}.btn{display:inline-block;padding:.55rem 1.1rem;border-radius:var(--r);font-weight:600;font-size:.82rem;cursor:pointer;border:none;transition:opacity .15s;font-family:"Inter",sans-serif}.btn:hover{opacity:.85}.btn-gold{background:var(--a);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{border-color:var(--a);color:var(--a)}.btn-sm{padding:.35rem .75rem;font-size:.75rem}table{width:100%;border-collapse:collapse;font-size:.82rem}thead th{text-align:left;padding:.5rem .75rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border)}tbody tr:hover{background:rgba(255,255,255,.03)}td{padding:.6rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);vertical-align:top}.log{background:rgba(0,0,0,.3);border-radius:var(--r);padding:1rem;font-size:.78rem;font-family:monospace;color:#94a3b8;white-space:pre-wrap;max-height:200px;overflow:auto;display:none;margin-top:1rem}.sinput{background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:var(--r);padding:.6rem 1rem;font-size:.88rem;color:#fff;outline:none;flex:1}.sinput:focus{border-color:var(--a)}.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}@keyframes spin{to{transform:rotate(360deg)}}</style>'
+  + '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--p:#1a2744;--a:#c8a84b;--bg:#0f1a2e;--card:#1a2744;--border:#2a3a5c;--text:#e8eaf0;--muted:#8899aa;--r:8px}body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}#lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}.lbox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:3rem 2.5rem;max-width:380px;width:90%;text-align:center}.ltitle{font-family:"Oswald",sans-serif;font-size:1.6rem;color:#fff;letter-spacing:.06em;margin-bottom:.25rem}.ltitle span{color:var(--a)}.lsub{color:var(--muted);font-size:.85rem;margin-bottom:2rem}.linput{width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:var(--r);padding:.8rem 1rem;font-size:1rem;color:#fff;outline:none;text-align:center;letter-spacing:.2em;margin-bottom:1rem}.linput:focus{border-color:var(--a)}.lbtn{width:100%;background:var(--a);color:#fff;font-family:"Oswald",sans-serif;font-size:1rem;font-weight:600;letter-spacing:.08em;border:none;border-radius:var(--r);padding:.85rem;cursor:pointer}.lerr{color:#f87171;font-size:.82rem;margin-top:.5rem;display:none}#app{display:none}.anav{background:var(--p);border-bottom:3px solid var(--a);padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between}.alogo{font-family:"Oswald",sans-serif;color:#fff;font-size:1.25rem;letter-spacing:.06em}.alogo span{color:var(--a)}.atag{background:rgba(200,168,75,.2);color:var(--a);font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .7rem;border-radius:10px}.lout{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:var(--r);cursor:pointer}.lout:hover{border-color:var(--a);color:var(--a)}.abody{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;display:grid;gap:2rem}.acard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}.acard-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}.acard-head h2{font-family:"Oswald",sans-serif;font-size:1.1rem;color:#fff;letter-spacing:.06em}.acard-body{padding:1.5rem}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}.stat-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}.stat-box h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.4rem}.stat-val{font-size:1.2rem;font-weight:700;color:#fff}.ok{color:#4ade80}.err{color:#f87171}.btn{display:inline-block;padding:.55rem 1.1rem;border-radius:var(--r);font-weight:600;font-size:.82rem;cursor:pointer;border:none;transition:opacity .15s;font-family:"Inter",sans-serif;text-decoration:none}.btn:hover{opacity:.85}.btn-gold{background:var(--a);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{border-color:var(--a);color:var(--a)}.btn-sm{padding:.35rem .75rem;font-size:.75rem}table{width:100%;border-collapse:collapse;font-size:.82rem}thead th{text-align:left;padding:.5rem .75rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border)}tbody tr:hover{background:rgba(255,255,255,.03)}td{padding:.6rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);vertical-align:top}.log{background:rgba(0,0,0,.3);border-radius:var(--r);padding:1rem;font-size:.78rem;font-family:monospace;color:#94a3b8;white-space:pre-wrap;max-height:200px;overflow:auto;display:none;margin-top:1rem}.sinput{background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:var(--r);padding:.6rem 1rem;font-size:.88rem;color:#fff;outline:none;flex:1}.sinput:focus{border-color:var(--a)}.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}@keyframes spin{to{transform:rotate(360deg)}}</style>'
   + '</head><body><div id="lock"><div class="lbox"><div class="ltitle">CCS<span>.</span>Admin</div><div class="lsub">'+WORKER+' &middot; v'+VERSION+'</div><input class="linput" type="password" id="pw" placeholder="Password" autocomplete="off"/><button class="lbtn" id="pwBtn">Enter</button><div class="lerr" id="pwErr">Incorrect password</div></div></div>'
   + '<div id="app"><div class="anav"><div class="alogo">CCS<span> Admin</span></div><div style="display:flex;align-items:center;gap:1rem"><span class="atag">v'+VERSION+'</span><button class="lout" id="logoutBtn">Log out</button></div></div>'
   + '<div class="abody">'
@@ -576,26 +735,7 @@ function buildAdmin() {
   + '<div class="acard"><div class="acard-head"><h2>Articles</h2><button class="btn btn-outline btn-sm" id="refreshArticles">Refresh</button></div><div class="acard-body"><div id="articlesTable"><div style="color:var(--muted);font-size:.85rem"><span class="spin"></span> Loading...</div></div></div></div>'
   + '<div class="acard"><div class="acard-head"><h2>RAG Search Tester</h2></div><div class="acard-body"><div style="display:flex;gap:.75rem;margin-bottom:1rem"><input class="sinput" id="searchQ" placeholder="e.g. ADU permits Los Angeles"/><button class="btn btn-gold btn-sm" id="searchBtn">Search</button></div><div id="searchResults"></div></div></div>'
   + '</div></div>'
-  + '<script>'
-  + 'var PASS="'+ADMIN_PASS+'";var authed=sessionStorage.getItem("ccs_admin_v2")==="1";if(authed)unlock();'
-  + 'function unlock(){document.getElementById("lock").style.display="none";document.getElementById("app").style.display="block";loadAll();}'
-  + 'function tryLogin(){var pw=document.getElementById("pw").value;if(pw===PASS){sessionStorage.setItem("ccs_admin_v2","1");unlock();}else{document.getElementById("pwErr").style.display="block";document.getElementById("pw").value="";}}'
-  + 'document.getElementById("pwBtn").addEventListener("click",tryLogin);'
-  + 'document.getElementById("pw").addEventListener("keydown",function(e){if(e.key==="Enter")tryLogin();});'
-  + 'document.getElementById("logoutBtn").addEventListener("click",function(){sessionStorage.removeItem("ccs_admin_v2");document.getElementById("app").style.display="none";document.getElementById("lock").style.display="flex";document.getElementById("pw").value="";});'
-  + 'function loadAll(){loadStatus();loadLeads();loadCallbacks();loadArticles();}'
-  + 'document.getElementById("refreshBtn").addEventListener("click",loadStatus);'
-  + 'document.getElementById("refreshLeads").addEventListener("click",loadLeads);'
-  + 'document.getElementById("refreshCallbacks").addEventListener("click",loadCallbacks);'
-  + 'document.getElementById("refreshArticles").addEventListener("click",loadArticles);'
-  + 'async function loadStatus(){try{var r=await fetch("/api/status");var d=await r.json();var items=[["Worker",d.worker,false],["Version",d.version,false],["D1",d.db,true],["Vectorize",d.vectorize,true],["R2",d.r2,true],["Leads",d.leads,false],["Callbacks",d.callbacks,false],["Articles",d.articles,false]];document.getElementById("statusGrid").innerHTML=items.map(function(x){var v=x[2]?(x[1]?"Yes":"No"):String(x[1]!=null?x[1]:"--");var c=x[2]?(x[1]?"ok":"err"):"";return"<div class=\'stat-box\'><h4>"+x[0]+"</h4><div class=\'stat-val "+c+"\'>"+v+"</div></div>";}).join("");}catch(e){document.getElementById("statusGrid").innerHTML="<div class=\'stat-box\'><h4>Error</h4><div class=\'stat-val err\'>"+e.message+"</div></div>";}}'
-  + 'async function loadLeads(){var el=document.getElementById("leadsTable");try{var r=await fetch("/api/admin/leads");var d=await r.json();if(!d.ok||!d.leads||!d.leads.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No leads yet.</p>";return;}el.innerHTML="<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Message</th><th>Date</th></tr></thead><tbody>"+d.leads.map(function(l){return"<tr><td>"+l.name+"</td><td>"+l.email+"</td><td>"+l.phone+"</td><td>"+l.service+"</td><td>"+(l.message||"").slice(0,60)+"</td><td>"+(l.created_at||"").slice(0,16)+"</td></tr>";}).join("")+"</tbody></table>";}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}}'
-  + 'async function loadCallbacks(){var el=document.getElementById("callbacksTable");try{var r=await fetch("/api/admin/callbacks");var d=await r.json();if(!d.ok||!d.callbacks||!d.callbacks.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No callbacks yet.</p>";return;}el.innerHTML="<table><thead><tr><th>Name</th><th>Phone</th><th>Service</th><th>Notes</th><th>Date</th></tr></thead><tbody>"+d.callbacks.map(function(c){return"<tr><td>"+c.name+"</td><td>"+c.phone+"</td><td>"+c.service+"</td><td>"+(c.message||"").slice(0,60)+"</td><td>"+(c.created_at||"").slice(0,16)+"</td></tr>";}).join("")+"</tbody></table>";}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}}'
-  + 'async function loadArticles(){var el=document.getElementById("articlesTable");try{var r=await fetch("/articles");var d=await r.json();if(!d.articles||!d.articles.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No articles.</p>";return;}el.innerHTML="<table><thead><tr><th>Slug</th><th>Title</th><th>Summary</th><th>Date</th></tr></thead><tbody>"+d.articles.map(function(a){return"<tr><td style=\'font-family:monospace;font-size:.75rem;color:var(--a)\'>"+a.slug+"</td><td>"+a.title+"</td><td>"+(a.summary||"").slice(0,80)+"</td><td>"+(a.created_at||"").slice(0,10)+"</td></tr>";}).join("")+"</tbody></table>";}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}}'
-  + 'document.getElementById("seedBtn").addEventListener("click",async function(){var log=document.getElementById("seedLog");log.style.display="block";log.textContent="Re-embedding...\\n";try{var r=await fetch("/api/seed",{method:"POST"});var d=await r.json();log.textContent+="Done: "+d.embedded+"/"+d.total+" articles embedded\\n";}catch(e){log.textContent+="Error: "+e.message+"\\n";}});'
-  + 'document.getElementById("searchBtn").addEventListener("click",async function(){var q=document.getElementById("searchQ").value.trim();if(!q)return;var el=document.getElementById("searchResults");el.innerHTML="<span class=\'spin\'></span> Searching...";try{var r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,state:"qa"})});var d=await r.json();if(!d.matches||!d.matches.length){el.innerHTML="<p style=\'color:var(--muted)\'>No vector matches.</p>";return;}el.innerHTML=d.matches.map(function(m){return"<div style=\'background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.75rem\'><div style=\'font-size:.72rem;color:var(--a);font-weight:600;margin-bottom:.3rem\'>Score: "+(m.score*100).toFixed(1)+"% &mdash; "+m.slug+"</div><div style=\'font-size:.9rem;font-weight:600;color:#fff;margin-bottom:.25rem\'>"+m.title+"</div><div style=\'font-size:.78rem;color:var(--muted)\'>"+m.summary+"</div></div>";}).join("");}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}});'
-  + 'document.getElementById("searchQ").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("searchBtn").click();});'
-  + '</script></body></html>';
+  + '<script>\n' + adminJS + '\n</script></body></html>';
 }
 
 export default {
@@ -614,8 +754,12 @@ export default {
     if (path.startsWith('/articles/') && method === 'GET') return handleArticle(path.slice(10), env);
     if (path === '/api/status') return handleStatus(env);
     if (path === '/api/seed' && method === 'POST') return handleSeed(env);
-    if (path === '/api/admin/leads') return handleAdminLeads(env);
-    if (path === '/api/admin/callbacks') return handleAdminCallbacks(env);
+    if (path === '/api/admin/leads') return handleAdminLeads(request, env);
+    if (path === '/api/admin/callbacks') return handleAdminCallbacks(request, env);
+    const leadMatch = path.match(/^\/api\/admin\/leads\/(\d+)$/);
+    if (leadMatch) return handleAdminLeadById(request, env, leadMatch[1]);
+    const cbMatch = path.match(/^\/api\/admin\/callbacks\/(\d+)$/);
+    if (cbMatch) return handleAdminCallbackById(request, env, cbMatch[1]);
     return j({ ok:false, error:'not_found', path }, 404);
   }
 };
