@@ -1,0 +1,62 @@
+{
+  "worker": "afo-gitzip-patcher-mcp",
+  "version": "0.1.0-core",
+  "action": "apply_repo_text_patch",
+  "target": {
+    "owner": "nothinginfinity",
+    "repo": "repo-copilot",
+    "branch": "main",
+    "path": "workers/contractor-v003-2-afo/contractor-v003-2-afo.js"
+  },
+  "source_sha": "cc498b6af986aaf54029277e16633cb1c33d68fd",
+  "result_sha": "797fb0c3586dfe9288e9b8aa29655f668fdea00b",
+  "commit_sha": "0f5ba55e5ee6f11a781c6e38b09ca30553397e90",
+  "diff": {
+    "before_length": 66784,
+    "after_length": 67406,
+    "delta": 622,
+    "common_prefix": 11362,
+    "common_suffix": 55259,
+    "before_fingerprint": "89a07375",
+    "after_fingerprint": "25325927"
+  },
+  "applied": [
+    {
+      "label": "make_admin_leads_handler_req_compatible",
+      "type": "replace_exact",
+      "changed": true
+    },
+    {
+      "label": "make_admin_callbacks_handler_req_compatible",
+      "type": "replace_exact",
+      "changed": true
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "results": [
+      {
+        "label": "leads_handler_req_compatible",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "callbacks_handler_req_compatible",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "leads_format_csv_ready",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "callbacks_patch_ready",
+        "ok": true,
+        "detail": "contains"
+      }
+    ],
+    "failed": []
+  },
+  "timestamp": "2026-06-06T07:22:24.645Z"
+}
