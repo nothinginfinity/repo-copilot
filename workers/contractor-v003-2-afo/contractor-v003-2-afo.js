@@ -231,6 +231,37 @@ async function handleAdminCallbacks(env) {
   return j({ ok:true, callbacks });
 }
 
+function csvCell(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; }
+function csvRes(filename, text) {
+  return new Response(text, { headers: { 'Content-Type':'text/csv;charset=utf-8', 'Content-Disposition':'attachment; filename="' + filename + '"' } });
+}
+function validLeadStatus(s) { return ['new','contacted','quoted','won','lost'].includes(String(s||'').toLowerCase()); }
+function validCallbackStatus(s) { return ['pending','called','no_answer','scheduled'].includes(String(s||'').toLowerCase()); }
+async function handlePatchLead(req, env, id) {
+  const b = await body(req);
+  const status = String(b.status||'').toLowerCase();
+  if (!validLeadStatus(status)) return j({ ok:false, error:'invalid status' }, 400);
+  await dbRun(env, 'UPDATE leads SET status=? WHERE id=?', [status, id]);
+  return j({ ok:true, id, status });
+}
+async function handlePatchCallback(req, env, id) {
+  const b = await body(req);
+  const status = String(b.status||'').toLowerCase();
+  if (!validCallbackStatus(status)) return j({ ok:false, error:'invalid status' }, 400);
+  await dbRun(env, 'UPDATE callbacks SET status=? WHERE id=?', [status, id]);
+  return j({ ok:true, id, status });
+}
+async function handleLeadsCSV(env) {
+  const rows = await dbAll(env, 'SELECT id,name,email,phone,service,message,source,lead_section,status,budget_range,timeline,created_at FROM leads ORDER BY id DESC LIMIT 1000');
+  const headers = ['id','name','email','phone','service','message','source','lead_section','status','budget_range','timeline','created_at'];
+  return csvRes('leads.csv', [headers.join(','), ...rows.map(r => headers.map(h => csvCell(r[h])).join(','))].join('\n'));
+}
+async function handleCallbacksCSV(env) {
+  const rows = await dbAll(env, 'SELECT id,name,phone,preferred_time,service,message,source,lead_section,status,created_at FROM callbacks ORDER BY id DESC LIMIT 1000');
+  const headers = ['id','name','phone','preferred_time','service','message','source','lead_section','status','created_at'];
+  return csvRes('callbacks.csv', [headers.join(','), ...rows.map(r => headers.map(h => csvCell(r[h])).join(','))].join('\n'));
+}
+
 function buildPublicJS() {
   return [
     'var chatState="init";',
