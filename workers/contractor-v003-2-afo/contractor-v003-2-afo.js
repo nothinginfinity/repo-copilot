@@ -222,11 +222,25 @@ async function handleUpload(req, env) {
     return j({ ok:true, r2_key:key });
   } catch(e) { return j({ ok:false, error:e.message }, 500); }
 }
-async function handleAdminLeads(env) {
+async function handleAdminLeads(envOrReq, maybeEnv) {
+  const req = maybeEnv ? envOrReq : null;
+  const env = maybeEnv || envOrReq;
+  if (req && req.method === 'PATCH') {
+    const b = await body(req);
+    return handlePatchLead(req, env, b.id);
+  }
+  if (req && new URL(req.url).searchParams.get('format') === 'csv') return handleLeadsCSV(env);
   const leads = await dbAll(env,'SELECT * FROM leads ORDER BY id DESC LIMIT 100');
   return j({ ok:true, leads });
 }
-async function handleAdminCallbacks(env) {
+async function handleAdminCallbacks(envOrReq, maybeEnv) {
+  const req = maybeEnv ? envOrReq : null;
+  const env = maybeEnv || envOrReq;
+  if (req && req.method === 'PATCH') {
+    const b = await body(req);
+    return handlePatchCallback(req, env, b.id);
+  }
+  if (req && new URL(req.url).searchParams.get('format') === 'csv') return handleCallbacksCSV(env);
   const callbacks = await dbAll(env,'SELECT * FROM callbacks ORDER BY id DESC LIMIT 100');
   return j({ ok:true, callbacks });
 }
