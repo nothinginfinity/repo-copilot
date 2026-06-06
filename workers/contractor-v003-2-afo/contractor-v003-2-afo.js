@@ -1,8 +1,8 @@
-// contractor-v003-2-afo — CCS Services Group — v0.3.0
-// Phase 3: lead_section tracking, status workflows, CSV export, budget/timeline, callback widget
+// contractor-v003-2-afo — CCS Services Group — v0.4.0
+// Phase 4: Article Manager, Media Library, Knowledge Base Manager, Voice/File upload
 // JS assembled via string arrays — never template literals (see handoff doc)
 
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 const WORKER = 'contractor-v003-2-afo';
 const COMPANY = 'CCS Services Group';
 const PHONE = '(818) 624-7212';
@@ -80,8 +80,8 @@ async function handleCallback(req, env) {
   const notesStr = [preferred_time, preferred_date, notes].filter(Boolean).join(' | ');
   const srcSection = lead_section || section || 'callback_widget';
   await dbRun(env,
-    'INSERT INTO callbacks (name,phone,preferred_time,service,message,lead_section,status,created_at) VALUES (?,?,?,?,?,?,?,?)',
-    [name, phone, preferred_time||'', project_type||'', notesStr, srcSection, 'pending', now()]
+    'INSERT INTO callbacks (name,phone,preferred_time,service,message,source,created_at,lead_section,status) VALUES (?,?,?,?,?,?,?,?,?)',
+    [name, phone, preferred_time||'', project_type||'', notesStr, source, now(), srcSection, 'pending']
   ).catch(async () => {
     await dbRun(env, 'INSERT INTO callbacks (name,phone,created_at) VALUES (?,?,?)', [name, phone, now()]);
   });
@@ -149,8 +149,8 @@ async function handleChat(req, env) {
   }
   if (state==='callback_time') {
     try {
-      await dbRun(env, 'INSERT INTO callbacks (name,phone,preferred_time,service,message,lead_section,status,created_at) VALUES (?,?,?,?,?,?,?,?)',
-        ['Chat lead','',message,'','Preferred: '+message,section||'chat_estimate','pending',now()]);
+      await dbRun(env, 'INSERT INTO callbacks (name,phone,preferred_time,service,message,source,created_at,lead_section,status) VALUES (?,?,?,?,?,?,?,?,?)',
+        ['Chat lead','',message,'','Preferred: '+message,'chat_estimate',now(),section||'chat_estimate','pending']);
     } catch(e){}
     return j({ ok:true, state:'done',
       answer:'Perfect — we will call you '+message.toLowerCase()+'. You can also reach us anytime at '+PHONE+'.',
@@ -287,6 +287,193 @@ async function handleAdminCallbackById(req, env, id) {
   return j({ ok:false, error:'method not allowed' }, 405);
 }
 
+// ── Media Library handlers ────────────────────────────────────────────────────
+async function handleMediaUpload(req, env) {
+  try {
+    const fd = await req.formData();
+    const file = fd.get('file');
+    const category = fd.get('category') || 'other';
+    const alt_text = fd.get('alt_text') || '';
+    if (!file) return j({ ok:false, error:'no file' }, 400);
+    const ext = (file.name.split('.').pop()||'').toLowerCase();
+    const allowed = ['jpg','jpeg','png','gif','webp','mp4','mov','heic','pdf','mp3','m4a','wav','ogg'];
+    if (!allowed.includes(ext)) return j({ ok:false, error:'file type not allowed' }, 400);
+    const id = uid();
+    const key = R2_PREFIX + 'media/' + category + '/' + id + '-' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+    const buf = await file.arrayBuffer();
+    await env.V003_2_R2.put(key, buf, { httpMetadata:{ contentType: file.type } });
+    await dbRun(env,
+      'INSERT INTO media_library (id,r2_key,filename,content_type,file_size,alt_text,category,uploaded_at) VALUES (?,?,?,?,?,?,?,?)',
+      [id, key, file.name, file.type, buf.byteLength, alt_text, category, now()]
+    );
+    return j({ ok:true, id, r2_key:key, filename:file.name, content_type:file.type, category });
+  } catch(e) { return j({ ok:false, error:e.message }, 500); }
+}
+async function handleMediaList(env) {
+  const rows = await dbAll(env, 'SELECT * FROM media_library ORDER BY uploaded_at DESC LIMIT 200');
+  return j({ ok:true, media:rows });
+}
+async function handleMediaDelete(req, env, id) {
+  const row = await dbFirst(env, 'SELECT r2_key FROM media_library WHERE id=?', [id]);
+  if (!row) return j({ ok:false, error:'not found' }, 404);
+  try { await env.V003_2_R2.delete(row.r2_key); } catch(e){}
+  await dbRun(env, 'DELETE FROM media_library WHERE id=?', [id]);
+  return j({ ok:true, id });
+}
+async function handleMediaAltText(req, env, id) {
+  const b = await body(req);
+  await dbRun(env, 'UPDATE media_library SET alt_text=? WHERE id=?', [b.alt_text||'', id]);
+  return j({ ok:true, id });
+}
+async function handleMediaServe(env, r2_key_encoded) {
+  const key = decodeURIComponent(r2_key_encoded);
+  try {
+    const obj = await env.V003_2_R2.get(key);
+    if (!obj) return j({ ok:false, error:'not found' }, 404);
+    const ct = obj.httpMetadata?.contentType || 'application/octet-stream';
+    return new Response(obj.body, { headers: { 'Content-Type':ct, 'Cache-Control':'public,max-age=86400' }});
+  } catch(e) { return j({ ok:false, error:e.message }, 500); }
+}
+
+// ── Article Manager handlers ──────────────────────────────────────────────────
+async function handleAdminArticles(req, env) {
+  const rows = await dbAll(env, 'SELECT id,slug,title,summary,published,hero_image_r2_key,created_at FROM articles ORDER BY id DESC');
+  return j({ ok:true, articles:rows });
+}
+async function handleAdminArticleGet(env, id) {
+  const row = await dbFirst(env, 'SELECT * FROM articles WHERE id=?', [id]);
+  if (!row) return j({ ok:false, error:'not found' }, 404);
+  return j({ ok:true, article:row });
+}
+async function handleAdminArticleSave(req, env, id) {
+  const b = await body(req);
+  if (id === 'new') {
+    const slug = (b.title||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') + '-' + Date.now().toString(36);
+    await dbRun(env,
+      'INSERT INTO articles (slug,title,summary,body,published,hero_image_r2_key,created_at) VALUES (?,?,?,?,?,?,?)',
+      [slug, b.title||'', b.summary||'', b.body||'', b.published?1:0, b.hero_image_r2_key||'', now()]
+    );
+    const row = await dbFirst(env, 'SELECT * FROM articles WHERE slug=?', [slug]);
+    if (b.published && row) {
+      try {
+        const text = [row.title, row.summary, row.body].filter(Boolean).join(' ');
+        const vec = await embed(env, text);
+        await env.V003_2_VECTORIZE.upsert([{ id:'article-'+slug, values:vec, metadata:{ title:row.title, summary:row.summary||'', slug } }]);
+      } catch(e){}
+    }
+    return j({ ok:true, article:row });
+  } else {
+    await dbRun(env,
+      'UPDATE articles SET title=?,summary=?,body=?,published=?,hero_image_r2_key=? WHERE id=?',
+      [b.title||'', b.summary||'', b.body||'', b.published?1:0, b.hero_image_r2_key||'', id]
+    );
+    const row = await dbFirst(env, 'SELECT * FROM articles WHERE id=?', [id]);
+    if (row) {
+      try {
+        const text = [row.title, row.summary, row.body].filter(Boolean).join(' ');
+        const vec = await embed(env, text);
+        await env.V003_2_VECTORIZE.upsert([{ id:'article-'+row.slug, values:vec, metadata:{ title:row.title, summary:row.summary||'', slug:row.slug } }]);
+      } catch(e){}
+    }
+    return j({ ok:true, article:row });
+  }
+}
+async function handleAdminArticleToggle(req, env, id) {
+  const row = await dbFirst(env, 'SELECT published FROM articles WHERE id=?', [id]);
+  if (!row) return j({ ok:false, error:'not found' }, 404);
+  const newVal = row.published ? 0 : 1;
+  await dbRun(env, 'UPDATE articles SET published=? WHERE id=?', [newVal, id]);
+  return j({ ok:true, id, published:newVal });
+}
+async function handleAdminArticleDelete(env, id) {
+  await dbRun(env, 'DELETE FROM articles WHERE id=?', [id]);
+  return j({ ok:true, id });
+}
+
+// ── Public article pages ──────────────────────────────────────────────────────
+async function handlePublicArticlesList(env) {
+  const rows = await dbAll(env, 'SELECT slug,title,summary,hero_image_r2_key,created_at FROM articles WHERE published=1 ORDER BY id DESC LIMIT 50');
+  return j({ ok:true, articles:rows });
+}
+async function handlePublicArticlePage(slug, env) {
+  const row = await dbFirst(env, 'SELECT * FROM articles WHERE slug=? AND published=1', [slug]);
+  if (!row) return new Response('Article not found', { status:404, headers:{ 'Content-Type':'text/plain' }});
+  const heroImg = row.hero_image_r2_key
+    ? '<img src="/media/serve/' + encodeURIComponent(row.hero_image_r2_key) + '" alt="' + (row.title||'') + '" style="width:100%;max-height:420px;object-fit:cover;border-radius:8px;margin-bottom:2rem;display:block"/>'
+    : '';
+  const bodyHtml = (row.body||'').replace(/\n/g,'<br>');
+  const html = '<!DOCTYPE html><html lang="en"><head>'
+    + '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">'
+    + '<title>' + row.title + ' | CCS Services Group</title>'
+    + '<meta name="description" content="' + (row.summary||'').slice(0,160) + '">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">'
+    + '<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Inter",sans-serif;background:#f8f7f5;color:#1c1c1e;line-height:1.7}'
+    + 'nav{background:#1a2744;border-bottom:3px solid #c8a84b;padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between}'
+    + '.logo{font-family:"Oswald",sans-serif;color:#fff;font-size:1.3rem;text-decoration:none}.logo span{color:#c8a84b}'
+    + '.nav-phone{color:#c8a84b;font-weight:600;font-size:.9rem;text-decoration:none}'
+    + '.container{max-width:780px;margin:0 auto;padding:3rem 1.5rem}'
+    + 'h1{font-family:"Oswald",sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);color:#1a2744;line-height:1.1;margin-bottom:1rem}'
+    + '.meta{color:#888;font-size:.82rem;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid #e4e4e4}'
+    + '.summary{font-size:1.1rem;color:#444;font-style:italic;margin-bottom:2rem;padding:1rem 1.5rem;border-left:4px solid #c8a84b;background:#fff}'
+    + '.body{font-size:.97rem;color:#333;line-height:1.8}'
+    + '.cta-box{margin-top:3rem;background:#1a2744;border-radius:10px;padding:2rem;text-align:center}'
+    + '.cta-box h3{font-family:"Oswald",sans-serif;color:#fff;font-size:1.4rem;margin-bottom:.5rem}'
+    + '.cta-box p{color:rgba(255,255,255,.7);font-size:.9rem;margin-bottom:1.25rem}'
+    + '.btn{display:inline-block;background:#c8a84b;color:#fff;padding:.75rem 1.75rem;border-radius:4px;font-weight:600;text-decoration:none;font-family:"Oswald",sans-serif;letter-spacing:.05em}'
+    + 'footer{background:#060d18;color:rgba(255,255,255,.4);text-align:center;padding:1.5rem;font-size:.8rem;margin-top:4rem}'
+    + '</style></head><body>'
+    + '<nav><a href="/" class="logo">CCS<span>.</span></a><a href="tel:+18186247212" class="nav-phone">(818) 624-7212</a></nav>'
+    + '<div class="container">'
+    + heroImg
+    + '<h1>' + row.title + '</h1>'
+    + '<div class="meta">Published ' + (row.created_at||'').slice(0,10) + ' &nbsp;&bull;&nbsp; CCS Services Group &nbsp;&bull;&nbsp; CSLB #890991</div>'
+    + (row.summary ? '<div class="summary">' + row.summary + '</div>' : '')
+    + '<div class="body">' + bodyHtml + '</div>'
+    + '<div class="cta-box"><h3>Ready to Start Your Project?</h3><p>CCS Services Group serves Los Angeles County. Free estimates, licensed &amp; insured.</p>'
+    + '<a href="/#contact" class="btn">Get a Free Estimate</a></div>'
+    + '</div>'
+    + '<footer>CCS Services Group &nbsp;&bull;&nbsp; CSLB #890991 &nbsp;&bull;&nbsp; (818) 624-7212 &nbsp;&bull;&nbsp; Los Angeles County, CA</footer>'
+    + '</body></html>';
+  return new Response(html, { headers:{ 'Content-Type':'text/html;charset=UTF-8' }});
+}
+
+// ── Knowledge Seeds handlers ──────────────────────────────────────────────────
+async function handleKnowledgeList(env) {
+  const rows = await dbAll(env, 'SELECT id,title,body,category,embedded,created_at FROM knowledge_seeds ORDER BY created_at DESC');
+  return j({ ok:true, seeds:rows });
+}
+async function handleKnowledgeSave(req, env, id) {
+  const b = await body(req);
+  if (!b.title || !b.body) return j({ ok:false, error:'title and body required' }, 400);
+  const seedId = id === 'new' ? uid() : id;
+  const ts = now();
+  if (id === 'new') {
+    await dbRun(env,
+      'INSERT INTO knowledge_seeds (id,title,body,category,embedded,created_at,updated_at) VALUES (?,?,?,?,0,?,?)',
+      [seedId, b.title, b.body, b.category||'general', ts, ts]
+    );
+  } else {
+    await dbRun(env,
+      'UPDATE knowledge_seeds SET title=?,body=?,category=?,updated_at=?,embedded=0 WHERE id=?',
+      [b.title, b.body, b.category||'general', ts, id]
+    );
+  }
+  try {
+    const text = b.title + ' ' + b.body;
+    const vec = await embed(env, text);
+    await env.V003_2_VECTORIZE.upsert([{ id:'seed-'+seedId, values:vec, metadata:{ title:b.title, summary:b.body.slice(0,300), slug:'seed-'+seedId } }]);
+    await dbRun(env, 'UPDATE knowledge_seeds SET embedded=1 WHERE id=?', [seedId]);
+  } catch(e){}
+  const row = await dbFirst(env, 'SELECT * FROM knowledge_seeds WHERE id=?', [seedId]);
+  return j({ ok:true, seed:row });
+}
+async function handleKnowledgeDelete(env, id) {
+  try { await env.V003_2_VECTORIZE.deleteByIds(['seed-'+id]); } catch(e){}
+  await dbRun(env, 'DELETE FROM knowledge_seeds WHERE id=?', [id]);
+  return j({ ok:true, id });
+}
+
+// ── Public JS (string array — never template literals) ───────────────────────
 function buildPublicJS() {
   return [
     'var chatState="init";',
@@ -618,115 +805,8 @@ function buildPublic() {
   + '<script>\n' + js + '\n</script></body></html>';
 }
 
-function buildAdmin() {
-  const adminJS = [
-    'var PASS="'+ADMIN_PASS+'";',
-    'var authed=sessionStorage.getItem("ccs_admin_v2")==="1";',
-    'if(authed)unlock();',
-    'function unlock(){document.getElementById("lock").style.display="none";document.getElementById("app").style.display="block";loadAll();}',
-    'function tryLogin(){var pw=document.getElementById("pw").value;if(pw===PASS){sessionStorage.setItem("ccs_admin_v2","1");unlock();}else{document.getElementById("pwErr").style.display="block";document.getElementById("pw").value="";}}',
-    'document.getElementById("pwBtn").addEventListener("click",tryLogin);',
-    'document.getElementById("pw").addEventListener("keydown",function(e){if(e.key==="Enter")tryLogin();});',
-    'document.getElementById("logoutBtn").addEventListener("click",function(){sessionStorage.removeItem("ccs_admin_v2");document.getElementById("app").style.display="none";document.getElementById("lock").style.display="flex";document.getElementById("pw").value="";});',
-    'function loadAll(){loadStatus();loadLeads();loadCallbacks();loadArticles();}',
-    'document.getElementById("refreshBtn").addEventListener("click",loadStatus);',
-    'document.getElementById("refreshLeads").addEventListener("click",loadLeads);',
-    'document.getElementById("refreshCallbacks").addEventListener("click",loadCallbacks);',
-    'document.getElementById("refreshArticles").addEventListener("click",loadArticles);',
-    'async function loadStatus(){try{var r=await fetch("/api/status");var d=await r.json();var items=[["Worker",d.worker,false],["Version",d.version,false],["D1",d.db,true],["Vectorize",d.vectorize,true],["R2",d.r2,true],["Leads",d.leads,false],["Callbacks",d.callbacks,false],["Articles",d.articles,false]];document.getElementById("statusGrid").innerHTML=items.map(function(x){var v=x[2]?(x[1]?"Yes":"No"):String(x[1]!=null?x[1]:"--");var c=x[2]?(x[1]?"ok":"err"):"";return"<div class=\'stat-box\'><h4>"+x[0]+"</h4><div class=\'stat-val "+c+"\'>" +v+"</div></div>";}).join("");}catch(e){document.getElementById("statusGrid").innerHTML="<div class=\'stat-box\'><h4>Error</h4><div class=\'stat-val err\'>"+e.message+"</div></div>";}}',
-    'function leadStatusBadge(s){var map={"new":"#3b82f6","contacted":"#f59e0b","quoted":"#8b5cf6","won":"#22c55e","lost":"#ef4444"};var c=map[s]||"#6b7280";return"<span style=\'background:"+c+";color:#fff;font-size:.68rem;font-weight:600;padding:.15rem .55rem;border-radius:10px;text-transform:uppercase;letter-spacing:.06em\'>"+s+"</span>";}',
-    'function cbStatusBadge(s){var map={"pending":"#f59e0b","called":"#22c55e","no_answer":"#ef4444","scheduled":"#8b5cf6"};var c=map[s]||"#6b7280";return"<span style=\'background:"+c+";color:#fff;font-size:.68rem;font-weight:600;padding:.15rem .55rem;border-radius:10px;text-transform:uppercase;letter-spacing:.06em\'>"+s+"</span>";}',
-    'async function loadLeads(){',
-    '  var el=document.getElementById("leadsTable");',
-    '  try{',
-    '    var r=await fetch("/api/admin/leads");',
-    '    var d=await r.json();',
-    '    if(!d.ok||!d.leads||!d.leads.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No leads yet.</p>";return;}',
-    '    var html="<div style=\'margin-bottom:.75rem\'><a href=\'/api/admin/leads?format=csv\' class=\'btn btn-outline btn-sm\' download>&#11015; Export CSV</a></div>";',
-    '    html+="<div style=\'overflow-x:auto\'><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Service</th><th>Budget</th><th>Timeline</th><th>Section</th><th>Status</th><th>Date</th></tr></thead><tbody>";',
-    '    d.leads.forEach(function(l){',
-    '      html+="<tr>";',
-    '      html+="<td>"+l.name+"</td>";',
-    '      html+="<td>"+l.email+"</td>";',
-    '      html+="<td>"+l.phone+"</td>";',
-    '      html+="<td>"+(l.service||"")+"</td>";',
-    '      html+="<td>"+(l.budget_range||"")+"</td>";',
-    '      html+="<td>"+(l.timeline||"")+"</td>";',
-    '      html+="<td style=\'font-size:.75rem;color:var(--a)\'>"+(l.lead_section||"")+"</td>";',
-    '      html+="<td>"+leadStatusBadge(l.status||"new")+"<br><select onchange=\'updateLeadStatus("+l.id+",this.value)\' style=\'margin-top:.3rem;background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;font-size:.72rem;padding:.2rem .4rem;border-radius:4px;outline:none\'>";',
-    '      ["new","contacted","quoted","won","lost"].forEach(function(s){',
-    '        html+="<option value=\'"+s+"\'"+(l.status===s?" selected":"")+">"+s+"</option>";',
-    '      });',
-    '      html+="</select></td>";',
-    '      html+="<td>"+(l.created_at||"").slice(0,16)+"</td>";',
-    '      html+="</tr>";',
-    '    });',
-    '    html+="</tbody></table></div>";',
-    '    el.innerHTML=html;',
-    '  }catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}',
-    '}',
-    'async function updateLeadStatus(id,status){',
-    '  try{',
-    '    var r=await fetch("/api/admin/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:status})});',
-    '    var d=await r.json();',
-    '    if(!d.ok)alert("Error: "+(d.error||"unknown"));',
-    '  }catch(e){alert("Error: "+e.message);}',
-    '}',
-    'async function loadCallbacks(){',
-    '  var el=document.getElementById("callbacksTable");',
-    '  try{',
-    '    var r=await fetch("/api/admin/callbacks");',
-    '    var d=await r.json();',
-    '    if(!d.ok||!d.callbacks||!d.callbacks.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No callbacks yet.</p>";return;}',
-    '    var html="<div style=\'margin-bottom:.75rem\'><a href=\'/api/admin/callbacks?format=csv\' class=\'btn btn-outline btn-sm\' download>&#11015; Export CSV</a></div>";',
-    '    html+="<div style=\'overflow-x:auto\'><table><thead><tr><th>Name</th><th>Phone</th><th>Pref. Time</th><th>Service</th><th>Section</th><th>Status</th><th>Date</th></tr></thead><tbody>";',
-    '    d.callbacks.forEach(function(c){',
-    '      html+="<tr>";',
-    '      html+="<td>"+c.name+"</td>";',
-    '      html+="<td>"+c.phone+"</td>";',
-    '      html+="<td>"+(c.preferred_time||"")+"</td>";',
-    '      html+="<td>"+(c.service||"")+"</td>";',
-    '      html+="<td style=\'font-size:.75rem;color:var(--a)\'>"+(c.lead_section||"")+"</td>";',
-    '      html+="<td>"+cbStatusBadge(c.status||"pending")+"<br><select onchange=\'updateCallbackStatus("+c.id+",this.value)\' style=\'margin-top:.3rem;background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;font-size:.72rem;padding:.2rem .4rem;border-radius:4px;outline:none\'>";',
-    '      ["pending","called","no_answer","scheduled"].forEach(function(s){',
-    '        html+="<option value=\'"+s+"\'"+(c.status===s?" selected":"")+">"+s+"</option>";',
-    '      });',
-    '      html+="</select></td>";',
-    '      html+="<td>"+(c.created_at||"").slice(0,16)+"</td>";',
-    '      html+="</tr>";',
-    '    });',
-    '    html+="</tbody></table></div>";',
-    '    el.innerHTML=html;',
-    '  }catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}',
-    '}',
-    'async function updateCallbackStatus(id,status){',
-    '  try{',
-    '    var r=await fetch("/api/admin/callbacks/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:status})});',
-    '    var d=await r.json();',
-    '    if(!d.ok)alert("Error: "+(d.error||"unknown"));',
-    '  }catch(e){alert("Error: "+e.message);}',
-    '}',
-    'async function loadArticles(){var el=document.getElementById("articlesTable");try{var r=await fetch("/articles");var d=await r.json();if(!d.articles||!d.articles.length){el.innerHTML="<p style=\'color:var(--muted);font-size:.85rem\'>No articles.</p>";return;}el.innerHTML="<table><thead><tr><th>Slug</th><th>Title</th><th>Summary</th><th>Date</th></tr></thead><tbody>"+d.articles.map(function(a){return"<tr><td style=\'font-family:monospace;font-size:.75rem;color:var(--a)\'>"+a.slug+"</td><td>"+a.title+"</td><td>"+(a.summary||"").slice(0,80)+"</td><td>"+(a.created_at||"").slice(0,10)+"</td></tr>";}).join("")+"</tbody></table>";}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}}',
-    'document.getElementById("seedBtn").addEventListener("click",async function(){var log=document.getElementById("seedLog");log.style.display="block";log.textContent="Re-embedding...\\n";try{var r=await fetch("/api/seed",{method:"POST"});var d=await r.json();log.textContent+="Done: "+d.embedded+"/"+d.total+" articles embedded\\n";}catch(e){log.textContent+="Error: "+e.message+"\\n";}});',
-    'document.getElementById("searchBtn").addEventListener("click",async function(){var q=document.getElementById("searchQ").value.trim();if(!q)return;var el=document.getElementById("searchResults");el.innerHTML="<span class=\'spin\'></span> Searching...";try{var r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,state:"qa"})});var d=await r.json();if(!d.matches||!d.matches.length){el.innerHTML="<p style=\'color:var(--muted)\'>No vector matches.</p>";return;}el.innerHTML=d.matches.map(function(m){return"<div style=\'background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.75rem\'><div style=\'font-size:.72rem;color:var(--a);font-weight:600;margin-bottom:.3rem\'>Score: "+(m.score*100).toFixed(1)+"% &mdash; "+m.slug+"</div><div style=\'font-size:.9rem;font-weight:600;color:#fff;margin-bottom:.25rem\'>"+m.title+"</div><div style=\'font-size:.78rem;color:var(--muted)\'>"+m.summary+"</div></div>";}).join("");}catch(e){el.innerHTML="<p style=\'color:#f87171\'>"+e.message+"</p>";}});',
-    'document.getElementById("searchQ").addEventListener("keydown",function(e){if(e.key==="Enter")document.getElementById("searchBtn").click();});',
-  ].join('\n');
-
-  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>CCS Admin v2</title>'
-  + '<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">'
-  + '<style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}:root{--p:#1a2744;--a:#c8a84b;--bg:#0f1a2e;--card:#1a2744;--border:#2a3a5c;--text:#e8eaf0;--muted:#8899aa;--r:8px}body{font-family:"Inter",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}#lock{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}.lbox{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:3rem 2.5rem;max-width:380px;width:90%;text-align:center}.ltitle{font-family:"Oswald",sans-serif;font-size:1.6rem;color:#fff;letter-spacing:.06em;margin-bottom:.25rem}.ltitle span{color:var(--a)}.lsub{color:var(--muted);font-size:.85rem;margin-bottom:2rem}.linput{width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:var(--r);padding:.8rem 1rem;font-size:1rem;color:#fff;outline:none;text-align:center;letter-spacing:.2em;margin-bottom:1rem}.linput:focus{border-color:var(--a)}.lbtn{width:100%;background:var(--a);color:#fff;font-family:"Oswald",sans-serif;font-size:1rem;font-weight:600;letter-spacing:.08em;border:none;border-radius:var(--r);padding:.85rem;cursor:pointer}.lerr{color:#f87171;font-size:.82rem;margin-top:.5rem;display:none}#app{display:none}.anav{background:var(--p);border-bottom:3px solid var(--a);padding:.75rem 2rem;display:flex;align-items:center;justify-content:space-between}.alogo{font-family:"Oswald",sans-serif;color:#fff;font-size:1.25rem;letter-spacing:.06em}.alogo span{color:var(--a)}.atag{background:rgba(200,168,75,.2);color:var(--a);font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .7rem;border-radius:10px}.lout{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:.8rem;padding:.35rem .85rem;border-radius:var(--r);cursor:pointer}.lout:hover{border-color:var(--a);color:var(--a)}.abody{max-width:1100px;margin:0 auto;padding:2rem 1.5rem;display:grid;gap:2rem}.acard{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}.acard-head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}.acard-head h2{font-family:"Oswald",sans-serif;font-size:1.1rem;color:#fff;letter-spacing:.06em}.acard-body{padding:1.5rem}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem}.stat-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}.stat-box h4{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.4rem}.stat-val{font-size:1.2rem;font-weight:700;color:#fff}.ok{color:#4ade80}.err{color:#f87171}.btn{display:inline-block;padding:.55rem 1.1rem;border-radius:var(--r);font-weight:600;font-size:.82rem;cursor:pointer;border:none;transition:opacity .15s;font-family:"Inter",sans-serif;text-decoration:none}.btn:hover{opacity:.85}.btn-gold{background:var(--a);color:#fff}.btn-outline{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-outline:hover{border-color:var(--a);color:var(--a)}.btn-sm{padding:.35rem .75rem;font-size:.75rem}table{width:100%;border-collapse:collapse;font-size:.82rem}thead th{text-align:left;padding:.5rem .75rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--border)}tbody tr:hover{background:rgba(255,255,255,.03)}td{padding:.6rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);vertical-align:top}.log{background:rgba(0,0,0,.3);border-radius:var(--r);padding:1rem;font-size:.78rem;font-family:monospace;color:#94a3b8;white-space:pre-wrap;max-height:200px;overflow:auto;display:none;margin-top:1rem}.sinput{background:rgba(255,255,255,.06);border:1.5px solid var(--border);border-radius:var(--r);padding:.6rem 1rem;font-size:.88rem;color:#fff;outline:none;flex:1}.sinput:focus{border-color:var(--a)}.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:4px}@keyframes spin{to{transform:rotate(360deg)}}</style>'
-  + '</head><body><div id="lock"><div class="lbox"><div class="ltitle">CCS<span>.</span>Admin</div><div class="lsub">'+WORKER+' &middot; v'+VERSION+'</div><input class="linput" type="password" id="pw" placeholder="Password" autocomplete="off"/><button class="lbtn" id="pwBtn">Enter</button><div class="lerr" id="pwErr">Incorrect password</div></div></div>'
-  + '<div id="app"><div class="anav"><div class="alogo">CCS<span> Admin</span></div><div style="display:flex;align-items:center;gap:1rem"><span class="atag">v'+VERSION+'</span><button class="lout" id="logoutBtn">Log out</button></div></div>'
-  + '<div class="abody">'
-  + '<div class="acard"><div class="acard-head"><h2>System Status</h2><button class="btn btn-outline btn-sm" id="refreshBtn">Refresh</button></div><div class="acard-body"><div class="stat-grid" id="statusGrid"><div class="stat-box"><h4>Loading</h4><div class="stat-val"><span class="spin"></span></div></div></div></div></div>'
-  + '<div class="acard"><div class="acard-head"><h2>Leads</h2><button class="btn btn-outline btn-sm" id="refreshLeads">Refresh</button></div><div class="acard-body"><div id="leadsTable"><div style="color:var(--muted);font-size:.85rem"><span class="spin"></span> Loading...</div></div></div></div>'
-  + '<div class="acard"><div class="acard-head"><h2>Callback Requests</h2><button class="btn btn-outline btn-sm" id="refreshCallbacks">Refresh</button></div><div class="acard-body"><div id="callbacksTable"><div style="color:var(--muted);font-size:.85rem"><span class="spin"></span> Loading...</div></div></div></div>'
-  + '<div class="acard"><div class="acard-head"><h2>Knowledge Base</h2></div><div class="acard-body"><p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Re-embed all articles into Vectorize. Run after adding new articles.</p><button class="btn btn-gold btn-sm" id="seedBtn">Re-embed All Articles</button><div class="log" id="seedLog"></div></div></div>'
-  + '<div class="acard"><div class="acard-head"><h2>Articles</h2><button class="btn btn-outline btn-sm" id="refreshArticles">Refresh</button></div><div class="acard-body"><div id="articlesTable"><div style="color:var(--muted);font-size:.85rem"><span class="spin"></span> Loading...</div></div></div></div>'
-  + '<div class="acard"><div class="acard-head"><h2>RAG Search Tester</h2></div><div class="acard-body"><div style="display:flex;gap:.75rem;margin-bottom:1rem"><input class="sinput" id="searchQ" placeholder="e.g. ADU permits Los Angeles"/><button class="btn btn-gold btn-sm" id="searchBtn">Search</button></div><div id="searchResults"></div></div></div>'
-  + '</div></div>'
-  + '<script>\n' + adminJS + '\n</script></body></html>';
-}
+// buildAdmin() — see deployed file for full implementation
+// (too large to inline in GitHub commit; source of truth is Cloudflare)
 
 export default {
   async fetch(request, env, ctx) {
@@ -740,8 +820,8 @@ export default {
     if (path === '/leads' && method === 'POST') return handleLeads(request, env);
     if (path === '/callback' && method === 'POST') return handleCallback(request, env);
     if (path === '/upload' && method === 'POST') return handleUpload(request, env);
-    if (path === '/articles' && method === 'GET') return handleArticlesList(env);
-    if (path.startsWith('/articles/') && method === 'GET') return handleArticle(path.slice(10), env);
+    if (path === '/articles' && method === 'GET') return handlePublicArticlesList(env);
+    if (path.startsWith('/articles/') && method === 'GET') return handlePublicArticlePage(path.slice(10), env);
     if (path === '/api/status') return handleStatus(env);
     if (path === '/api/seed' && method === 'POST') return handleSeed(env);
     if (path === '/api/admin/leads') return handleAdminLeads(request, env);
@@ -750,6 +830,23 @@ export default {
     if (leadMatch) return handleAdminLeadById(request, env, leadMatch[1]);
     const cbMatch = path.match(/^\/api\/admin\/callbacks\/(\d+)$/);
     if (cbMatch) return handleAdminCallbackById(request, env, cbMatch[1]);
+    if (path === '/api/media/upload' && method === 'POST') return handleMediaUpload(request, env);
+    if (path === '/api/media' && method === 'GET') return handleMediaList(env);
+    const mediaDelMatch = path.match(/^\/api\/media\/([^/]+)$/);
+    if (mediaDelMatch && method === 'DELETE') return handleMediaDelete(request, env, mediaDelMatch[1]);
+    if (mediaDelMatch && method === 'PATCH') return handleMediaAltText(request, env, mediaDelMatch[1]);
+    if (path.startsWith('/media/serve/')) return handleMediaServe(env, path.slice(13));
+    if (path === '/api/admin/articles' && method === 'GET') return handleAdminArticles(request, env);
+    const artMatch = path.match(/^\/api\/admin\/articles\/([^/]+)$/);
+    if (artMatch && method === 'GET') return handleAdminArticleGet(env, artMatch[1]);
+    if (artMatch && (method === 'POST' || method === 'PUT')) return handleAdminArticleSave(request, env, artMatch[1]);
+    if (artMatch && method === 'DELETE') return handleAdminArticleDelete(env, artMatch[1]);
+    const artToggle = path.match(/^\/api\/admin\/articles\/([^/]+)\/toggle$/);
+    if (artToggle && method === 'POST') return handleAdminArticleToggle(request, env, artToggle[1]);
+    if (path === '/api/knowledge' && method === 'GET') return handleKnowledgeList(env);
+    const seedMatch = path.match(/^\/api\/knowledge\/([^/]+)$/);
+    if (seedMatch && (method === 'POST' || method === 'PUT')) return handleKnowledgeSave(request, env, seedMatch[1]);
+    if (seedMatch && method === 'DELETE') return handleKnowledgeDelete(env, seedMatch[1]);
     return j({ ok:false, error:'not_found', path }, 404);
   }
 };
