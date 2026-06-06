@@ -1,5 +1,5 @@
 name = "afo-control-center-dashboard"
-main = "worker.js"
+main = "worker.generated.js"
 compatibility_date = "2026-06-06"
 
 # Production route target:
