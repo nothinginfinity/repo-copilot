@@ -1,0 +1,95 @@
+{
+  "worker": "contractor-v003-2-afo",
+  "phase": "phase3-preflight",
+  "created_at": "2026-06-05T00:00:00-07:00",
+  "created_by": "ChatGPT",
+  "status": "blocked_on_live_source_and_d1_sql_tools",
+  "requested_work": [
+    "Read START-HERE, hardening receipt, roadmap",
+    "Verify current state",
+    "Begin Phase 3 work where safe"
+  ],
+  "files_read": [
+    "handoffs/contractor-v003-2-afo-START-HERE.md",
+    "receipts/contractor-v003-2-afo-hardening.json",
+    "handoffs/contractor-v003-2-afo-roadmap.md",
+    "workers/contractor-v003-2-afo/worker.js"
+  ],
+  "verified_from_hardening_receipt": {
+    "live_url": "https://contractor-v003-2-afo.jaredtechfit.workers.dev",
+    "version": "0.2.0",
+    "d1_uuid": "c0743318-ee23-4d08-9bd7-0d2b3cc36018",
+    "vectorize": "contractor-v003-2-afo-vector",
+    "vectors_embedded": 12,
+    "routes_working_as_of_receipt": [
+      "GET /",
+      "GET /admin",
+      "POST /chat",
+      "POST /leads",
+      "POST /callback",
+      "POST /upload",
+      "GET /articles",
+      "GET /articles/{slug}",
+      "GET /api/status",
+      "POST /api/seed",
+      "GET /api/admin/leads",
+      "GET /api/admin/callbacks"
+    ]
+  },
+  "tooling_available_in_this_chat": {
+    "github_mcp": [
+      "read_file",
+      "list_files",
+      "commit_file",
+      "search_code"
+    ],
+    "cf_multipart_vnext_r2": [
+      "deployment_status",
+      "list_workers",
+      "deploy_worker_with_r2_bindings",
+      "update_worker_bindings_multipart",
+      "create_vectorize_index",
+      "list_vectorize_indexes"
+    ]
+  },
+  "tooling_missing_for_safe_completion": [
+    "A source-read tool for the currently deployed Cloudflare Worker, such as get_worker_source",
+    "D1 SQL execution/query tooling for contractor_v003_2_afo_db, such as execute_d1_sql/query_d1_sql/list_d1_tables"
+  ],
+  "critical_findings": [
+    "GitHub repo file workers/contractor-v003-2-afo/worker.js is only 528 bytes and appears to be a truncated/broken scaffold, not the live v0.2.0 source described by the hardening receipt.",
+    "GitHub code search did not find another committed v0.2.0 source for contractor-v003-2-afo; the hardening receipt is the only match for version 0.2.0.",
+    "cf-multipart-vnext-r2 is working for deploy/bindings/vectorize operations, but does not expose reliable source-read or D1 SQL execution in this chat.",
+    "Redeploying from the current repo worker.js would risk overwriting Claude's working live v0.2.0 Worker with an incomplete scaffold. No deploy was performed."
+  ],
+  "safe_next_steps": [
+    "Attach cloudflare-multipart-mcp with get_worker_source, execute_d1_sql, query_d1_sql, and list_d1_tables, or attach equivalent D1/source tools.",
+    "Fetch the live contractor-v003-2-afo Worker source and commit it to workers/contractor-v003-2-afo/worker.js before patching.",
+    "Run D1 schema inspection on database c0743318-ee23-4d08-9bd7-0d2b3cc36018 before ALTER TABLE statements.",
+    "Apply Phase 3 patch to the real live source, not the 528-byte scaffold.",
+    "Deploy with bindings V003_2_DB, V003_2_VECTORIZE, V003_2_R2, AI only after source is confirmed.",
+    "Smoke test /api/status, /leads, /callback, /api/admin/leads, /api/admin/callbacks, CSV endpoints, and public callback widget.",
+    "Commit receipts/contractor-v003-2-afo-phase3.json after successful deploy and smoke tests."
+  ],
+  "phase3_patch_plan_ready": {
+    "d1_migration": [
+      "ALTER TABLE leads ADD COLUMN lead_section TEXT DEFAULT '';",
+      "ALTER TABLE callbacks ADD COLUMN lead_section TEXT DEFAULT '';",
+      "Ensure status columns exist or add status TEXT DEFAULT 'new' for leads and status TEXT DEFAULT 'pending' for callbacks if missing"
+    ],
+    "routes_to_add_or_update": [
+      "POST /leads saves budget, timeline, lead_section",
+      "POST /callback saves lead_section and preferred_time",
+      "PATCH /api/admin/leads/{id} validates and saves status",
+      "PATCH /api/admin/callbacks/{id} validates and saves status",
+      "GET /api/admin/leads.csv returns CSV export",
+      "GET /api/admin/callbacks.csv returns CSV export"
+    ],
+    "frontend_to_update": [
+      "Every CTA passes section label: hero_chat, nav_cta, services_{type}, portfolio_{id}, lead_form, callback_widget",
+      "Lead form adds budget and timeline dropdowns",
+      "Public page adds standalone callback request widget below lead form",
+      "Admin leads/callbacks tables add status dropdowns and CSV export buttons"
+    ]
+  }
+}
