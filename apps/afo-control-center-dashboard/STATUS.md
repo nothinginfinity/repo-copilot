@@ -68,14 +68,14 @@ Mobile GitHub Actions verification path reviewed.
 
 GitHub Actions install step hardened with npm fetch retry settings after a transient registry `ECONNRESET` failure.
 
+GitHub Actions dry run passed green with `deploy=false`.
+
 ## Next concrete steps
 
-1. Run the GitHub Actions workflow manually from GitHub mobile with `deploy=false`.
-2. Review the workflow logs for install retry, build, generated worker verification, and Wrangler dry run.
-3. Deploy to a preview Worker only after the dry run passes.
-4. Confirm `/api/status` returns JSON.
-5. Confirm `/` serves the polished dashboard, not the fallback shell.
-6. After preview works, attach or route to `control.agentfeedoptimization.com`.
+1. Deploy to a preview Worker only after Jared explicitly requests deployment.
+2. Confirm `/api/status` returns JSON after preview deployment.
+3. Confirm `/` serves the polished dashboard, not the fallback shell.
+4. After preview works, attach or route to `control.agentfeedoptimization.com`.
 
 ## Next product steps
 
