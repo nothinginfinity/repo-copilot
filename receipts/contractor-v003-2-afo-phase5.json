@@ -1,1 +1,46 @@
-receipts/contractor-v003-2-afo-phase5.json
+{
+  "worker": "contractor-v003-2-afo",
+  "version": "0.5.0",
+  "phase": "Phase 5 — CMS, Site Publish, Articles on Homepage",
+  "deployed_at": "2026-06-06T23:30:00Z",
+  "cloudflare_version_id": "cdd42957-71af-4df2-8b7b-87b205100521",
+  "url": "https://contractor-v003-2-afo.jaredtechfit.workers.dev",
+  "admin": "https://contractor-v003-2-afo.jaredtechfit.workers.dev/admin",
+  "d1_uuid": "c0743318-ee23-4d08-9bd7-0d2b3cc36018",
+  "new_d1_tables": ["site_content", "site_snapshot"],
+  "seeded_sections": ["services (5 items)", "projects (6 items)", "reviews (3 items)", "process (3 steps)", "contact"],
+  "architecture": {
+    "public_site": "Served from site_snapshot table (pre-rendered HTML). Zero DB calls on page load.",
+    "publish_flow": "Admin edits content -> saved to site_content -> click Publish -> renderPublicHTML() runs -> saved to site_snapshot -> live instantly",
+    "fallback": "If no snapshot exists, renders on-the-fly from site_content"
+  },
+  "new_features": {
+    "admin_tabs": ["Services", "Projects", "Reviews", "Process", "Contact"],
+    "cms_editor": "Each section has add/edit/delete/reorder items with image picker (R2 key or URL)",
+    "publish_button": "Dashboard Publish Site Live button — renders and saves full snapshot",
+    "articles_homepage": "Latest 3 published articles shown in section above contact form",
+    "articles_index": "GET /articles — styled index page listing all published articles",
+    "articles_nav": "Nav menu now includes Articles link",
+    "contact_editor": "Full contact/branding editor: phone, hero title/sub/image, stats, company name, license, areas"
+  },
+  "routes_added": [
+    "POST /api/publish — render + save site snapshot",
+    "GET /api/content/{section} — read section data",
+    "POST /api/content/{section} — save section data",
+    "GET /articles — articles index page",
+    "GET /articles/{slug} — individual article page (already existed, now reads contact from D1)"
+  ],
+  "how_to_use": {
+    "edit_content": "Admin -> Services/Projects/Reviews/Process/Contact tabs -> edit items -> Save Draft or Save+Publish Live",
+    "add_images": "Admin -> Media tab -> upload image -> copy R2 key -> paste into image field",
+    "add_articles": "Admin -> Articles tab -> New Article -> fill in -> check Publish -> Save",
+    "publish_site": "Admin -> Dashboard -> Publish Site Live button (or use Save+Publish from any CMS tab)",
+    "articles_appear": "On homepage after publishing (latest 3), and at /articles index"
+  },
+  "remaining_work": {
+    "github_action": "No auto-deploy on git push yet — still requires wrangler from bash_tool with API token",
+    "email_notifications": "No email on new lead/callback yet",
+    "voice_recorder": "Audio upload works via media library but no in-browser recorder widget yet",
+    "admin_auth": "Password is hardcoded 'demo' — no per-user accounts"
+  }
+}
