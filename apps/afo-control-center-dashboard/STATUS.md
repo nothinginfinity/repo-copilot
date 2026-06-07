@@ -60,6 +60,8 @@ That file is not committed by default. It is generated locally or in CI with:
 npm run build
 ```
 
+Package scripts have been cleaned up so Wrangler reads `worker.generated.js` from `wrangler.toml` instead of receiving it as a positional argument.
+
 ## Next concrete steps
 
 1. Run the build script and verify `worker.generated.js` is created.
