@@ -66,11 +66,13 @@ Verification pass: package scripts, Wrangler `main`, Worker fallback marker, and
 
 Mobile GitHub Actions verification path reviewed.
 
+GitHub Actions install step hardened with npm fetch retry settings after a transient registry `ECONNRESET` failure.
+
 ## Next concrete steps
 
-1. Run the build script and verify `worker.generated.js` is created.
-2. Run the Wrangler dry run from the dashboard folder.
-3. Deploy to a preview Worker first.
+1. Run the GitHub Actions workflow manually from GitHub mobile with `deploy=false`.
+2. Review the workflow logs for install retry, build, generated worker verification, and Wrangler dry run.
+3. Deploy to a preview Worker only after the dry run passes.
 4. Confirm `/api/status` returns JSON.
 5. Confirm `/` serves the polished dashboard, not the fallback shell.
 6. After preview works, attach or route to `control.agentfeedoptimization.com`.
