@@ -70,12 +70,13 @@ GitHub Actions install step hardened with npm fetch retry settings after a trans
 
 GitHub Actions dry run passed green with `deploy=false`.
 
+GitHub Actions deployment passed green with `deploy=true`.
+
 ## Next concrete steps
 
-1. Deploy to a preview Worker only after Jared explicitly requests deployment.
-2. Confirm `/api/status` returns JSON after preview deployment.
-3. Confirm `/` serves the polished dashboard, not the fallback shell.
-4. After preview works, attach or route to `control.agentfeedoptimization.com`.
+1. Confirm `/api/status` returns JSON after deployment.
+2. Confirm `/` serves the polished dashboard, not the fallback shell.
+3. After preview works, attach or route to `control.agentfeedoptimization.com` if not already configured.
 
 ## Next product steps
 
