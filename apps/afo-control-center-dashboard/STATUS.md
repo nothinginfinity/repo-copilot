@@ -62,6 +62,8 @@ npm run build
 
 Package scripts have been cleaned up so Wrangler reads `worker.generated.js` from `wrangler.toml` instead of receiving it as a positional argument.
 
+Verification pass: package scripts, Wrangler `main`, Worker fallback marker, and inline build paths are consistent for a local dry run.
+
 ## Next concrete steps
 
 1. Run the build script and verify `worker.generated.js` is created.
