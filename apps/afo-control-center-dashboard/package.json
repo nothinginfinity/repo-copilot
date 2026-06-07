@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "node build-inline.mjs",
-    "dev": "npm run build && wrangler dev worker.generated.js",
-    "check": "npm run build && wrangler deploy worker.generated.js --dry-run",
-    "deploy": "npm run build && wrangler deploy worker.generated.js"
+    "dev": "npm run build && wrangler dev",
+    "check": "npm run build && wrangler deploy --dry-run",
+    "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "latest"
