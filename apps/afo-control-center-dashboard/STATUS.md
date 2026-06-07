@@ -64,6 +64,8 @@ Package scripts have been cleaned up so Wrangler reads `worker.generated.js` fro
 
 Verification pass: package scripts, Wrangler `main`, Worker fallback marker, and inline build paths are consistent for a local dry run.
 
+Mobile GitHub Actions verification path reviewed.
+
 ## Next concrete steps
 
 1. Run the build script and verify `worker.generated.js` is created.
