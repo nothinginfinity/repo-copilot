@@ -1,0 +1,17 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo-cf-resource-admin-mcp",
+  "worker_name": "afo-cf-resource-admin-mcp",
+  "plane": "Cloudflare Resource Admin",
+  "risk_profile": "cloudflare_write_gated",
+  "purpose": "Creates and lists Cloudflare KV namespaces and R2 buckets via the CF API.",
+  "tools": [
+    "resource_admin_status",
+    "create_kv_namespace",
+    "list_kv_namespaces",
+    "create_r2_bucket",
+    "list_r2_buckets"
+  ],
+  "source_path": "apps/afo-cf-resource-admin-mcp/worker.js",
+  "status": "v0.1.0"
+}
