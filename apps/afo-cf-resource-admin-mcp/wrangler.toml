@@ -1,0 +1,7 @@
+name = "afo-cf-resource-admin-mcp"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+# Required secrets — set via wrangler CLI:
+# wrangler secret put CF_API_TOKEN
+# wrangler secret put CF_ACCOUNT_ID
