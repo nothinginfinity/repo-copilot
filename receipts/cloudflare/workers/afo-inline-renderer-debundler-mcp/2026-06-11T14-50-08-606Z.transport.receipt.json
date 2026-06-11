@@ -1,0 +1,16 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-inline-renderer-debundler-mcp",
+  "created_at": "2026-06-11T14:50:08.761Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-inline-renderer-debundler-mcp",
+  "source_path": "apps/afo-inline-renderer-debundler-mcp/worker.js",
+  "source_sha256": "sha256:1f8cb11a6c68833004c76294a4da66ca1138d063c12a2946412dc04e3920bc4f",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-inline-renderer-debundler-mcp",
+    "binding_count": 0,
+    "bindings": [],
+    "deployed_at": "2026-06-11T14:50:08.606Z"
+  }
+}
