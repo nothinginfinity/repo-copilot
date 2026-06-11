@@ -1,0 +1,9 @@
+name = "afo-inline-renderer-debundler-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+# No public vars — secrets set via dashboard or wrangler secret put
+
+# Required secrets (set via Cloudflare dashboard or wrangler secret put):
+#   GITHUB_TOKEN  — fine-grained PAT with contents:read+write on lab repos
