@@ -1,4 +1,4 @@
-const VERSION = '0.1.0';
+PLACEHOLDER_WILL_NOT_MATCH_ANYTHING_XYZ
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
