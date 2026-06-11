@@ -1,0 +1,14 @@
+{
+  "name": "afo-inline-renderer-debundler-mcp",
+  "version": "0.1.0",
+  "description": "MCP tool that detects and splits large inline HTML/CSS/JS renderer files into maintainable modules without changing runtime behavior.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": ["GITHUB_TOKEN"],
+  "tools": [
+    "inline_debundler_status",
+    "analyze_inline_renderer",
+    "debundle_inline_renderer",
+    "verify_inline_debundle"
+  ]
+}
