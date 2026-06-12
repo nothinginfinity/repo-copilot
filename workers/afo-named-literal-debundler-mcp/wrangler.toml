@@ -1,0 +1,6 @@
+name = "afo-named-literal-debundler-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Required secrets (set via Cloudflare dashboard):
+#   GITHUB_TOKEN — fine-grained PAT with contents:read+write on target repos
