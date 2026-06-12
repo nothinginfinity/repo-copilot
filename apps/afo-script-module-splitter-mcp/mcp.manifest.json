@@ -1,0 +1,15 @@
+{
+  "name": "afo-script-module-splitter-mcp",
+  "version": "0.1.0",
+  "description": "Splits large exported browser-script modules into smaller UX surface modules while preserving Cloudflare Worker deployment compatibility.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": ["GITHUB_TOKEN"],
+  "tools": [
+    "script_splitter_status",
+    "analyze_script_modules",
+    "plan_script_module_split",
+    "split_script_modules",
+    "verify_script_module_split"
+  ]
+}
