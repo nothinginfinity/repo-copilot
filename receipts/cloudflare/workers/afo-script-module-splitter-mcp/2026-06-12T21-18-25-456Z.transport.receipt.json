@@ -1,0 +1,16 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-script-module-splitter-mcp",
+  "created_at": "2026-06-12T21:18:25.528Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-script-module-splitter-mcp",
+  "source_path": "apps/afo-script-module-splitter-mcp/worker.js",
+  "source_sha256": "sha256:907358811858b71b4cb1ab1e8e913c9c31e5dda8a60d8e3c48466ddbc1ba6928",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-script-module-splitter-mcp",
+    "binding_count": 0,
+    "bindings": [],
+    "deployed_at": "2026-06-12T21:18:25.456Z"
+  }
+}
