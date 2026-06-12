@@ -1,0 +1,16 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-named-literal-debundler-mcp",
+  "created_at": "2026-06-12T18:53:01.982Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-named-literal-debundler-mcp",
+  "source_path": "apps/afo-named-literal-debundler-mcp/worker.js",
+  "source_sha256": "sha256:78e0d0d0b2526aedd4ca4b13ff80827c6713bbc83c70788dc63d3e77b5d5de96",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-named-literal-debundler-mcp",
+    "binding_count": 0,
+    "bindings": [],
+    "deployed_at": "2026-06-12T18:53:01.890Z"
+  }
+}
