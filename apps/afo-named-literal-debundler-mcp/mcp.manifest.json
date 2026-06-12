@@ -1,0 +1,14 @@
+{
+  "name": "afo-named-literal-debundler-mcp",
+  "version": "0.1.0",
+  "description": "Extracts a named template literal from a partially-debundled renderer file into its own module.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": ["GITHUB_TOKEN"],
+  "tools": [
+    "named_literal_debundler_status",
+    "analyze_named_template_literal",
+    "debundle_named_template_literal",
+    "verify_named_template_literal_debundle"
+  ]
+}
