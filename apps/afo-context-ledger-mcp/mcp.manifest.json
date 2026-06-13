@@ -1,0 +1,26 @@
+{
+  "name": "afo-context-ledger-mcp",
+  "version": "0.1.0",
+  "description": "Autonomous tool telemetry and event-sourcing ledger. Captures tool executions, state mutations, and generates dense handoff reports. Backed by D1, KV, R2, Vectorize, and Workers AI.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": [],
+  "bindings": {
+    "d1": [{ "binding": "DB", "database_name": "afo-context-ledger-db", "database_id": "8a29dec6-aae1-4279-824d-93e4a18488db" }],
+    "kv": [{ "binding": "KV", "id": "4c272cf8588a478cbcc77eef193f8542" }],
+    "r2": [{ "binding": "R2", "bucket_name": "afo-context-ledger-payloads" }],
+    "vectorize": [{ "binding": "VECTORIZE", "index_name": "afo-context-ledger-vector" }],
+    "ai": { "binding": "AI" }
+  },
+  "tools": [
+    "ledger_status",
+    "start_session",
+    "log_execution",
+    "record_mutation",
+    "get_project_handoff",
+    "search_history",
+    "list_sessions",
+    "get_session_detail",
+    "resolve_payload"
+  ]
+}
