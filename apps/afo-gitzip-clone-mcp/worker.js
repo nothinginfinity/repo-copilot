@@ -1,4 +1,4 @@
-const VERSION = '0.1.0';
+const VERSION = '0.1.1';
 const CORS = {'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization,Mcp-Session-Id'};
 const DEFAULT_BATCH_FILES = 25;
 const DEFAULT_BATCH_BYTES = 250000;
@@ -8,8 +8,8 @@ const TOOLS = [
   {name:'plan_zip_clone',description:'Plans a chunked clone from source repo/path to destination. Builds manifest, assigns batches. Does NOT write to destination. Returns session_id.',inputSchema:{type:'object',properties:{src_owner:{type:'string'},src_repo:{type:'string'},src_ref:{type:'string'},src_path:{type:'string'},dst_owner:{type:'string'},dst_repo:{type:'string'},dst_branch:{type:'string'},dst_path:{type:'string'},include_paths:{type:'array',items:{type:'string'}},exclude_paths:{type:'array',items:{type:'string'}},replacements:{type:'array',items:{type:'object'}},batch_max_files:{type:'number'},batch_max_bytes:{type:'number'},skip_binary:{type:'boolean'},write_receipt:{type:'boolean'}},required:['src_owner','src_repo','dst_owner','dst_repo']}},
   {name:'run_zip_clone_batch',description:'Processes one batch. Fetches files, applies replacements, commits to destination.',inputSchema:{type:'object',properties:{session_id:{type:'string'},batch_index:{type:'number'},confirm_write:{type:'boolean'}},required:['session_id','batch_index']}},
   {name:'resume_zip_clone',description:'Resumes from first incomplete batch. Safe to call repeatedly after timeouts.',inputSchema:{type:'object',properties:{session_id:{type:'string'},confirm_write:{type:'boolean'},max_batches:{type:'number'}},required:['session_id']}},
-  {name:'verify_zip_clone',description:'Verifies clone by comparing source manifest to destination. Reports mismatches.',inputSchema:{type:'object',properties:{session_id:{type:'string'}},required:['session_id']}},
-  {name:'clone_receipt',description:'Returns full structured receipt for a clone session.',inputSchema:{type:'object',properties:{session_id:{type:'string'}},required:['session_id']}}
+  {name:'verify_zip_clone',description:'Verifies a clone session including any repair sessions. Cross-session aware: files committed in repair_sessions (or auto-detected sibling sessions to the same destination) are counted as resolved. Returns combined PASS/FAIL verdict.',inputSchema:{type:'object',properties:{session_id:{type:'string',description:'Primary clone session ID'},repair_sessions:{type:'array',items:{type:'string'},description:'Optional list of repair/follow-up session IDs whose committed files should count toward this session'},auto_detect_siblings:{type:'boolean',description:'If true, automatically find other sessions targeting the same dst_repo and count their committed files (default: true)'}},required:['session_id']}},
+  {name:'clone_receipt',description:'Returns full structured receipt for a clone session, optionally merged with repair sessions.',inputSchema:{type:'object',properties:{session_id:{type:'string'},repair_sessions:{type:'array',items:{type:'string'},description:'Optional repair session IDs to merge into the receipt'}},required:['session_id']}}
 ];
 function rpc(id,r){return Response.json({jsonrpc:'2.0',id,result:r},{headers:CORS});}
 function errResp(id,c,m){return Response.json({jsonrpc:'2.0',id,error:{code:c,message:m}},{headers:CORS});}
@@ -28,8 +28,12 @@ async function dbRun(db,sql,p){const s=db.prepare(sql);return p?s.bind(...p).run
 async function dbFirst(db,sql,p){const s=db.prepare(sql);return p?s.bind(...p).first():s.first();}
 async function dbAll(db,sql,p){const s=db.prepare(sql);const r=p?await s.bind(...p).all():await s.all();return r.results||[];}
 async function ensureSchema(db){await dbRun(db,`CREATE TABLE IF NOT EXISTS clone_sessions (session_id TEXT PRIMARY KEY,src_owner TEXT,src_repo TEXT,src_ref TEXT,src_path TEXT,dst_owner TEXT,dst_repo TEXT,dst_branch TEXT,dst_path TEXT,replacements TEXT,include_paths TEXT,exclude_paths TEXT,batch_max_files INTEGER,batch_max_bytes INTEGER,skip_binary INTEGER,write_receipt INTEGER,source_commit_sha TEXT,file_count INTEGER,total_bytes INTEGER,batch_count INTEGER,status TEXT DEFAULT 'planned',created_at TEXT,updated_at TEXT)`);await dbRun(db,`CREATE TABLE IF NOT EXISTS clone_batches (session_id TEXT,batch_index INTEGER,file_count INTEGER,byte_count INTEGER,status TEXT DEFAULT 'pending',commit_sha TEXT,error TEXT,created_at TEXT,updated_at TEXT,PRIMARY KEY(session_id,batch_index))`);await dbRun(db,`CREATE TABLE IF NOT EXISTS clone_files (session_id TEXT,file_path TEXT,dst_path TEXT,size INTEGER,batch_index INTEGER,is_binary INTEGER,status TEXT DEFAULT 'pending',sha TEXT,PRIMARY KEY(session_id,file_path))`);}
+
+async function collectRepairedPaths(db,sessionIds){const repairedPaths=new Set();const repairDetails=[];for(const sid of sessionIds){const repairFiles=await dbAll(db,"SELECT dst_path,file_path FROM clone_files WHERE session_id = ? AND status = 'committed'",[sid]);for(const f of repairFiles){repairedPaths.add(f.dst_path);}repairDetails.push({session_id:sid,files_committed:repairFiles.length,paths:repairFiles.map(function(f){return f.dst_path;})});}return{repairedPaths,repairDetails};}
+
 async function handle(name,args,env){
   if(name==='clone_status'){let dbOk=false;let active=0;try{await ensureSchema(env.DB);const r=await dbFirst(env.DB,"SELECT COUNT(*) as n FROM clone_sessions WHERE status!='complete'");active=r?r.n:0;dbOk=true;}catch{}return{status:'ok',worker:'afo-gitzip-clone-mcp',version:VERSION,bindings:{GITHUB_TOKEN:!!env.GITHUB_TOKEN,DB:dbOk},active_sessions:active,default_batch_files:DEFAULT_BATCH_FILES,default_batch_bytes:DEFAULT_BATCH_BYTES,tools:TOOLS.map(function(t){return t.name;})};}
+
   if(name==='plan_zip_clone'){
     const{src_owner,src_repo,dst_owner,dst_repo}=args;if(!src_owner||!src_repo||!dst_owner||!dst_repo)throw new Error('src_owner,src_repo,dst_owner,dst_repo required');
     const src_ref=args.src_ref||'main';const src_path=args.src_path||'';const dst_branch=args.dst_branch||'main';const dst_path=args.dst_path!==undefined?args.dst_path:src_path;const replacements=args.replacements||[];const include_paths=args.include_paths||[];const exclude_paths=args.exclude_paths||['node_modules','.wrangler','dist','build','.git'];const batch_max_files=args.batch_max_files||DEFAULT_BATCH_FILES;const batch_max_bytes=args.batch_max_bytes||DEFAULT_BATCH_BYTES;const skip_binary=args.skip_binary!==false;const write_receipt=args.write_receipt!==false;
@@ -43,6 +47,7 @@ async function handle(name,args,env){
     for(let i=0;i<batches.length;i++){const b=batches[i];await dbRun(env.DB,'INSERT INTO clone_batches VALUES (?,?,?,?,?,?,?,?,?)',[session_id,i,b.length,b.reduce(function(s,f){return s+f.size;},0),'pending',null,null,now,now]);for(const f of b){const rel=src_path?f.path.slice(src_path.length).replace(/^\//,''):f.path;const dstFp=dst_path?dst_path+'/'+rel:f.path;await dbRun(env.DB,'INSERT OR IGNORE INTO clone_files VALUES (?,?,?,?,?,?,?,?)',[session_id,f.path,dstFp,f.size,i,isBinary(f.path)?1:0,'pending',f.sha]);}}
     return{ok:true,session_id,source:src_owner+'/'+src_repo+'@'+src_ref+(src_path?':'+src_path:''),destination:dst_owner+'/'+dst_repo+'@'+dst_branch+(dst_path?':'+dst_path:''),source_commit_sha,file_count:toClone.length,total_bytes:toClone.reduce(function(s,f){return s+f.size;},0),batch_count:batches.length,skipped_files:skipped.length,skipped_sample:skipped.slice(0,5),planned_batches:batches.map(function(b,i){return{batch_index:i,files:b.length,bytes:b.reduce(function(s,f){return s+f.size;},0)};}),warnings:batches.length===0?['No files found. Check src_path and exclude_paths.']:[],next_step:'Run resume_zip_clone with session_id: '+session_id+' and confirm_write: true'};
   }
+
   if(name==='run_zip_clone_batch'){
     const{session_id,batch_index}=args;if(!session_id)throw new Error('session_id required');if(batch_index===undefined)throw new Error('batch_index required');const confirmWrite=args.confirm_write===true;
     await ensureSchema(env.DB);const session=await dbFirst(env.DB,'SELECT * FROM clone_sessions WHERE session_id = ?',[session_id]);if(!session)throw new Error('Session not found: '+session_id);const batch=await dbFirst(env.DB,'SELECT * FROM clone_batches WHERE session_id = ? AND batch_index = ?',[session_id,batch_index]);if(!batch)throw new Error('Batch '+batch_index+' not found');
@@ -55,6 +60,7 @@ async function handle(name,args,env){
     const nextBatch=remaining.filter(function(r){return r.batch_index>batch_index;});
     return{ok:errors.length===0,session_id,batch_index,committed:confirmWrite&&errors.length===0,commit_sha:lastCommitSha,files_written:written.length,files_skipped:skipped.length,errors,next_batch_index:nextBatch.length>0?nextBatch[0].batch_index:null,clone_complete:allDone};
   }
+
   if(name==='resume_zip_clone'){
     const{session_id}=args;if(!session_id)throw new Error('session_id required');const confirmWrite=args.confirm_write===true;const maxBatches=args.max_batches||3;
     await ensureSchema(env.DB);const session=await dbFirst(env.DB,'SELECT * FROM clone_sessions WHERE session_id = ?',[session_id]);if(!session)throw new Error('Session not found: '+session_id);if(session.status==='complete')return{ok:true,session_id,status:'already_complete',message:'Clone already complete.'};
@@ -63,19 +69,51 @@ async function handle(name,args,env){
     const stillPending=await dbAll(env.DB,"SELECT batch_index FROM clone_batches WHERE session_id = ? AND status != 'complete' ORDER BY batch_index ASC",[session_id]);
     return{ok:batchResults.every(function(r){return r.ok;}),session_id,batches_processed:batchResults.length,batches_remaining:stillPending.length,batch_results:batchResults,clone_complete:stillPending.length===0,next_step:stillPending.length>0?'Call resume_zip_clone again. Batches remaining: '+stillPending.length:'Clone complete. Run verify_zip_clone.'};
   }
+
   if(name==='verify_zip_clone'){
-    const{session_id}=args;if(!session_id)throw new Error('session_id required');await ensureSchema(env.DB);const session=await dbFirst(env.DB,'SELECT * FROM clone_sessions WHERE session_id = ?',[session_id]);if(!session)throw new Error('Session not found: '+session_id);
-    const allFiles=await dbAll(env.DB,'SELECT * FROM clone_files WHERE session_id = ?',[session_id]);const batches=await dbAll(env.DB,'SELECT * FROM clone_batches WHERE session_id = ?',[session_id]);
-    const committed=allFiles.filter(function(f){return f.status==='committed';});const errors=allFiles.filter(function(f){return f.status==='error';});const pending=allFiles.filter(function(f){return f.status==='pending';});const binary=allFiles.filter(function(f){return f.is_binary;});
-    const spotChecks=[];for(const f of committed.slice(0,5)){try{await ghGet(env.GITHUB_TOKEN,session.dst_owner,session.dst_repo,f.dst_path,session.dst_branch);spotChecks.push({path:f.dst_path,ok:true});}catch(e){spotChecks.push({path:f.dst_path,ok:false,error:e.message});}}
-    return{ok:errors.length===0&&pending.length===0,session_id,session_status:session.status,source:session.src_owner+'/'+session.src_repo,destination:session.dst_owner+'/'+session.dst_repo,total_planned:allFiles.length,committed:committed.length,errors:errors.length,pending:pending.length,binary_skipped:binary.length,spot_checks:spotChecks,batch_summary:batches.map(function(b){return{batch_index:b.batch_index,status:b.status,commit_sha:b.commit_sha,files:b.file_count};}),verdict:errors.length===0&&pending.length===0?'PASS: All files committed.':'FAIL: '+errors.length+' errors, '+pending.length+' pending. Run resume_zip_clone to continue.'};
+    const{session_id}=args;if(!session_id)throw new Error('session_id required');
+    await ensureSchema(env.DB);
+    const session=await dbFirst(env.DB,'SELECT * FROM clone_sessions WHERE session_id = ?',[session_id]);
+    if(!session)throw new Error('Session not found: '+session_id);
+    const allFiles=await dbAll(env.DB,'SELECT * FROM clone_files WHERE session_id = ?',[session_id]);
+    const batches=await dbAll(env.DB,'SELECT * FROM clone_batches WHERE session_id = ?',[session_id]);
+    const primaryErrors=allFiles.filter(function(f){return f.status==='error';});
+    const primaryCommitted=allFiles.filter(function(f){return f.status==='committed';});
+    const primaryPending=allFiles.filter(function(f){return f.status==='pending';});
+    const binary=allFiles.filter(function(f){return f.is_binary;});
+    const explicitRepairs=Array.isArray(args.repair_sessions)?args.repair_sessions:[];
+    const autoDetect=args.auto_detect_siblings!==false;
+    let siblingSessionIds=[];
+    if(autoDetect){const siblings=await dbAll(env.DB,'SELECT session_id FROM clone_sessions WHERE dst_owner = ? AND dst_repo = ? AND session_id != ?',[session.dst_owner,session.dst_repo,session_id]);siblingSessionIds=siblings.map(function(s){return s.session_id;});}
+    const allRepairIds=[...new Set([...explicitRepairs,...siblingSessionIds])];
+    const{repairedPaths,repairDetails}=await collectRepairedPaths(env.DB,allRepairIds);
+    const resolvedByRepair=primaryErrors.filter(function(f){return repairedPaths.has(f.dst_path);});
+    const stillErrored=primaryErrors.filter(function(f){return !repairedPaths.has(f.dst_path);});
+    const resolvedPending=primaryPending.filter(function(f){return repairedPaths.has(f.dst_path);});
+    const stillPending=primaryPending.filter(function(f){return !repairedPaths.has(f.dst_path);});
+    const totalCommitted=primaryCommitted.length+resolvedByRepair.length+resolvedPending.length;
+    const totalPlanned=allFiles.length;
+    const allResolved=stillErrored.length===0&&stillPending.length===0;
+    const spotChecks=[];
+    for(const f of primaryCommitted.slice(0,3)){try{await ghGet(env.GITHUB_TOKEN,session.dst_owner,session.dst_repo,f.dst_path,session.dst_branch);spotChecks.push({path:f.dst_path,ok:true,session:'primary'});}catch(e){spotChecks.push({path:f.dst_path,ok:false,error:e.message,session:'primary'});}}
+    for(const sid of allRepairIds.slice(0,2)){const repFiles=await dbAll(env.DB,"SELECT dst_path FROM clone_files WHERE session_id = ? AND status = 'committed' LIMIT 1",[sid]);for(const f of repFiles){try{await ghGet(env.GITHUB_TOKEN,session.dst_owner,session.dst_repo,f.dst_path,session.dst_branch);spotChecks.push({path:f.dst_path,ok:true,session:sid});}catch(e){spotChecks.push({path:f.dst_path,ok:false,error:e.message,session:sid});}}}
+    return{ok:allResolved,session_id,session_status:session.status,source:session.src_owner+'/'+session.src_repo,destination:session.dst_owner+'/'+session.dst_repo,primary:{total_planned:totalPlanned,committed:primaryCommitted.length,errors:primaryErrors.length,pending:primaryPending.length,binary_skipped:binary.length},repair_sessions_checked:allRepairIds,repair_sessions_found:repairDetails,resolved_by_repair:resolvedByRepair.map(function(f){return f.dst_path;}),combined:{total_planned:totalPlanned,total_committed:totalCommitted,still_errored:stillErrored.length,still_pending:stillPending.length},spot_checks:spotChecks,batch_summary:batches.map(function(b){return{batch_index:b.batch_index,status:b.status,commit_sha:b.commit_sha,files:b.file_count};}),verdict:allResolved?'PASS: All '+totalPlanned+' files accounted for ('+primaryCommitted.length+' primary + '+resolvedByRepair.length+' repaired across '+allRepairIds.length+' repair session(s)).':'FAIL: '+stillErrored.length+' unresolved errors, '+stillPending.length+' still pending. Pass repair_sessions or run more repair clones.'};
   }
+
   if(name==='clone_receipt'){
-    const{session_id}=args;if(!session_id)throw new Error('session_id required');await ensureSchema(env.DB);const session=await dbFirst(env.DB,'SELECT * FROM clone_sessions WHERE session_id = ?',[session_id]);if(!session)throw new Error('Session not found: '+session_id);
-    const batches=await dbAll(env.DB,'SELECT * FROM clone_batches WHERE session_id = ? ORDER BY batch_index ASC',[session_id]);const allFiles=await dbAll(env.DB,'SELECT * FROM clone_files WHERE session_id = ?',[session_id]);
+    const{session_id}=args;if(!session_id)throw new Error('session_id required');
+    await ensureSchema(env.DB);
+    const session=await dbFirst(env.DB,'SELECT * FROM clone_sessions WHERE session_id = ?',[session_id]);if(!session)throw new Error('Session not found: '+session_id);
+    const batches=await dbAll(env.DB,'SELECT * FROM clone_batches WHERE session_id = ? ORDER BY batch_index ASC',[session_id]);
+    const allFiles=await dbAll(env.DB,'SELECT * FROM clone_files WHERE session_id = ?',[session_id]);
     const committed=allFiles.filter(function(f){return f.status==='committed';});const errFiles=allFiles.filter(function(f){return f.status==='error';});const pending=allFiles.filter(function(f){return f.status==='pending';});const binaries=allFiles.filter(function(f){return f.is_binary;});
-    return{session_id,status:session.status,source:{owner:session.src_owner,repo:session.src_repo,ref:session.src_ref,path:session.src_path,commit_sha:session.source_commit_sha},destination:{owner:session.dst_owner,repo:session.dst_repo,branch:session.dst_branch,path:session.dst_path},replacements:JSON.parse(session.replacements||'[]'),include_paths:JSON.parse(session.include_paths||'[]'),exclude_paths:JSON.parse(session.exclude_paths||'[]'),stats:{files_planned:allFiles.length,files_committed:committed.length,files_errored:errFiles.length,files_pending:pending.length,binary_skipped:binaries.length,total_bytes:session.total_bytes,batch_count:session.batch_count},destination_commits:batches.filter(function(b){return b.commit_sha;}).map(function(b){return b.commit_sha;}),failed_files:errFiles.map(function(f){return{path:f.file_path,dst:f.dst_path};}),batch_summary:batches.map(function(b){return{index:b.batch_index,status:b.status,files:b.file_count,commit_sha:b.commit_sha};}),created_at:session.created_at,updated_at:session.updated_at};
+    const repairIds=Array.isArray(args.repair_sessions)?args.repair_sessions:[];
+    let repairSummary=[];if(repairIds.length>0){const{repairDetails}=await collectRepairedPaths(env.DB,repairIds);repairSummary=repairDetails;}
+    const commitShas=batches.filter(function(b){return b.commit_sha;}).map(function(b){return b.commit_sha;});
+    return{session_id,status:session.status,source:{owner:session.src_owner,repo:session.src_repo,ref:session.src_ref,path:session.src_path,commit_sha:session.source_commit_sha},destination:{owner:session.dst_owner,repo:session.dst_repo,branch:session.dst_branch,path:session.dst_path},replacements:JSON.parse(session.replacements||'[]'),include_paths:JSON.parse(session.include_paths||'[]'),exclude_paths:JSON.parse(session.exclude_paths||'[]'),stats:{files_planned:allFiles.length,files_committed:committed.length,files_errored:errFiles.length,files_pending:pending.length,binary_skipped:binaries.length,total_bytes:session.total_bytes,batch_count:session.batch_count},destination_commits:commitShas,failed_files:errFiles.map(function(f){return{path:f.file_path,dst:f.dst_path};}),batch_summary:batches.map(function(b){return{index:b.batch_index,status:b.status,files:b.file_count,commit_sha:b.commit_sha};}),repair_sessions:repairSummary,created_at:session.created_at,updated_at:session.updated_at};
   }
+
   throw new Error('Unknown tool: '+name);
 }
+
 export default{async fetch(request,env){if(request.method==='OPTIONS')return new Response(null,{status:204,headers:CORS});const url=new URL(request.url);if(url.pathname==='/health')return Response.json({status:'ok',worker:'afo-gitzip-clone-mcp',version:VERSION},{headers:CORS});if(request.method!=='POST')return new Response('not found',{status:404,headers:CORS});let body;try{body=await request.json();}catch{return errResp(null,-32700,'Parse error');}const{id,method,params}=body;if(method==='initialize')return rpc(id,{protocolVersion:'2024-11-05',capabilities:{tools:{}},serverInfo:{name:'afo-gitzip-clone-mcp',version:VERSION}});if(method==='notifications/initialized')return new Response(null,{status:204,headers:CORS});if(method==='ping')return rpc(id,{});if(method==='tools/list')return rpc(id,{tools:TOOLS});if(method==='tools/call'){try{return tool(id,await handle(params?.name,params?.arguments||{},env));}catch(e){return errResp(id,-32603,'Tool error: '+e.message);}}return errResp(id,-32601,'Method not found: '+method);}};
