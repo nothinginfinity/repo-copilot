@@ -1,7 +1,7 @@
 {
   "name": "afo-repo-indexer-mcp-v002",
-  "version": "0.02.0",
-  "description": "Repo indexer v0.02 scaffold. Adds cursor-aware indexing API surface for resumable repo batches.",
+  "version": "0.02.1",
+  "description": "Repo indexer v0.02 production implementation. Adds cursor-aware deterministic GitHub repo batch indexing with Workers AI embeddings and Vectorize upserts.",
   "main": "worker.js",
   "wrangler": "wrangler.jsonc",
   "secrets": [
@@ -13,6 +13,7 @@
     "get_index_cursor",
     "reset_index_cursor",
     "get_index_job",
+    "list_indexed_repos",
     "search_repos"
   ]
 }
