@@ -1,0 +1,11 @@
+name = "afo-gitzip-clone-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "afo-gitzip-clone-db"
+database_id = "51dd3d9f-2e94-4940-b462-cbded8503fef"
+
+# Required secrets (set via Cloudflare dashboard):
+#   GITHUB_TOKEN — fine-grained PAT with contents:read+write on source and destination repos
