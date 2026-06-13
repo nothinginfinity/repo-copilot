@@ -1,0 +1,19 @@
+{
+  "name": "afo-repo-change-ledger-mcp",
+  "version": "0.1.0",
+  "description": "Durable repo change ledger for AI-native patch workflows. Stores patch intents, approval state, implementation notes, receipts, and executor handoffs without directly mutating GitHub.",
+  "main": "worker.js",
+  "wrangler": "wrangler.jsonc",
+  "secrets": [],
+  "tools": [
+    "afo_repo_change_ledger_status",
+    "create_patch_intent",
+    "list_patch_intents",
+    "get_patch_intent",
+    "update_patch_intent",
+    "approve_patch_intent",
+    "reject_patch_intent",
+    "mark_patch_applied",
+    "export_executor_handoff"
+  ]
+}
