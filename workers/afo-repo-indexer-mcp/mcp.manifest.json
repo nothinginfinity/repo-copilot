@@ -1,0 +1,17 @@
+{
+  "name": "afo-repo-indexer-mcp",
+  "version": "0.1.0",
+  "description": "Crawls GitHub repos, chunks source files, generates embeddings with Workers AI, and upserts into Vectorize. Enables semantic search across the entire nothinginfinity repo footprint. Idempotent — skips unchanged SHAs via KV cache.",
+  "main": "worker.js",
+  "wrangler": "wrangler.jsonc",
+  "secrets": [
+    "GITHUB_TOKEN"
+  ],
+  "tools": [
+    "afo_repo_indexer_status",
+    "index_repo",
+    "search_repos",
+    "list_indexed_repos",
+    "get_index_job"
+  ]
+}
