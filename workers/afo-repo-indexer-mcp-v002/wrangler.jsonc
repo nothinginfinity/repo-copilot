@@ -12,7 +12,7 @@
     {"binding":"VECTORIZE","index_name":"afo-repo-footprint-vector"}
   ]
   ,"ai": {"binding":"AI"}
-  ,"vars":{"WORKER_VERSION":"0.02.0","WORKER_NAME":"afo-repo-indexer-mcp-v002"}
+  ,"vars":{"WORKER_VERSION":"0.02.1","WORKER_NAME":"afo-repo-indexer-mcp-v002"}
   ,"observability":{"enabled":true,"head_sampling_rate":1}
   ,"placement":{"mode":"smart"}
 }
