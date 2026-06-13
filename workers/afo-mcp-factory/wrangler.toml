@@ -1,0 +1,18 @@
+name = "afo-mcp-factory"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "afo-mcp-factory-db"
+database_id = "51ec37aa-d2db-4a01-9a19-b68fc3dfa146"
+
+[observability]
+enabled = true
+head_sampling_rate = 1
+
+[placement]
+mode = "smart"
+
+# Required secrets (set via Cloudflare dashboard or wrangler secret put):
+#   GITHUB_TOKEN  -- fine-grained PAT with contents:write on repo-copilot
