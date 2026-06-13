@@ -1,0 +1,2 @@
+deploy trigger for afo-repo-indexer-mcp-v002
+workflow: deploy-workers.yml
