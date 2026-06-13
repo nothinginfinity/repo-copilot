@@ -1,0 +1,26 @@
+name = "afo-context-ledger-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "afo-context-ledger-db"
+database_id = "8a29dec6-aae1-4279-824d-93e4a18488db"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "4c272cf8588a478cbcc77eef193f8542"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "afo-context-ledger-payloads"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "afo-context-ledger-vector"
+
+[ai]
+binding = "AI"
+
+# Required secrets (set via Cloudflare dashboard):
+#   none — all resources are bound via wrangler.toml
