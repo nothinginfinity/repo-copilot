@@ -6,9 +6,10 @@ on:
       worker:
         description: 'Worker directory under workers/ to deploy'
         required: true
-        default: 'afo-repo-indexer-mcp-v002'
+        default: 'afo-repo-change-ledger-mcp'
         type: choice
         options:
+          - afo-repo-change-ledger-mcp
           - afo-repo-indexer-mcp-v002
           - contractor-v003-2-afo
   push:
@@ -40,6 +41,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "worker=${{ github.event.inputs.worker }}" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-repo-change-ledger-mcp/'; then
+            echo "worker=afo-repo-change-ledger-mcp" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-change-ledger-mcp/'; then
+            echo "worker=afo-repo-change-ledger-mcp" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
             echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
@@ -49,7 +54,7 @@ jobs:
           elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
             echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
           else
-            echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
+            echo "worker=afo-repo-change-ledger-mcp" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Deploy selected worker
