@@ -1,4 +1,4 @@
-const VERSION="0.02.0";
+const VERSION="0.02.1";
 const WORKER_NAME="afo-repo-indexer-mcp-v002";
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization,Mcp-Session-Id'};
 const TOOLS=[{
@@ -12,7 +12,7 @@ const TOOLS=[{
 },
 {
   "name": "index_repo_batch",
-  "description": "v0.02 resumable index API. Indexes a deterministic batch using offset/cursor/resume controls. This stamped scaffold records cursor/job state; implementation is intended to replace v0.1 root-slice behavior with cursor batching.",
+  "description": "Production v0.02 resumable repo indexer. Lists repo files deterministically, starts from offset/cursor/resume, fetches raw file text, chunks, embeds with Workers AI, upserts to Vectorize, records job progress in D1, and stores next cursor in KV.",
   "inputSchema": {
     "type": "object",
     "required": [
@@ -35,7 +35,7 @@ const TOOLS=[{
       },
       "max_files": {
         "type": "number",
-        "default": 20
+        "default": 10
       },
       "offset": {
         "type": "number"
@@ -126,6 +126,20 @@ const TOOLS=[{
   }
 },
 {
+  "name": "list_indexed_repos",
+  "description": "List recent v0.02 index jobs.",
+  "inputSchema": {
+    "type": "object",
+    "required": [],
+    "properties": {
+      "limit": {
+        "type": "number",
+        "default": 30
+      }
+    }
+  }
+},
+{
   "name": "search_repos",
   "description": "Semantic search across indexed repos using the shared Vectorize index.",
   "inputSchema": {
@@ -161,7 +175,7 @@ async function kvGet(kv,k){const v=await kv.get(k);if(v===null)return null;try{r
 async function embedText(ai,t){if(!ai)return null;try{const r=await ai.run("@cf/baai/bge-base-en-v1.5",{text:[t.slice(0,512)]});return(r.data&&r.data[0])||null;}catch{return null;}}
 async function vectorQuery(v,ai,q,k){const vec=await embedText(ai,q);if(!vec)return[];try{const r=await v.query(vec,{topK:k||5,returnMetadata:true});return r.matches||[];}catch{return[];}}
 async function handle(name,args,env,ctx){
-  if(name==="afo_repo_indexer_mcp_v002_status"){const res={status:"ok",worker:WORKER_NAME,version:VERSION,generated_at:"2026-06-13T15:48:21.114Z",bindings:{},tools:TOOLS.map(t=>t.name)};
+  if(name==="afo_repo_indexer_mcp_v002_status"){const res={status:"ok",worker:WORKER_NAME,version:VERSION,generated_at:"2026-06-13T16:01:08.470Z",bindings:{},tools:TOOLS.map(t=>t.name)};
   try{await ensureSchema(env.DB);res.bindings.DB=true;}catch{res.bindings.DB=false;}
   try{await env.KV.put("_ping","1",{expirationTtl:60});res.bindings.KV=true;}catch{res.bindings.KV=false;}
   res.bindings.VECTORIZE=!!env.VECTORIZE;res.bindings.AI=!!env.AI;
@@ -170,31 +184,35 @@ async function handle(name,args,env,ctx){
   if (name === "index_repo_batch") {
     const { repo } = args;
     if (!repo) throw new Error("index_repo_batch: repo required");
-    const owner=args.owner||'nothinginfinity'; const branch=args.branch||'main'; const path=args.path||''; const repoKey=owner+'/'+args.repo; const pathKey=repoKey+':'+branch+':'+(path||'root'); const cursorKey='index:v002:'+pathKey+':cursor'; let start=0; if(typeof args.offset==='number') start=Math.max(0,Math.floor(args.offset)); if(args.cursor){ const n=parseInt(args.cursor,10); if(!Number.isNaN(n)) start=n; } if(args.resume){ const saved=await kvGet(env.KV,cursorKey); const n=parseInt(saved||'0',10); if(!Number.isNaN(n)) start=n; } const maxFiles=Math.max(1,Math.min(args.max_files||20,25)); const next=start+maxFiles; const jobId=genId('idx2'); await dbRun(env.DB,'CREATE TABLE IF NOT EXISTS index_jobs_v002 (job_id TEXT PRIMARY KEY, repo_key TEXT, branch TEXT, path TEXT, start_offset INTEGER, next_cursor INTEGER, files_planned INTEGER, status TEXT, created_at TEXT, updated_at TEXT)'); await dbRun(env.DB,'INSERT INTO index_jobs_v002 VALUES (?,?,?,?,?,?,?,?,?,?)',[jobId,repoKey,branch,path,start,next,maxFiles,'scaffold',nowIso(),nowIso()]); await kvSet(env.KV,cursorKey,String(next)); return {ok:true, scaffold:true, message:'v0.02 cursor-aware worker stamped; replace scaffold handler with full GitHub crawl/index implementation for production indexing', job_id:jobId, repo:repoKey, branch, path:path||'root', start_offset:start, next_cursor:String(next), max_files:maxFiles};
+    const owner=args.owner||'nothinginfinity',repo=args.repo,branch=args.branch||'main',root=args.path||'',repoKey=owner+'/'+repo,pathKey=repoKey+':'+branch+':'+(root||'root'),jobId=genId('idx2'),ts=nowIso(); const max=Math.max(1,Math.min(args.max_files||10,15)), cursorKey='index:v002:'+pathKey+':cursor', shaKey='index:v002:'+pathKey+':sha'; let start=0; if(typeof args.offset==='number')start=Math.max(0,Math.floor(args.offset)); if(args.cursor){const n=parseInt(args.cursor,10); if(!Number.isNaN(n))start=n;} if(args.resume){const n=parseInt(await kvGet(env.KV,cursorKey)||'0',10); if(!Number.isNaN(n))start=n;} async function gh(url,accept){return fetch(url,{headers:{Authorization:'Bearer '+env.GITHUB_TOKEN,Accept:accept||'application/vnd.github+json','User-Agent':'afo-repo-indexer-mcp-v002'}})} const ref=await gh('https://api.github.com/repos/'+owner+'/'+repo+'/git/ref/heads/'+encodeURIComponent(branch)); let commit='unknown'; if(ref.ok){const j=await ref.json(); commit=j.object&&j.object.sha?j.object.sha:'unknown'} const shortSha=commit.slice(0,12), last=await kvGet(env.KV,shaKey); if(!args.force&&!args.resume&&!args.cursor&&typeof args.offset!=='number'&&last===shortSha&&shortSha!=='unknown')return{ok:true,skipped:true,reason:'SHA unchanged; use resume/cursor/offset/force to continue',repo:repoKey,sha:shortSha,cursor:await kvGet(env.KV,cursorKey)||'0'}; const tree=await gh('https://api.github.com/repos/'+owner+'/'+repo+'/git/trees/'+encodeURIComponent(branch)+'?recursive=1'); if(!tree.ok)throw new Error('GitHub tree fetch failed '+tree.status); const tj=await tree.json(), badExt=new Set(['png','jpg','jpeg','gif','webp','ico','woff','woff2','ttf','pdf','zip','wasm','bin','mp4','mov']), badDir=['node_modules/','.git/','.wrangler/','dist/','build/','.next/','coverage/']; let files=(tj.tree||[]).filter(f=>f.type==='blob'&&(!root||f.path===root||f.path.startsWith(root.replace(/\/$/,'')+'/'))&&f.size<120000&&!badDir.some(d=>f.path.includes(d))&&!badExt.has((f.path.split('.').pop()||'').toLowerCase())).map(f=>({path:f.path,size:f.size,sha:f.sha})).sort((a,b)=>a.path.localeCompare(b.path)); const batch=files.slice(start,start+max), next=start+batch.length, done=next>=files.length; await dbRun(env.DB,'CREATE TABLE IF NOT EXISTS index_jobs_v002 (job_id TEXT PRIMARY KEY, repo_key TEXT, branch TEXT, path TEXT, sha TEXT, files_found INTEGER, start_offset INTEGER, next_cursor INTEGER, files_planned INTEGER, files_indexed INTEGER, status TEXT, created_at TEXT, updated_at TEXT)'); await dbRun(env.DB,'INSERT INTO index_jobs_v002 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',[jobId,repoKey,branch,root,shortSha,files.length,start,next,batch.length,0,'running',ts,ts]); let indexed=0,errors=[]; for(const file of batch){try{const enc=file.path.split('/').map(encodeURIComponent).join('/'); const raw=await fetch('https://raw.githubusercontent.com/'+owner+'/'+repo+'/'+encodeURIComponent(branch)+'/'+enc,{headers:{Authorization:'Bearer '+env.GITHUB_TOKEN,'User-Agent':'afo-repo-indexer-mcp-v002'}}); if(!raw.ok){errors.push({path:file.path,error:'raw '+raw.status}); continue} const txt=await raw.text(); if(!txt.trim())continue; const chunks=[]; for(let i=0;i<txt.length;i+=450){chunks.push(txt.slice(i,i+600)); if(i+600>=txt.length)break} for(let c=0;c<Math.min(chunks.length,5);c++){const input=(repoKey+' '+file.path+' '+chunks[c]).slice(0,512); const er=await env.AI.run('@cf/baai/bge-base-en-v1.5',{text:[input]}); const vector=er.data&&er.data[0]; if(!vector)continue; await env.VECTORIZE.upsert([{id:'v002_'+jobId+'_'+(start+indexed)+'_'+c,values:vector,metadata:{repo:repoKey,path:file.path,chunk:c,sha:file.sha,branch,index_version:'0.02.1',offset:start+indexed}}])} indexed++}catch(e){errors.push({path:file.path,error:e.message})}} const status=errors.length?'partial':'complete'; await dbRun(env.DB,'UPDATE index_jobs_v002 SET files_indexed=?,status=?,updated_at=? WHERE job_id=?',[indexed,status,nowIso(),jobId]); await kvSet(env.KV,cursorKey,String(next)); if(done&&indexed>0)await kvSet(env.KV,shaKey,shortSha); await kvSet(env.KV,'index:v002:'+repoKey+':last_job',jobId); return{ok:true,job_id:jobId,repo:repoKey,branch,path:root||'root',sha:shortSha,files_found:files.length,start_offset:start,files_planned:batch.length,files_indexed:indexed,next_cursor:String(next),files_remaining:Math.max(0,files.length-next),done,errors};
   }
 
   if (name === "get_index_cursor") {
     const { repo } = args;
     if (!repo) throw new Error("get_index_cursor: repo required");
-    const owner=args.owner||'nothinginfinity'; const branch=args.branch||'main'; const path=args.path||''; const repoKey=owner+'/'+args.repo; const cursorKey='index:v002:'+repoKey+':'+branch+':'+(path||'root')+':cursor'; return {ok:true, repo:repoKey, branch, path:path||'root', cursor:await kvGet(env.KV,cursorKey)||'0'};
+    const owner=args.owner||'nothinginfinity',branch=args.branch||'main',path=args.path||'',repoKey=owner+'/'+args.repo,cursorKey='index:v002:'+repoKey+':'+branch+':'+(path||'root')+':cursor',shaKey='index:v002:'+repoKey+':'+branch+':'+(path||'root')+':sha'; return{ok:true,repo:repoKey,branch,path:path||'root',cursor:await kvGet(env.KV,cursorKey)||'0',sha:await kvGet(env.KV,shaKey)||null};
   }
 
   if (name === "reset_index_cursor") {
     const { repo } = args;
     if (!repo) throw new Error("reset_index_cursor: repo required");
-    const owner=args.owner||'nothinginfinity'; const branch=args.branch||'main'; const path=args.path||''; const repoKey=owner+'/'+args.repo; const cursorKey='index:v002:'+repoKey+':'+branch+':'+(path||'root')+':cursor'; const offset=Math.max(0,Math.floor(args.offset||0)); await kvSet(env.KV,cursorKey,String(offset)); return {ok:true, repo:repoKey, branch, path:path||'root', cursor:String(offset)};
+    const owner=args.owner||'nothinginfinity',branch=args.branch||'main',path=args.path||'',repoKey=owner+'/'+args.repo,cursorKey='index:v002:'+repoKey+':'+branch+':'+(path||'root')+':cursor',offset=Math.max(0,Math.floor(args.offset||0)); await kvSet(env.KV,cursorKey,String(offset)); return{ok:true,repo:repoKey,branch,path:path||'root',cursor:String(offset)};
   }
 
   if (name === "get_index_job") {
     const { job_id } = args;
     if (!job_id) throw new Error("get_index_job: job_id required");
-    await dbRun(env.DB,'CREATE TABLE IF NOT EXISTS index_jobs_v002 (job_id TEXT PRIMARY KEY, repo_key TEXT, branch TEXT, path TEXT, start_offset INTEGER, next_cursor INTEGER, files_planned INTEGER, status TEXT, created_at TEXT, updated_at TEXT)'); const rows=await dbAll(env.DB,'SELECT * FROM index_jobs_v002 WHERE job_id=? LIMIT 1',[args.job_id]); return {ok:true, found:rows.length>0, job:rows[0]||null};
+    await dbRun(env.DB,'CREATE TABLE IF NOT EXISTS index_jobs_v002 (job_id TEXT PRIMARY KEY, repo_key TEXT, branch TEXT, path TEXT, sha TEXT, files_found INTEGER, start_offset INTEGER, next_cursor INTEGER, files_planned INTEGER, files_indexed INTEGER, status TEXT, created_at TEXT, updated_at TEXT)'); const rows=await dbAll(env.DB,'SELECT * FROM index_jobs_v002 WHERE job_id=? LIMIT 1',[args.job_id]); return{ok:true,found:rows.length>0,job:rows[0]||null};
+  }
+
+  if (name === "list_indexed_repos") {
+    await dbRun(env.DB,'CREATE TABLE IF NOT EXISTS index_jobs_v002 (job_id TEXT PRIMARY KEY, repo_key TEXT, branch TEXT, path TEXT, sha TEXT, files_found INTEGER, start_offset INTEGER, next_cursor INTEGER, files_planned INTEGER, files_indexed INTEGER, status TEXT, created_at TEXT, updated_at TEXT)'); const rows=await dbAll(env.DB,'SELECT * FROM index_jobs_v002 ORDER BY created_at DESC LIMIT ?',[args.limit||30]); return{ok:true,indexed_repos:rows,total:rows.length};
   }
 
   if (name === "search_repos") {
     const { query } = args;
     if (!query) throw new Error("search_repos: query required");
-    const topK=Math.min(args.top_k||8,20); const embRes=await env.AI.run('@cf/baai/bge-base-en-v1.5',{text:[args.query.slice(0,512)]}); const vector=embRes.data&&embRes.data[0]; if(!vector) throw new Error('Embedding failed'); const results=await env.VECTORIZE.query(vector,{topK,returnMetadata:true}); let matches=results.matches||[]; if(args.repo) matches=matches.filter(m=>m.metadata&&m.metadata.repo&&m.metadata.repo.includes(args.repo)); return {ok:true, query:args.query, count:matches.length, results:matches.map(m=>({score:m.score, repo:m.metadata&&m.metadata.repo, path:m.metadata&&m.metadata.path, chunk:m.metadata&&m.metadata.chunk, sha:m.metadata&&m.metadata.sha, id:m.id}))};
+    const topK=Math.min(args.top_k||8,20); const embRes=await env.AI.run('@cf/baai/bge-base-en-v1.5',{text:[args.query.slice(0,512)]}); const vector=embRes.data&&embRes.data[0]; if(!vector)throw new Error('Embedding failed'); const results=await env.VECTORIZE.query(vector,{topK,returnMetadata:true}); let matches=results.matches||[]; if(args.repo)matches=matches.filter(m=>m.metadata&&m.metadata.repo&&m.metadata.repo.includes(args.repo)); return{ok:true,query:args.query,count:matches.length,results:matches.map(m=>({score:m.score,repo:m.metadata&&m.metadata.repo,path:m.metadata&&m.metadata.path,chunk:m.metadata&&m.metadata.chunk,sha:m.metadata&&m.metadata.sha,index_version:m.metadata&&m.metadata.index_version,offset:m.metadata&&m.metadata.offset,id:m.id}))};
   }
 
   throw new Error("Unknown tool: "+name);}
