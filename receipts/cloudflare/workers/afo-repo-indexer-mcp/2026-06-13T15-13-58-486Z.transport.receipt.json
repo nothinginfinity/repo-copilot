@@ -1,0 +1,16 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-repo-indexer-mcp",
+  "created_at": "2026-06-13T15:13:58.553Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-repo-indexer-mcp",
+  "source_path": "apps/afo-repo-indexer-mcp/worker.js",
+  "source_sha256": "sha256:7271071eb9f1792ad1c44a406eddeb8f49159c639b400d582c4edb415984a19a",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-repo-indexer-mcp",
+    "binding_count": 0,
+    "bindings": [],
+    "deployed_at": "2026-06-13T15:13:58.486Z"
+  }
+}
