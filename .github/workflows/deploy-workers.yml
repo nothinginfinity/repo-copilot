@@ -1,16 +1,27 @@
 name: Deploy Workers to Cloudflare
 
 on:
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 'Worker directory under workers/ to deploy'
+        required: true
+        default: 'afo-repo-indexer-mcp-v002'
+        type: choice
+        options:
+          - afo-repo-indexer-mcp-v002
+          - contractor-v003-2-afo
   push:
     branches:
       - main
     paths:
       - 'workers/**'
+      - '.github/workflows/deploy-workers.yml'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy changed workers
+    name: Deploy worker
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,9 +34,26 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Deploy contractor-v003-2-afo
-        if: contains(github.event.head_commit.modified, 'workers/contractor-v003-2-afo/') || contains(github.event.head_commit.added, 'workers/contractor-v003-2-afo/')
-        working-directory: workers/contractor-v003-2-afo
+      - name: Resolve worker directory
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "worker=${{ github.event.inputs.worker }}" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
+            echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
+            echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
+            echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
+            echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
+          else
+            echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy selected worker
+        working-directory: workers/${{ steps.resolve.outputs.worker }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: wrangler deploy
