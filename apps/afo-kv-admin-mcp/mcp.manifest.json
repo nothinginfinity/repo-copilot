@@ -1,0 +1,19 @@
+{
+  "name": "afo-kv-admin-mcp",
+  "version": "0.1.0",
+  "description": "Full Cloudflare Workers KV data operations: put, get, delete, bulk write, bulk delete, list keys, list namespaces, get with metadata. Uses CF API token — no KV binding required.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": ["CF_API_TOKEN", "CF_ACCOUNT_ID"],
+  "tools": [
+    "kv_status",
+    "kv_put",
+    "kv_get",
+    "kv_delete",
+    "kv_list",
+    "kv_bulk_put",
+    "kv_bulk_delete",
+    "kv_get_with_metadata",
+    "kv_list_namespaces"
+  ]
+}
