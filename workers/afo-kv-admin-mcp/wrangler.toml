@@ -1,0 +1,7 @@
+name = "afo-kv-admin-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Required secrets (set via Cloudflare dashboard):
+#   CF_API_TOKEN   — API token with Workers KV Storage:Edit permission
+#   CF_ACCOUNT_ID  — Cloudflare account ID
