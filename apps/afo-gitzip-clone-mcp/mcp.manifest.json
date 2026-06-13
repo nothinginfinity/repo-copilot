@@ -1,0 +1,19 @@
+{
+  "name": "afo-gitzip-clone-mcp",
+  "version": "0.1.0",
+  "description": "Chunked, resumable GitHub repo/subtree cloner with D1 session state. Designed for large repos that time out with single-request clone approaches.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": ["GITHUB_TOKEN"],
+  "bindings": {
+    "d1": [{ "binding": "DB", "database_name": "afo-gitzip-clone-db", "database_id": "51dd3d9f-2e94-4940-b462-cbded8503fef" }]
+  },
+  "tools": [
+    "clone_status",
+    "plan_zip_clone",
+    "run_zip_clone_batch",
+    "resume_zip_clone",
+    "verify_zip_clone",
+    "clone_receipt"
+  ]
+}
