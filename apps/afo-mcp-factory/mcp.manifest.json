@@ -1,0 +1,12 @@
+{
+  "name": "afo-mcp-factory",
+  "version": "0.1.0",
+  "description": "Infrastructure assembly line. Pass a blueprint JSON, get a production-ready stateful MCP worker committed to GitHub.",
+  "main": "worker.js",
+  "wrangler": "wrangler.toml",
+  "secrets": ["GITHUB_TOKEN"],
+  "bindings": {
+    "d1": [{ "binding": "DB", "database_name": "afo-mcp-factory-db", "database_id": "51ec37aa-d2db-4a01-9a19-b68fc3dfa146" }]
+  },
+  "tools": ["factory_status", "compile_blueprint", "stamp_worker", "list_blueprints", "get_blueprint"]
+}
