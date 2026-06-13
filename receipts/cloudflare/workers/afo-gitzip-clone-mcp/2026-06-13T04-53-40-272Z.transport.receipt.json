@@ -1,0 +1,16 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-gitzip-clone-mcp",
+  "created_at": "2026-06-13T04:53:40.341Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-gitzip-clone-mcp",
+  "source_path": "apps/afo-gitzip-clone-mcp/worker.js",
+  "source_sha256": "sha256:a7588654ea3282fbde237df0ab6629393d1e88e28a5bd012ddf28b20512baeaa",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-gitzip-clone-mcp",
+    "binding_count": 0,
+    "bindings": [],
+    "deployed_at": "2026-06-13T04:53:40.272Z"
+  }
+}
