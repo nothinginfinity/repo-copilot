@@ -1,0 +1,24 @@
+{
+  "name": "afo-youtube-transcript-resilient-mcp",
+  "version": "0.3.0",
+  "description": "Resilient YouTube transcript MCP with caption extraction, browser payload fallback, user-provided audio transcription handoff, D1/KV storage, transcript retrieval, search, and summary tools.",
+  "main": "worker.js",
+  "wrangler": "wrangler.jsonc",
+  "secrets": [
+    "TRANSCRIPTION_WEBHOOK_SECRET"
+  ],
+  "tools": [
+    "afo_youtube_transcript_resilient_status",
+    "youtube_resilient_status",
+    "probe_youtube_sources",
+    "capture_youtube_transcript_resilient",
+    "submit_browser_caption_payload",
+    "create_audio_transcription_job",
+    "submit_transcription_result",
+    "import_transcript_text",
+    "get_youtube_transcript_resilient",
+    "list_youtube_transcripts_resilient",
+    "search_youtube_transcripts_resilient",
+    "summarize_youtube_transcript_resilient"
+  ]
+}
