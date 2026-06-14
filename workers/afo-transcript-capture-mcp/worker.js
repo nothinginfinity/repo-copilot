@@ -1,5 +1,8 @@
 const VERSION = "0.1.1";const VERSION = "0.1.2";
-const WORKER_NAME = "afo-transcript-capture-mcp";const WORKER_NAME = "afo-transcript-capture-mcp";
+const WORKER_NAME = "afo-transcript-capture-mcp";const WORKER_NAME = "afo-transcript-capture-mcp";const VERSION = "0.1.2";
+const WORKER_NAME = "afo-transcript-capture-mcp";
+
+const CORS
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
