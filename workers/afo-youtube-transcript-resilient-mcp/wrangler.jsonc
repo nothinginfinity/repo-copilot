@@ -1,18 +1,33 @@
 {
   "name": "afo-youtube-transcript-resilient-mcp",
   "main": "worker.js",
-  "compatibility_date": "2024-11-01"
-  ,"d1_databases": [
-    {"binding":"DB","database_name":"afo-repo-indexer-db","database_id":"8353183f-a89e-4777-a01b-b7299b75d1c5"}
+  "compatibility_date": "2024-11-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "afo-repo-indexer-db",
+      "database_id": "8353183f-a89e-4777-a01b-b7299b75d1c5"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "f63668fb549142ad8b321cc7dcea6d3b"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "afo-repo-footprint-vector"
+    }
+  ],
+  "services": [
+    {
+      "binding": "BROWSER_CAPTURE",
+      "service": "afo-youtube-browser-capture-worker"
+    }
   ]
-  ,"kv_namespaces": [
-    {"binding":"KV","id":"f63668fb549142ad8b321cc7dcea6d3b"}
-  ]
-  ,"vectorize": [
-    {"binding":"VECTORIZE","index_name":"afo-repo-footprint-vector"}
-  ]
-  ,"ai": {"binding":"AI"}
-  ,"vars":{"WORKER_VERSION":"0.3.1","WORKER_NAME":"afo-youtube-transcript-resilient-mcp"}
-  ,"observability":{"enabled":true,"head_sampling_rate":1}
-  ,"placement":{"mode":"smart"}
 }
