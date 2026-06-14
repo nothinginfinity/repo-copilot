@@ -371,7 +371,7 @@ async function probeTranscriptUrl(args) {
   };
 }
 
-async function captureTranscript(args, env) {async function captureTranscript(args, env) {
+async function captureTranscript(args, env) {
   const inputUrl = args.url;
   if (!inputUrl) throw new Error("url required");
   await ensureSchema(env.DB);
