@@ -6,9 +6,10 @@ on:
       worker:
         description: 'Worker directory under workers/ to deploy'
         required: true
-        default: 'afo-transcript-capture-mcp'
+        default: 'afo-youtube-transcript-mcp-v2'
         type: choice
         options:
+          - afo-youtube-transcript-mcp-v2
           - afo-transcript-capture-mcp
           - afo-repo-change-ledger-mcp
           - afo-repo-indexer-mcp-v002
@@ -42,6 +43,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "worker=${{ github.event.inputs.worker }}" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-youtube-transcript-mcp-v2/'; then
+            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-mcp-v2/'; then
+            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
             echo "worker=afo-transcript-capture-mcp" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
@@ -59,7 +64,7 @@ jobs:
           elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
             echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
           else
-            echo "worker=afo-transcript-capture-mcp" >> "$GITHUB_OUTPUT"
+            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Deploy selected worker
