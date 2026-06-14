@@ -1,91 +1,45 @@
 const VERSION="0.2.0";
 const WORKER_NAME="afo-youtube-transcript-mcp-v2";
-const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,Authorization,Mcp-Session-Id'};
-const TOOLS=[{
-  "name": "youtube_transcript_status",
-  "description": "Health check for the YouTube transcript MCP v2.",
-  "inputSchema": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  }
-},
-{
-  "name": "probe_youtube_captions",
-  "description": "Probe a YouTube URL for public caption tracks without storing anything.",
-  "inputSchema": {
-    "type": "object",
-    "required": [
-      "url"
-    ],
-    "properties": {
-      "url": {
-        "type": "string"
-      },
-      "language": {
-        "type": "string",
-        "default": "en"
-      }
-    }
-  }
-},
-{
-  "name": "capture_youtube_transcript",
-  "description": "Capture public YouTube captions, store transcript text in D1/KV, and index chunks in Vectorize.",
-  "inputSchema": {
-    "type": "object",
-    "required": [
-      "url"
-    ],
-    "properties": {
-      "url": {
-        "type": "string"
-      },
-      "language": {
-        "type": "string",
-        "default": "en"
-      },
-      "title": {
-        "type": "string"
-      },
-      "source_note": {
-        "type": "string"
-      },
-      "force": {
-        "type": "boolean",
-        "default": false
-      }
-    }
-  }
-}];
-function rpc(id,r){return Response.json({jsonrpc:"2.0",id,result:r},{headers:CORS});}
-function errResp(id,c,m){return Response.json({jsonrpc:"2.0",id,error:{code:c,message:m}},{headers:CORS});}
-function tool(id,r){return rpc(id,{content:[{type:"text",text:JSON.stringify(r,null,2)}]});}
-function genId(p){return p+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);}
-function nowIso(){return new Date().toISOString();}
-async function dbRun(db,sql,p){const s=db.prepare(sql);return p?s.bind(...p).run():s.run();}
-async function dbFirst(db,sql,p){const s=db.prepare(sql);return p?s.bind(...p).first():s.first();}
-async function dbAll(db,sql,p){const s=db.prepare(sql);const r=p?await s.bind(...p).all():await s.all();return r.results||[];}
-async function ensureSchema(db){await db.prepare(`CREATE TABLE IF NOT EXISTS mcp_sessions (session_id TEXT PRIMARY KEY,worker_name TEXT NOT NULL,status TEXT DEFAULT 'active',parent_id TEXT,metadata TEXT,started_at TEXT NOT NULL,updated_at TEXT NOT NULL,finished_at TEXT)`).run();await db.prepare(`CREATE TABLE IF NOT EXISTS action_execution_logs (log_id TEXT PRIMARY KEY,session_id TEXT,worker_name TEXT NOT NULL,tool_name TEXT NOT NULL,status TEXT NOT NULL,input_json TEXT,output_summary TEXT,payload_uri TEXT,error_message TEXT,duration_ms INTEGER,input_tokens INTEGER,output_tokens INTEGER,vector_id TEXT,created_at TEXT NOT NULL)`).run();await db.prepare(`CREATE TABLE IF NOT EXISTS schema_migrations (migration_id TEXT PRIMARY KEY,worker_name TEXT NOT NULL,description TEXT,applied_at TEXT NOT NULL,checksum TEXT)`).run();}
-async function kvSet(kv,k,v,o){await kv.put(k,typeof v==="string"?v:JSON.stringify(v),o||{});}
-async function kvGet(kv,k){const v=await kv.get(k);if(v===null)return null;try{return JSON.parse(v);}catch{return v;}}
-async function handle(name,args,env,ctx){
-  await ensureSchema(env.DB);
-  if (name === "youtube_transcript_status") {
-    throw new Error("youtube_transcript_status: handler type undefined not yet implemented");
-  }
-
-  if (name === "probe_youtube_captions") {
-    const { url } = args;
-    if (!url) throw new Error("probe_youtube_captions: url required");
-    throw new Error("probe_youtube_captions: handler type undefined not yet implemented");
-  }
-
-  if (name === "capture_youtube_transcript") {
-    const { url } = args;
-    if (!url) throw new Error("capture_youtube_transcript: url required");
-    throw new Error("capture_youtube_transcript: handler type undefined not yet implemented");
-  }
-
-  throw new Error("Unknown tool: "+name);}
-export default{async fetch(request,env,ctx){if(request.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});const url=new URL(request.url);if(url.pathname==="/health")return Response.json({status:"ok",worker:WORKER_NAME,version:VERSION},{headers:CORS});if(request.method!=="POST")return new Response("not found",{status:404,headers:CORS});let body;try{body=await request.json();}catch{return errResp(null,-32700,"Parse error");}const{id,method,params}=body;if(method==="initialize")return rpc(id,{protocolVersion:"2024-11-05",capabilities:{tools:{}},serverInfo:{name:WORKER_NAME,version:VERSION}});if(method==="notifications/initialized")return new Response(null,{status:204,headers:CORS});if(method==="ping")return rpc(id,{});if(method==="tools/list")return rpc(id,{tools:TOOLS});if(method==="tools/call"){try{return tool(id,await handle(params?.name,params?.arguments||{},env,ctx));}catch(e){return errResp(id,-32603,"Tool error: "+e.message);}}return errResp(id,-32601,"Method not found: "+method);}};
+const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization,Mcp-Session-Id"};
+const TOOLS=[
+{name:"youtube_transcript_status",description:"Health check for the YouTube transcript MCP v2.",inputSchema:{type:"object",properties:{},required:[]}},
+{name:"probe_youtube_captions",description:"Probe a YouTube URL for public caption tracks without storing anything.",inputSchema:{type:"object",required:["url"],properties:{url:{type:"string"},language:{type:"string",default:"en"}}}},
+{name:"capture_youtube_transcript",description:"Capture public YouTube captions, store transcript text in D1/KV, and index chunks in Vectorize.",inputSchema:{type:"object",required:["url"],properties:{url:{type:"string"},language:{type:"string",default:"en"},title:{type:"string"},source_note:{type:"string"},force:{type:"boolean",default:false}}}},
+{name:"get_youtube_transcript",description:"Get a stored YouTube transcript by transcript_id.",inputSchema:{type:"object",required:["transcript_id"],properties:{transcript_id:{type:"string"},include_text:{type:"boolean",default:true},include_segments:{type:"boolean",default:false}}}},
+{name:"list_youtube_transcripts",description:"List stored YouTube transcript records.",inputSchema:{type:"object",properties:{limit:{type:"number",default:20},video_id:{type:"string"},language:{type:"string"}},required:[]}},
+{name:"search_youtube_transcripts",description:"Semantic search transcript chunks in Vectorize.",inputSchema:{type:"object",required:["query"],properties:{query:{type:"string"},top_k:{type:"number",default:8},video_id:{type:"string"}}}},
+{name:"summarize_youtube_transcript",description:"Return a simple extractive summary from a stored transcript.",inputSchema:{type:"object",required:["transcript_id"],properties:{transcript_id:{type:"string"},max_chars:{type:"number",default:4000}}}}
+];
+function rpc(id,result){return Response.json({jsonrpc:"2.0",id,result},{headers:CORS});}
+function err(id,code,message){return Response.json({jsonrpc:"2.0",id,error:{code,message}},{headers:CORS});}
+function tool(id,payload){return rpc(id,{content:[{type:"text",text:JSON.stringify(payload,null,2)}]});}
+function uid(prefix){return prefix+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2,8);}
+function now(){return new Date().toISOString();}
+async function run(db,sql,params=[]){const s=db.prepare(sql);return params.length?s.bind(...params).run():s.run();}
+async function all(db,sql,params=[]){const s=db.prepare(sql);const r=params.length?await s.bind(...params).all():await s.all();return r.results||[];}
+async function ensure(db){await run(db,"CREATE TABLE IF NOT EXISTS yt_transcripts (transcript_id TEXT PRIMARY KEY,url TEXT,video_id TEXT,title TEXT,language TEXT,source_note TEXT,transcript_text TEXT,segments_json TEXT,chunk_count INTEGER,status TEXT,caption_format TEXT,created_at TEXT,updated_at TEXT)");}
+async function kvGet(kv,key){const v=await kv.get(key);if(v===null)return null;try{return JSON.parse(v);}catch{return v;}}
+async function kvPut(kv,key,value){await kv.put(key,JSON.stringify(value));}
+function decode(s){return String(s||"").replace(/<[^>]+>/g," ").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&apos;/g,"'").replace(/&quot;/g,'"').replace(/&#(\d+);/g,(_,n)=>String.fromCharCode(Number(n))).replace(/&#x([0-9a-fA-F]+);/g,(_,n)=>String.fromCharCode(parseInt(n,16))).replace(/\s+/g," ").trim();}
+function unyt(s){return String(s||"").replace(/\\u0026/g,"&").replace(/&amp;/g,"&").replace(/\\\//g,"/");}
+function videoId(input){try{const u=new URL(input);if(u.hostname.includes("youtu.be"))return u.pathname.slice(1).split("/")[0];const v=u.searchParams.get("v");if(v)return v;const m=u.pathname.match(/\/shorts\/([^/?#]+)/);if(m)return m[1];}catch{}return null;}
+async function watchHtml(id){const r=await fetch("https://www.youtube.com/watch?v="+id,{headers:{"User-Agent":"Mozilla/5.0"}});return r.text();}
+function pageTitle(html){const m=html.match(/<title>(.*?)<\/title>/i);return m?decode(m[1]).replace(/ - YouTube$/,""):"";}
+function captionTracks(html){const m=html.match(/"captionTracks":(\[.*?\])\s*,\s*"audioTracks"/);if(!m)return[];try{return JSON.parse(unyt(m[1]));}catch{return[];}}
+function choose(tracks,lang="en"){return tracks.find(t=>t.languageCode===lang&&t.kind!=="asr")||tracks.find(t=>t.languageCode===lang)||tracks.find(t=>(t.languageCode||"").startsWith(lang.split("-")[0])&&t.kind!=="asr")||tracks.find(t=>(t.languageCode||"").startsWith(lang.split("-")[0]))||tracks[0];}
+function withFmt(base,fmt){const b=unyt(base);try{const u=new URL(b);u.searchParams.set("fmt",fmt);return u.toString();}catch{return b+(b.includes("?")?"&":"?")+"fmt="+encodeURIComponent(fmt);}}
+function parseJson3(txt){try{const j=JSON.parse(txt);return (j.events||[]).map(e=>({start:Number(e.tStartMs||0)/1000,dur:Number(e.dDurationMs||0)/1000,text:decode((e.segs||[]).map(s=>s.utf8||"").join(""))})).filter(x=>x.text);}catch{return[];}}
+function parseXml(txt){return [...String(txt).matchAll(/<text[^>]*start="([^"]+)"[^>]*(?:dur="([^"]+)")?[^>]*>([\s\S]*?)<\/text>/g)].map(m=>({start:Number(m[1]),dur:Number(m[2]||0),text:decode(m[3])})).filter(x=>x.text);}
+function parseVtt(txt){const lines=String(txt||"").replace(/\r/g,"").split("\n");const out=[];let st=0,du=0,buf=[];const sec=x=>{const p=x.trim().replace(",",".").split(":").map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:Number(x)||0;};const flush=()=>{const text=decode(buf.join(" "));if(text)out.push({start:st,dur:du,text});buf=[];};for(const raw of lines){const line=raw.trim();if(!line||line==="WEBVTT"||line.startsWith("Kind:")||line.startsWith("Language:")){if(!line)flush();continue;}if(line.includes(" --> ")){flush();const a=line.split(" --> ");st=sec(a[0]);du=Math.max(0,sec(a[1].split(/\s+/)[0])-st);}else if(!/^\d+$/.test(line)){buf.push(line);}}flush();return out;}
+async function fetchSegments(base){const attempts=[{fmt:"json3",parse:parseJson3},{fmt:"vtt",parse:parseVtt},{fmt:"srv3",parse:parseXml},{fmt:null,parse:t=>parseJson3(t).length?parseJson3(t):(String(t).trim().startsWith("WEBVTT")?parseVtt(t):parseXml(t))}];const notes=[];for(const a of attempts){const url=a.fmt?withFmt(base,a.fmt):unyt(base);try{const txt=await fetch(url,{headers:{"User-Agent":"Mozilla/5.0","Accept":"application/json,text/vtt,text/xml,*/*"}}).then(r=>r.text());const segs=a.parse(txt);if(segs.length)return{segments:segs,format:a.fmt||"default"};notes.push((a.fmt||"default")+":empty");}catch(e){notes.push((a.fmt||"default")+":"+e.message);}}return{segments:[],format:"none",notes};}
+function chunks(text){const out=[];for(let i=0;i<text.length;i+=1200){out.push(text.slice(i,i+1500));if(i+1500>=text.length)break;}return out;}
+async function embed(ai,text){if(!ai)return null;const r=await ai.run("@cf/baai/bge-base-en-v1.5",{text:[String(text).slice(0,512)]});return r.data&&r.data[0];}
+async function status(env){const r={ok:true,worker:WORKER_NAME,version:VERSION,bindings:{DB:false,KV:false,VECTORIZE:!!env.VECTORIZE,AI:!!env.AI},tools:TOOLS.map(t=>t.name)};try{await ensure(env.DB);r.bindings.DB=true;}catch(e){r.db_error=e.message;}try{await env.KV.put("_yt_v2_ping","1",{expirationTtl:60});r.bindings.KV=true;}catch(e){r.kv_error=e.message;}return r;}
+async function probe(args){const input=args.url;if(!input)throw new Error("url required");const id=videoId(input);if(!id)throw new Error("Could not parse YouTube video id");const html=await watchHtml(id);const tracks=captionTracks(html);return{ok:true,video_id:id,title:pageTitle(html),has_transcript:tracks.length>0,tracks:tracks.map(t=>({languageCode:t.languageCode,name:t.name&&t.name.simpleText,kind:t.kind||"manual",isTranslatable:!!t.isTranslatable}))};}
+async function capture(args,env){const input=args.url;if(!input)throw new Error("url required");await ensure(env.DB);const id=videoId(input);if(!id)throw new Error("Could not parse YouTube video id");const key="yt:v2:url:"+input;if(!args.force){const c=await kvGet(env.KV,key);if(c&&c.characters>0)return{ok:true,cached:true,...c};}const html=await watchHtml(id);const tracks=captionTracks(html);if(!tracks.length)throw new Error("No public captionTracks found");const tr=choose(tracks,args.language||"en");if(!tr)throw new Error("No caption track available");const cap=await fetchSegments(tr.baseUrl);if(!cap.segments.length)throw new Error("Caption track found but no text parsed: "+(cap.notes||[]).join(" | "));const text=cap.segments.map(s=>s.text).join(" ").replace(/\s+/g," ").trim();if(!text)throw new Error("Caption parser returned empty transcript text");const title=args.title||pageTitle(html);const tx=uid("ytx");const at=now();const cs=chunks(text);const lang=tr.languageCode||args.language||"en";await run(env.DB,"INSERT INTO yt_transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",[tx,input,id,title,lang,args.source_note||"",text,JSON.stringify(cap.segments),cs.length,"complete",cap.format,at,at]);for(let i=0;i<cs.length;i++){const vector=await embed(env.AI,title+" "+cs[i]);if(vector&&env.VECTORIZE)await env.VECTORIZE.upsert([{id:"ytx_"+tx+"_"+i,values:vector,metadata:{source_type:"youtube_transcript",transcript_id:tx,url:input,video_id:id,title,language:lang,chunk:i,text:cs[i].slice(0,900)}}]);}const payload={transcript_id:tx,url:input,video_id:id,title,language:lang,caption_format:cap.format,segments:cap.segments.length,characters:text.length,chunk_count:cs.length,status:"complete"};await kvPut(env.KV,key,payload);return{ok:true,...payload};}
+async function getTx(args,env){if(!args.transcript_id)throw new Error("transcript_id required");await ensure(env.DB);const r=(await all(env.DB,"SELECT * FROM yt_transcripts WHERE transcript_id=? LIMIT 1",[args.transcript_id]))[0];if(!r)return{ok:true,found:false};const o={ok:true,found:true,transcript_id:r.transcript_id,url:r.url,video_id:r.video_id,title:r.title,language:r.language,source_note:r.source_note,caption_format:r.caption_format,chunk_count:r.chunk_count,status:r.status,created_at:r.created_at,updated_at:r.updated_at};if(args.include_text!==false)o.transcript_text=r.transcript_text;if(args.include_segments)o.segments=JSON.parse(r.segments_json||"[]");return o;}
+async function listTx(args,env){await ensure(env.DB);let sql="SELECT transcript_id,url,video_id,title,language,caption_format,chunk_count,status,created_at,updated_at FROM yt_transcripts";const p=[],w=[];if(args.video_id){w.push("video_id=?");p.push(args.video_id);}if(args.language){w.push("language=?");p.push(args.language);}if(w.length)sql+=" WHERE "+w.join(" AND ");sql+=" ORDER BY created_at DESC LIMIT ?";p.push(Math.min(args.limit||20,100));const rows=await all(env.DB,sql,p);return{ok:true,count:rows.length,transcripts:rows};}
+async function searchTx(args,env){if(!args.query)throw new Error("query required");if(!env.VECTORIZE)throw new Error("VECTORIZE binding missing");const v=await embed(env.AI,args.query);if(!v)throw new Error("Embedding failed");let m=(await env.VECTORIZE.query(v,{topK:Math.min(args.top_k||8,20),returnMetadata:true})).matches||[];m=m.filter(x=>x.metadata&&x.metadata.source_type==="youtube_transcript");if(args.video_id)m=m.filter(x=>x.metadata.video_id===args.video_id);return{ok:true,query:args.query,count:m.length,results:m.map(x=>({score:x.score,id:x.id,transcript_id:x.metadata.transcript_id,video_id:x.metadata.video_id,title:x.metadata.title,url:x.metadata.url,language:x.metadata.language,chunk:x.metadata.chunk,text:x.metadata.text}))};}
+async function summary(args,env){const r=await getTx({...args,include_text:true},env);if(!r.found)return r;const text=(r.transcript_text||"").slice(0,args.max_chars||4000);const s=text.split(/(?<=[.!?])\s+/).filter(Boolean);return{ok:true,found:true,transcript_id:r.transcript_id,title:r.title,video_id:r.video_id,language:r.language,summary:s.slice(0,8).join(" "),key_excerpt:text.slice(0,1200),note:"v2 extractive summary"};}
+async function handle(name,args,env){if(name==="youtube_transcript_status")return status(env);if(name==="probe_youtube_captions")return probe(args||{});if(name==="capture_youtube_transcript")return capture(args||{},env);if(name==="get_youtube_transcript")return getTx(args||{},env);if(name==="list_youtube_transcripts")return listTx(args||{},env);if(name==="search_youtube_transcripts")return searchTx(args||{},env);if(name==="summarize_youtube_transcript")return summary(args||{},env);throw new Error("Unknown tool: "+name);}
+export default{async fetch(request,env,ctx){if(request.method==="OPTIONS")return new Response(null,{status:204,headers:CORS});const u=new URL(request.url);if(u.pathname==="/health")return Response.json({status:"ok",worker:WORKER_NAME,version:VERSION},{headers:CORS});if(request.method!=="POST")return new Response("not found",{status:404,headers:CORS});let body;try{body=await request.json();}catch{return err(null,-32700,"Parse error");}const{id,method,params}=body;if(method==="initialize")return rpc(id,{protocolVersion:"2024-11-05",capabilities:{tools:{}},serverInfo:{name:WORKER_NAME,version:VERSION}});if(method==="notifications/initialized")return new Response(null,{status:204,headers:CORS});if(method==="ping")return rpc(id,{});if(method==="tools/list")return rpc(id,{tools:TOOLS});if(method==="tools/call"){try{return tool(id,await handle(params&&params.name,(params&&params.arguments)||{},env));}catch(e){return err(id,-32603,"Tool error: "+e.message);}}return err(id,-32601,"Method not found: "+method);}};
