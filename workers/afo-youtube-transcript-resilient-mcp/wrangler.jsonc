@@ -23,11 +23,5 @@
       "binding": "VECTORIZE",
       "index_name": "afo-repo-footprint-vector"
     }
-  ],
-  "services": [
-    {
-      "binding": "BROWSER_CAPTURE",
-      "service": "afo-youtube-browser-capture-worker"
-    }
   ]
 }
