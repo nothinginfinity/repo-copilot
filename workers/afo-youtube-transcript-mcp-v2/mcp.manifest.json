@@ -1,0 +1,14 @@
+{
+  "name": "afo-youtube-transcript-mcp-v2",
+  "version": "0.2.0",
+  "description": "Clean v2 Cloudflare-native YouTube transcript MCP. Captures public YouTube caption tracks without downloading audio/video, stores transcripts in D1/KV, embeds chunks with Workers AI, and indexes chunks in Vectorize.",
+  "main": "worker.js",
+  "wrangler": "wrangler.jsonc",
+  "secrets": [],
+  "tools": [
+    "afo_youtube_transcript_mcp_v2_status",
+    "youtube_transcript_status",
+    "probe_youtube_captions",
+    "capture_youtube_transcript"
+  ]
+}
