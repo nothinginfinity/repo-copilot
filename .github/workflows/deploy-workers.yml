@@ -11,6 +11,7 @@ on:
         options:
           - afo-youtube-transcript-mcp-v2
           - afo-youtube-transcript-resilient-mcp
+          - afo-youtube-browser-capture-worker
           - afo-transcript-capture-mcp
           - afo-repo-change-ledger-mcp
           - afo-repo-indexer-mcp-v002
@@ -44,33 +45,29 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "worker=${{ github.event.inputs.worker }}" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-youtube-transcript-mcp-v2/'; then
-            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-mcp-v2/'; then
-            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-youtube-transcript-resilient-mcp/'; then
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-browser-capture-worker/'; then
+            echo "worker=afo-youtube-browser-capture-worker" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-resilient-mcp/'; then
             echo "worker=afo-youtube-transcript-resilient-mcp" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-resilient-mcp/'; then
-            echo "worker=afo-youtube-transcript-resilient-mcp" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-mcp-v2/'; then
+            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
             echo "worker=afo-transcript-capture-mcp" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
-            echo "worker=afo-transcript-capture-mcp" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-repo-change-ledger-mcp/'; then
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-change-ledger-mcp/'; then
             echo "worker=afo-repo-change-ledger-mcp" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-change-ledger-mcp/'; then
-            echo "worker=afo-repo-change-ledger-mcp" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
             echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-repo-indexer-mcp-v002/'; then
-            echo "worker=afo-repo-indexer-mcp-v002" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
-            echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
             echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
           else
             echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Install worker dependencies
+        working-directory: workers/${{ steps.resolve.outputs.worker }}
+        shell: bash
+        run: |
+          if [ -f package.json ]; then npm install; fi
 
       - name: Deploy selected worker
         working-directory: workers/${{ steps.resolve.outputs.worker }}
