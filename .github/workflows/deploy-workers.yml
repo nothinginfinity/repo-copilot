@@ -10,6 +10,7 @@ on:
         type: choice
         options:
           - afo-youtube-transcript-mcp-v2
+          - afo-youtube-transcript-resilient-mcp
           - afo-transcript-capture-mcp
           - afo-repo-change-ledger-mcp
           - afo-repo-indexer-mcp-v002
@@ -47,6 +48,10 @@ jobs:
             echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-mcp-v2/'; then
             echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-youtube-transcript-resilient-mcp/'; then
+            echo "worker=afo-youtube-transcript-resilient-mcp" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-resilient-mcp/'; then
+            echo "worker=afo-youtube-transcript-resilient-mcp" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
             echo "worker=afo-transcript-capture-mcp" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-transcript-capture-mcp/'; then
