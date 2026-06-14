@@ -371,7 +371,7 @@ async function probeTranscriptUrl(args) {
   };
 }
 
-async function captureTranscript(args, env) {
+async function captureTranscript(args, env) {async function captureTranscript(args, env) {
   const inputUrl = args.url;
   if (!inputUrl) throw new Error("url required");
   await ensureSchema(env.DB);
@@ -382,43 +382,46 @@ async function captureTranscript(args, env) {
   const cacheKey = `transcript:url:${inputUrl}`;
   if (!args.force) {
     const cached = await kvGet(env.KV, cacheKey);
-    if (cached) return { ok: true, cached: true, ...cached };
+    if (cached && cached.characters > 0) return { ok: true, cached: true, ...cached };
   }
 
   const html = await fetchYouTubeWatchPage(videoId);
-  const tracks = parseCaptionTracks(html);
-  if (!tracks.length) throw new Error("No public captionTracks found");
+  const captionTracks = parseCaptionTracks(html);
+  if (!captionTracks.length) throw new Error("No public captionTracks found");
 
-  const track = chooseTrack(tracks, args.language || "en");
+  const track = chooseTrack(captionTracks, args.language || "en");
   if (!track) throw new Error("No caption track available");
 
-  const captionUrl = unescapeYouTube(track.baseUrl);  const captionResult = await fetchCaptionSegments(track.baseUrl);
-  const segments = captionResult.segments;
+  const captionResult = await fetchCaptionSegments(track.baseUrl);
+  const segments = captionResult.segments || [];
   if (!segments.length) throw new Error(`Caption track found but no transcript text parsed. Attempts: ${(captionResult.errors || []).join(" | ")}`);
+
   const transcriptText = segments.map((segment) => segment.text).join(" ").replace(/\s+/g, " ").trim();
   if (!transcriptText) throw new Error("Caption parser returned empty transcript text");
-  const title = args.title || parsePageTitle(html);
+
+  const pageTitle = args.title || parsePageTitle(html);
   const transcriptId = genId("tx");
   const timestamp = nowIso();
-  const chunks = chunkText(transcriptText);
+  const transcriptChunks = chunkText(transcriptText);
+  const language = track.languageCode || args.language || "en";
 
-  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
+  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
     transcriptId,
     inputUrl,
     videoId,
-    title,
-    track.languageCode || args.language || "en",
+    pageTitle,
+    language,
     args.source_note || "",
     transcriptText,
     JSON.stringify(segments),
-    chunks.length,
+    transcriptChunks.length,
     "complete",
     timestamp,
     timestamp
   ]);
 
-  for (let index = 0; index < chunks.length; index++) {  for (let index = 0; index < chunks.length; index++) {
-    const vector = await embedText(env.AI, `${title} ${chunks[index]}`);
+  for (let index = 0; index < transcriptChunks.length; index++) {
+    const vector = await embedText(env.AI, `${pageTitle} ${transcriptChunks[index]}`);
     if (vector) {
       await env.VECTORIZE.upsert([{
         id: `tx_${transcriptId}_${index}`,
@@ -427,20 +430,33 @@ async function captureTranscript(args, env) {
           transcript_id: transcriptId,
           url: inputUrl,
           video_id: videoId,
-          title,
-          language: track.languageCode || args.language || "en",    language: track.languageCode || args.language || "en",
+          title: pageTitle,
+          language,
+          chunk: index,
+          text: transcriptChunks[index].slice(0, 900),
+          source_type: "transcript"
+        }
+      }]);
+    }
+  }
+
+  const payload = {
+    transcript_id: transcriptId,
+    url: inputUrl,
+    video_id: videoId,
+    title: pageTitle,
+    language,
     caption_format: captionResult.format,
     segments: segments.length,
     characters: transcriptText.length,
-    chunk_count: chunks.length,
-    status: "complete"    status: "complete"    status: "complete"
+    chunk_count: transcriptChunks.length,
+    status: "complete"
   };
-  };
-  await kvSet(env.KV, cacheKey, output);
-  return { ok: true, ...output };
+  await kvSet(env.KV, cacheKey, payload);
+  return { ok: true, ...payload };
 }
 
-async function getTranscript(args, env) {
+async function getTranscript(args, env) {async function getTranscript(args, env) {
   const transcriptId = args.transcript_id;
   if (!transcriptId) throw new Error("transcript_id required");
   await ensureSchema(env.DB);
