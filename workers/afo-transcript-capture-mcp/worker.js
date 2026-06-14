@@ -402,9 +402,7 @@ async function captureTranscript(args, env) {
   const timestamp = nowIso();
   const chunks = chunkText(transcriptText);
 
-  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
-
-  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
+  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
     transcriptId,
     inputUrl,
     videoId,
@@ -419,7 +417,7 @@ async function captureTranscript(args, env) {
     timestamp
   ]);
 
-  for (let index = 0; index < chunks.length; index++) {
+  for (let index = 0; index < chunks.length; index++) {  for (let index = 0; index < chunks.length; index++) {
     const vector = await embedText(env.AI, `${title} ${chunks[index]}`);
     if (vector) {
       await env.VECTORIZE.upsert([{
