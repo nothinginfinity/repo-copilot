@@ -1,8 +1,5 @@
-const VERSION = "0.1.1";const VERSION = "0.1.2";
-const WORKER_NAME = "afo-transcript-capture-mcp";const WORKER_NAME = "afo-transcript-capture-mcp";const VERSION = "0.1.2";
+const VERSION = "0.1.2";
 const WORKER_NAME = "afo-transcript-capture-mcp";
-
-const CORS
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -403,7 +400,7 @@ async function captureTranscript(args, env) {
   const title = args.title || parsePageTitle(html);
   const transcriptId = genId("tx");
   const timestamp = nowIso();
-  const chunks = chunkText(transcriptText);  const chunks = chunkText(transcriptText);  const chunks = chunkText(transcriptText);
+  const chunks = chunkText(transcriptText);
 
   await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
 
