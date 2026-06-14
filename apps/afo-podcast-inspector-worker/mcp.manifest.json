@@ -1,0 +1,13 @@
+{
+  "name": "afo-podcast-inspector-worker",
+  "version": "0.1.0",
+  "description": "Specialized Discovery Mode worker for podcast feed inspection and episode indexing.",
+  "tools": [
+    "podcast_inspector_status",
+    "inspect_podcast_feed",
+    "run_podcast_inspection_job",
+    "list_recent_podcast_episodes"
+  ],
+  "routes": ["/", "/console", "/run", "/health"],
+  "shared_tables": ["discovery_index", "discovery_receipts", "discovery_job_steps"]
+}
