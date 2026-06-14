@@ -1,5 +1,5 @@
-const VERSION = "0.1.1";
-const WORKER_NAME = "afo-transcript-capture-mcp";
+const VERSION = "0.1.1";const VERSION = "0.1.2";
+const WORKER_NAME = "afo-transcript-capture-mcp";const WORKER_NAME = "afo-transcript-capture-mcp";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -237,7 +237,7 @@ function chooseTrack(tracks, preferredLanguage) {
     || tracks[0];
 }
 
-function parseTranscriptXml(xml) {
+function parseTranscriptXml(xml) {function parseTranscriptXml(xml) {
   return [...xml.matchAll(/<text[^>]*start="([^"]+)"[^>]*(?:dur="([^"]+)")?[^>]*>([\s\S]*?)<\/text>/g)]
     .map((match) => ({
       start: Number(match[1]),
@@ -246,6 +246,92 @@ function parseTranscriptXml(xml) {
     }))
     .filter((segment) => segment.text);
 }
+
+function parseTranscriptJson3(payload) {
+  let parsed;
+  try { parsed = JSON.parse(payload); } catch { return []; }
+  return (parsed.events || []).map((event) => {
+    const text = Array.isArray(event.segs) ? event.segs.map((seg) => seg.utf8 || "").join("") : "";
+    return {
+      start: Number(event.tStartMs || 0) / 1000,
+      dur: Number(event.dDurationMs || 0) / 1000,
+      text: decodeText(text)
+    };
+  }).filter((segment) => segment.text);
+}
+
+function parseTranscriptVtt(vtt) {
+  const lines = (vtt || "").replace(/\r/g, "").split("\n");
+  const segments = [];
+  let start = 0;
+  let dur = 0;
+  let buffer = [];
+  const seconds = (stamp) => {
+    const parts = stamp.trim().replace(",", ".").split(":").map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return Number(stamp) || 0;
+  };
+  const flush = () => {
+    const text = decodeText(buffer.join(" "));
+    if (text) segments.push({ start, dur, text });
+    buffer = [];
+  };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line === "WEBVTT" || line.startsWith("Kind:") || line.startsWith("Language:")) {
+      if (!line) flush();
+      continue;
+    }
+    if (line.includes(" --> ")) {
+      flush();
+      const [from, toRest] = line.split(" --> ");
+      const to = toRest.split(/\s+/)[0];
+      start = seconds(from);
+      dur = Math.max(0, seconds(to) - start);
+    } else if (!/^\d+$/.test(line)) {
+      buffer.push(line);
+    }
+  }
+  flush();
+  return segments;
+}
+
+function withCaptionFormat(baseUrl, format) {
+  const expanded = unescapeYouTube(baseUrl);
+  try {
+    const parsed = new URL(expanded);
+    parsed.searchParams.set("fmt", format);
+    return parsed.toString();
+  } catch {
+    return expanded + (expanded.includes("?") ? "&" : "?") + "fmt=" + encodeURIComponent(format);
+  }
+}
+
+async function fetchCaptionSegments(baseUrl) {
+  const attempts = [
+    { format: "json3", parser: parseTranscriptJson3 },
+    { format: "vtt", parser: parseTranscriptVtt },
+    { format: "srv3", parser: parseTranscriptXml },
+    { format: null, parser: (payload) => parseTranscriptJson3(payload).length ? parseTranscriptJson3(payload) : (payload.trim().startsWith("WEBVTT") ? parseTranscriptVtt(payload) : parseTranscriptXml(payload)) }
+  ];
+  const errors = [];
+  for (const attempt of attempts) {
+    const captionUrl = attempt.format ? withCaptionFormat(baseUrl, attempt.format) : unescapeYouTube(baseUrl);
+    try {
+      const response = await fetch(captionUrl, { headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json,text/vtt,text/xml,*/*" } });
+      const payload = await response.text();
+      const segments = attempt.parser(payload);
+      if (segments.length) return { segments, format: attempt.format || "default" };
+      errors.push(`${attempt.format || "default"}: empty`);
+    } catch (error) {
+      errors.push(`${attempt.format || "default"}: ${error.message}`);
+    }
+  }
+  return { segments: [], format: "none", errors };
+}
+
+function chunkText(text, step = 1200, size = 1500) {
 
 function chunkText(text, step = 1200, size = 1500) {
   const chunks = [];
@@ -306,14 +392,15 @@ async function captureTranscript(args, env) {
   const track = chooseTrack(tracks, args.language || "en");
   if (!track) throw new Error("No caption track available");
 
-  const captionUrl = unescapeYouTube(track.baseUrl);
-  const xml = await (await fetch(captionUrl)).text();
-  const segments = parseTranscriptXml(xml);
+  const captionUrl = unescapeYouTube(track.baseUrl);  const captionResult = await fetchCaptionSegments(track.baseUrl);
+  const segments = captionResult.segments;
+  if (!segments.length) throw new Error(`Caption track found but no transcript text parsed. Attempts: ${(captionResult.errors || []).join(" | ")}`);
   const transcriptText = segments.map((segment) => segment.text).join(" ").replace(/\s+/g, " ").trim();
+  if (!transcriptText) throw new Error("Caption parser returned empty transcript text");
   const title = args.title || parsePageTitle(html);
   const transcriptId = genId("tx");
   const timestamp = nowIso();
-  const chunks = chunkText(transcriptText);
+  const chunks = chunkText(transcriptText);  const chunks = chunkText(transcriptText);
 
   await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
     transcriptId,
@@ -341,25 +428,12 @@ async function captureTranscript(args, env) {
           url: inputUrl,
           video_id: videoId,
           title,
-          language: track.languageCode || args.language || "en",
-          chunk: index,
-          text: chunks[index].slice(0, 900),
-          source_type: "transcript"
-        }
-      }]);
-    }
-  }
-
-  const output = {
-    transcript_id: transcriptId,
-    url: inputUrl,
-    video_id: videoId,
-    title,
-    language: track.languageCode || args.language || "en",
+          language: track.languageCode || args.language || "en",    language: track.languageCode || args.language || "en",
+    caption_format: captionResult.format,
     segments: segments.length,
     characters: transcriptText.length,
     chunk_count: chunks.length,
-    status: "complete"
+    status: "complete"    status: "complete"
   };
   await kvSet(env.KV, cacheKey, output);
   return { ok: true, ...output };
