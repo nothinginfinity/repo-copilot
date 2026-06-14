@@ -400,7 +400,9 @@ async function captureTranscript(args, env) {
   const title = args.title || parsePageTitle(html);
   const transcriptId = genId("tx");
   const timestamp = nowIso();
-  const chunks = chunkText(transcriptText);  const chunks = chunkText(transcriptText);
+  const chunks = chunkText(transcriptText);  const chunks = chunkText(transcriptText);  const chunks = chunkText(transcriptText);
+
+  await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
 
   await dbRun(env.DB, "INSERT INTO transcripts VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", [
     transcriptId,
@@ -433,7 +435,8 @@ async function captureTranscript(args, env) {
     segments: segments.length,
     characters: transcriptText.length,
     chunk_count: chunks.length,
-    status: "complete"    status: "complete"
+    status: "complete"    status: "complete"    status: "complete"
+  };
   };
   await kvSet(env.KV, cacheKey, output);
   return { ok: true, ...output };
