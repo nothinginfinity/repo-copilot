@@ -1,0 +1,17 @@
+{
+  "name": "afo-transcript-capture-mcp",
+  "version": "0.1.0",
+  "description": "Cloudflare-native transcript capture MCP for iPhone-only workflows. Fetches public caption tracks from video URLs, stores transcript records in D1/KV, embeds transcript chunks with Workers AI, and indexes them in Vectorize for semantic search. GitHub remains source of truth for the Worker code.",
+  "main": "worker.js",
+  "wrangler": "wrangler.jsonc",
+  "secrets": [],
+  "tools": [
+    "afo_transcript_capture_status",
+    "probe_transcript_url",
+    "capture_transcript",
+    "get_transcript",
+    "list_transcripts",
+    "search_transcripts",
+    "summarize_transcript"
+  ]
+}
