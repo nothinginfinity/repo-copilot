@@ -1,0 +1,15 @@
+{
+  "name": "afo-source-registry-worker",
+  "version": "0.1.0",
+  "description": "Source intake, registry, and routing layer for the AFO Discovery Mesh.",
+  "tools": [
+    "source_registry_status",
+    "add_source",
+    "bulk_add_sources",
+    "list_sources",
+    "route_source_to_worker",
+    "crawl_source_batch"
+  ],
+  "routes": ["/", "/console", "/add", "/sources", "/batch", "/health"],
+  "shared_tables": ["source_registry", "discovery_receipts"]
+}
