@@ -6,7 +6,7 @@ on:
       worker:
         description: 'Worker directory under workers/ to deploy'
         required: true
-        default: 'afo-youtube-transcript-mcp-v2'
+        default: 'afo-youtube-transcript-resilient-mcp'
         type: choice
         options:
           - afo-youtube-transcript-mcp-v2
@@ -15,7 +15,6 @@ on:
           - afo-feed-discoverer-worker
           - afo-podcast-inspector-worker
           - afo-article-metadata-worker
-          - afo-sitemap-discovery-worker
           - afo-sitemap-discovery-worker
           - afo-source-registry-worker
           - afo-trend-collector-worker
@@ -60,8 +59,6 @@ jobs:
             echo "worker=afo-article-metadata-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-sitemap-discovery-worker/'; then
             echo "worker=afo-sitemap-discovery-worker" >> "$GITHUB_OUTPUT"
-          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-sitemap-discovery-worker/'; then
-            echo "worker=afo-sitemap-discovery-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-source-registry-worker/'; then
             echo "worker=afo-source-registry-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-trend-collector-worker/'; then
@@ -81,7 +78,7 @@ jobs:
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/contractor-v003-2-afo/'; then
             echo "worker=contractor-v003-2-afo" >> "$GITHUB_OUTPUT"
           else
-            echo "worker=afo-youtube-transcript-mcp-v2" >> "$GITHUB_OUTPUT"
+            echo "worker=afo-youtube-transcript-resilient-mcp" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install worker dependencies
