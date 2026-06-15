@@ -17,6 +17,7 @@ on:
           - afo-article-metadata-worker
           - afo-sitemap-discovery-worker
           - afo-source-registry-worker
+          - afo-trend-collector-worker
           - afo-transcript-capture-mcp
           - afo-repo-change-ledger-mcp
           - afo-repo-indexer-mcp-v002
@@ -60,6 +61,8 @@ jobs:
             echo "worker=afo-sitemap-discovery-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-source-registry-worker/'; then
             echo "worker=afo-source-registry-worker" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-trend-collector-worker/'; then
+            echo "worker=afo-trend-collector-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-browser-capture-worker/'; then
             echo "worker=afo-youtube-browser-capture-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-youtube-transcript-resilient-mcp/'; then
