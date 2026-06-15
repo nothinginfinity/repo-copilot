@@ -1,4 +1,4 @@
-const VERSION="0.4.6";
+const VERSION="0.4.7";
 const WORKER_NAME="afo-youtube-transcript-resilient-mcp";
 const PRODUCT_NAME="AFO Smart Public Content Discovery MCP";
 const POLICY="Only retrieves public, user-provided, or explicitly authorized content. Does not bypass login, paywalls, CAPTCHAs, access controls, or private content.";
