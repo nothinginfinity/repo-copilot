@@ -1,0 +1,14 @@
+{
+  "name": "afo-trend-collector-worker",
+  "version": "0.1.0",
+  "description": "Trend collector and source crawler for keeping the AFO source-backed news feed alive.",
+  "tools": [
+    "trend_collector_status",
+    "seed_technology_sources",
+    "crawl_trend_sources",
+    "collect_trends",
+    "list_trend_runs"
+  ],
+  "routes": ["/", "/console", "/seed", "/crawl", "/trends", "/health"],
+  "shared_tables": ["source_registry", "discovery_index", "discovery_receipts", "trend_runs"]
+}
