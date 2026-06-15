@@ -16,6 +16,7 @@ on:
           - afo-podcast-inspector-worker
           - afo-article-metadata-worker
           - afo-sitemap-discovery-worker
+          - afo-sitemap-discovery-worker
           - afo-source-registry-worker
           - afo-trend-collector-worker
           - afo-transcript-capture-mcp
@@ -57,6 +58,8 @@ jobs:
             echo "worker=afo-podcast-inspector-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-article-metadata-worker/'; then
             echo "worker=afo-article-metadata-worker" >> "$GITHUB_OUTPUT"
+          elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-sitemap-discovery-worker/'; then
+            echo "worker=afo-sitemap-discovery-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-sitemap-discovery-worker/'; then
             echo "worker=afo-sitemap-discovery-worker" >> "$GITHUB_OUTPUT"
           elif echo '${{ toJson(github.event.head_commit.modified) }} ${{ toJson(github.event.head_commit.added) }}' | grep -q 'workers/afo-source-registry-worker/'; then
