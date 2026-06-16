@@ -2,7 +2,7 @@ const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
-  'access-control-allow-headers': 'content-type,authorization'
+  'access-control-allow-headers': 'content-type,authorization,x-message-os-token'
 };
 
 export default {
@@ -14,7 +14,7 @@ export default {
       const route = matchRoute(request.method, url.pathname);
 
       if (route.name === 'home') return jsonResponse(serviceCard(env));
-      if (route.name === 'health') return jsonResponse({ ok: true, service: 'afo-micro-mail-worker', at: nowIso() });
+      if (route.name === 'health') return jsonResponse({ ok: true, service: 'afo-micro-mail-worker', at: nowIso(), message_os_bridge: bridgeEnabled(env) });
       if (route.name === 'createMailbox') return createMailbox(request, env);
       if (route.name === 'listMailboxes') return listMailboxes(env);
       if (route.name === 'getMailbox') return getMailbox(env, route.params.id);
@@ -23,6 +23,7 @@ export default {
       if (route.name === 'exportMailbox') return exportMailbox(env, route.params.id);
       if (route.name === 'closeMailbox') return closeMailbox(env, route.params.id);
       if (route.name === 'ask') return askMailbox(request, env);
+      if (route.name === 'emitMessageOsTest') return emitMessageOsTest(request, env);
 
       return jsonResponse({ error: 'not_found' }, 404);
     } catch (error) {
@@ -55,7 +56,7 @@ export default {
       headers_json: JSON.stringify({ from: message.from, to: message.to, subject })
     };
 
-    ctx.waitUntil(storeMessage(env, mailbox, payload, raw));
+    ctx.waitUntil(storeMessage(env, mailbox, payload, raw, ctx));
   }
 };
 
@@ -73,6 +74,7 @@ function matchRoute(method, pathname) {
   if (parts[0] === 'api' && parts[1] === 'mailboxes' && parts[2] && parts[3] === 'export' && method === 'GET') return { name: 'exportMailbox', params: { id: parts[2] } };
   if (parts[0] === 'api' && parts[1] === 'mailboxes' && parts[2] && parts.length === 3 && method === 'DELETE') return { name: 'closeMailbox', params: { id: parts[2] } };
   if (method === 'POST' && clean === '/api/ask') return { name: 'ask', params: {} };
+  if (method === 'POST' && clean === '/api/message-os/test') return { name: 'emitMessageOsTest', params: {} };
 
   return { name: 'notFound', params: {} };
 }
@@ -82,6 +84,12 @@ function serviceCard(env) {
     service: 'afo-micro-mail-worker',
     purpose: 'AI-native project and ephemeral email capsules on Cloudflare Workers.',
     domain: env.MAIL_DOMAIN || 'example.com',
+    message_os_bridge: {
+      enabled: bridgeEnabled(env),
+      ingest_url_configured: Boolean(env.MESSAGE_OS_INGEST_URL),
+      target_user: env.MESSAGE_OS_TARGET_USER || null,
+      mode: env.MESSAGE_OS_BRIDGE_MODE || 'notify'
+    },
     endpoints: [
       'GET /health',
       'POST /api/mailboxes',
@@ -91,7 +99,8 @@ function serviceCard(env) {
       'GET /api/mailboxes/:id/messages',
       'GET /api/mailboxes/:id/export',
       'DELETE /api/mailboxes/:id',
-      'POST /api/ask'
+      'POST /api/ask',
+      'POST /api/message-os/test'
     ]
   };
 }
@@ -218,8 +227,29 @@ async function storeMessage(env, mailbox, input, rawArrayBuffer = null, ctx = nu
   if (ctx && ctx.waitUntil) ctx.waitUntil(vectorTask);
   else await vectorTask;
 
-  await logAgentEvent(env, mailbox.id, id, 'message.ingested', { subject: input.subject || '(no subject)', summary, intent });
-  return { id, mailbox_id: mailbox.id, r2_key: r2Key, vector_id: vectorId, summary, intent };
+  const messageRecord = {
+    id,
+    mailbox_id: mailbox.id,
+    mailbox_slug: mailbox.slug,
+    mailbox_address: mailbox.address,
+    r2_key: r2Key,
+    vector_id: vectorId,
+    from_addr: input.from_addr || input.from || null,
+    to_addr: input.to_addr || input.to || mailbox.address,
+    subject: input.subject || '(no subject)',
+    clean_text: text,
+    summary,
+    intent,
+    received_at: received
+  };
+
+  await logAgentEvent(env, mailbox.id, id, 'message.ingested', { subject: messageRecord.subject, summary, intent });
+
+  const bridgeTask = emitMessageOsEvent(env, mailbox, messageRecord);
+  if (ctx && ctx.waitUntil) ctx.waitUntil(bridgeTask);
+  else await bridgeTask;
+
+  return { id, mailbox_id: mailbox.id, r2_key: r2Key, vector_id: vectorId, summary, intent, message_os_bridge: bridgeEnabled(env) };
 }
 
 async function exportMailbox(env, idOrSlug) {
@@ -233,19 +263,12 @@ async function exportMailbox(env, idOrSlug) {
     ORDER BY received_at ASC
   `).bind(mailbox.id).all();
 
-  const bundle = {
-    exported_at: nowIso(),
-    mailbox,
-    messages: messages || []
-  };
-
+  const bundle = { exported_at: nowIso(), mailbox, messages: messages || [] };
   const exportId = randomId('exp');
   const r2Key = `mailboxes/${mailbox.slug}/exports/${exportId}.json`;
 
   if (env.MAIL_R2) {
-    await env.MAIL_R2.put(r2Key, JSON.stringify(bundle, null, 2), {
-      httpMetadata: { contentType: 'application/json' }
-    });
+    await env.MAIL_R2.put(r2Key, JSON.stringify(bundle, null, 2), { httpMetadata: { contentType: 'application/json' } });
   }
 
   await env.DB.prepare(`
@@ -325,12 +348,7 @@ async function askMailbox(request, env) {
     return `Message ${index + 1}\nFrom: ${m.from_addr || ''}\nSubject: ${m.subject || ''}\nSummary: ${m.summary || ''}\nText: ${(m.clean_text || '').slice(0, 1200)}`;
   }).join('\n\n');
 
-  if (!env.AI) {
-    return jsonResponse({
-      answer: 'AI binding is not configured. Returning recent context only.',
-      context
-    });
-  }
+  if (!env.AI) return jsonResponse({ answer: 'AI binding is not configured. Returning recent context only.', context });
 
   const prompt = `You are an email project assistant. Answer using only this mailbox context.\n\nQuestion: ${input.question}\n\nContext:\n${context}`;
   const result = await env.AI.run(env.SUMMARY_MODEL || '@cf/meta/llama-3.1-8b-instruct', {
@@ -343,6 +361,32 @@ async function askMailbox(request, env) {
   return jsonResponse({ answer: result.response || result.result || result, mailbox: mailbox.slug });
 }
 
+async function emitMessageOsTest(request, env) {
+  const input = await readJson(request);
+  const mailbox = {
+    id: input.mailbox_id || 'test-mailbox',
+    slug: input.mailbox_slug || 'test-mailbox',
+    address: input.to_addr || `test-mailbox@${env.MAIL_DOMAIN || 'example.com'}`
+  };
+  const message = {
+    id: randomId('test'),
+    mailbox_id: mailbox.id,
+    mailbox_slug: mailbox.slug,
+    mailbox_address: mailbox.address,
+    from_addr: input.from_addr || 'sender@example.com',
+    to_addr: mailbox.address,
+    subject: input.subject || 'Message OS bridge test',
+    clean_text: input.body || 'This is a test event from AFO Micro Mail Worker.',
+    summary: input.summary || 'AFO Micro Mail Worker emitted a test event.',
+    intent: 'bridge_test',
+    r2_key: null,
+    vector_id: null,
+    received_at: nowIso()
+  };
+  const result = await emitMessageOsEvent(env, mailbox, message, { force: true });
+  return jsonResponse({ ok: true, bridge_enabled: bridgeEnabled(env), result });
+}
+
 async function summarizeMessage(env, subject, text) {
   const result = await env.AI.run(env.SUMMARY_MODEL || '@cf/meta/llama-3.1-8b-instruct', {
     messages: [
@@ -353,10 +397,7 @@ async function summarizeMessage(env, subject, text) {
 
   const raw = result.response || result.result || '{}';
   const parsed = safeJson(typeof raw === 'string' ? raw : JSON.stringify(raw));
-  return {
-    summary: parsed.summary || String(raw).slice(0, 500),
-    intent: parsed.intent || 'message'
-  };
+  return { summary: parsed.summary || String(raw).slice(0, 500), intent: parsed.intent || 'message' };
 }
 
 async function maybeUpsertVector(env, vectorId, text, metadata) {
@@ -370,6 +411,92 @@ async function maybeUpsertVector(env, vectorId, text, metadata) {
   } catch (error) {
     console.warn('vector_upsert_failed', error.message);
   }
+}
+
+async function emitMessageOsEvent(env, mailbox, message, options = {}) {
+  if (!options.force && !bridgeEnabled(env)) return { skipped: true, reason: 'bridge_not_configured' };
+  if (!env.MESSAGE_OS_INGEST_URL) return { skipped: true, reason: 'missing_MESSAGE_OS_INGEST_URL' };
+
+  const subject = `📬 ${message.subject || '(no subject)'}`;
+  const body = buildChatMailBody(env, mailbox, message);
+  const payload = {
+    source: 'afo-micro-mail-worker',
+    type: 'email.received',
+    to_user: env.MESSAGE_OS_TARGET_USER || 'jared',
+    project: mailbox.slug,
+    subject,
+    body,
+    summary: message.summary || `New email from ${message.from_addr || 'unknown sender'}`,
+    priority: classifyPriority(message),
+    tags: ['email', 'micro-mail', `mailbox:${mailbox.slug}`],
+    metadata: {
+      mailbox_id: mailbox.id,
+      mailbox_slug: mailbox.slug,
+      mailbox_address: mailbox.address,
+      message_id: message.id,
+      from_addr: message.from_addr,
+      to_addr: message.to_addr,
+      r2_key: message.r2_key,
+      vector_id: message.vector_id,
+      received_at: message.received_at,
+      intent: message.intent
+    }
+  };
+
+  const headers = { 'content-type': 'application/json' };
+  if (env.MESSAGE_OS_TOKEN) headers.authorization = `Bearer ${env.MESSAGE_OS_TOKEN}`;
+  if (env.MESSAGE_OS_TOKEN) headers['x-message-os-token'] = env.MESSAGE_OS_TOKEN;
+
+  try {
+    const res = await fetch(env.MESSAGE_OS_INGEST_URL, { method: 'POST', headers, body: JSON.stringify(payload) });
+    const text = await res.text();
+    await logAgentEvent(env, mailbox.id, message.id, res.ok ? 'message_os.emit.ok' : 'message_os.emit.failed', {
+      status: res.status,
+      response: text.slice(0, 1000)
+    });
+    return { ok: res.ok, status: res.status, response: text.slice(0, 1000), payload };
+  } catch (error) {
+    console.warn('message_os_emit_failed', error.message);
+    await logAgentEvent(env, mailbox.id, message.id, 'message_os.emit.error', { error: error.message });
+    return { ok: false, error: error.message, payload };
+  }
+}
+
+function buildChatMailBody(env, mailbox, message) {
+  const lines = [
+    `New email received in ${mailbox.slug}`,
+    '',
+    `From: ${message.from_addr || 'unknown'}`,
+    `To: ${message.to_addr || mailbox.address || 'unknown'}`,
+    `Subject: ${message.subject || '(no subject)'}`,
+    `Mailbox: ${mailbox.slug}`,
+    `Received: ${message.received_at || nowIso()}`,
+    '',
+    'Summary:',
+    message.summary || 'No summary generated.',
+    '',
+    'Clean text:',
+    (message.clean_text || '').slice(0, Number(env.MESSAGE_OS_BODY_LIMIT || 6000)),
+    '',
+    'Actions this should support in chat:',
+    '- Show full email',
+    '- Summarize thread',
+    '- Draft reply',
+    '- Export mailbox',
+    '- Close mailbox'
+  ];
+  if (message.r2_key) lines.splice(8, 0, `R2 key: ${message.r2_key}`);
+  return lines.join('\n');
+}
+
+function bridgeEnabled(env) {
+  return Boolean(env.MESSAGE_OS_INGEST_URL);
+}
+
+function classifyPriority(message) {
+  const text = `${message.subject || ''} ${message.clean_text || ''}`.toLowerCase();
+  if (/(urgent|asap|immediately|emergency|past due|final notice)/.test(text)) return 'high';
+  return 'normal';
 }
 
 async function findMailbox(env, idOrSlug) {
