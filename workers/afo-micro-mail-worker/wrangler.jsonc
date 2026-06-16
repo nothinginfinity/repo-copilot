@@ -1,0 +1,40 @@
+{
+  "name": "afo-micro-mail-worker",
+  "main": "worker.js",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "afo-micro-mail-db",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MAIL_R2",
+      "bucket_name": "afo-micro-mail"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "MAIL_KV",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+  "vectorize": [
+    {
+      "binding": "MAIL_VECTORIZE",
+      "index_name": "afo-micro-mail-vectors"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "MAIL_DOMAIN": "example.com",
+    "DEFAULT_TTL_SECONDS": "604800",
+    "EMBEDDING_MODEL": "@cf/baai/bge-base-en-v1.5",
+    "SUMMARY_MODEL": "@cf/meta/llama-3.1-8b-instruct"
+  }
+}
