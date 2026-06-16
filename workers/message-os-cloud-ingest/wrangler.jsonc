@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "message-os-cloud-ingest",
+  "main": "worker.js",
+  "compatibility_date": "2025-06-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "message-os-cloud-db",
+      "database_id": "0060f4f3-5a4c-4156-a8ee-be9020671d61"
+    }
+  ]
+}
