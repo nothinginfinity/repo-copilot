@@ -1,3 +1,3 @@
 # GitZip access
 
-Confirmed by directly calling `AFO-gitZip.create_or_update_repo_file`.
+Confirmed AFO GitZip direct tool access for this Worker folder.
