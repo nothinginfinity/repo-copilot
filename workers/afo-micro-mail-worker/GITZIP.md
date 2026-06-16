@@ -1,1 +1,1 @@
-GitZip create_or_update_repo_file access confirmed.
+Direct AFO GitZip create/update file call confirmed.
