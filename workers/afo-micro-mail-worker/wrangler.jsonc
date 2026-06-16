@@ -2,12 +2,14 @@
   "name": "afo-micro-mail-worker",
   "main": "worker.js",
   "compatibility_date": "2025-01-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "afo-micro-mail-db",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "9d74ea95-0d6e-4358-b2fa-8c886af6dda6"
     }
   ],
   "r2_buckets": [
@@ -19,7 +21,7 @@
   "kv_namespaces": [
     {
       "binding": "MAIL_KV",
-      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+      "id": "345b8967125048bba86b60767192edb2"
     }
   ],
   "vectorize": [
