@@ -1,0 +1,15 @@
+{
+  "name": "afo-micro-mail-worker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-native project and ephemeral email capsules on Cloudflare Workers.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:apply": "wrangler d1 execute afo-micro-mail-db --file=./schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "latest"
+  }
+}
