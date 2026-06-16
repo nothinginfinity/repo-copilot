@@ -4,34 +4,34 @@ on:
   workflow_dispatch:
     inputs:
       setup_resources:
-        description: 'Create or reuse Cloudflare D1, KV, R2, and Vectorize resources'
+        description: Create or reuse Cloudflare resources
         required: true
         default: true
         type: boolean
       commit_wrangler_ids:
-        description: 'Commit discovered D1/KV IDs back to wrangler.jsonc'
+        description: Commit resolved D1 and KV IDs back to wrangler.jsonc
         required: true
         default: true
         type: boolean
       apply_schema:
-        description: 'Apply D1 schema before deploy'
-        required: true
-        default: true
-        type: boolean
-      deploy_worker:
-        description: 'Deploy the Worker after setup'
+        description: Apply D1 schema before deploy
         required: true
         default: true
         type: boolean
       smoke_test:
-        description: 'Run wrangler deploy --dry-run before deploy'
+        description: Run wrangler deploy dry run before deploy
+        required: true
+        default: true
+        type: boolean
+      deploy_worker:
+        description: Deploy the Worker
         required: true
         default: true
         type: boolean
       mail_domain:
-        description: 'Mail domain to write into wrangler vars, for example agentfeedoptimization.com'
+        description: Mail domain for the Worker vars
         required: true
-        default: 'example.com'
+        default: example.com
         type: string
 
 permissions:
@@ -39,156 +39,94 @@ permissions:
 
 jobs:
   deploy:
-    name: Setup and deploy AFO Micro Mail Worker
     runs-on: ubuntu-latest
-
     env:
       WORKER_DIR: workers/afo-micro-mail-worker
       D1_NAME: afo-micro-mail-db
       KV_TITLE: afo-micro-mail-kv
       R2_BUCKET: afo-micro-mail
       VECTORIZE_INDEX: afo-micro-mail-vectors
-      VECTORIZE_DIMENSIONS: '768'
-      VECTORIZE_METRIC: cosine
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Install Worker dependencies
+      - name: Verify Node and Wrangler
         working-directory: ${{ env.WORKER_DIR }}
-        run: npm install
-
-      - name: Show Wrangler version
-        working-directory: ${{ env.WORKER_DIR }}
-        run: npx wrangler --version
-
-      - name: Verify required secrets
-        shell: bash
         run: |
-          set -euo pipefail
-          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
-            echo "Missing required repository secret: CLOUDFLARE_API_TOKEN" >&2
-            exit 1
-          fi
-          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "Missing required repository secret: CLOUDFLARE_ACCOUNT_ID" >&2
-            exit 1
-          fi
+          node --version
+          npm install
+          npx wrangler --version
+
+      - name: Verify Cloudflare secrets
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || (echo "Missing CLOUDFLARE_API_TOKEN" && exit 1)
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
 
       - name: Create or reuse Cloudflare resources
         id: resources
         if: ${{ inputs.setup_resources }}
         working-directory: ${{ env.WORKER_DIR }}
-        shell: bash
         run: |
-          set -euo pipefail
-
-          echo "Resolving D1 database: ${D1_NAME}"
-          D1_ID=$(npx wrangler d1 list --json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const arr=JSON.parse(s||'[]');const item=arr.find(x=>x.name===process.env.D1_NAME); if(item) process.stdout.write(item.uuid || item.id || '');})")
+          set -e
+          D1_ID=$(npx wrangler d1 list --json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const a=JSON.parse(s||'[]');const x=a.find(i=>i.name===process.env.D1_NAME);if(x)process.stdout.write(x.uuid||x.id||'')})")
           if [ -z "$D1_ID" ]; then
-            echo "Creating D1 database: ${D1_NAME}"
-            npx wrangler d1 create "${D1_NAME}" | tee /tmp/d1-create.txt
-            D1_ID=$(grep -Eo '[0-9a-fA-F-]{36}' /tmp/d1-create.txt | head -n 1 || true)
+            npx wrangler d1 create "$D1_NAME" | tee /tmp/d1.txt
+            D1_ID=$(grep -Eo '[0-9a-fA-F-]{36}' /tmp/d1.txt | head -n 1)
           fi
-          if [ -z "$D1_ID" ]; then
-            echo "Unable to resolve D1 database ID for ${D1_NAME}" >&2
-            exit 1
-          fi
-          echo "d1_id=${D1_ID}" >> "$GITHUB_OUTPUT"
+          echo "d1_id=$D1_ID" >> "$GITHUB_OUTPUT"
 
-          echo "Resolving KV namespace: ${KV_TITLE}"
-          KV_ID=$(npx wrangler kv namespace list --json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const arr=JSON.parse(s||'[]');const item=arr.find(x=>x.title===process.env.KV_TITLE); if(item) process.stdout.write(item.id || '');})")
+          KV_ID=$(npx wrangler kv namespace list --json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const a=JSON.parse(s||'[]');const x=a.find(i=>i.title===process.env.KV_TITLE);if(x)process.stdout.write(x.id||'')})")
           if [ -z "$KV_ID" ]; then
-            echo "Creating KV namespace: ${KV_TITLE}"
-            npx wrangler kv namespace create "${KV_TITLE}" | tee /tmp/kv-create.txt
-            KV_ID=$(grep -Eo 'id = "[^"]+"' /tmp/kv-create.txt | head -n 1 | sed -E 's/id = "([^"]+)"/\1/' || true)
-            if [ -z "$KV_ID" ]; then
-              KV_ID=$(grep -Eo '[0-9a-fA-F]{32}' /tmp/kv-create.txt | head -n 1 || true)
-            fi
+            npx wrangler kv namespace create "$KV_TITLE" | tee /tmp/kv.txt
+            KV_ID=$(grep -Eo '[0-9a-fA-F]{32}' /tmp/kv.txt | head -n 1)
           fi
-          if [ -z "$KV_ID" ]; then
-            echo "Unable to resolve KV namespace ID for ${KV_TITLE}" >&2
-            exit 1
-          fi
-          echo "kv_id=${KV_ID}" >> "$GITHUB_OUTPUT"
+          echo "kv_id=$KV_ID" >> "$GITHUB_OUTPUT"
 
-          echo "Ensuring R2 bucket: ${R2_BUCKET}"
-          if ! npx wrangler r2 bucket list | grep -q "${R2_BUCKET}"; then
-            npx wrangler r2 bucket create "${R2_BUCKET}"
-          fi
+          npx wrangler r2 bucket list | grep -q "$R2_BUCKET" || npx wrangler r2 bucket create "$R2_BUCKET"
+          npx wrangler vectorize list | grep -q "$VECTORIZE_INDEX" || npx wrangler vectorize create "$VECTORIZE_INDEX" --dimensions=768 --metric=cosine
 
-          echo "Ensuring Vectorize index: ${VECTORIZE_INDEX}"
-          if ! npx wrangler vectorize list | grep -q "${VECTORIZE_INDEX}"; then
-            npx wrangler vectorize create "${VECTORIZE_INDEX}" --dimensions="${VECTORIZE_DIMENSIONS}" --metric="${VECTORIZE_METRIC}"
-          fi
-
-      - name: Patch wrangler.jsonc with resolved IDs
+      - name: Patch wrangler.jsonc
         if: ${{ inputs.setup_resources }}
         working-directory: ${{ env.WORKER_DIR }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          node <<'NODE'
-          const fs = require('fs');
-          const path = 'wrangler.jsonc';
-          const config = JSON.parse(fs.readFileSync(path, 'utf8'));
-          config.d1_databases = [{
-            binding: 'DB',
-            database_name: process.env.D1_NAME,
-            database_id: process.env.D1_ID
-          }];
-          config.kv_namespaces = [{
-            binding: 'MAIL_KV',
-            id: process.env.KV_ID
-          }];
-          config.r2_buckets = [{
-            binding: 'MAIL_R2',
-            bucket_name: process.env.R2_BUCKET
-          }];
-          config.vectorize = [{
-            binding: 'MAIL_VECTORIZE',
-            index_name: process.env.VECTORIZE_INDEX
-          }];
-          config.vars = config.vars || {};
-          config.vars.MAIL_DOMAIN = process.env.MAIL_DOMAIN;
-          fs.writeFileSync(path, JSON.stringify(config, null, 2) + '\n');
-          NODE
         env:
           D1_ID: ${{ steps.resources.outputs.d1_id }}
           KV_ID: ${{ steps.resources.outputs.kv_id }}
           MAIL_DOMAIN: ${{ inputs.mail_domain }}
-
-      - name: Commit resolved Wrangler IDs
-        if: ${{ inputs.setup_resources && inputs.commit_wrangler_ids }}
-        shell: bash
         run: |
-          set -euo pipefail
+          node - <<'NODE'
+          const fs=require('fs');
+          const c=JSON.parse(fs.readFileSync('wrangler.jsonc','utf8'));
+          c.d1_databases=[{binding:'DB',database_name:process.env.D1_NAME,database_id:process.env.D1_ID}];
+          c.kv_namespaces=[{binding:'MAIL_KV',id:process.env.KV_ID}];
+          c.r2_buckets=[{binding:'MAIL_R2',bucket_name:process.env.R2_BUCKET}];
+          c.vectorize=[{binding:'MAIL_VECTORIZE',index_name:process.env.VECTORIZE_INDEX}];
+          c.vars=c.vars||{};
+          c.vars.MAIL_DOMAIN=process.env.MAIL_DOMAIN;
+          fs.writeFileSync('wrangler.jsonc',JSON.stringify(c,null,2)+'\n');
+          NODE
+
+      - name: Commit resolved wrangler.jsonc
+        if: ${{ inputs.setup_resources && inputs.commit_wrangler_ids }}
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "${WORKER_DIR}/wrangler.jsonc"
-          if git diff --cached --quiet; then
-            echo "No wrangler.jsonc changes to commit."
-          else
-            git commit -m "Update AFO micro mail Worker Cloudflare bindings"
-            git push
-          fi
+          git add "$WORKER_DIR/wrangler.jsonc"
+          git diff --cached --quiet || (git commit -m "Update AFO micro mail Worker Cloudflare bindings" && git push)
 
       - name: Apply D1 schema
         if: ${{ inputs.apply_schema }}
         working-directory: ${{ env.WORKER_DIR }}
-        run: npx wrangler d1 execute "${D1_NAME}" --file=./schema.sql --remote
+        run: npx wrangler d1 execute "$D1_NAME" --file=./schema.sql --remote
 
-      - name: Validate deploy config
+      - name: Dry run deploy
         if: ${{ inputs.smoke_test }}
         working-directory: ${{ env.WORKER_DIR }}
         run: npx wrangler deploy --dry-run
