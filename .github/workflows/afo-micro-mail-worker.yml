@@ -76,17 +76,31 @@ jobs:
         working-directory: ${{ env.WORKER_DIR }}
         run: |
           set -e
-          D1_ID=$(npx wrangler d1 list --json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const a=JSON.parse(s||'[]');const x=a.find(i=>i.name===process.env.D1_NAME);if(x)process.stdout.write(x.uuid||x.id||'')})")
+          D1_ID=$(npx wrangler d1 list | grep "$D1_NAME" | grep -Eo '[0-9a-fA-F-]{36}' | head -n 1 || true)
           if [ -z "$D1_ID" ]; then
             npx wrangler d1 create "$D1_NAME" | tee /tmp/d1.txt
-            D1_ID=$(grep -Eo '[0-9a-fA-F-]{36}' /tmp/d1.txt | head -n 1)
+            D1_ID=$(grep -Eo '[0-9a-fA-F-]{36}' /tmp/d1.txt | head -n 1 || true)
+          fi
+          if [ -z "$D1_ID" ]; then
+            echo "Could not resolve D1 database ID" >&2
+            exit 1
           fi
           echo "d1_id=$D1_ID" >> "$GITHUB_OUTPUT"
 
-          KV_ID=$(npx wrangler kv namespace list --json | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const a=JSON.parse(s||'[]');const x=a.find(i=>i.title===process.env.KV_TITLE);if(x)process.stdout.write(x.id||'')})")
+          KV_ID=$(curl -sS -X GET "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s||'{}');const a=j.result||[];const x=a.find(i=>i.title===process.env.KV_TITLE);if(x)process.stdout.write(x.id||'')})")
           if [ -z "$KV_ID" ]; then
-            npx wrangler kv namespace create "$KV_TITLE" | tee /tmp/kv.txt
-            KV_ID=$(grep -Eo '[0-9a-fA-F]{32}' /tmp/kv.txt | head -n 1)
+            KV_ID=$(curl -sS -X POST "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/storage/kv/namespaces" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"title\":\"${KV_TITLE}\"}" \
+              | node -e "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>{const j=JSON.parse(s||'{}');if(!j.success){console.error(JSON.stringify(j.errors||j));process.exit(1)}process.stdout.write(j.result.id||'')})")
+          fi
+          if [ -z "$KV_ID" ]; then
+            echo "Could not resolve KV namespace ID" >&2
+            exit 1
           fi
           echo "kv_id=$KV_ID" >> "$GITHUB_OUTPUT"
 
