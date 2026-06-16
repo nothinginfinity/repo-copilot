@@ -37,6 +37,10 @@
     "MAIL_DOMAIN": "example.com",
     "DEFAULT_TTL_SECONDS": "604800",
     "EMBEDDING_MODEL": "@cf/baai/bge-base-en-v1.5",
-    "SUMMARY_MODEL": "@cf/meta/llama-3.1-8b-instruct"
+    "SUMMARY_MODEL": "@cf/meta/llama-3.1-8b-instruct",
+    "MESSAGE_OS_INGEST_URL": "",
+    "MESSAGE_OS_TARGET_USER": "jared",
+    "MESSAGE_OS_BRIDGE_MODE": "notify",
+    "MESSAGE_OS_BODY_LIMIT": "6000"
   }
 }
