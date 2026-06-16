@@ -1,3 +1,3 @@
-# GitZip
+# GitZip access
 
-Confirmed: this folder can be updated through `AFO-gitZip.create_or_update_repo_file`.
+Confirmed direct write access through the AFO GitZip create/update file tool.
