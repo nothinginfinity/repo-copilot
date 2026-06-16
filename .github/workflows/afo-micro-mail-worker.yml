@@ -33,6 +33,16 @@ on:
         required: true
         default: example.com
         type: string
+      message_os_ingest_url:
+        description: Message OS ingest endpoint URL. Leave blank to disable bridge.
+        required: false
+        default: ''
+        type: string
+      message_os_target_user:
+        description: Message OS target user for inbound mail notifications
+        required: true
+        default: jared
+        type: string
 
 permissions:
   contents: write
@@ -48,6 +58,7 @@ jobs:
       VECTORIZE_INDEX: afo-micro-mail-vectors
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      MESSAGE_OS_TOKEN: ${{ secrets.MESSAGE_OS_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -114,6 +125,8 @@ jobs:
           D1_ID: ${{ steps.resources.outputs.d1_id }}
           KV_ID: ${{ steps.resources.outputs.kv_id }}
           MAIL_DOMAIN: ${{ inputs.mail_domain }}
+          MESSAGE_OS_INGEST_URL: ${{ inputs.message_os_ingest_url }}
+          MESSAGE_OS_TARGET_USER: ${{ inputs.message_os_target_user }}
         run: |
           node - <<'NODE'
           const fs=require('fs');
@@ -124,8 +137,21 @@ jobs:
           c.vectorize=[{binding:'MAIL_VECTORIZE',index_name:process.env.VECTORIZE_INDEX}];
           c.vars=c.vars||{};
           c.vars.MAIL_DOMAIN=process.env.MAIL_DOMAIN;
+          c.vars.DEFAULT_TTL_SECONDS=c.vars.DEFAULT_TTL_SECONDS||'604800';
+          c.vars.EMBEDDING_MODEL=c.vars.EMBEDDING_MODEL||'@cf/baai/bge-base-en-v1.5';
+          c.vars.SUMMARY_MODEL=c.vars.SUMMARY_MODEL||'@cf/meta/llama-3.1-8b-instruct';
+          c.vars.MESSAGE_OS_INGEST_URL=process.env.MESSAGE_OS_INGEST_URL||'';
+          c.vars.MESSAGE_OS_TARGET_USER=process.env.MESSAGE_OS_TARGET_USER||'jared';
+          c.vars.MESSAGE_OS_BRIDGE_MODE='notify';
+          c.vars.MESSAGE_OS_BODY_LIMIT=c.vars.MESSAGE_OS_BODY_LIMIT||'6000';
           fs.writeFileSync('wrangler.jsonc',JSON.stringify(c,null,2)+'\n');
           NODE
+
+      - name: Set Message OS token secret
+        if: ${{ env.MESSAGE_OS_TOKEN != '' }}
+        working-directory: ${{ env.WORKER_DIR }}
+        run: |
+          printf '%s' "$MESSAGE_OS_TOKEN" | npx wrangler secret put MESSAGE_OS_TOKEN
 
       - name: Commit resolved wrangler.jsonc
         if: ${{ inputs.setup_resources && inputs.commit_wrangler_ids }}
