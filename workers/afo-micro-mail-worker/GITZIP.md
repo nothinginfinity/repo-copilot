@@ -1,1 +1,1 @@
-GitZip file update confirmed.
+GitZip direct update confirmed.
