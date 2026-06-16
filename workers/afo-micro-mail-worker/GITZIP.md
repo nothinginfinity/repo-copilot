@@ -1,3 +1,3 @@
 # GitZip
 
-This file confirms the AFO micro mail worker folder can be updated through GitZip.
+Confirmed: this folder can be updated through `AFO-gitZip.create_or_update_repo_file`.
