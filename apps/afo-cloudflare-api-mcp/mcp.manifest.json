@@ -1,0 +1,16 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo-cloudflare-api-mcp",
+  "worker_name": "afo-cloudflare-api-mcp",
+  "plane": "Cloudflare API Gateway",
+  "risk_profile": "cloudflare_write_gated",
+  "purpose": "Token-efficient access to the entire Cloudflare API (2500+ endpoints across Workers, KV, R2, D1, Vectorize, DNS, Zones, Firewall, Access, and more) via a 2-tool search+call pattern instead of one MCP tool per endpoint. search filters a cached OpenAPI index stored in R2; call makes the live authenticated request. Replaces the need for new single-purpose admin MCPs as new Cloudflare resource types come up.",
+  "tools": [
+    "cf_api_status",
+    "search",
+    "call",
+    "seed_spec"
+  ],
+  "source_path": "apps/afo-cloudflare-api-mcp/worker.js",
+  "status": "v0.1.0"
+}
