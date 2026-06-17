@@ -1,0 +1,29 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-cf-universal-mcp",
+  "created_at": "2026-06-17T23:55:29.469Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-cf-universal-mcp",
+  "source_path": "apps/afo-cf-universal-mcp/worker.js",
+  "source_sha256": "sha256:3b89cdd57c26d8d4f41cf9bf91af6b37a093466676353447d91b33e6ddd95a86",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-cf-universal-mcp",
+    "binding_count": 3,
+    "bindings": [
+      {
+        "name": "CF_API_TOKEN",
+        "type": "secret_text"
+      },
+      {
+        "name": "CF_ACCOUNT_ID",
+        "type": "secret_text"
+      },
+      {
+        "name": "SPEC_KV",
+        "type": "kv_namespace"
+      }
+    ],
+    "deployed_at": "2026-06-17T23:55:29.401Z"
+  }
+}
