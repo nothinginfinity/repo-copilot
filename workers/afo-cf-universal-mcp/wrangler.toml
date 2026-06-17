@@ -1,0 +1,11 @@
+name = "afo-cf-universal-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[[kv_namespaces]]
+binding = "SPEC_KV"
+id = "e5272d56430841a981a38b3b22355003"
+
+# Required secrets (set via Cloudflare dashboard):
+#   CF_API_TOKEN   - API token with the permissions you intend to use across the Cloudflare API
+#   CF_ACCOUNT_ID  - Cloudflare account ID
