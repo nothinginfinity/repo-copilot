@@ -1,0 +1,11 @@
+name = "afo-cloudflare-api-mcp"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+[[r2_buckets]]
+binding = "SPEC"
+bucket_name = "afo-site-content"
+
+# Required secrets — set via Cloudflare dashboard (Workers & Pages > afo-cloudflare-api-mcp > Settings > Variables and Secrets):
+# CF_API_TOKEN
+# CF_ACCOUNT_ID
