@@ -1,0 +1,17 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo-cf-universal-mcp",
+  "worker_name": "afo-cf-universal-mcp",
+  "plane": "Cloudflare Universal API",
+  "risk_profile": "cloudflare_write_gated",
+  "purpose": "Code-mode-style MCP server for the entire Cloudflare API. Indexes the full OpenAPI spec into KV for search, then executes any endpoint via a generic call_endpoint tool, instead of registering one tool per endpoint.",
+  "tools": [
+    "api_status",
+    "build_spec_index",
+    "list_tags",
+    "search_endpoints",
+    "call_endpoint"
+  ],
+  "source_path": "workers/afo-cf-universal-mcp/worker.js",
+  "status": "v0.1.0"
+}
