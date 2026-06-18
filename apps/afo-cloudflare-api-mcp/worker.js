@@ -1,4 +1,4 @@
-const VERSION = "0.2.1";
+const VERSION = "0.3.0";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +9,8 @@ const CORS = {
 const SPEC_URL = "https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json";
 const SPEC_KEY = "cf-openapi-spec/index.json";
 const MAX_RESPONSE_CHARS = 30000;
+const MAX_PAGINATION_PAGES = 10;
+const MAX_PAGINATION_ITEMS = 2000;
 const DEFAULT_COMPAT_DATE = "2026-05-31";
 
 const BINDINGS_DOC =
@@ -40,7 +42,7 @@ const TOOLS = [
   },
   {
     name: "call",
-    description: "Call any Cloudflare API v4 endpoint directly. Use search first to find the right method and path. The literal substring {account_id} in path is auto-replaced with the account_id argument or the default account.",
+    description: "Call any Cloudflare API v4 endpoint directly. Use search first to find the right method and path. The literal substring {account_id} in path is auto-replaced with the account_id argument or the default account. Automatically retries on 429/5xx with backoff. Set paginate=true to follow Cloudflare's page/result_info pagination when the response is a paginated list (capped at 10 pages / 2000 items).",
     inputSchema: {
       type: "object",
       properties: {
@@ -48,7 +50,8 @@ const TOOLS = [
         path: { type: "string", description: "API path, e.g. /accounts/{account_id}/workers/scripts/my-worker" },
         query: { type: "object", description: "Query string parameters" },
         body: { type: "object", description: "JSON request body for POST/PUT/PATCH" },
-        account_id: { type: "string", description: "Override the account id substituted for {account_id} in path" }
+        account_id: { type: "string", description: "Override the account id substituted for {account_id} in path" },
+        paginate: { type: "boolean", description: "Follow pagination if the response has result_info.total_pages. Default false." }
       },
       required: ["method", "path"]
     }
@@ -113,6 +116,15 @@ const TOOLS = [
         account_id: { type: "string" }
       },
       required: []
+    }
+  },
+  {
+    name: "get_worker_settings",
+    description: "Read a worker's current bindings (names and types, not secret values) and compatibility settings. Run this before deploy_worker_with_bindings/deploy_worker_from_github/setup_worker_with_d1_schema on an existing worker to see exactly what would be lost if not replicated, since Cloudflare's deploy API fully replaces bindings rather than merging.",
+    inputSchema: {
+      type: "object",
+      properties: { script_name: { type: "string" }, account_id: { type: "string" } },
+      required: ["script_name"]
     }
   },
   {
@@ -190,6 +202,27 @@ function truncate(str) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchWithRetry(url, opts, maxRetries = 3) {
+  let res;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    res = await fetch(url, opts);
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt === maxRetries) return res;
+    const retryAfterHeader = res.headers.get("retry-after");
+    let delayMs = retryAfterHeader ? parseFloat(retryAfterHeader) * 1000 : 1000 * Math.pow(2, attempt);
+    if (!Number.isFinite(delayMs)) delayMs = 2000;
+    await sleep(Math.min(delayMs, 15000));
+  }
+  return res;
+}
+
+function extractCfRateLimit(headers) {
+  const remaining = headers.get("x-ratelimit-remaining");
+  const limit = headers.get("x-ratelimit-limit");
+  if (remaining === null && limit === null) return null;
+  return { remaining: remaining !== null ? Number(remaining) : null, limit: limit !== null ? Number(limit) : null };
+}
 
 const SMOKE_RETRY_DELAYS_MS = [1500, 2500, 4000, 6000];
 
@@ -270,11 +303,11 @@ async function cfApi(env, method, path, query, body, accountIdOverride) {
   const m = (method || "GET").toUpperCase();
   const opts = { method: m, headers: { Authorization: `Bearer ${env.CF_API_TOKEN}`, "Content-Type": "application/json" } };
   if (body !== undefined && !["GET", "HEAD"].includes(m)) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
+  const res = await fetchWithRetry(url, opts);
   const text = await res.text();
   let parsed;
   try { parsed = text ? JSON.parse(text) : {}; } catch { parsed = { raw: text }; }
-  return { status: res.status, data: parsed };
+  return { status: res.status, data: parsed, rate_limit: extractCfRateLimit(res.headers) };
 }
 
 async function githubFetchRaw(env, owner, repo, path, branch) {
@@ -321,10 +354,24 @@ async function enableSubdomainFor(env, scriptName, accountId) {
   return { ok: true, result: r.data.result };
 }
 
+async function getWorkerSettings(env, scriptName, accountId) {
+  const r = await cfApi(env, "GET", `/accounts/{account_id}/workers/scripts/${scriptName}/settings`, null, null, accountId);
+  if (!r.data.success) throw new Error(`Could not read worker settings: ${JSON.stringify(r.data.errors)}`);
+  return r.data.result;
+}
+
 async function listD1(env, accountId) {
-  const r = await cfApi(env, "GET", "/accounts/{account_id}/d1/database?per_page=100", null, null, accountId);
-  if (!r.data.success) throw new Error(`D1 list failed: ${JSON.stringify(r.data.errors)}`);
-  return r.data.result || [];
+  let all = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const r = await cfApi(env, "GET", `/accounts/{account_id}/d1/database?per_page=100&page=${page}`, null, null, accountId);
+    if (!r.data.success) throw new Error(`D1 list failed: ${JSON.stringify(r.data.errors)}`);
+    all = all.concat(r.data.result || []);
+    totalPages = r.data.result_info?.total_pages || 1;
+    page++;
+  } while (page <= totalPages && page <= MAX_PAGINATION_PAGES);
+  return all;
 }
 
 async function resolveD1Id(env, args, accountId) {
@@ -391,10 +438,31 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "call") {
-    const { method, path, query, body, account_id } = args;
+    const { method, path, query, body, account_id, paginate } = args;
     if (!method || !path) throw new Error("method and path are required");
-    const r = await cfApi(env, method, path, query, body, account_id);
-    return { status: r.status, data: r.data };
+    let r = await cfApi(env, method, path, query, body, account_id);
+    if (paginate && Array.isArray(r.data?.result) && r.data?.result_info) {
+      let combined = r.data.result;
+      const info = r.data.result_info;
+      let page = info.page || 1;
+      const totalPages = info.total_pages || 1;
+      let pagesFetched = 1;
+      while (page < totalPages && pagesFetched < MAX_PAGINATION_PAGES && combined.length < MAX_PAGINATION_ITEMS) {
+        page++;
+        const nq = Object.assign({}, query || {}, { page });
+        const nr = await cfApi(env, method, path, nq, body, account_id);
+        if (!Array.isArray(nr.data?.result)) break;
+        combined = combined.concat(nr.data.result);
+        pagesFetched++;
+      }
+      return {
+        status: r.status,
+        data: { ...r.data, result: combined, result_info: { ...info, fetched_count: combined.length } },
+        pages_fetched: pagesFetched,
+        rate_limit: r.rate_limit
+      };
+    }
+    return { status: r.status, data: r.data, rate_limit: r.rate_limit };
   }
 
   if (name === "list_d1_databases") {
@@ -419,6 +487,18 @@ async function dispatch(name, args, env) {
     const result = await d1Query(env, id, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name", null, args.account_id);
     const rows = result?.[0]?.results || result?.results || [];
     return { database_id: id, tables: rows.map(r => r.name) };
+  }
+
+  if (name === "get_worker_settings") {
+    const { script_name, account_id } = args;
+    if (!script_name) throw new Error("script_name is required");
+    const settings = await getWorkerSettings(env, script_name, account_id);
+    return {
+      script_name,
+      bindings: settings.bindings || [],
+      compatibility_date: settings.compatibility_date,
+      compatibility_flags: settings.compatibility_flags || []
+    };
   }
 
   if (name === "deploy_worker_with_bindings") {
