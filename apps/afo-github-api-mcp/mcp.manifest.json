@@ -1,0 +1,20 @@
+{
+  "schema": "afo.mcp.manifest.v1",
+  "name": "afo-github-api-mcp",
+  "worker_name": "afo-github-api-mcp",
+  "plane": "GitHub API Gateway",
+  "risk_profile": "github_write_gated",
+  "purpose": "Token-efficient access to the entire GitHub REST API via a search+call pattern, mirroring afo-cloudflare-api-mcp. search filters a cached OpenAPI index (github/rest-api-description) stored in R2; call makes the live authenticated request. Includes typed convenience tools for GitHub Actions (workflow dispatch, run status, job status) to address recurring deploy-reliability friction.",
+  "tools": [
+    "gh_api_status",
+    "search",
+    "call",
+    "seed_spec",
+    "trigger_workflow_dispatch",
+    "list_workflow_runs",
+    "get_workflow_run",
+    "list_workflow_run_jobs"
+  ],
+  "source_path": "apps/afo-github-api-mcp/worker.js",
+  "status": "v0.1.0"
+}
