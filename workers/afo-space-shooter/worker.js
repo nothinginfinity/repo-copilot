@@ -91,7 +91,7 @@ function buildGameScript(sprites) {
   L.push("  });");
   L.push("}");
 
-  L.push("const FALLBACK=['\u{1F47E}','\u{1F6F8}','\u{1F480}','\u{1F916}','\u{1F479}','\u{1F47B}','\u{1F9BE}','\u{1F608}','\u{1F47D}','\u{1F419}'];");
+  L.push("const FALLBACK=['👾','🛸','💀','🤖','👹','👻','🦾','😈','👽','🐙'];");
   L.push("function getTypes(){ return spriteKeys.length>0?spriteKeys:FALLBACK; }");
   L.push("function gun(){ return GUNS.find(function(g){return g.id===unlockedGuns[currentGunIdx];})||GUNS[0]; }");
 
@@ -103,7 +103,7 @@ function buildGameScript(sprites) {
 
   L.push("function drawPlayer(){");
   L.push("  ctx.save();ctx.font='38px serif';ctx.textAlign='center';");
-  L.push("  ctx.fillText('\u{1F680}',playerX+20,playerY+36);ctx.restore();");
+  L.push("  ctx.fillText('🚀',playerX+20,playerY+36);ctx.restore();");
   L.push("}");
 
   L.push("function drawEnemy(e){");
@@ -125,7 +125,7 @@ function buildGameScript(sprites) {
   L.push("  const g=GUNS.find(function(x){return x.id===b.gun;})||GUNS[0];");
   L.push("  if(b.gun==='rocket'||b.gun==='blackhole'){");
   L.push("    ctx.save();ctx.font='16px serif';ctx.textAlign='center';");
-  L.push("    ctx.fillText(b.gun==='rocket'?'\u{1F680}':'\u{1F300}',b.x+4,b.y+12);ctx.restore();");
+  L.push("    ctx.fillText(b.gun==='rocket'?'🚀':'🌀',b.x+4,b.y+12);ctx.restore();");
   L.push("  } else if(b.gun==='pixelnuke'){");
   L.push("    ctx.save();ctx.font='20px serif';ctx.textAlign='center';");
   L.push("    ctx.fillText('\u2622\uFE0F',b.x+4,b.y+14);ctx.restore();");
@@ -221,7 +221,7 @@ function buildGameScript(sprites) {
   L.push("  ctx.fillRect(8,12,120*hpPct,16);");
   L.push("  text('HP '+playerHP,8,26,11,'#fff');");
   L.push("  text(''+score,W/2,28,18,'#ffdd00','center');");
-  L.push("  text('\u{1F4B0}'+credits,W-8,28,14,'#aaffaa','right');");
+  L.push("  text('💰'+credits,W-8,28,14,'#aaffaa','right');");
   L.push("  text('W'+wave,8,H-10,12,'#555');");
   L.push("}");
 
@@ -255,7 +255,7 @@ function buildGameScript(sprites) {
 
   // Menu
   L.push("function drawMenu(){");
-  L.push("  text('\u{1F47E} SPACE SHOOTER',W/2,90,28,'#00ff88','center');");
+  L.push("  text('👾 SPACE SHOOTER',W/2,90,28,'#00ff88','center');");
   L.push("  text('powered by AFO + Cloudflare',W/2,116,12,'#333','center');");
   L.push("  if(leaderboardData.length>0){");
   L.push("    text('TOP SCORES',W/2,160,13,'#ffdd00','center');");
