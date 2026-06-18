@@ -1,4 +1,4 @@
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +9,15 @@ const CORS = {
 const SPEC_URL = "https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json";
 const SPEC_KEY = "cf-openapi-spec/index.json";
 const MAX_RESPONSE_CHARS = 30000;
+const DEFAULT_COMPAT_DATE = "2026-05-31";
+
+const BINDINGS_DOC =
+  "Array of binding objects, one of: " +
+  "{type:'plain_text',name,text} | {type:'secret_text',name,text} | " +
+  "{type:'kv_namespace',name,namespace_id} | {type:'r2_bucket',name,bucket_name} | " +
+  "{type:'d1',name,id} | {type:'vectorize',name,index_name}. " +
+  "This list fully replaces the worker's current bindings — Cloudflare's API has no partial " +
+  "merge, so omit nothing you want to keep, including secrets (their values can't be read back).";
 
 const TOOLS = [
   {
@@ -18,12 +27,12 @@ const TOOLS = [
   },
   {
     name: "search",
-    description: "Search the Cloudflare OpenAPI spec for endpoints across the entire Cloudflare API (Workers, KV, R2, D1, Vectorize, DNS, Zones, Firewall, Access, Stream, Images, AI Gateway, and more). Filter by free-text query (matches path, summary, tags) and/or an exact product tag. Returns method, path, tags, and summary for each match so you can then call the endpoint with the call tool.",
+    description: "Search the Cloudflare OpenAPI spec for endpoints across the entire Cloudflare API. Filter by free-text query (matches path, summary, tags) and/or an exact product tag. Returns method, path, tags, and summary for each match so you can then call the endpoint with the call tool.",
     inputSchema: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Free text to match against path, summary, or tags, e.g. 'vectorize index' or 'dns record'" },
-        tag: { type: "string", description: "Exact product tag to filter by, e.g. 'workers', 'r2', 'd1', 'dns', 'zones'" },
+        query: { type: "string", description: "Free text to match against path, summary, or tags" },
+        tag: { type: "string", description: "Exact product tag to filter by, e.g. 'workers', 'r2', 'd1'" },
         limit: { type: "number", description: "Max results to return, default 30" }
       },
       required: []
@@ -31,13 +40,13 @@ const TOOLS = [
   },
   {
     name: "call",
-    description: "Call any Cloudflare API v4 endpoint directly, authenticated with the account's API token. Use search first to find the right method and path. Path should look like /accounts/{account_id}/workers/scripts or /zones/{zone_id}/dns_records or /graphql, exactly as returned by search. The literal substring {account_id} in path is auto-replaced with the account_id argument or the default account. Query params and JSON body are optional.",
+    description: "Call any Cloudflare API v4 endpoint directly. Use search first to find the right method and path. The literal substring {account_id} in path is auto-replaced with the account_id argument or the default account.",
     inputSchema: {
       type: "object",
       properties: {
         method: { type: "string", description: "HTTP method: GET, POST, PUT, PATCH, or DELETE" },
         path: { type: "string", description: "API path, e.g. /accounts/{account_id}/workers/scripts/my-worker" },
-        query: { type: "object", description: "Query string parameters as key-value pairs" },
+        query: { type: "object", description: "Query string parameters" },
         body: { type: "object", description: "JSON request body for POST/PUT/PATCH" },
         account_id: { type: "string", description: "Override the account id substituted for {account_id} in path" }
       },
@@ -46,8 +55,126 @@ const TOOLS = [
   },
   {
     name: "seed_spec",
-    description: "Fetch the latest Cloudflare OpenAPI spec from GitHub (cloudflare/api-schemas) and rebuild the search index in R2. Run once after first deploy, and again any time you want to pick up new Cloudflare API endpoints.",
+    description: "Fetch the latest Cloudflare OpenAPI spec from GitHub and rebuild the search index in R2. Run any time you want to pick up new endpoints.",
     inputSchema: { type: "object", properties: {}, required: [] }
+  },
+  {
+    name: "list_d1_databases",
+    description: "List all D1 databases in the account (name and uuid).",
+    inputSchema: { type: "object", properties: { account_id: { type: "string" } }, required: [] }
+  },
+  {
+    name: "resolve_d1_database",
+    description: "Look up a D1 database's uuid by its name, so you don't have to memorize database ids.",
+    inputSchema: {
+      type: "object",
+      properties: { name: { type: "string", description: "D1 database name" }, account_id: { type: "string" } },
+      required: ["name"]
+    }
+  },
+  {
+    name: "execute_d1_sql",
+    description: "Run one write/DDL SQL statement (INSERT, UPDATE, CREATE TABLE, etc.) against a D1 database. Exactly one statement per call — call it once per statement for bulk operations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        database_name: { type: "string", description: "D1 database name (resolved automatically)" },
+        database_id: { type: "string", description: "D1 database uuid, if already known" },
+        sql: { type: "string", description: "Exactly one SQL statement" },
+        params: { type: "array", description: "Optional bound parameters" },
+        account_id: { type: "string" }
+      },
+      required: ["sql"]
+    }
+  },
+  {
+    name: "query_d1_sql",
+    description: "Run one read SQL statement (SELECT) against a D1 database and return rows.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        database_name: { type: "string", description: "D1 database name (resolved automatically)" },
+        database_id: { type: "string", description: "D1 database uuid, if already known" },
+        sql: { type: "string", description: "Exactly one SQL statement" },
+        params: { type: "array", description: "Optional bound parameters" },
+        account_id: { type: "string" }
+      },
+      required: ["sql"]
+    }
+  },
+  {
+    name: "list_d1_tables",
+    description: "List table names in a D1 database.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        database_name: { type: "string" },
+        database_id: { type: "string" },
+        account_id: { type: "string" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "deploy_worker_with_bindings",
+    description: "Deploy a Worker from inline script content (module syntax: export default {fetch}). " + BINDINGS_DOC + " Workers.dev subdomain is auto-enabled unless enable_subdomain=false.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        script_name: { type: "string" },
+        script_content: { type: "string", description: "Full module-syntax worker source" },
+        bindings: { type: "array" },
+        compatibility_date: { type: "string" },
+        enable_subdomain: { type: "boolean", description: "Default true" },
+        account_id: { type: "string" }
+      },
+      required: ["script_name", "script_content"]
+    }
+  },
+  {
+    name: "deploy_worker_from_github",
+    description: "Fetch a Worker's module source directly from a GitHub repo (server-side, no inlining needed) and deploy it. " + BINDINGS_DOC + " Workers.dev subdomain is auto-enabled unless enable_subdomain=false. Requires the GITHUB_TOKEN binding (repos are private).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        owner: { type: "string" },
+        repo: { type: "string" },
+        branch: { type: "string", description: "Defaults to the repo's default branch" },
+        file_path: { type: "string", description: "e.g. workers/my-worker/src/index.js" },
+        script_name: { type: "string" },
+        bindings: { type: "array" },
+        compatibility_date: { type: "string" },
+        enable_subdomain: { type: "boolean", description: "Default true" },
+        account_id: { type: "string" }
+      },
+      required: ["owner", "repo", "file_path", "script_name"]
+    }
+  },
+  {
+    name: "setup_worker_with_d1_schema",
+    description: "One-shot: resolve-or-create a D1 database, fetch a Worker's module source from GitHub, deploy it with a D1 binding (plus optional plain_text vars), enable its workers.dev subdomain, optionally run a schema SQL file from the same repo statement-by-statement, and optionally smoke-test the live URL. Returns a consolidated result for all steps.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        owner: { type: "string" },
+        repo: { type: "string" },
+        branch: { type: "string" },
+        worker_file_path: { type: "string" },
+        script_name: { type: "string" },
+        database_name: { type: "string", description: "Created if it doesn't already exist" },
+        schema_file_path: { type: "string", description: "Optional .sql file in the same repo, split and run one statement at a time" },
+        vars: { type: "object", description: "Optional plain_text bindings, e.g. {DEMO_SLUG: 'ccs-services'}" },
+        d1_binding_name: { type: "string", description: "Default 'DB'" },
+        smoke_test: {
+          type: "object",
+          description: "Optional {method, path, body} to hit the deployed worker's own URL after deploy",
+          properties: { method: { type: "string" }, path: { type: "string" }, body: { type: "object" } }
+        },
+        compatibility_date: { type: "string" },
+        account_id: { type: "string" }
+      },
+      required: ["owner", "repo", "worker_file_path", "script_name", "database_name"]
+    }
   }
 ];
 
@@ -62,8 +189,17 @@ function truncate(str) {
     `\n...[truncated, ${str.length} total chars. Narrow the query, request fewer fields, or use pagination params like per_page/page/cursor.]`;
 }
 
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function splitStatements(sqlText) {
+  return sqlText
+    .split(";")
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !s.startsWith("--"));
+}
+
 async function buildIndex(env) {
-  const res = await fetch(SPEC_URL, { headers: { "User-Agent": "afo-cloudflare-api-mcp" } });
+  const res = await fetch(SPEC_URL, { headers: { "User-Agent": WORKER_NAME } });
   if (!res.ok) throw new Error(`Spec fetch failed: HTTP ${res.status}`);
   const spec = await res.json();
   const index = [];
@@ -102,7 +238,7 @@ async function cfApi(env, method, path, query, body, accountIdOverride) {
   if (query && Object.keys(query).length) {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(query)) qs.set(k, String(v));
-    url += `?${qs.toString()}`;
+    url += `${url.includes("?") ? "&" : "?"}${qs.toString()}`;
   }
   const m = (method || "GET").toUpperCase();
   const opts = { method: m, headers: { Authorization: `Bearer ${env.CF_API_TOKEN}`, "Content-Type": "application/json" } };
@@ -114,6 +250,82 @@ async function cfApi(env, method, path, query, body, accountIdOverride) {
   return { status: res.status, data: parsed };
 }
 
+async function githubFetchRaw(env, owner, repo, path, branch) {
+  if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN binding missing — required for GitHub-source tools");
+  const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}${branch ? `?ref=${encodeURIComponent(branch)}` : ""}`;
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `token ${env.GITHUB_TOKEN}`,
+      Accept: "application/vnd.github.raw",
+      "User-Agent": WORKER_NAME
+    }
+  });
+  if (!res.ok) throw new Error(`GitHub fetch failed: HTTP ${res.status} for ${owner}/${repo}/${path}@${branch || "default"}`);
+  return await res.text();
+}
+
+async function putScript(env, scriptName, moduleContent, bindings, compatibilityDate, accountId) {
+  if (!env.CF_API_TOKEN) throw new Error("CF_API_TOKEN binding missing");
+  const aid = accountId || env.CF_ACCOUNT_ID;
+  const metadata = {
+    main_module: "worker.js",
+    compatibility_date: compatibilityDate || DEFAULT_COMPAT_DATE,
+    bindings: bindings || []
+  };
+  const form = new FormData();
+  form.append("metadata", JSON.stringify(metadata));
+  form.append("worker.js", new Blob([moduleContent], { type: "application/javascript+module" }), "worker.js");
+  const url = `https://api.cloudflare.com/client/v4/accounts/${aid}/workers/scripts/${scriptName}`;
+  const res = await fetch(url, { method: "PUT", headers: { Authorization: `Bearer ${env.CF_API_TOKEN}` }, body: form });
+  const json = await res.json();
+  if (!json.success) throw new Error(`Deploy failed: ${JSON.stringify(json.errors)}`);
+  return json.result;
+}
+
+async function getWorkersSubdomain(env, accountId) {
+  const r = await cfApi(env, "GET", "/accounts/{account_id}/workers/subdomain", null, null, accountId);
+  if (!r.data.success) throw new Error(`Could not read workers subdomain: ${JSON.stringify(r.data.errors)}`);
+  return r.data.result.subdomain;
+}
+
+async function enableSubdomainFor(env, scriptName, accountId) {
+  const r = await cfApi(env, "POST", `/accounts/{account_id}/workers/scripts/${scriptName}/subdomain`, null, { enabled: true, previews_enabled: true }, accountId);
+  if (!r.data.success) return { ok: false, errors: r.data.errors };
+  return { ok: true, result: r.data.result };
+}
+
+async function listD1(env, accountId) {
+  const r = await cfApi(env, "GET", "/accounts/{account_id}/d1/database?per_page=100", null, null, accountId);
+  if (!r.data.success) throw new Error(`D1 list failed: ${JSON.stringify(r.data.errors)}`);
+  return r.data.result || [];
+}
+
+async function resolveD1Id(env, args, accountId) {
+  if (args.database_id) return args.database_id;
+  if (!args.database_name) throw new Error("database_id or database_name is required");
+  const dbs = await listD1(env, accountId);
+  const match = dbs.find(d => d.name.toLowerCase() === args.database_name.toLowerCase());
+  if (!match) throw new Error(`No D1 database named "${args.database_name}" found. Available: ${dbs.map(d => d.name).join(", ")}`);
+  return match.uuid;
+}
+
+async function resolveOrCreateD1(env, databaseName, accountId) {
+  const dbs = await listD1(env, accountId);
+  const match = dbs.find(d => d.name.toLowerCase() === databaseName.toLowerCase());
+  if (match) return { id: match.uuid, created: false };
+  const r = await cfApi(env, "POST", "/accounts/{account_id}/d1/database", null, { name: databaseName }, accountId);
+  if (!r.data.success) throw new Error(`D1 create failed: ${JSON.stringify(r.data.errors)}`);
+  return { id: r.data.result.uuid, created: true };
+}
+
+async function d1Query(env, databaseId, sql, params, accountId) {
+  const stmts = splitStatements(sql);
+  if (stmts.length > 1) throw new Error(`Exactly one SQL statement is allowed per call; received ${stmts.length}. Call once per statement.`);
+  const r = await cfApi(env, "POST", `/accounts/{account_id}/d1/database/${databaseId}/query`, null, { sql, params: params || [] }, accountId);
+  if (!r.data.success) throw new Error(`D1 query failed: ${JSON.stringify(r.data.errors)}`);
+  return r.data.result;
+}
+
 async function dispatch(name, args, env) {
   if (name === "cf_api_status") {
     let seeded = false, count = null;
@@ -122,7 +334,12 @@ async function dispatch(name, args, env) {
       worker: WORKER_NAME,
       version: VERSION,
       status: "ok",
-      bindings: { CF_API_TOKEN: Boolean(env.CF_API_TOKEN), CF_ACCOUNT_ID: Boolean(env.CF_ACCOUNT_ID), SPEC: Boolean(env.SPEC) },
+      bindings: {
+        CF_API_TOKEN: Boolean(env.CF_API_TOKEN),
+        CF_ACCOUNT_ID: Boolean(env.CF_ACCOUNT_ID),
+        GITHUB_TOKEN: Boolean(env.GITHUB_TOKEN),
+        SPEC: Boolean(env.SPEC)
+      },
       spec_seeded: seeded,
       indexed_endpoints: count,
       tools: TOOLS.map(t => t.name)
@@ -151,6 +368,121 @@ async function dispatch(name, args, env) {
     if (!method || !path) throw new Error("method and path are required");
     const r = await cfApi(env, method, path, query, body, account_id);
     return { status: r.status, data: r.data };
+  }
+
+  if (name === "list_d1_databases") {
+    const dbs = await listD1(env, args.account_id);
+    return { count: dbs.length, databases: dbs.map(d => ({ name: d.name, uuid: d.uuid, created_at: d.created_at })) };
+  }
+
+  if (name === "resolve_d1_database") {
+    const id = await resolveD1Id(env, { database_name: args.name }, args.account_id);
+    return { name: args.name, uuid: id };
+  }
+
+  if (name === "execute_d1_sql" || name === "query_d1_sql") {
+    if (!args.sql) throw new Error("sql is required");
+    const id = await resolveD1Id(env, args, args.account_id);
+    const result = await d1Query(env, id, args.sql, args.params, args.account_id);
+    return { database_id: id, result };
+  }
+
+  if (name === "list_d1_tables") {
+    const id = await resolveD1Id(env, args, args.account_id);
+    const result = await d1Query(env, id, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name", null, args.account_id);
+    const rows = result?.[0]?.results || result?.results || [];
+    return { database_id: id, tables: rows.map(r => r.name) };
+  }
+
+  if (name === "deploy_worker_with_bindings") {
+    const { script_name, script_content, bindings, compatibility_date, enable_subdomain, account_id } = args;
+    if (!script_name || !script_content) throw new Error("script_name and script_content are required");
+    const cfResult = await putScript(env, script_name, script_content, bindings || [], compatibility_date, account_id);
+    let subdomain = null;
+    if (enable_subdomain !== false) subdomain = await enableSubdomainFor(env, script_name, account_id);
+    return { ok: true, script_name, bindings_set: (bindings || []).map(b => ({ type: b.type, name: b.name })), subdomain, cloudflare_result: cfResult };
+  }
+
+  if (name === "deploy_worker_from_github") {
+    const { owner, repo, branch, file_path, script_name, bindings, compatibility_date, enable_subdomain, account_id } = args;
+    if (!owner || !repo || !file_path || !script_name) throw new Error("owner, repo, file_path, and script_name are required");
+    const content = await githubFetchRaw(env, owner, repo, file_path, branch);
+    const cfResult = await putScript(env, script_name, content, bindings || [], compatibility_date, account_id);
+    let subdomain = null;
+    if (enable_subdomain !== false) subdomain = await enableSubdomainFor(env, script_name, account_id);
+    return {
+      ok: true,
+      script_name,
+      source: `${owner}/${repo}/${file_path}@${branch || "default"}`,
+      source_bytes: content.length,
+      bindings_set: (bindings || []).map(b => ({ type: b.type, name: b.name })),
+      subdomain,
+      cloudflare_result: cfResult
+    };
+  }
+
+  if (name === "setup_worker_with_d1_schema") {
+    const {
+      owner, repo, branch, worker_file_path, script_name, database_name,
+      schema_file_path, vars, d1_binding_name, smoke_test, compatibility_date, account_id
+    } = args;
+    if (!owner || !repo || !worker_file_path || !script_name || !database_name) {
+      throw new Error("owner, repo, worker_file_path, script_name, and database_name are required");
+    }
+
+    const db = await resolveOrCreateD1(env, database_name, account_id);
+    const bindings = [{ type: "d1", name: d1_binding_name || "DB", id: db.id }];
+    if (vars) for (const [k, v] of Object.entries(vars)) bindings.push({ type: "plain_text", name: k, text: String(v) });
+
+    const content = await githubFetchRaw(env, owner, repo, worker_file_path, branch);
+    const deployResult = await putScript(env, script_name, content, bindings, compatibility_date, account_id);
+    const subdomain = await enableSubdomainFor(env, script_name, account_id);
+
+    let schema = null;
+    if (schema_file_path) {
+      const schemaSql = await githubFetchRaw(env, owner, repo, schema_file_path, branch);
+      const statements = splitStatements(schemaSql);
+      schema = { total_statements: statements.length, executed: [] };
+      for (let i = 0; i < statements.length; i++) {
+        try {
+          const r = await d1Query(env, db.id, statements[i], null, account_id);
+          schema.executed.push({ index: i, ok: true, meta: r?.[0]?.meta || r?.meta || null });
+        } catch (e) {
+          schema.executed.push({ index: i, ok: false, error: e.message, statement: statements[i].slice(0, 200) });
+          schema.stopped_early = true;
+          break;
+        }
+      }
+    }
+
+    let smoke = null;
+    if (smoke_test) {
+      try {
+        await sleep(1500);
+        const subdomainName = await getWorkersSubdomain(env, account_id);
+        const testUrl = `https://${script_name}.${subdomainName}.workers.dev${smoke_test.path || "/"}`;
+        const res = await fetch(testUrl, {
+          method: smoke_test.method || "GET",
+          headers: smoke_test.body ? { "Content-Type": "application/json" } : undefined,
+          body: smoke_test.body ? JSON.stringify(smoke_test.body) : undefined
+        });
+        const text = await res.text();
+        smoke = { url: testUrl, status: res.status, body: text.slice(0, 2000) };
+      } catch (e) {
+        smoke = { error: e.message };
+      }
+    }
+
+    return {
+      ok: true,
+      script_name,
+      database: { name: database_name, id: db.id, created: db.created },
+      bindings_set: bindings.map(b => ({ type: b.type, name: b.name })),
+      deploy: deployResult,
+      subdomain,
+      schema,
+      smoke_test: smoke
+    };
   }
 
   throw new Error(`Unknown tool: ${name}`);
