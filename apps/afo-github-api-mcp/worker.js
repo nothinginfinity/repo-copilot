@@ -1,4 +1,4 @@
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -10,6 +10,8 @@ const SPEC_URL = "https://raw.githubusercontent.com/github/rest-api-description/
 const SPEC_KEY = "gh-openapi-spec/index.json";
 const MAX_RESPONSE_CHARS = 30000;
 const GITHUB_API_VERSION = "2022-11-28";
+const MAX_PAGINATION_PAGES = 10;
+const MAX_PAGINATION_ITEMS = 2000;
 
 const TOOLS = [
   {
@@ -32,7 +34,7 @@ const TOOLS = [
   },
   {
     name: "call",
-    description: "Call any GitHub REST API endpoint directly, authenticated with GITHUB_TOKEN. Use search first to find the right method and path. The literal substrings {owner} and {repo} in path are auto-replaced with the owner/repo arguments or the default repo if set.",
+    description: "Call any GitHub REST API endpoint directly, authenticated with GITHUB_TOKEN. Use search first to find the right method and path. The literal substrings {owner} and {repo} in path are auto-replaced with the owner/repo arguments or the default repo if set. Automatically retries on 429/5xx with backoff. Set paginate=true to follow Link-header pagination when the response is a top-level array (capped at 10 pages / 2000 items).",
     inputSchema: {
       type: "object",
       properties: {
@@ -41,7 +43,8 @@ const TOOLS = [
         owner: { type: "string", description: "Overrides {owner} in path" },
         repo: { type: "string", description: "Overrides {repo} in path" },
         query: { type: "object", description: "Query string parameters" },
-        body: { type: "object", description: "JSON request body for POST/PUT/PATCH" }
+        body: { type: "object", description: "JSON request body for POST/PUT/PATCH" },
+        paginate: { type: "boolean", description: "Follow pagination if the response is a top-level array. Default false." }
       },
       required: ["method", "path"]
     }
@@ -68,7 +71,7 @@ const TOOLS = [
   },
   {
     name: "list_workflow_runs",
-    description: "List recent Actions workflow runs for a repo, optionally scoped to one workflow, branch, or status.",
+    description: "List recent Actions workflow runs for a repo, optionally scoped to one workflow, branch, or status. Set all_pages=true to follow pagination beyond the first page (capped at 10 pages / 2000 runs).",
     inputSchema: {
       type: "object",
       properties: {
@@ -77,7 +80,8 @@ const TOOLS = [
         workflow_id: { type: "string", description: "Optional: scope to one workflow (filename or id)" },
         branch: { type: "string" },
         status: { type: "string", description: "e.g. 'completed', 'in_progress', 'queued', 'failure'" },
-        limit: { type: "number", description: "Default 10" }
+        limit: { type: "number", description: "Per-page size, default 10" },
+        all_pages: { type: "boolean", description: "Follow pagination to fetch beyond the first page. Default false." }
       },
       required: []
     }
@@ -111,6 +115,44 @@ function truncate(str) {
   if (str.length <= MAX_RESPONSE_CHARS) return str;
   return str.slice(0, MAX_RESPONSE_CHARS) +
     `\n...[truncated, ${str.length} total chars. Narrow the query or use pagination params like per_page/page.]`;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function fetchWithRetry(url, opts, maxRetries = 3) {
+  let res;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    res = await fetch(url, opts);
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt === maxRetries) return res;
+    const retryAfterHeader = res.headers.get("retry-after");
+    let delayMs = retryAfterHeader ? parseFloat(retryAfterHeader) * 1000 : 1000 * Math.pow(2, attempt);
+    if (!Number.isFinite(delayMs)) delayMs = 2000;
+    await sleep(Math.min(delayMs, 15000));
+  }
+  return res;
+}
+
+function extractRateLimit(headers) {
+  const remaining = headers.get("x-ratelimit-remaining");
+  const limit = headers.get("x-ratelimit-limit");
+  const reset = headers.get("x-ratelimit-reset");
+  if (remaining === null && limit === null) return null;
+  return {
+    remaining: remaining !== null ? Number(remaining) : null,
+    limit: limit !== null ? Number(limit) : null,
+    reset_at: reset !== null ? new Date(Number(reset) * 1000).toISOString() : null
+  };
+}
+
+function parseLinkHeader(linkHeader) {
+  if (!linkHeader) return {};
+  const links = {};
+  linkHeader.split(",").forEach(part => {
+    const match = part.match(/<([^>]+)>;\s*rel="([^"]+)"/);
+    if (match) links[match[2]] = match[1];
+  });
+  return links;
 }
 
 async function buildIndex(env) {
@@ -151,6 +193,17 @@ function resolveOwnerRepo(env, args) {
   return { owner, repo };
 }
 
+function ghHeaders(env, jsonBody) {
+  const h = {
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": GITHUB_API_VERSION,
+    "User-Agent": WORKER_NAME
+  };
+  if (jsonBody) h["Content-Type"] = "application/json";
+  return h;
+}
+
 async function ghApi(env, method, path, query, body, owner, repo) {
   if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN binding missing");
   let resolvedPath = path;
@@ -163,22 +216,21 @@ async function ghApi(env, method, path, query, body, owner, repo) {
     url += `${url.includes("?") ? "&" : "?"}${qs.toString()}`;
   }
   const m = (method || "GET").toUpperCase();
-  const opts = {
-    method: m,
-    headers: {
-      Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": GITHUB_API_VERSION,
-      "User-Agent": WORKER_NAME,
-      "Content-Type": "application/json"
-    }
-  };
+  const opts = { method: m, headers: ghHeaders(env, true) };
   if (body !== undefined && !["GET", "HEAD"].includes(m)) opts.body = JSON.stringify(body);
-  const res = await fetch(url, opts);
+  const res = await fetchWithRetry(url, opts);
   const text = await res.text();
   let parsed;
   try { parsed = text ? JSON.parse(text) : {}; } catch { parsed = { raw: text }; }
-  return { status: res.status, data: parsed };
+  return { status: res.status, data: parsed, rate_limit: extractRateLimit(res.headers), links: parseLinkHeader(res.headers.get("link")) };
+}
+
+async function ghFetchAbsolute(env, url) {
+  const res = await fetchWithRetry(url, { method: "GET", headers: ghHeaders(env, false) });
+  const text = await res.text();
+  let parsed;
+  try { parsed = text ? JSON.parse(text) : {}; } catch { parsed = { raw: text }; }
+  return { status: res.status, data: parsed, rate_limit: extractRateLimit(res.headers), links: parseLinkHeader(res.headers.get("link")) };
 }
 
 async function dispatch(name, args, env) {
@@ -219,11 +271,24 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "call") {
-    const { method, path, query, body, owner, repo } = args;
+    const { method, path, query, body, owner, repo, paginate } = args;
     if (!method || !path) throw new Error("method and path are required");
     const { owner: o, repo: r } = resolveOwnerRepo(env, { owner, repo });
     const res = await ghApi(env, method, path, query, body, o, r);
-    return { status: res.status, data: res.data };
+    if (paginate && Array.isArray(res.data)) {
+      let combined = res.data;
+      let nextUrl = res.links.next;
+      let pages = 1;
+      while (nextUrl && pages < MAX_PAGINATION_PAGES && combined.length < MAX_PAGINATION_ITEMS) {
+        const nres = await ghFetchAbsolute(env, nextUrl);
+        if (!Array.isArray(nres.data)) break;
+        combined = combined.concat(nres.data);
+        nextUrl = nres.links.next;
+        pages++;
+      }
+      return { status: res.status, data: combined, pages_fetched: pages, rate_limit: res.rate_limit };
+    }
+    return { status: res.status, data: res.data, rate_limit: res.rate_limit };
   }
 
   if (name === "trigger_workflow_dispatch") {
@@ -233,11 +298,11 @@ async function dispatch(name, args, env) {
     if (!owner || !repo) throw new Error("owner and repo are required (no default set)");
     const res = await ghApi(env, "POST", `/repos/{owner}/{repo}/actions/workflows/${workflow_id}/dispatches`, null,
       { ref: ref || "main", inputs: inputs || {} }, owner, repo);
-    return { status: res.status, ok: res.status === 204, data: res.data };
+    return { status: res.status, ok: res.status === 204, data: res.data, rate_limit: res.rate_limit };
   }
 
   if (name === "list_workflow_runs") {
-    const { workflow_id, branch, status, limit } = args;
+    const { workflow_id, branch, status, limit, all_pages } = args;
     const { owner, repo } = resolveOwnerRepo(env, args);
     if (!owner || !repo) throw new Error("owner and repo are required (no default set)");
     const path = workflow_id
@@ -247,12 +312,23 @@ async function dispatch(name, args, env) {
     if (branch) query.branch = branch;
     if (status) query.status = status;
     const res = await ghApi(env, "GET", path, query, null, owner, repo);
-    const runs = (res.data.workflow_runs || []).map(r => ({
+    let allRuns = res.data.workflow_runs || [];
+    let pages = 1;
+    if (all_pages) {
+      let nextUrl = res.links.next;
+      while (nextUrl && pages < MAX_PAGINATION_PAGES && allRuns.length < MAX_PAGINATION_ITEMS) {
+        const nres = await ghFetchAbsolute(env, nextUrl);
+        allRuns = allRuns.concat(nres.data.workflow_runs || []);
+        nextUrl = nres.links.next;
+        pages++;
+      }
+    }
+    const runs = allRuns.map(r => ({
       id: r.id, name: r.name, status: r.status, conclusion: r.conclusion,
       head_branch: r.head_branch, head_sha: r.head_sha,
       run_started_at: r.run_started_at, html_url: r.html_url
     }));
-    return { total_count: res.data.total_count, runs };
+    return { total_count: res.data.total_count, fetched: runs.length, pages_fetched: pages, runs, rate_limit: res.rate_limit };
   }
 
   if (name === "get_workflow_run") {
@@ -265,7 +341,8 @@ async function dispatch(name, args, env) {
     return {
       id: r.id, status: r.status, conclusion: r.conclusion, html_url: r.html_url,
       run_started_at: r.run_started_at, updated_at: r.updated_at,
-      head_branch: r.head_branch, head_sha: r.head_sha
+      head_branch: r.head_branch, head_sha: r.head_sha,
+      rate_limit: res.rate_limit
     };
   }
 
@@ -280,7 +357,7 @@ async function dispatch(name, args, env) {
       started_at: job.started_at, completed_at: job.completed_at,
       steps: (job.steps || []).map(s => ({ name: s.name, status: s.status, conclusion: s.conclusion, number: s.number }))
     }));
-    return { total_count: res.data.total_count, jobs };
+    return { total_count: res.data.total_count, jobs, rate_limit: res.rate_limit };
   }
 
   throw new Error(`Unknown tool: ${name}`);
