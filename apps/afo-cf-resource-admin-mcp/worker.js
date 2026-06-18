@@ -44,6 +44,24 @@ const TOOLS = [
     name: "list_r2_buckets",
     description: "List all R2 buckets in the account.",
     inputSchema: { type: "object", properties: {}, required: [] }
+  },
+  {
+    name: "get_worker_subdomain_status",
+    description: "Check whether the workers.dev subdomain route is enabled for a given script name.",
+    inputSchema: {
+      type: "object",
+      properties: { script_name: { type: "string" } },
+      required: ["script_name"]
+    }
+  },
+  {
+    name: "enable_worker_subdomain",
+    description: "Enable the workers.dev subdomain route for a given script name, so it becomes reachable at https://<script_name>.<subdomain>.workers.dev. New scripts created via the raw API often need this as a separate step.",
+    inputSchema: {
+      type: "object",
+      properties: { script_name: { type: "string" } },
+      required: ["script_name"]
+    }
   }
 ];
 
@@ -125,6 +143,20 @@ async function dispatch(name, args, env) {
     return { count: items.length, buckets: items.map(b => ({ name: b.name, creation_date: b.creation_date })) };
   }
 
+  if (name === "get_worker_subdomain_status") {
+    const { script_name } = args;
+    if (!script_name) throw new Error("script_name is required");
+    const result = await cfReq(env, "GET", `/workers/scripts/${encodeURIComponent(script_name)}/subdomain`);
+    return { script_name, status: result };
+  }
+
+  if (name === "enable_worker_subdomain") {
+    const { script_name } = args;
+    if (!script_name) throw new Error("script_name is required");
+    const result = await cfReq(env, "POST", `/workers/scripts/${encodeURIComponent(script_name)}/subdomain`, { enabled: true, previews_enabled: true });
+    return { ok: true, script_name, result };
+  }
+
   throw new Error(`Unknown tool: ${name}`);
 }
 
@@ -140,7 +172,7 @@ export default {
       if (method === "initialize") return rr(id, { protocolVersion: "2024-11-05", serverInfo: { name: WORKER_NAME, version: VERSION }, capabilities: { tools: {} } });
       if (method === "tools/list") return rr(id, { tools: TOOLS });
       if (method === "tools/call") return tr(id, await dispatch(params.name, params.arguments || {}, env));
-      return er(id, -32601, `Method not found: ${method}`);
+      return er(id, -32603, `Method not found: ${method}`);
     } catch (e) {
       return er(id, -32603, `Tool error: ${e.message}`);
     }
