@@ -1,0 +1,25 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-cf-resource-admin-mcp",
+  "created_at": "2026-06-18T00:05:05.029Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-cf-resource-admin-mcp",
+  "source_path": "apps/afo-cf-resource-admin-mcp/worker.js",
+  "source_sha256": "sha256:1d9b4992f9e6b1e227d88073a2ae4a5141e9e299f6141534c5e60ff86ceaf3a9",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-cf-resource-admin-mcp",
+    "binding_count": 2,
+    "bindings": [
+      {
+        "name": "CF_API_TOKEN",
+        "type": "secret_text"
+      },
+      {
+        "name": "CF_ACCOUNT_ID",
+        "type": "secret_text"
+      }
+    ],
+    "deployed_at": "2026-06-18T00:05:04.910Z"
+  }
+}
