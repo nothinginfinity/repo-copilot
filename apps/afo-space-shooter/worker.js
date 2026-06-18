@@ -439,8 +439,7 @@ function buildGameScript(sprites) {
   L.push("function loop(){update();drawFrame();requestAnimationFrame(loop);}");
   L.push("loadSprites();loadLeaderboard();setUI();loop();");
 
-  return L.join("
-");
+  return L.join("\n");
 }
 
 // =================== HTML ===================
@@ -493,8 +492,7 @@ function buildGameHTML(sprites) {
     "</script>",
     "</body></html>"
   ];
-  return parts.join("
-");
+  return parts.join("\n");
 }
 
 function buildAdminHTML(spriteList) {
@@ -546,8 +544,7 @@ function buildAdminHTML(spriteList) {
     "</script>",
     "</body></html>"
   ];
-  return parts.join("
-");
+  return parts.join("\n");
 }
 
 // =================== API HANDLERS ===================
