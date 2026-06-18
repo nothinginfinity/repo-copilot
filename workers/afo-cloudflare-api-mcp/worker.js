@@ -1,4 +1,4 @@
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -190,6 +190,33 @@ function truncate(str) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+const SMOKE_RETRY_DELAYS_MS = [1500, 2500, 4000, 6000];
+
+function looksLikeSubdomainPropagationFailure(status, text) {
+  return status === 404 && typeof text === "string" && text.includes("error code: 1042");
+}
+
+async function fetchWithSubdomainRetry(testUrl, smokeTest) {
+  let last = null;
+  for (let attempt = 0; attempt < SMOKE_RETRY_DELAYS_MS.length; attempt++) {
+    await sleep(SMOKE_RETRY_DELAYS_MS[attempt]);
+    try {
+      const res = await fetch(testUrl, {
+        method: smokeTest.method || "GET",
+        headers: smokeTest.body ? { "Content-Type": "application/json" } : undefined,
+        body: smokeTest.body ? JSON.stringify(smokeTest.body) : undefined
+      });
+      const text = await res.text();
+      last = { url: testUrl, status: res.status, body: text.slice(0, 2000), attempt: attempt + 1 };
+      if (!looksLikeSubdomainPropagationFailure(res.status, text)) return last;
+    } catch (e) {
+      last = { url: testUrl, error: e.message, attempt: attempt + 1 };
+    }
+  }
+  last.note = "Still failing after retries with backoff — may not be a propagation delay; investigate directly.";
+  return last;
+}
 
 function splitStatements(sqlText) {
   return sqlText
@@ -458,16 +485,9 @@ async function dispatch(name, args, env) {
     let smoke = null;
     if (smoke_test) {
       try {
-        await sleep(1500);
         const subdomainName = await getWorkersSubdomain(env, account_id);
         const testUrl = `https://${script_name}.${subdomainName}.workers.dev${smoke_test.path || "/"}`;
-        const res = await fetch(testUrl, {
-          method: smoke_test.method || "GET",
-          headers: smoke_test.body ? { "Content-Type": "application/json" } : undefined,
-          body: smoke_test.body ? JSON.stringify(smoke_test.body) : undefined
-        });
-        const text = await res.text();
-        smoke = { url: testUrl, status: res.status, body: text.slice(0, 2000) };
+        smoke = await fetchWithSubdomainRetry(testUrl, smoke_test);
       } catch (e) {
         smoke = { error: e.message };
       }
