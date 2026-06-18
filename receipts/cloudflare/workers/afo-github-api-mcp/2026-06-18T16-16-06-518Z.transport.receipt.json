@@ -1,0 +1,29 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-github-api-mcp",
+  "created_at": "2026-06-18T16:16:06.617Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-github-api-mcp",
+  "source_path": "apps/afo-github-api-mcp/worker.js",
+  "source_sha256": "sha256:71f4c683b4c71548e0ef9030ce3958ba40f4c558be8351675ea3e3640f1ede54",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-github-api-mcp",
+    "binding_count": 3,
+    "bindings": [
+      {
+        "name": "SPEC",
+        "type": "r2_bucket"
+      },
+      {
+        "name": "DEFAULT_OWNER",
+        "type": "secret_text"
+      },
+      {
+        "name": "DEFAULT_REPO",
+        "type": "secret_text"
+      }
+    ],
+    "deployed_at": "2026-06-18T16:16:06.518Z"
+  }
+}
