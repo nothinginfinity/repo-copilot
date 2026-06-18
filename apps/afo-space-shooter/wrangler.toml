@@ -1,0 +1,12 @@
+name = "afo-space-shooter"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "afo-space-shooter-db"
+database_id = "221deb29-d24b-4f02-b708-ff4acc6191ec"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "afo-site-content"
