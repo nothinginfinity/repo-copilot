@@ -1,0 +1,14 @@
+name = "afo-github-api-mcp"
+main = "worker.js"
+compatibility_date = "2026-05-31"
+
+[[r2_buckets]]
+binding = "SPEC"
+bucket_name = "afo-site-content"
+
+[vars]
+DEFAULT_OWNER = "nothinginfinity"
+DEFAULT_REPO = "repo-copilot"
+
+# Required secret - set via Cloudflare dashboard (Workers & Pages > afo-github-api-mcp > Settings > Variables and Secrets):
+# GITHUB_TOKEN
