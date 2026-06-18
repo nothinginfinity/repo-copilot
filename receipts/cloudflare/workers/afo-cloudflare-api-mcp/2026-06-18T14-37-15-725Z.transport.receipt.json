@@ -1,0 +1,21 @@
+{
+  "schema": "afo.transport.receipt.v1",
+  "script_name": "afo-cloudflare-api-mcp",
+  "created_at": "2026-06-18T14:37:15.815Z",
+  "transport": "github_to_cloudflare",
+  "worker_slug": "afo-cloudflare-api-mcp",
+  "source_path": "apps/afo-cloudflare-api-mcp/worker.js",
+  "source_sha256": "sha256:6bae5f5fd1991f847a88a44d243dfddf9cfc39de492610b142026a1518ae8b72",
+  "deploy_result": {
+    "deployed": true,
+    "script_name": "afo-cloudflare-api-mcp",
+    "binding_count": 1,
+    "bindings": [
+      {
+        "name": "SPEC",
+        "type": "r2_bucket"
+      }
+    ],
+    "deployed_at": "2026-06-18T14:37:15.725Z"
+  }
+}
