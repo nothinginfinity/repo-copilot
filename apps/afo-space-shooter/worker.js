@@ -34,7 +34,7 @@ function safe(v) { return String(v || "").replace(/[<>"']/g, ""); }
 
 function buildGameScript(sprites) {
   const L = [];
-  L.push("const SPRITES = " + JSON.stringify(sprites) + ";");
+  L.push("const sprites = " + JSON.stringify(sprites) + ";");
   L.push("const GUNS = " + JSON.stringify(GUNS) + ";");
   L.push("const W = 480, H = 640;");
   L.push("let sessionId=null, playerName='', gameState='menu';");
