@@ -1,4 +1,4 @@
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -363,14 +363,17 @@ async function getWorkerSettings(env, scriptName, accountId) {
 async function listD1(env, accountId) {
   let all = [];
   let page = 1;
-  let totalPages = 1;
+  const perPage = 100;
+  let totalCount = null;
   do {
-    const r = await cfApi(env, "GET", `/accounts/{account_id}/d1/database?per_page=100&page=${page}`, null, null, accountId);
+    const r = await cfApi(env, "GET", `/accounts/{account_id}/d1/database?per_page=${perPage}&page=${page}`, null, null, accountId);
     if (!r.data.success) throw new Error(`D1 list failed: ${JSON.stringify(r.data.errors)}`);
-    all = all.concat(r.data.result || []);
-    totalPages = r.data.result_info?.total_pages || 1;
+    const batch = r.data.result || [];
+    all = all.concat(batch);
+    totalCount = r.data.result_info?.total_count;
     page++;
-  } while (page <= totalPages && page <= MAX_PAGINATION_PAGES);
+    if (batch.length < perPage) break;
+  } while (page <= MAX_PAGINATION_PAGES && (totalCount === undefined || totalCount === null || all.length < totalCount));
   return all;
 }
 
@@ -445,14 +448,21 @@ async function dispatch(name, args, env) {
       let combined = r.data.result;
       const info = r.data.result_info;
       let page = info.page || 1;
-      const totalPages = info.total_pages || 1;
+      const perPage = info.per_page || combined.length || 1;
+      const totalCount = info.total_count;
       let pagesFetched = 1;
-      while (page < totalPages && pagesFetched < MAX_PAGINATION_PAGES && combined.length < MAX_PAGINATION_ITEMS) {
+      let lastPageSize = combined.length;
+      while (
+        pagesFetched < MAX_PAGINATION_PAGES &&
+        combined.length < MAX_PAGINATION_ITEMS &&
+        (totalCount !== undefined ? combined.length < totalCount : lastPageSize === perPage)
+      ) {
         page++;
         const nq = Object.assign({}, query || {}, { page });
         const nr = await cfApi(env, method, path, nq, body, account_id);
-        if (!Array.isArray(nr.data?.result)) break;
+        if (!Array.isArray(nr.data?.result) || nr.data.result.length === 0) break;
         combined = combined.concat(nr.data.result);
+        lastPageSize = nr.data.result.length;
         pagesFetched++;
       }
       return {
