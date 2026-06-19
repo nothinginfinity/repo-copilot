@@ -75,7 +75,33 @@ function resolveUrl(base,maybeRelative){
   try{return new URL(maybeRelative,base).toString();}catch{return null;}
 }
 
+function youtubeVideoId(url){
+  try{
+    const u=new URL(url);
+    if(u.hostname==="youtu.be") return u.pathname.slice(1);
+    if(u.hostname.endsWith("youtube.com")){
+      if(u.pathname==="/watch") return u.searchParams.get("v");
+      if(u.pathname.startsWith("/shorts/")) return u.pathname.split("/")[2];
+      if(u.pathname.startsWith("/embed/")) return u.pathname.split("/")[2];
+    }
+  }catch{}
+  return null;
+}
+
+async function fetchOembedPreview(url){
+  const res=await fetch("https://www.youtube.com/oembed?url="+encodeURIComponent(url)+"&format=json");
+  if(!res.ok) throw new Error("oEmbed failed: HTTP "+res.status);
+  const data=await res.json();
+  return {title:data.title||url,description:data.author_name?("by "+data.author_name):"",ogImageUrl:data.thumbnail_url||null,finalUrl:url};
+}
+
 async function fetchLinkPreview(targetUrl){
+  // YouTube blocks direct scraping of /watch pages from datacenter IPs with a CAPTCHA wall.
+  // Their official oEmbed endpoint is designed for exactly this use case and isn't blocked.
+  const ytId=youtubeVideoId(targetUrl);
+  if(ytId){
+    try{ return await fetchOembedPreview(targetUrl); }catch{ /* fall through to generic scraping below */ }
+  }
   const res=await fetch(targetUrl,{headers:{"User-Agent":"Mozilla/5.0 (compatible; AFOLinkLane/1.0)"},redirect:"follow"});
   if(!res.ok) throw new Error("Fetch failed: HTTP "+res.status);
   const html=(await res.text()).slice(0,200000);
