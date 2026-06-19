@@ -19493,8 +19493,7 @@ __reExport(inngest_exports, __toESM(require_dist2(), 1));
 // src/functions.js
 var inngest = new Inngest({ id: "afo-platform" });
 var triggerDemoSnapshot = inngest.createFunction(
-  { id: "trigger-demo-snapshot", retries: 3 },
-  { event: "afo/business.injected" },
+  { id: "trigger-demo-snapshot", retries: 3, triggers: { event: "afo/business.injected" } },
   async ({ event, step: step2 }) => {
     const { worker_url, slug } = event.data;
     const result = await step2.run("trigger-snapshot", async () => {
@@ -19518,8 +19517,7 @@ var triggerDemoSnapshot = inngest.createFunction(
   }
 );
 var pingTest = inngest.createFunction(
-  { id: "afo-ping-test" },
-  { event: "afo/ping" },
+  { id: "afo-ping-test", triggers: { event: "afo/ping" } },
   async ({ event, step: step2 }) => {
     const echoed = await step2.run("echo", async () => {
       return { received: event.data || {}, at: (/* @__PURE__ */ new Date()).toISOString() };
