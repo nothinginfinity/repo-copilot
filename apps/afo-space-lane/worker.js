@@ -1,4 +1,4 @@
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 const WORKER_NAME = "afo-space-lane";
 const R2_PREFIX = "memory-lane/photos/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -140,9 +140,51 @@ function buildGameScript(layout){
   L.push("    const mesh=new THREE.Mesh(geo,mat);");
   L.push("    mesh.position.set(p.x,p.y,p.z);");
   L.push("    mesh.userData=p;");
+  L.push("    mesh.userData.loadedTier='none';");
+  L.push("    mesh.userData.loadingTier=null;");
   L.push("    scene.add(mesh);planetMeshes.push(mesh);");
-  L.push("    loader.load(p.url,function(tex){tex.colorSpace=THREE.SRGBColorSpace;mat.map=tex;mat.color.set(0xffffff);mat.needsUpdate=true;});");
   L.push("  });");
+  L.push("}");
+
+  L.push("function tierUrl(p,tier){");
+  L.push("  if(tier==='thumb') return p.url+'?size=thumb';");
+  L.push("  if(tier==='medium') return p.url+'?size=medium';");
+  L.push("  return p.url;");
+  L.push("}");
+
+  L.push("function desiredTier(dist){");
+  L.push("  if(dist>700) return 'none';");
+  L.push("  if(dist>260) return 'thumb';");
+  L.push("  if(dist>90) return 'medium';");
+  L.push("  return 'full';");
+  L.push("}");
+
+  L.push("const TIER_RANK={none:0,thumb:1,medium:2,full:3};");
+  L.push("const texLoader=new THREE.TextureLoader();");
+  L.push("function loadTierFor(mesh,tier){");
+  L.push("  if(tier==='none'||mesh.userData.loadingTier===tier) return;");
+  L.push("  mesh.userData.loadingTier=tier;");
+  L.push("  texLoader.load(tierUrl(mesh.userData,tier),function(tex){");
+  L.push("    tex.colorSpace=THREE.SRGBColorSpace;");
+  L.push("    mesh.material.map=tex;mesh.material.color.set(0xffffff);mesh.material.needsUpdate=true;");
+  L.push("    mesh.userData.loadedTier=tier;mesh.userData.loadingTier=null;");
+  L.push("  },undefined,function(){mesh.userData.loadingTier=null;});");
+  L.push("}");
+
+  L.push("let lodCursor=0;");
+  L.push("function updateLOD(){");
+  L.push("  const batch=24;");
+  L.push("  for(let i=0;i<batch&&planetMeshes.length>0;i++){");
+  L.push("    const mesh=planetMeshes[lodCursor%planetMeshes.length];");
+  L.push("    lodCursor++;");
+  L.push("    const dist=camera.position.distanceTo(mesh.position);");
+  L.push("    const want=desiredTier(dist);");
+  L.push("    if(TIER_RANK[want]>TIER_RANK[mesh.userData.loadedTier]) loadTierFor(mesh,want);");
+  L.push("    else if(want==='none'&&mesh.userData.loadedTier!=='none'&&dist>1100){");
+  L.push("      mesh.material.map=null;mesh.material.color.set(0x223344);mesh.material.needsUpdate=true;");
+  L.push("      mesh.userData.loadedTier='none';");
+  L.push("    }");
+  L.push("  }");
   L.push("}");
 
   // Targeting (crosshair raycast every frame)
@@ -198,7 +240,7 @@ function buildGameScript(layout){
   L.push("    cross.classList.remove('locked');");
   L.push("    hint.style.display='none';");
   L.push("  }");
-  L.push("  document.getElementById('speedLabel').textContent='\uD83D\uDE80 '+speed.toFixed(1)+'x';");
+  L.push("  document.getElementById('speedLabel').textContent=speed===0?'\u23F8 STOPPED':'\uD83D\uDE80 '+speed.toFixed(1)+'x';");
   // Compass to nearest galaxy not currently near
   L.push("  let nearest=null,nd=Infinity;");
   L.push("  LAYOUT.galaxies.forEach(function(g){");
@@ -225,10 +267,12 @@ function buildGameScript(layout){
   L.push("  camera.translateZ(-speed);");
   L.push("  yawVel*=0.85;pitchVel*=0.85;");
   L.push("  updateTarget();");
+  L.push("  updateLOD();");
   L.push("  if(frame%4===0) updateHUD();");
   L.push("}");
 
-  L.push("function adjustSpeed(d){speed=Math.max(0.5,Math.min(14,speed+d));}");
+  L.push("function adjustSpeed(d){speed=Math.max(0,Math.min(14,speed+d));}");
+  L.push("function fullStop(){speed=0;}");
 
   L.push("function startFlying(){");
   L.push("  if(LAYOUT.photos.length===0){alert('Upload photos at /admin first');return;}");
@@ -274,10 +318,12 @@ function buildGameHTML(layout) {
     "#menuUI p{color:#4488aa;font-size:12px;}",
     "#startBtn{background:#00ff88;color:#000;border:none;padding:14px 36px;font-family:monospace;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "#statBadge{color:#00ff88;font-size:12px;background:rgba(0,255,136,0.1);border:1px solid #00ff88;padding:6px 14px;border-radius:6px;}",
-    "#flyUI{width:100%;max-width:480px;background:#000;border-top:1px solid #0a0a1a;padding:8px 12px;display:none;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;}",
-    ".sBtn{background:#0a0a18;color:#fff;border:1px solid #2a2a4a;font-size:16px;padding:10px 20px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
+    "#flyUI{width:100%;max-width:480px;background:#000;border-top:1px solid #0a0a1a;padding:8px 10px;display:none;flex-direction:row;align-items:center;justify-content:space-between;gap:6px;}",
+    ".sBtn{background:#0a0a18;color:#fff;border:1px solid #2a2a4a;font-size:15px;padding:9px 14px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
     ".sBtn:active{background:#1a1a2a;}",
-    "#speedLabel{color:#888;font-size:12px;text-align:center;flex:1;}",
+    ".sBtn.stopBtn{background:#1a0a0a;border-color:#aa3333;color:#ff6666;font-size:12px;padding:9px 10px;}",
+    ".sBtn.stopBtn:active{background:#2a0a0a;}",
+    "#speedLabel{color:#888;font-size:11px;text-align:center;flex:1;}",
     "#adminLink{color:#222;font-size:10px;padding:4px;text-align:center;width:100%;max-width:480px;}",
     "#adminLink a{color:#222;}",
     "#ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.97);z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:20px;}",
@@ -302,9 +348,10 @@ function buildGameHTML(layout) {
     "  <button id='startBtn' onclick='startFlying()'>LAUNCH \uD83D\uDE80</button>",
     "</div>",
     "<div id='flyUI'>",
-    "  <button class='sBtn' onclick='adjustSpeed(-1)'>\u23F4 Brake</button>",
+    "  <button class='sBtn' onclick='adjustSpeed(-1)'>\u23F4</button>",
+    "  <button class='sBtn stopBtn' onclick='fullStop()'>\u23F9 STOP</button>",
     "  <div id='speedLabel'>\uD83D\uDE80 3.0x</div>",
-    "  <button class='sBtn' onclick='adjustSpeed(1)'>Boost \u23E9</button>",
+    "  <button class='sBtn' onclick='adjustSpeed(1)'>\u23E9</button>",
     "</div>",
     "<div id='adminLink'><a href='/admin'>upload photos</a></div>",
     "<div id='ov'>",
@@ -341,7 +388,7 @@ function buildAdminHTML(photos, clusters) {
     "<h1>\uD83D\uDE80 Space Lane</h1>",
     "<a href='/'>\u2190 back to game</a>",
     "<h2>Upload Photos</h2>",
-    "<p class='note'>Select up to 100 photos at once. GPS and date are extracted automatically before upload. Shared with Memory Lane and Heli Lane too.</p>",
+    "<p class='note'>Select up to 100 photos at once. GPS, date, and 3 size tiers (thumb/medium/full) are generated on your device before upload, so the 3D view can load nearby planets fast and far ones even faster. Shared with Memory Lane and Heli Lane too.</p>",
     "<div id='msg'></div>",
     "<div id='progLabel'></div>",
     "<div id='progWrap'><div id='progBar'></div></div>",
@@ -355,7 +402,25 @@ function buildAdminHTML(photos, clusters) {
     "function msg(t,ok){const d=document.getElementById('msg');d.textContent=t;d.className=ok?'ok':'er';d.style.display='block';setTimeout(function(){d.style.display='none';},6000);}",
     "function setProgress(done,total){const pct=total?Math.round(done/total*100):0;document.getElementById('progBar').style.width=pct+'%';document.getElementById('progLabel').textContent='Uploading '+done+' / '+total+' \u2014 '+pct+'%';document.getElementById('progWrap').style.display=total?'block':'none';document.getElementById('progLabel').style.display=total?'block':'none';}",
     "function getExif(file){return new Promise(function(resolve){try{EXIF.getData(file,function(){const la=EXIF.getTag(this,'GPSLatitude'),laR=EXIF.getTag(this,'GPSLatitudeRef'),lo=EXIF.getTag(this,'GPSLongitude'),loR=EXIF.getTag(this,'GPSLongitudeRef'),dt=EXIF.getTag(this,'DateTimeOriginal')||EXIF.getTag(this,'DateTime');let lat=null,lng=null;if(la&&la.length===3){lat=la[0]+la[1]/60+la[2]/3600;if(laR==='S')lat=-lat;}if(lo&&lo.length===3){lng=lo[0]+lo[1]/60+lo[2]/3600;if(loR==='W')lng=-lng;}resolve({lat,lng,date_taken:dt||null});});}catch(e){resolve({lat:null,lng:null,date_taken:null});}});}",
-    "async function uploadOne(file){const exif=await getExif(file);const form=new FormData();form.append('file',file);form.append('name',file.name);if(exif.lat!=null)form.append('lat',exif.lat);if(exif.lng!=null)form.append('lng',exif.lng);if(exif.date_taken)form.append('date_taken',exif.date_taken);const r=await fetch('/admin/upload',{method:'POST',body:form});return r.json();}",
+    "function resizeToBlob(img,maxDim,quality){",
+    "  let w=img.naturalWidth,h=img.naturalHeight;",
+    "  const scale=Math.min(1,maxDim/Math.max(w,h));",
+    "  w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));",
+    "  const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;",
+    "  canvas.getContext('2d').drawImage(img,0,0,w,h);",
+    "  return new Promise(function(resolve){canvas.toBlob(function(b){resolve(b);},'image/jpeg',quality||0.82);});",
+    "}",
+    "function loadImageEl(file){return new Promise(function(resolve,reject){const img=new Image();img.onload=function(){resolve(img);};img.onerror=reject;img.src=URL.createObjectURL(file);});}",
+    "async function makeTiers(file){",
+    "  try{",
+    "    const img=await loadImageEl(file);",
+    "    const thumb=await resizeToBlob(img,180,0.75);",
+    "    const medium=await resizeToBlob(img,800,0.82);",
+    "    URL.revokeObjectURL(img.src);",
+    "    return {thumb,medium};",
+    "  }catch(e){return {thumb:null,medium:null};}",
+    "}",
+    "async function uploadOne(file){const exif=await getExif(file);const tiers=await makeTiers(file);const form=new FormData();form.append('file',file);form.append('name',file.name);if(exif.lat!=null)form.append('lat',exif.lat);if(exif.lng!=null)form.append('lng',exif.lng);if(exif.date_taken)form.append('date_taken',exif.date_taken);if(tiers.thumb)form.append('thumb',tiers.thumb,'thumb.jpg');if(tiers.medium)form.append('medium',tiers.medium,'medium.jpg');const r=await fetch('/admin/upload',{method:'POST',body:form});return r.json();}",
     "async function uploadBatch(files,concurrency){let done=0,errors=0;const total=files.length;const queue=Array.from(files);async function worker(){while(queue.length>0){const f=queue.shift();try{const d=await uploadOne(f);if(d.ok)done++;else errors++;}catch(e){errors++;}setProgress(done+errors,total);}}await Promise.all(Array.from({length:Math.min(concurrency,total)},worker));return{done,errors};}",
     "async function upload(){const files=document.getElementById('fileInput').files;if(!files.length){msg('No files selected',false);return;}const btn=document.querySelector('button.go');btn.disabled=true;btn.textContent='Uploading...';setProgress(0,files.length);try{const{done,errors}=await uploadBatch(files,5);setProgress(0,0);if(errors)msg('Uploaded '+done+', '+errors+' failed',done>0);else msg('Uploaded '+done+' photo'+(done===1?'':'s')+'! Refresh game to see them.',true);}catch(e){msg('Upload error: '+e,false);}finally{btn.disabled=false;btn.textContent='Upload Photos \u2191';}}",
     "</script>",
@@ -380,16 +445,35 @@ async function apiUpload(env, req) {
   const url = "/photo/"+id;
   const buf = await file.arrayBuffer();
   await env.BUCKET.put(r2Key, buf, {httpMetadata:{contentType:file.type||"image/jpeg"}});
+  // Optional pre-resized tiers, generated client-side before upload (see admin page).
+  // Stored under a parallel prefix so the original key can derive them by convention - no DB schema change needed.
+  const thumb = form.get("thumb");
+  const medium = form.get("medium");
+  if (thumb) {
+    const thumbKey = r2Key.replace(R2_PREFIX, R2_PREFIX+"thumb/");
+    await env.BUCKET.put(thumbKey, await thumb.arrayBuffer(), {httpMetadata:{contentType:thumb.type||"image/jpeg"}});
+  }
+  if (medium) {
+    const mediumKey = r2Key.replace(R2_PREFIX, R2_PREFIX+"medium/");
+    await env.BUCKET.put(mediumKey, await medium.arrayBuffer(), {httpMetadata:{contentType:medium.type||"image/jpeg"}});
+  }
   const cluster = await resolveCluster(env, lat, lng);
   await env.DB.prepare("INSERT INTO photos (id,filename,r2_key,url,lat,lng,date_taken,cluster_id,cluster_name) VALUES (?,?,?,?,?,?,?,?,?)")
     .bind(id,rawName,r2Key,url,lat,lng,dateTaken,cluster.id,cluster.name).run();
-  return j({ok:true,id,cluster_name:cluster.name});
+  return j({ok:true,id,cluster_name:cluster.name,tiers:{thumb:Boolean(thumb),medium:Boolean(medium)}});
 }
 
-async function apiPhoto(env, id) {
+async function apiPhoto(env, id, size) {
   const row = await env.DB.prepare("SELECT r2_key FROM photos WHERE id=?").bind(safe(id)).first();
   if (!row) return new Response("Not found",{status:404});
-  const obj = await env.BUCKET.get(row.r2_key);
+  let key = row.r2_key;
+  if (size === "thumb" || size === "medium") {
+    const tieredKey = key.replace(R2_PREFIX, R2_PREFIX + size + "/");
+    const tieredObj = await env.BUCKET.get(tieredKey);
+    if (tieredObj) return new Response(tieredObj.body,{headers:{"Content-Type":tieredObj.httpMetadata?.contentType||"image/jpeg","Cache-Control":"public, max-age=86400"}});
+    // fall through to full if this tier wasn't uploaded (older photos)
+  }
+  const obj = await env.BUCKET.get(key);
   if (!obj) return new Response("Not found",{status:404});
   return new Response(obj.body,{headers:{"Content-Type":obj.httpMetadata?.contentType||"image/jpeg","Cache-Control":"public, max-age=86400"}});
 }
@@ -400,7 +484,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url), path = url.pathname, method = request.method;
     if (method==="OPTIONS") return new Response(null,{status:204,headers:CORS});
-    if (path.startsWith("/photo/")) return apiPhoto(env, decodeURIComponent(path.slice(7)));
+    if (path.startsWith("/photo/")) return apiPhoto(env, decodeURIComponent(path.slice(7)), url.searchParams.get("size"));
     if (path==="/admin" && method==="GET") {
       const [pr,cr] = await Promise.all([
         env.DB.prepare("SELECT id,filename,url,lat,lng,date_taken,cluster_name FROM photos ORDER BY uploaded_at DESC LIMIT 300").all(),
