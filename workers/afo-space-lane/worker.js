@@ -1,4 +1,4 @@
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const WORKER_NAME = "afo-space-lane";
 const R2_PREFIX = "memory-lane/photos/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -76,6 +76,9 @@ function buildGameScript(layout){
   L.push("const LAYOUT="+JSON.stringify(layout)+";");
   L.push("let scene,camera,renderer,raycaster;");
   L.push("let planetMeshes=[];");
+  L.push("let galaxyMeshes={},galaxyAnchors={};");
+  L.push("let currentFormation='sphere';");
+  L.push("let insideGalaxy=null;");
   L.push("let gameState='menu';");
   L.push("let speed=3;");
   L.push("let yawVel=0,pitchVel=0,rollAmt=0;");
@@ -94,6 +97,8 @@ function buildGameScript(layout){
   L.push("  renderer.setSize(wrap.clientWidth,wrap.clientHeight);");
   L.push("  raycaster=new THREE.Raycaster();raycaster.far=4000;");
   L.push("  buildStarfield();buildGalaxies();");
+  L.push("  const ld=document.getElementById('loadScreen');");
+  L.push("  if(ld){ld.classList.add('fadeOut');setTimeout(function(){ld.style.display='none';},700);}");
   L.push("  window.addEventListener('resize',onResize);");
   L.push("}");
 
@@ -113,6 +118,84 @@ function buildGameScript(layout){
   L.push("  scene.add(new THREE.Points(geo,mat));");
   L.push("}");
 
+  L.push("function showToast(msg){");
+  L.push("  const t=document.getElementById('toast');if(!t) return;");
+  L.push("  t.textContent=msg;t.classList.add('show');");
+  L.push("  clearTimeout(t._hideTimer);");
+  L.push("  t._hideTimer=setTimeout(function(){t.classList.remove('show');},2200);");
+  L.push("}");
+
+  L.push("function checkZoneEntry(){");
+  L.push("  let inside=null;");
+  L.push("  Object.keys(galaxyAnchors).forEach(function(k){");
+  L.push("    const a=galaxyAnchors[k];");
+  L.push("    const d=Math.sqrt((camera.position.x-a.x)**2+(camera.position.y-a.y)**2+(camera.position.z-a.z)**2);");
+  L.push("    if(d<a.radius) inside=k;");
+  L.push("  });");
+  L.push("  if(inside!==insideGalaxy){");
+  L.push("    if(inside) showToast('\uD83D\uDCCD Entering '+inside);");
+  L.push("    insideGalaxy=inside;");
+  L.push("  }");
+  L.push("}");
+
+  L.push("function fmtSphere(i,n,r){");
+  L.push("  if(n<=1) return {x:0,y:0,z:r};");
+  L.push("  const golden=Math.PI*(3-Math.sqrt(5));");
+  L.push("  const y=1-(i/(n-1))*2;");
+  L.push("  const rad=Math.sqrt(Math.max(0,1-y*y));");
+  L.push("  const theta=golden*i;");
+  L.push("  return {x:Math.cos(theta)*rad*r,y:y*r,z:Math.sin(theta)*rad*r};");
+  L.push("}");
+  L.push("function fmtSpiral(i,n,r){");
+  L.push("  const turns=3.2;");
+  L.push("  const t=n<=1?0:i/(n-1);");
+  L.push("  const ang=t*turns*Math.PI*2;");
+  L.push("  const rad=t*r;");
+  L.push("  const yh=(t-0.5)*r*0.7;");
+  L.push("  return {x:Math.cos(ang)*rad,y:yh,z:Math.sin(ang)*rad};");
+  L.push("}");
+  L.push("function fmtCube(i,n,r){");
+  L.push("  const side=Math.max(1,Math.ceil(Math.pow(n,1/3)));");
+  L.push("  const x=(i%side)-(side-1)/2;");
+  L.push("  const y=Math.floor((i/side)%side)-(side-1)/2;");
+  L.push("  const z=Math.floor(i/(side*side))-(side-1)/2;");
+  L.push("  const sp=(r*2)/side;");
+  L.push("  return {x:x*sp,y:y*sp,z:z*sp};");
+  L.push("}");
+  L.push("function fmtTorus(i,n,r){");
+  L.push("  const minor=r*0.32,major=r*0.78;");
+  L.push("  const u=(i/Math.max(1,n))*Math.PI*4;");
+  L.push("  const v=((i*7)%Math.max(1,n)/Math.max(1,n))*Math.PI*2;");
+  L.push("  const x=(major+minor*Math.cos(v))*Math.cos(u);");
+  L.push("  const y=(major+minor*Math.cos(v))*Math.sin(u);");
+  L.push("  const z=minor*Math.sin(v);");
+  L.push("  return {x:x,y:y,z:z};");
+  L.push("}");
+  L.push("const FORMATIONS={sphere:fmtSphere,spiral:fmtSpiral,cube:fmtCube,torus:fmtTorus};");
+  L.push("const FORMATION_GEO={");
+  L.push("  sphere:function(r){return new THREE.SphereGeometry(r,16,12);},");
+  L.push("  spiral:function(r){return new THREE.SphereGeometry(r,16,12);},");
+  L.push("  cube:function(r){return new THREE.BoxGeometry(r*1.5,r*1.5,r*1.5);},");
+  L.push("  torus:function(r){return new THREE.TorusGeometry(r*0.78,r*0.32,8,24);}");
+  L.push("};");
+
+  L.push("function applyFormation(name){");
+  L.push("  if(!FORMATIONS[name]) return;");
+  L.push("  currentFormation=name;");
+  L.push("  planetMeshes.forEach(function(mesh){");
+  L.push("    const a=galaxyAnchors[mesh.userData.galaxyKey];if(!a) return;");
+  L.push("    const off=FORMATIONS[name](mesh.userData.localIdx,mesh.userData.localCount,a.radius);");
+  L.push("    mesh.position.set(a.x+off.x,a.y+off.y,a.z+off.z);");
+  L.push("  });");
+  L.push("  Object.keys(galaxyMeshes).forEach(function(k){");
+  L.push("    const wf=galaxyMeshes[k],a=galaxyAnchors[k];if(!wf||!a) return;");
+  L.push("    wf.geometry.dispose();");
+  L.push("    wf.geometry=FORMATION_GEO[name](a.radius);");
+  L.push("  });");
+  L.push("  document.querySelectorAll('.fmtBtn').forEach(function(b){b.classList.toggle('active',b.dataset.f===name);});");
+  L.push("  showToast('Formation: '+name.charAt(0).toUpperCase()+name.slice(1));");
+  L.push("}");
+
   L.push("function makeLabelSprite(text){");
   L.push("  const c=document.createElement('canvas');c.width=256;c.height=64;");
   L.push("  const ctx=c.getContext('2d');");
@@ -130,11 +213,16 @@ function buildGameScript(layout){
   L.push("  LAYOUT.galaxies.forEach(function(g){");
   L.push("    const wf=new THREE.Mesh(new THREE.SphereGeometry(g.radius,16,12),new THREE.MeshBasicMaterial({color:0x00ffaa,wireframe:true,transparent:true,opacity:0.22}));");
   L.push("    wf.position.set(g.x,g.y,g.z);scene.add(wf);");
+  L.push("    galaxyMeshes[g.name]=wf;galaxyAnchors[g.name]={x:g.x,y:g.y,z:g.z,radius:g.radius};");
   L.push("    const label=makeLabelSprite('\uD83D\uDCCD '+g.name);");
   L.push("    label.position.set(g.x,g.y+g.radius+34,g.z);scene.add(label);");
   L.push("  });");
-  L.push("  const loader=new THREE.TextureLoader();");
+  L.push("  const counts={};");
+  L.push("  LAYOUT.photos.forEach(function(p){const k=p.cluster_name||'Unknown Space';counts[k]=(counts[k]||0)+1;});");
+  L.push("  const idxCursor={};");
   L.push("  LAYOUT.photos.forEach(function(p){");
+  L.push("    const k=p.cluster_name||'Unknown Space';");
+  L.push("    const localIdx=idxCursor[k]=(idxCursor[k]||0);idxCursor[k]++;");
   L.push("    const geo=new THREE.SphereGeometry(15,20,16);");
   L.push("    const mat=new THREE.MeshBasicMaterial({color:0x223344});");
   L.push("    const mesh=new THREE.Mesh(geo,mat);");
@@ -142,6 +230,9 @@ function buildGameScript(layout){
   L.push("    mesh.userData=p;");
   L.push("    mesh.userData.loadedTier='none';");
   L.push("    mesh.userData.loadingTier=null;");
+  L.push("    mesh.userData.galaxyKey=k;");
+  L.push("    mesh.userData.localIdx=localIdx;");
+  L.push("    mesh.userData.localCount=counts[k];");
   L.push("    scene.add(mesh);planetMeshes.push(mesh);");
   L.push("  });");
   L.push("}");
@@ -268,11 +359,12 @@ function buildGameScript(layout){
   L.push("  yawVel*=0.85;pitchVel*=0.85;");
   L.push("  updateTarget();");
   L.push("  updateLOD();");
+  L.push("  if(frame%10===0) checkZoneEntry();");
   L.push("  if(frame%4===0) updateHUD();");
   L.push("}");
 
   L.push("function adjustSpeed(d){speed=Math.max(0,Math.min(14,speed+d));}");
-  L.push("function fullStop(){speed=0;}");
+  L.push("function fullStop(){speed=0;showToast('\u23F8 Stopped');}");
 
   L.push("function startFlying(){");
   L.push("  if(LAYOUT.photos.length===0){alert('Upload photos at /admin first');return;}");
@@ -301,6 +393,16 @@ function buildGameHTML(layout) {
     "<style>",
     "*{margin:0;padding:0;box-sizing:border-box;}",
     "body{background:#000;display:flex;flex-direction:column;align-items:center;min-height:100vh;min-height:100dvh;font-family:monospace;overflow:hidden;padding-top:env(safe-area-inset-top);}",
+    "#loadScreen{position:fixed;top:0;left:0;width:100%;height:100%;height:100dvh;background:radial-gradient(ellipse at center,#0a0a1a 0%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.7s ease-out;}",
+    "#loadScreen.fadeOut{opacity:0;}",
+    "#loadLogo{font-size:2.4rem;font-weight:200;background:linear-gradient(45deg,#00ffff,#0088ff,#ff00ff);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;animation:gradientShift 3s ease-in-out infinite;}",
+    "#loadText{color:#00ffff;font-size:0.85rem;opacity:0.8;margin-bottom:20px;}",
+    "#loadBarTrack{width:220px;height:3px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;}",
+    "#loadBar{height:100%;width:0%;background:linear-gradient(90deg,#00ffff,#0088ff);box-shadow:0 0 12px rgba(0,255,255,0.6);animation:loadProgress 1.1s ease-out forwards;}",
+    "@keyframes gradientShift{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}",
+    "@keyframes loadProgress{from{width:0%;}to{width:100%;}}",
+    "#toast{position:fixed;top:14%;left:50%;transform:translateX(-50%) translateY(-12px);background:rgba(0,20,15,0.9);color:#00ff88;border:1px solid rgba(0,255,136,0.4);padding:8px 18px;border-radius:20px;font-size:12px;z-index:300;opacity:0;transition:all 0.35s ease;pointer-events:none;white-space:nowrap;backdrop-filter:blur(10px);}",
+    "#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}",
     "#wrap{position:relative;width:100%;max-width:480px;height:62vh;height:62dvh;background:#000;}",
     "#gc{display:block;width:100%;height:100%;touch-action:none;}",
     "#hud{display:none;position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}",
@@ -313,16 +415,20 @@ function buildGameHTML(layout) {
     "#compass{position:absolute;top:50%;left:50%;width:0;height:0;display:none;}",
     "#compass:before{content:'\u25B2';position:absolute;left:-150px;top:-10px;color:#ffdd00;font-size:14px;}",
     "#compassLabel{position:absolute;top:8px;left:50%;transform:translateX(-50%);color:#ffdd00;font-size:11px;background:rgba(0,0,0,0.55);padding:2px 8px;border-radius:4px;white-space:nowrap;}",
-    "#menuUI{width:100%;max-width:480px;background:#000;border-top:1px solid #0a0a1a;padding:14px 16px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;}",
+    "#menuUI{width:100%;max-width:480px;background:rgba(0,0,0,0.85);border-top:1px solid rgba(0,255,255,0.2);backdrop-filter:blur(20px);padding:14px 16px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;}",
     "#menuUI h1{color:#00ff88;font-size:22px;}",
     "#menuUI p{color:#4488aa;font-size:12px;}",
     "#startBtn{background:#00ff88;color:#000;border:none;padding:14px 36px;font-family:monospace;font-size:16px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "#statBadge{color:#00ff88;font-size:12px;background:rgba(0,255,136,0.1);border:1px solid #00ff88;padding:6px 14px;border-radius:6px;}",
-    "#flyUI{width:100%;max-width:480px;background:#000;border-top:1px solid #0a0a1a;padding:8px 10px;display:none;flex-direction:row;align-items:center;justify-content:space-between;gap:6px;}",
-    ".sBtn{background:#0a0a18;color:#fff;border:1px solid #2a2a4a;font-size:15px;padding:9px 14px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
-    ".sBtn:active{background:#1a1a2a;}",
-    ".sBtn.stopBtn{background:#1a0a0a;border-color:#aa3333;color:#ff6666;font-size:12px;padding:9px 10px;}",
-    ".sBtn.stopBtn:active{background:#2a0a0a;}",
+    "#flyUI{width:100%;max-width:480px;background:rgba(0,0,0,0.85);border-top:1px solid rgba(0,255,255,0.2);backdrop-filter:blur(20px);padding:8px 10px;display:none;flex-direction:column;gap:6px;}",
+    ".speedRow{display:flex;align-items:center;justify-content:space-between;gap:6px;}",
+    ".fmtRow{display:flex;gap:5px;justify-content:center;}",
+    ".fmtBtn{background:rgba(0,255,255,0.06);color:#7ab;border:1px solid rgba(0,255,255,0.25);font-size:10px;padding:5px 10px;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
+    ".fmtBtn.active{background:rgba(0,255,255,0.25);border-color:#00ffff;color:#fff;box-shadow:0 0 10px rgba(0,255,255,0.3);}",
+    ".sBtn{background:rgba(0,255,255,0.06);color:#fff;border:1px solid rgba(0,255,255,0.25);font-size:15px;padding:9px 14px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
+    ".sBtn:active{background:rgba(0,255,255,0.18);}",
+    ".sBtn.stopBtn{background:rgba(170,30,30,0.15);border-color:#aa3333;color:#ff6666;font-size:12px;padding:9px 10px;}",
+    ".sBtn.stopBtn:active{background:rgba(170,30,30,0.3);}",
     "#speedLabel{color:#888;font-size:11px;text-align:center;flex:1;}",
     "#adminLink{color:#222;font-size:10px;padding:4px;text-align:center;width:100%;max-width:480px;}",
     "#adminLink a{color:#222;}",
@@ -331,6 +437,12 @@ function buildGameHTML(layout) {
     "#ovMeta{color:#888;font-size:11px;text-align:center;margin-top:10px;line-height:1.8;}",
     "#ovClose{margin-top:14px;padding:12px 36px;background:#00ff88;color:#000;border:none;font-family:monospace;font-size:15px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "</style></head><body>",
+    "<div id='loadScreen'>",
+    "  <div id='loadLogo'>SPACE LANE</div>",
+    "  <div id='loadText'>Initializing flight systems</div>",
+    "  <div id='loadBarTrack'><div id='loadBar'></div></div>",
+    "</div>",
+    "<div id='toast'></div>",
     "<div id='wrap'><canvas id='gc'></canvas>",
     "<div id='hud'>",
     "  <div id='vignette'></div>",
@@ -348,10 +460,18 @@ function buildGameHTML(layout) {
     "  <button id='startBtn' onclick='startFlying()'>LAUNCH \uD83D\uDE80</button>",
     "</div>",
     "<div id='flyUI'>",
-    "  <button class='sBtn' onclick='adjustSpeed(-1)'>\u23F4</button>",
-    "  <button class='sBtn stopBtn' onclick='fullStop()'>\u23F9 STOP</button>",
-    "  <div id='speedLabel'>\uD83D\uDE80 3.0x</div>",
-    "  <button class='sBtn' onclick='adjustSpeed(1)'>\u23E9</button>",
+    "  <div class='fmtRow'>",
+    "    <button class='fmtBtn active' data-f='sphere' onclick='applyFormation(\"sphere\")'>Sphere</button>",
+    "    <button class='fmtBtn' data-f='spiral' onclick='applyFormation(\"spiral\")'>Spiral</button>",
+    "    <button class='fmtBtn' data-f='cube' onclick='applyFormation(\"cube\")'>Cube</button>",
+    "    <button class='fmtBtn' data-f='torus' onclick='applyFormation(\"torus\")'>Torus</button>",
+    "  </div>",
+    "  <div class='speedRow'>",
+    "    <button class='sBtn' onclick='adjustSpeed(-1)'>\u23F4</button>",
+    "    <button class='sBtn stopBtn' onclick='fullStop()'>\u23F9 STOP</button>",
+    "    <div id='speedLabel'>\uD83D\uDE80 3.0x</div>",
+    "    <button class='sBtn' onclick='adjustSpeed(1)'>\u23E9</button>",
+    "  </div>",
     "</div>",
     "<div id='adminLink'><a href='/admin'>upload photos</a></div>",
     "<div id='ov'>",
