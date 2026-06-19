@@ -264,7 +264,7 @@ function parseListObjectsXml(xml) {
       key: key ? decodeXmlEntities(key) : null,
       size: size ? Number(size) : null,
       last_modified: lastModified || null,
-      etag: etag || null
+      etag: etag ? decodeXmlEntities(etag) : null
     });
   }
   const isTruncated = /<IsTruncated>true<\/IsTruncated>/.test(xml);
