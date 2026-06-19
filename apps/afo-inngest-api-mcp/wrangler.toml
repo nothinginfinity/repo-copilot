@@ -1,0 +1,9 @@
+name = "afo-inngest-api-mcp"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+# Bindings set via deploy tool / Cloudflare dashboard, not here:
+#   INNGEST_EVENT_KEY      (secret)
+#   INNGEST_SIGNING_KEY    (secret)
+#   INNGEST_BASE_URL       (plain_text, optional override, default https://api.inngest.com)
+#   INNGEST_EVENT_BASE_URL (plain_text, optional override, default https://inn.gs)
