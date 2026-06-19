@@ -1,4 +1,4 @@
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 const WORKER_NAME = "afo-space-lane";
 const R2_PREFIX = "memory-lane/photos/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -331,7 +331,9 @@ function buildGameScript(layout){
   L.push("    cross.classList.remove('locked');");
   L.push("    hint.style.display='none';");
   L.push("  }");
-  L.push("  document.getElementById('speedLabel').textContent=speed===0?'\u23F8 STOPPED':'\uD83D\uDE80 '+speed.toFixed(1)+'x';");
+  L.push("  const sl=document.getElementById('speedLabel');");
+  L.push("  sl.textContent=speed===0?'\u23F8 STOPPED':speed<0?'\u25C0 REVERSE '+Math.abs(speed).toFixed(1)+'x':'\uD83D\uDE80 '+speed.toFixed(1)+'x';");
+  L.push("  sl.style.color=speed===0?'#888':speed<0?'#ffaa44':'#888';");
   // Compass to nearest galaxy not currently near
   L.push("  let nearest=null,nd=Infinity;");
   L.push("  LAYOUT.galaxies.forEach(function(g){");
@@ -363,7 +365,7 @@ function buildGameScript(layout){
   L.push("  if(frame%4===0) updateHUD();");
   L.push("}");
 
-  L.push("function adjustSpeed(d){speed=Math.max(0,Math.min(14,speed+d));}");
+  L.push("function adjustSpeed(d){speed=Math.max(-6,Math.min(14,speed+d));}");
   L.push("function fullStop(){speed=0;showToast('\u23F8 Stopped');}");
 
   L.push("function startFlying(){");
