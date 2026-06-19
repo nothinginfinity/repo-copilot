@@ -324,12 +324,13 @@ async function githubFetchRaw(env, owner, repo, path, branch) {
   return await res.text();
 }
 
-async function putScript(env, scriptName, moduleContent, bindings, compatibilityDate, accountId) {
+async function putScript(env, scriptName, moduleContent, bindings, compatibilityDate, accountId, compatibilityFlags) {
   if (!env.CF_API_TOKEN) throw new Error("CF_API_TOKEN binding missing");
   const aid = accountId || env.CF_ACCOUNT_ID;
   const metadata = {
     main_module: "worker.js",
     compatibility_date: compatibilityDate || DEFAULT_COMPAT_DATE,
+    compatibility_flags: compatibilityFlags || [],
     bindings: bindings || []
   };
   const form = new FormData();
@@ -512,19 +513,19 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "deploy_worker_with_bindings") {
-    const { script_name, script_content, bindings, compatibility_date, enable_subdomain, account_id } = args;
+    const { script_name, script_content, bindings, compatibility_date, compatibility_flags, enable_subdomain, account_id } = args;
     if (!script_name || !script_content) throw new Error("script_name and script_content are required");
-    const cfResult = await putScript(env, script_name, script_content, bindings || [], compatibility_date, account_id);
+    const cfResult = await putScript(env, script_name, script_content, bindings || [], compatibility_date, account_id, compatibility_flags);
     let subdomain = null;
     if (enable_subdomain !== false) subdomain = await enableSubdomainFor(env, script_name, account_id);
     return { ok: true, script_name, bindings_set: (bindings || []).map(b => ({ type: b.type, name: b.name })), subdomain, cloudflare_result: cfResult };
   }
 
   if (name === "deploy_worker_from_github") {
-    const { owner, repo, branch, file_path, script_name, bindings, compatibility_date, enable_subdomain, account_id } = args;
+    const { owner, repo, branch, file_path, script_name, bindings, compatibility_date, compatibility_flags, enable_subdomain, account_id } = args;
     if (!owner || !repo || !file_path || !script_name) throw new Error("owner, repo, file_path, and script_name are required");
     const content = await githubFetchRaw(env, owner, repo, file_path, branch);
-    const cfResult = await putScript(env, script_name, content, bindings || [], compatibility_date, account_id);
+    const cfResult = await putScript(env, script_name, content, bindings || [], compatibility_date, account_id, compatibility_flags);
     let subdomain = null;
     if (enable_subdomain !== false) subdomain = await enableSubdomainFor(env, script_name, account_id);
     return {
