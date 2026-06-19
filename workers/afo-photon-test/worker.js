@@ -873,10 +873,17 @@ async function ensureInit() {
 }
 var photon_test_default = {
   async fetch(request) {
-    await ensureInit();
-    return new Response(JSON.stringify({ ok: true, hasPhotonImage: typeof PhotonImage, hasResize: typeof resize }), {
-      headers: { "Content-Type": "application/json" }
-    });
+    try {
+      await ensureInit();
+      return new Response(JSON.stringify({ ok: true, hasPhotonImage: typeof PhotonImage, hasResize: typeof resize }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (e) {
+      return new Response(JSON.stringify({ ok: false, error: e.message, stack: e.stack }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
   }
 };
 export {
