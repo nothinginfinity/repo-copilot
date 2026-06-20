@@ -1,4 +1,4 @@
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -358,10 +358,34 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function endTouch(){if(isTap&&gameState==='flying')trySelect();touchActive=false;yawVel=0;pitchVel=0;}");
 
+  L.push("let isPinching=false,pinchStartDist=0;");
+  L.push("const PINCH_SENSITIVITY=0.06;");
+  L.push("function touchDist(t1,t2){const dx=t1.clientX-t2.clientX,dy=t1.clientY-t2.clientY;return Math.sqrt(dx*dx+dy*dy);}");
+  L.push("function startPinch(t1,t2){isPinching=true;pinchStartDist=touchDist(t1,t2);touchActive=false;}");
+  L.push("function movePinch(t1,t2){");
+  L.push("  const dist=touchDist(t1,t2);");
+  L.push("  const delta=pinchStartDist-dist;");
+  L.push("  speed=Math.max(-6,Math.min(14,delta*PINCH_SENSITIVITY));");
+  L.push("}");
+  L.push("function endPinch(){isPinching=false;speed=0;}");
+
   L.push("const canvas=document.getElementById('gc');");
-  L.push("canvas.addEventListener('touchstart',function(e){e.preventDefault();const t=e.touches[0],r=canvas.getBoundingClientRect();startTouch(t.clientX-r.left,t.clientY-r.top);},{passive:false});");
-  L.push("canvas.addEventListener('touchmove',function(e){e.preventDefault();const t=e.touches[0],r=canvas.getBoundingClientRect();moveTouch(t.clientX-r.left,t.clientY-r.top);},{passive:false});");
-  L.push("canvas.addEventListener('touchend',function(e){e.preventDefault();endTouch();},{passive:false});");
+  L.push("canvas.addEventListener('touchstart',function(e){");
+  L.push("  e.preventDefault();");
+  L.push("  const r=canvas.getBoundingClientRect();");
+  L.push("  if(e.touches.length>=2){startPinch(e.touches[0],e.touches[1]);return;}");
+  L.push("  if(!isPinching){const t=e.touches[0];startTouch(t.clientX-r.left,t.clientY-r.top);}");
+  L.push("},{passive:false});");
+  L.push("canvas.addEventListener('touchmove',function(e){");
+  L.push("  e.preventDefault();");
+  L.push("  if(isPinching&&e.touches.length>=2){movePinch(e.touches[0],e.touches[1]);return;}");
+  L.push("  if(!isPinching){const t=e.touches[0],r=canvas.getBoundingClientRect();moveTouch(t.clientX-r.left,t.clientY-r.top);}");
+  L.push("},{passive:false});");
+  L.push("canvas.addEventListener('touchend',function(e){");
+  L.push("  e.preventDefault();");
+  L.push("  if(isPinching){if(e.touches.length<2) endPinch();return;}");
+  L.push("  endTouch();");
+  L.push("},{passive:false});");
   L.push("canvas.addEventListener('mousedown',function(e){const r=canvas.getBoundingClientRect();startTouch(e.clientX-r.left,e.clientY-r.top);});");
   L.push("canvas.addEventListener('mousemove',function(e){if(!touchActive)return;const r=canvas.getBoundingClientRect();moveTouch(e.clientX-r.left,e.clientY-r.top);});");
   L.push("window.addEventListener('mouseup',function(){endTouch();});");
@@ -405,6 +429,7 @@ function buildGameScript(layout){
   L.push("  document.getElementById('menuUI').style.display='none';");
   L.push("  document.getElementById('flyUI').style.display='flex';");
   L.push("  document.getElementById('hud').style.display='block';");
+  L.push("  setTimeout(function(){showToast('\uD83E\uDD0F Pinch together = forward, apart = reverse');},800);");
   L.push("}");
 
   L.push("initScene();loop();");
