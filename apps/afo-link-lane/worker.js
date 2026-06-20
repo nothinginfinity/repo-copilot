@@ -235,10 +235,7 @@ function buildGameScript(layout){
   L.push("    const a=galaxyAnchors[mesh.userData.galaxyKey];if(!a) return;");
   L.push("    const off=FORMATIONS[name](mesh.userData.localIdx,mesh.userData.localCount,a.radius);");
   L.push("    mesh.position.set(a.x+off.x,a.y+off.y,a.z+off.z);");
-  L.push("  });");
-  L.push("  Object.keys(galaxyMeshes).forEach(function(k){");
-  L.push("    const wf=galaxyMeshes[k],a=galaxyAnchors[k];if(!wf||!a) return;");
-  L.push("    wf.geometry.dispose();wf.geometry=FORMATION_GEO[name](a.radius);");
+  L.push("    mesh.lookAt(a.x,a.y,a.z);");
   L.push("  });");
   L.push("  document.querySelectorAll('.fmtBtn').forEach(function(b){b.classList.toggle('active',b.dataset.f===name);});");
   L.push("  showToast('Formation: '+name.charAt(0).toUpperCase()+name.slice(1));");
@@ -257,11 +254,26 @@ function buildGameScript(layout){
   L.push("  return spr;");
   L.push("}");
 
+  L.push("function makeFaceTexture(label,value,bgColor,isHighlight){");
+  L.push("  const c=document.createElement('canvas');c.width=256;c.height=256;");
+  L.push("  const ctx=c.getContext('2d');");
+  L.push("  ctx.fillStyle=bgColor||'#0a0a18';ctx.fillRect(0,0,256,256);");
+  L.push("  ctx.strokeStyle=isHighlight?'rgba(0,255,170,0.7)':'rgba(0,255,170,0.35)';ctx.lineWidth=5;ctx.strokeRect(3,3,250,250);");
+  L.push("  ctx.fillStyle='#00ff88';ctx.font='bold 17px monospace';ctx.textAlign='center';");
+  L.push("  ctx.fillText(label,128,34);");
+  L.push("  ctx.strokeStyle='rgba(0,255,136,0.3)';ctx.beginPath();ctx.moveTo(22,48);ctx.lineTo(234,48);ctx.stroke();");
+  L.push("  ctx.fillStyle='#e0e0e0';ctx.font='15px monospace';");
+  L.push("  const words=String(value||'(none)').split(' ');let lines=[],cur='';");
+  L.push("  words.forEach(function(w){const t=cur?cur+' '+w:w;if(ctx.measureText(t).width>216){lines.push(cur);cur=w;}else cur=t;});");
+  L.push("  if(cur)lines.push(cur);lines=lines.slice(0,8);");
+  L.push("  const startY=128-(lines.length-1)*11;");
+  L.push("  lines.forEach(function(line,i){ctx.fillText(line,128,startY+i*22);});");
+  L.push("  return new THREE.CanvasTexture(c);");
+  L.push("}");
+
   L.push("function buildGalaxies(){");
   L.push("  LAYOUT.galaxies.forEach(function(g){");
-  L.push("    const wf=new THREE.Mesh(new THREE.SphereGeometry(g.radius,16,12),new THREE.MeshBasicMaterial({color:0x00ffaa,wireframe:true,transparent:true,opacity:0.22}));");
-  L.push("    wf.position.set(g.x,g.y,g.z);scene.add(wf);");
-  L.push("    galaxyMeshes[g.name]=wf;galaxyAnchors[g.name]={x:g.x,y:g.y,z:g.z,radius:g.radius};");
+  L.push("    galaxyAnchors[g.name]={x:g.x,y:g.y,z:g.z,radius:g.radius};");
   L.push("    const label=makeLabelSprite('\uD83C\uDF10 '+g.name);");
   L.push("    label.position.set(g.x,g.y+g.radius+34,g.z);scene.add(label);");
   L.push("  });");
@@ -271,10 +283,21 @@ function buildGameScript(layout){
   L.push("  LAYOUT.links.forEach(function(p){");
   L.push("    const k=p.domain||'other';");
   L.push("    const localIdx=idxCursor[k]=(idxCursor[k]||0);idxCursor[k]++;");
-  L.push("    const geo=new THREE.SphereGeometry(15,20,16);");
-  L.push("    const mat=new THREE.MeshBasicMaterial({color:0x223344});");
-  L.push("    const mesh=new THREE.Mesh(geo,mat);");
+  L.push("    const geo=new THREE.BoxGeometry(28,28,28);");
+  L.push("    const placeholderMat=new THREE.MeshBasicMaterial({color:0x223344});");
+  L.push("    const dateStr=(p.added_at||'').slice(0,10);");
+  L.push("    const materials=[");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('TITLE',p.title||p.url,'#0a0a18')}),");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('ADDED',dateStr,'#0a0a18')}),");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('ABOUT',p.description,'#0a0a18')}),");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('URL',p.url,'#0a0a18')}),");
+  L.push("      placeholderMat,");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('SOURCE',p.domain,'#0a1f16',true)})");
+  L.push("    ];");
+  L.push("    const mesh=new THREE.Mesh(geo,materials);");
   L.push("    mesh.position.set(p.x,p.y,p.z);");
+  L.push("    const anchor=galaxyAnchors[k]||{x:0,y:0,z:0};");
+  L.push("    mesh.lookAt(anchor.x,anchor.y,anchor.z);");
   L.push("    mesh.userData=p;");
   L.push("    mesh.userData.loadedTier='none';mesh.userData.loadingTier=null;");
   L.push("    mesh.userData.galaxyKey=k;mesh.userData.localIdx=localIdx;mesh.userData.localCount=counts[k];");
@@ -290,7 +313,7 @@ function buildGameScript(layout){
   L.push("  mesh.userData.loadingTier=tier;");
   L.push("  texLoader.load('/og-image/'+mesh.userData.id,function(tex){");
   L.push("    tex.colorSpace=THREE.SRGBColorSpace;");
-  L.push("    mesh.material.map=tex;mesh.material.color.set(0xffffff);mesh.material.needsUpdate=true;");
+  L.push("    const faceMat=mesh.material[4];faceMat.map=tex;faceMat.color.set(0xffffff);faceMat.needsUpdate=true;");
   L.push("    mesh.userData.loadedTier=tier;mesh.userData.loadingTier=null;");
   L.push("  },undefined,function(){mesh.userData.loadingTier=null;});");
   L.push("}");
@@ -598,7 +621,7 @@ export default {
       return j({ok:true,results});
     }
     if(path==="/"||path===""){
-      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key FROM links ORDER BY domain, added_at LIMIT 300").all();
+      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,added_at FROM links ORDER BY domain, added_at LIMIT 300").all();
       const layout=layoutLinks(r.results||[]);
       return new Response(buildGameHTML(layout),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
