@@ -1,4 +1,4 @@
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -22,17 +22,21 @@ function fibPoint(i,n,radius){
   return {x:Math.cos(theta)*r*radius, y:y*radius, z:Math.sin(theta)*r*radius};
 }
 
+function clusterRadius(count){
+  return Math.max(55, Math.min(500, 36*Math.sqrt(count)));
+}
+
 function layoutLinks(links){
   const groups={};
   links.forEach(function(l){const d=l.domain||"other";(groups[d]=groups[d]||[]).push(l);});
   const domains=Object.keys(groups);
   const anchors={};
   domains.forEach(function(d,i){const p=fibPoint(i,domains.length,R_GALAXY);anchors[d]={x:p.x,y:p.y,z:p.z,count:groups[d].length};});
-  const galaxies=domains.map(function(d){const a=anchors[d];return{x:a.x,y:a.y,z:a.z,name:d,radius:Math.min(170,55+a.count*3.2),count:a.count};});
+  const galaxies=domains.map(function(d){const a=anchors[d];return{x:a.x,y:a.y,z:a.z,name:d,radius:clusterRadius(a.count),count:a.count};});
   const placed=[];
   domains.forEach(function(d){
     const group=groups[d],a=anchors[d];
-    const localR=Math.min(150,50+group.length*2.2);
+    const localR=clusterRadius(group.length);
     group.forEach(function(l,idx){
       const off=fibPoint(idx,group.length,localR);
       placed.push(Object.assign({},l,{x:a.x+off.x,y:a.y+off.y,z:a.z+off.z}));
@@ -235,7 +239,6 @@ function buildGameScript(layout){
   L.push("    const a=galaxyAnchors[mesh.userData.galaxyKey];if(!a) return;");
   L.push("    const off=FORMATIONS[name](mesh.userData.localIdx,mesh.userData.localCount,a.radius);");
   L.push("    mesh.position.set(a.x+off.x,a.y+off.y,a.z+off.z);");
-  L.push("    mesh.lookAt(a.x,a.y,a.z);");
   L.push("  });");
   L.push("  document.querySelectorAll('.fmtBtn').forEach(function(b){b.classList.toggle('active',b.dataset.f===name);});");
   L.push("  showToast('Formation: '+name.charAt(0).toUpperCase()+name.slice(1));");
@@ -275,7 +278,7 @@ function buildGameScript(layout){
   L.push("  LAYOUT.galaxies.forEach(function(g){");
   L.push("    galaxyAnchors[g.name]={x:g.x,y:g.y,z:g.z,radius:g.radius};");
   L.push("    const label=makeLabelSprite('\uD83C\uDF10 '+g.name);");
-  L.push("    label.position.set(g.x,g.y+g.radius+34,g.z);scene.add(label);");
+  L.push("    label.position.set(g.x,g.y+g.radius+55,g.z);scene.add(label);");
   L.push("  });");
   L.push("  const counts={};");
   L.push("  LAYOUT.links.forEach(function(p){const k=p.domain||'other';counts[k]=(counts[k]||0)+1;});");
@@ -296,8 +299,6 @@ function buildGameScript(layout){
   L.push("    ];");
   L.push("    const mesh=new THREE.Mesh(geo,materials);");
   L.push("    mesh.position.set(p.x,p.y,p.z);");
-  L.push("    const anchor=galaxyAnchors[k]||{x:0,y:0,z:0};");
-  L.push("    mesh.lookAt(anchor.x,anchor.y,anchor.z);");
   L.push("    mesh.userData=p;");
   L.push("    mesh.userData.loadedTier='none';mesh.userData.loadingTier=null;");
   L.push("    mesh.userData.galaxyKey=k;mesh.userData.localIdx=localIdx;mesh.userData.localCount=counts[k];");
@@ -406,6 +407,13 @@ function buildGameScript(layout){
   L.push("  } else { arrow.style.display='none'; document.getElementById('compassLabel').textContent=''; }");
   L.push("}");
 
+  L.push("function billboardCubes(){");
+  L.push("  planetMeshes.forEach(function(mesh){");
+  L.push("    const dx=camera.position.x-mesh.position.x,dz=camera.position.z-mesh.position.z;");
+  L.push("    mesh.rotation.y=Math.atan2(dx,dz);");
+  L.push("  });");
+  L.push("}");
+
   L.push("function update(){");
   L.push("  if(gameState!=='flying') return;");
   L.push("  frame++;");
@@ -413,7 +421,7 @@ function buildGameScript(layout){
   L.push("  rollAmt*=0.92;camera.rotation.z=rollAmt;");
   L.push("  camera.translateZ(-speed);");
   L.push("  yawVel*=0.85;pitchVel*=0.85;");
-  L.push("  updateTarget();updateLOD();");
+  L.push("  updateTarget();updateLOD();billboardCubes();");
   L.push("  if(frame%10===0) checkZoneEntry();");
   L.push("  if(frame%4===0) updateHUD();");
   L.push("}");
