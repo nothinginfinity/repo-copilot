@@ -1,0 +1,215 @@
+{
+  "gateway": "afo-agent-gateway",
+  "worker": "afo-zip-gateway-v2",
+  "version": "0.2.1-github-complete",
+  "transport": "json-rpc-2.0",
+  "endpoint": "/rpc",
+  "tools": [
+    {
+      "id": "zip.status",
+      "name": "ZipStatus",
+      "description": "Read Zip Gateway v2 status and binding readiness.",
+      "capabilities": [
+        "zip status",
+        "repo artifact filesystem status"
+      ],
+      "permissions": [
+        "zip:read"
+      ],
+      "environment": "worker",
+      "risk": "read",
+      "requiredRole": "public",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.tools",
+      "name": "ZipTools",
+      "description": "List the unified Zip Gateway v2 JSON-RPC methods.",
+      "capabilities": [
+        "zip tools",
+        "tool discovery",
+        "json rpc manifest"
+      ],
+      "permissions": [
+        "zip:read"
+      ],
+      "environment": "worker",
+      "risk": "read",
+      "requiredRole": "public",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.repo.writeFile",
+      "name": "ZipRepoWriteFile",
+      "description": "Create or update one GitHub repository file through Zip Gateway v2.",
+      "capabilities": [
+        "write repository file",
+        "create source file",
+        "update github file"
+      ],
+      "permissions": [
+        "github:write"
+      ],
+      "environment": "github",
+      "risk": "write",
+      "requiredRole": "operator",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.repo.writeBatch",
+      "name": "ZipRepoWriteBatch",
+      "description": "Create or update multiple GitHub repository files through Zip Gateway v2.",
+      "capabilities": [
+        "write repository files",
+        "batch repo write",
+        "publish generated files"
+      ],
+      "permissions": [
+        "github:write"
+      ],
+      "environment": "github",
+      "risk": "write",
+      "requiredRole": "operator",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.repo.planPatch",
+      "name": "ZipRepoPlanPatch",
+      "description": "Dry-run deterministic text patch operations against provided content.",
+      "capabilities": [
+        "plan text patch",
+        "preview code change",
+        "dry run mutation"
+      ],
+      "permissions": [
+        "zip:read"
+      ],
+      "environment": "worker",
+      "risk": "read",
+      "requiredRole": "read",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.repo.applyPatch",
+      "name": "ZipRepoApplyPatch",
+      "description": "Read a GitHub file, apply anchored text patch operations, verify, and optionally commit.",
+      "capabilities": [
+        "patch repository file",
+        "apply code change",
+        "safe text mutation"
+      ],
+      "permissions": [
+        "github:write",
+        "r2:write"
+      ],
+      "environment": "github",
+      "risk": "write",
+      "requiredRole": "operator",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.repo.applyPatchBatch",
+      "name": "ZipRepoApplyPatchBatch",
+      "description": "Apply multiple repo text patch jobs with shared defaults.",
+      "capabilities": [
+        "patch repository files",
+        "batch code mutation",
+        "multi file patch"
+      ],
+      "permissions": [
+        "github:write",
+        "r2:write"
+      ],
+      "environment": "github",
+      "risk": "write",
+      "requiredRole": "operator",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.artifact.put",
+      "name": "ZipArtifactPut",
+      "description": "Store an artifact in the Zip R2 bucket and write a receipt.",
+      "capabilities": [
+        "store artifact",
+        "r2 put",
+        "publish bundle"
+      ],
+      "permissions": [
+        "r2:write"
+      ],
+      "environment": "cloudflare",
+      "risk": "write",
+      "requiredRole": "operator",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.artifact.get",
+      "name": "ZipArtifactGet",
+      "description": "Read a text artifact from the Zip R2 bucket.",
+      "capabilities": [
+        "get artifact",
+        "r2 get",
+        "read bundle"
+      ],
+      "permissions": [
+        "r2:read"
+      ],
+      "environment": "cloudflare",
+      "risk": "read",
+      "requiredRole": "read",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.receipt",
+      "name": "ZipReceipt",
+      "description": "List receipts for a Zip session.",
+      "capabilities": [
+        "read receipt",
+        "audit zip session",
+        "operation ledger"
+      ],
+      "permissions": [
+        "r2:read"
+      ],
+      "environment": "cloudflare",
+      "risk": "read",
+      "requiredRole": "read",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.rollback",
+      "name": "ZipRollback",
+      "description": "Restore a repo file from provided prior content.",
+      "capabilities": [
+        "rollback repository file",
+        "restore source file",
+        "reverse patch"
+      ],
+      "permissions": [
+        "github:write",
+        "r2:write"
+      ],
+      "environment": "github",
+      "risk": "write",
+      "requiredRole": "operator",
+      "requiresApproval": false
+    },
+    {
+      "id": "zip.clone.plan",
+      "name": "ZipClonePlan",
+      "description": "Unified clone namespace entrypoint that delegates to the existing chunked gitZip Clone engine.",
+      "capabilities": [
+        "plan zip clone",
+        "clone repository",
+        "chunked repo ingestion"
+      ],
+      "permissions": [
+        "github:read"
+      ],
+      "environment": "github",
+      "risk": "read",
+      "requiredRole": "read",
+      "requiresApproval": false
+    }
+  ]
+}
