@@ -1,0 +1,36 @@
+name: Deploy Zip Gateway v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_message:
+        description: Manual deploy note
+        required: false
+        default: iPhone manual deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy afo-zip-gateway-v2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Verify worker source
+        working-directory: workers/afo-zip-gateway-v2
+        run: node --check index.js
+
+      - name: Deploy Worker
+        working-directory: workers/afo-zip-gateway-v2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler deploy
