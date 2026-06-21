@@ -1,0 +1,41 @@
+{
+  "status": {
+    "jsonrpc": "2.0",
+    "id": "status-1",
+    "method": "zip.status",
+    "params": {}
+  },
+  "plan_patch_content": {
+    "jsonrpc": "2.0",
+    "id": "plan-patch-1",
+    "method": "zip.repo.planPatch",
+    "params": {
+      "content": "hello old world\n",
+      "operations": [
+        {
+          "type": "replace",
+          "old_text": "old",
+          "new_text": "new"
+        }
+      ],
+      "verify": [
+        {
+          "contains": "hello new world"
+        }
+      ]
+    }
+  },
+  "write_file_dry_run": {
+    "jsonrpc": "2.0",
+    "id": "write-file-1",
+    "method": "zip.repo.writeFile",
+    "params": {
+      "owner": "nothinginfinity",
+      "repo": "repo-copilot",
+      "branch": "main",
+      "path": "tmp/zip-gateway-v2-test.txt",
+      "content": "hello from Zip Gateway v2\n",
+      "dry_run": true
+    }
+  }
+}
