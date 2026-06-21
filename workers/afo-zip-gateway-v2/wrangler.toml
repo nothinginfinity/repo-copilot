@@ -1,0 +1,16 @@
+name = "afo-zip-gateway-v2"
+main = "index.js"
+compatibility_date = "2026-06-21"
+
+[vars]
+DEFAULT_OWNER = "nothinginfinity"
+DEFAULT_BRANCH = "main"
+ZIP_ALLOWED_OWNER = "nothinginfinity"
+ZIP_DRY_RUN_DEFAULT = "true"
+ZIP_WRITE_ENABLED = "false"
+ZIP_DELETE_ENABLED = "false"
+DEFAULT_BUCKET = "afo-site-content"
+
+[[true_buckets]]
+binding = "ZIP_ARTIFACTS"
+bucket_name = "afo-site-content"
