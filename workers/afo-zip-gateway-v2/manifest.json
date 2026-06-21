@@ -1,0 +1,40 @@
+{
+  "name": "afo-zip-gateway-v2",
+  "version": "0.2.0-core",
+  "transport": "json-rpc-2.0",
+  "auth": "private-worker-secrets-no-user-oauth",
+  "routes": ["GET /status", "GET /manifest.json", "POST /rpc", "POST /mcp"],
+  "methods": [
+    "zip.status",
+    "zip.tools",
+    "zip.plan",
+    "zip.execute",
+    "zip.receipt",
+    "zip.rollback",
+    "zip.repo.writeFile",
+    "zip.repo.writeBatch",
+    "zip.repo.planPatch",
+    "zip.repo.applyPatch",
+    "zip.repo.applyPatchBatch",
+    "zip.clone.plan",
+    "zip.clone.runBatch",
+    "zip.clone.resume",
+    "zip.clone.verify",
+    "zip.clone.receipt",
+    "zip.artifact.list",
+    "zip.artifact.get",
+    "zip.artifact.put",
+    "zip.artifact.delete",
+    "zip.artifact.head",
+    "zip.artifact.presign"
+  ],
+  "bindings": {
+    "GITHUB_TOKEN": "secret",
+    "ZIP_ARTIFACTS": "r2 bucket binding"
+  },
+  "safety_defaults": {
+    "ZIP_DRY_RUN_DEFAULT": true,
+    "ZIP_WRITE_ENABLED": false,
+    "ZIP_DELETE_ENABLED": false
+  }
+}
