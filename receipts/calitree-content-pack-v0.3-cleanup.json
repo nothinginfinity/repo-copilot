@@ -1,0 +1,82 @@
+{
+  "worker": "afo-gitzip-patcher-mcp",
+  "version": "0.1.0-core",
+  "action": "apply_repo_text_patch",
+  "target": {
+    "owner": "nothinginfinity",
+    "repo": "repo-copilot",
+    "branch": "main",
+    "path": "workers/calitree-cannabis-feed-mcp/worker.js"
+  },
+  "source_sha": "353eaccd7ad7c63b55b8513b1e28f10b71b0bcd7",
+  "result_sha": "a27aa0ce35086a743aad356cf40932b697c827f8",
+  "commit_sha": "7029cff8fb582198a664a15f3be2f60ce28d3497",
+  "diff": {
+    "before_length": 145397,
+    "after_length": 142454,
+    "delta": -2943,
+    "common_prefix": 7356,
+    "common_suffix": 112881,
+    "before_fingerprint": "24fbab85",
+    "after_fingerprint": "216a5063"
+  },
+  "applied": [
+    {
+      "label": "op_0",
+      "type": "replace_between",
+      "changed": true
+    },
+    {
+      "label": "op_1",
+      "type": "replace_between",
+      "changed": true
+    },
+    {
+      "label": "op_2",
+      "type": "replace_between",
+      "changed": true
+    },
+    {
+      "label": "op_3",
+      "type": "replace_between",
+      "changed": true
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "results": [
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "not_contains",
+        "ok": true,
+        "detail": "absent"
+      }
+    ],
+    "failed": []
+  },
+  "timestamp": "2026-06-28T22:42:34.550Z"
+}
