@@ -1,0 +1,20 @@
+{
+  "name": "Calitree Feed MCP",
+  "category_set": [
+    "medical_research",
+    "policy_law",
+    "state_regulators",
+    "business_industry",
+    "patient_education",
+    "safety_recalls",
+    "cbd_thc_science",
+    "clinical_trials"
+  ],
+  "policy": "Educational news and research information only. Not medical advice, diagnosis, treatment, legal advice, or product endorsement.",
+  "routes_to_add": [
+    "/rss.xml?category=medical_research",
+    "/feed.json?category=medical_research",
+    "/sources",
+    "/api/items?category=policy_law"
+  ]
+}
