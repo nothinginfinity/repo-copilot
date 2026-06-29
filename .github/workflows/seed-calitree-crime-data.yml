@@ -1,0 +1,78 @@
+name: Seed Calitree Crime Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      startLine:
+        description: "CSV data row offset to start from. Use nextStartLine from the prior run."
+        required: true
+        default: "0"
+      maxRows:
+        description: "Number of CSV rows to process in this chunk. Keep modest for Worker limits."
+        required: true
+        default: "80"
+      storeRaw:
+        description: "Store raw FBI/CDE CSV in R2 on this run. Use 1 for first chunk, 0 for later chunks."
+        required: true
+        default: "1"
+      baseUrl:
+        description: "Calitree Worker base URL."
+        required: true
+        default: "https://calitree-cannabis-feed-mcp.jaredtechfit.workers.dev"
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    name: Seed one FBI/CDE crime data chunk
+
+    steps:
+      - name: Validate inputs
+        run: |
+          case "${{ github.event.inputs.startLine }}" in (*[!0-9]*|'') echo "startLine must be numeric"; exit 1;; esac
+          case "${{ github.event.inputs.maxRows }}" in (*[!0-9]*|'') echo "maxRows must be numeric"; exit 1;; esac
+          case "${{ github.event.inputs.storeRaw }}" in (0|1) ;; (*) echo "storeRaw must be 0 or 1"; exit 1;; esac
+
+      - name: Call private Calitree seed endpoint
+        env:
+          CALITREE_MCP_TOKEN: ${{ secrets.CALITREE_MCP_TOKEN }}
+          BASE_URL: ${{ github.event.inputs.baseUrl }}
+          START_LINE: ${{ github.event.inputs.startLine }}
+          MAX_ROWS: ${{ github.event.inputs.maxRows }}
+          STORE_RAW: ${{ github.event.inputs.storeRaw }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CALITREE_MCP_TOKEN:-}" ]; then
+            echo "Missing GitHub secret CALITREE_MCP_TOKEN"
+            exit 1
+          fi
+          URL="${BASE_URL%/}/admin/seed/fbi-crime?startLine=${START_LINE}&maxRows=${MAX_ROWS}&storeRaw=${STORE_RAW}"
+          echo "Calling seed endpoint for startLine=${START_LINE}, maxRows=${MAX_ROWS}, storeRaw=${STORE_RAW}"
+          HTTP_STATUS=$(curl -sS -w "%{http_code}" -o response.json \
+            -H "Authorization: Bearer ${CALITREE_MCP_TOKEN}" \
+            -H "Accept: application/json" \
+            "${URL}")
+          echo "HTTP status: ${HTTP_STATUS}"
+          cat response.json
+          echo
+          if [ "${HTTP_STATUS}" -lt 200 ] || [ "${HTTP_STATUS}" -ge 300 ]; then
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path('response.json').read_text())
+          print('ok:', data.get('ok'))
+          print('source_rows:', data.get('source_rows'))
+          print('rollup_rows_upserted:', data.get('rollup_rows_upserted'))
+          print('latest_year:', data.get('latest_year'))
+          print('nextStartLine:', data.get('nextStartLine'))
+          print('hasMore:', data.get('hasMore'))
+          if data.get('ok') is not True:
+              raise SystemExit(1)
+          PY
+
+      - name: Upload seed response artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calitree-crime-seed-response-${{ github.event.inputs.startLine }}-${{ github.event.inputs.maxRows }}
+          path: response.json
