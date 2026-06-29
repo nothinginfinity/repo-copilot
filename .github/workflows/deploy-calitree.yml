@@ -1,0 +1,36 @@
+name: Deploy Calitree Worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "workers/calitree-cannabis-feed-mcp/**"
+      - ".github/workflows/deploy-calitree.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy calitree-cannabis-feed-mcp
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Apply D1 migrations
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/calitree-cannabis-feed-mcp
+          wranglerVersion: "4"
+          command: d1 execute afo-repo-indexer-db --remote --file migrations/0002_fbi_crime_rollups.sql
+
+      - name: Deploy Worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/calitree-cannabis-feed-mcp
+          wranglerVersion: "4"
+          command: deploy
