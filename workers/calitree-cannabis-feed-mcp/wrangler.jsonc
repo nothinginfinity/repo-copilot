@@ -23,5 +23,8 @@
       "binding": "VECTORIZE",
       "index_name": "afo-repo-footprint-vector"
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["*/20 * * * *"]
+  }
 }
