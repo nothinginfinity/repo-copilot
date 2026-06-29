@@ -1,0 +1,67 @@
+{
+  "worker": "afo-gitzip-patcher-mcp",
+  "version": "0.1.0-core",
+  "action": "apply_repo_text_patch",
+  "target": {
+    "owner": "nothinginfinity",
+    "repo": "repo-copilot",
+    "branch": "main",
+    "path": "workers/calitree-cannabis-feed-mcp/worker.js"
+  },
+  "source_sha": "7ad42bf65bcab3f1f03ddfbb512a18f96bacf17d",
+  "result_sha": "9a0424359c11fe02ec14829b34f274a9b4fed7af",
+  "commit_sha": "f34191ad40a558c153fed4e5888bbd982aecd847",
+  "diff": {
+    "before_length": 150056,
+    "after_length": 150528,
+    "delta": 472,
+    "common_prefix": 29004,
+    "common_suffix": 118633,
+    "before_fingerprint": "08dfaf0f",
+    "after_fingerprint": "21d90284"
+  },
+  "applied": [
+    {
+      "label": "op_0",
+      "type": "replace_between",
+      "changed": true
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "results": [
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "not_contains",
+        "ok": true,
+        "detail": "absent"
+      },
+      {
+        "label": "not_contains",
+        "ok": true,
+        "detail": "absent"
+      }
+    ],
+    "failed": []
+  },
+  "timestamp": "2026-06-29T01:53:38.210Z"
+}
