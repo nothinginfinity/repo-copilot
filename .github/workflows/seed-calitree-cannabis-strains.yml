@@ -15,7 +15,7 @@ on:
 jobs:
   seed:
     runs-on: ubuntu-latest
-    name: Seed all cannabis strain + lineage data (loops until complete)
+    name: Seed all cannabis strain and lineage data
 
     steps:
       - name: Loop seed endpoint until done
@@ -29,6 +29,24 @@ jobs:
             echo "Missing GitHub secret CALITREE_MCP_TOKEN"
             exit 1
           fi
+          cat > parse_response.py << 'PYEOF'
+          import json, sys
+          from pathlib import Path
+          data = json.loads(Path('response.json').read_text())
+          print('ok:', data.get('ok'))
+          print('strains_this_chunk:', data.get('strains_this_chunk'))
+          print('lineage_edges_this_chunk:', data.get('lineage_edges_this_chunk'))
+          print('total_strains:', data.get('total_strains'))
+          print('total_lineage_edges:', data.get('total_lineage_edges'))
+          print('hasMore:', data.get('hasMore'))
+          print('nextStartLine:', data.get('nextStartLine'))
+          if data.get('ok') is not True:
+              sys.exit(1)
+          has_more = data.get('hasMore')
+          next_start = data.get('nextStartLine')
+          print('HAS_MORE=' + ('1' if has_more else '0'))
+          print('NEXT_START=' + str(next_start if next_start is not None else 0))
+          PYEOF
           START_LINE=0
           ITER=0
           MAX_ITER=40
@@ -40,35 +58,14 @@ jobs:
             fi
             URL="${BASE_URL%/}/admin/seed/cannabis-strains?startLine=${START_LINE}&maxRows=${MAX_ROWS}"
             echo "=== Chunk $ITER: calling startLine=${START_LINE}, maxRows=${MAX_ROWS} ==="
-            HTTP_STATUS=$(curl -sS -w "%{http_code}" -o response.json \
-              -H "Authorization: Bearer ${CALITREE_MCP_TOKEN}" \
-              -H "Accept: application/json" \
-              "${URL}")
+            HTTP_STATUS=$(curl -sS -w "%{http_code}" -o response.json -H "Authorization: Bearer ${CALITREE_MCP_TOKEN}" -H "Accept: application/json" "${URL}")
             echo "HTTP status: ${HTTP_STATUS}"
             cat response.json
             echo
             if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
               exit 1
             fi
-            RESULT=$(python3 - <<'PY'
-import json, sys
-from pathlib import Path
-data = json.loads(Path('response.json').read_text())
-print('ok:', data.get('ok'))
-print('strains_this_chunk:', data.get('strains_this_chunk'))
-print('lineage_edges_this_chunk:', data.get('lineage_edges_this_chunk'))
-print('total_strains:', data.get('total_strains'))
-print('total_lineage_edges:', data.get('total_lineage_edges'))
-print('hasMore:', data.get('hasMore'))
-print('nextStartLine:', data.get('nextStartLine'))
-if data.get('ok') is not True:
-    sys.exit(1)
-has_more = data.get('hasMore')
-next_start = data.get('nextStartLine')
-print(f"HAS_MORE={'1' if has_more else '0'}")
-print(f"NEXT_START={next_start if next_start is not None else 0}")
-PY
-)
+            RESULT=$(python3 parse_response.py)
             echo "$RESULT"
             HAS_MORE=$(echo "$RESULT" | grep '^HAS_MORE=' | cut -d= -f2)
             NEXT_START=$(echo "$RESULT" | grep '^NEXT_START=' | cut -d= -f2)
