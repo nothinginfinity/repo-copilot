@@ -1,0 +1,75 @@
+name: Backfill Calitree Discovery Context
+
+on:
+  workflow_dispatch:
+    inputs:
+      maxRowsPerChunk:
+        description: "discovery_index rows to backfill per API call. Keep modest for Worker limits."
+        required: true
+        default: "200"
+      baseUrl:
+        description: "Calitree Worker base URL."
+        required: true
+        default: "https://calitree-cannabis-feed-mcp.jaredtechfit.workers.dev"
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    name: Backfill published_date and keywords for existing discovery_index rows
+
+    steps:
+      - name: Loop backfill endpoint until done
+        env:
+          CALITREE_MCP_TOKEN: ${{ secrets.CALITREE_MCP_TOKEN }}
+          BASE_URL: ${{ github.event.inputs.baseUrl }}
+          MAX_ROWS: ${{ github.event.inputs.maxRowsPerChunk }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CALITREE_MCP_TOKEN:-}" ]; then
+            echo "Missing GitHub secret CALITREE_MCP_TOKEN"
+            exit 1
+          fi
+          cat > parse_response.py << 'PYEOF'
+          import json, sys
+          from pathlib import Path
+          data = json.loads(Path('response.json').read_text())
+          print('ok:', data.get('ok'))
+          print('updated_this_chunk:', data.get('updated_this_chunk'))
+          print('remaining:', data.get('remaining'))
+          print('hasMore:', data.get('hasMore'))
+          if data.get('ok') is not True:
+              sys.exit(1)
+          has_more = data.get('hasMore')
+          print('HAS_MORE=' + ('1' if has_more else '0'))
+          PYEOF
+          ITER=0
+          MAX_ITER=60
+          while true; do
+            ITER=$((ITER+1))
+            if [ "$ITER" -gt "$MAX_ITER" ]; then
+              echo "Hit safety cap of $MAX_ITER iterations - stopping."
+              exit 1
+            fi
+            URL="${BASE_URL%/}/admin/backfill/discovery-context?maxRows=${MAX_ROWS}"
+            echo "=== Chunk $ITER: calling maxRows=${MAX_ROWS} ==="
+            HTTP_STATUS=$(curl -sS -w "%{http_code}" -o response.json -H "Authorization: Bearer ${CALITREE_MCP_TOKEN}" -H "Accept: application/json" "${URL}")
+            echo "HTTP status: ${HTTP_STATUS}"
+            cat response.json
+            echo
+            if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+              exit 1
+            fi
+            RESULT=$(python3 parse_response.py)
+            echo "$RESULT"
+            HAS_MORE=$(echo "$RESULT" | grep '^HAS_MORE=' | cut -d= -f2)
+            if [ "$HAS_MORE" != "1" ]; then
+              echo "=== Done. All discovery_index rows backfilled. ==="
+              break
+            fi
+          done
+
+      - name: Upload final response artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: calitree-discovery-backfill-final-response
+          path: response.json
