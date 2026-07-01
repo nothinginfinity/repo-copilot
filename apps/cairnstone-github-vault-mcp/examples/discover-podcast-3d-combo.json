@@ -1,0 +1,7 @@
+{
+  "tool": "discover_repo_combinations",
+  "input": {
+    "query": "podcast 3D Three.js scene compiler",
+    "limit": 20
+  }
+}

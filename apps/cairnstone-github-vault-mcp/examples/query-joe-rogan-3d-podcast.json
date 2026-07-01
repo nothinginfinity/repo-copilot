@@ -1,0 +1,7 @@
+{
+  "tool": "query_github_vault",
+  "input": {
+    "query": "Joe Rogan 3D podcast explorer",
+    "limit": 20
+  }
+}
