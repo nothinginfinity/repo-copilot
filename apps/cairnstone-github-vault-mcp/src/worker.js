@@ -13,7 +13,7 @@ const TOOLS = [
   { name: "stone_github_repo", description: "Index one GitHub repository. Stones each file into CairnStone V5 (bridged); keeps a local compatibility-feature cache.", inputSchema: { type: "object", properties: { repo: { type: "string" }, branch: { type: "string" }, max_files: { type: "number" } }, required: ["repo"] } },
   { name: "stone_github_file", description: "Stone one exact GitHub file into CairnStone V5 (bridged).", inputSchema: { type: "object", properties: { repo: { type: "string" }, path: { type: "string" }, ref: { type: "string" } }, required: ["repo","path"] } },
   { name: "query_github_vault", description: "Search the local compatibility-feature cache of indexed files. Every call is persisted and searchable later via search_query_history.", inputSchema: { type: "object", properties: { query: { type: "string" }, limit: { type: "number" } }, required: ["query"] } },
-  { name: "get_repo_manifest", description: "Return a repo's local file/feature index plus its live CairnStone V5 chain manifest (HEAD, stones, edges).", inputSchema: { type: "object", properties: { repo: { type: "string" } }, required: ["repo"] } },
+  { name: "get_repo_manifest", description: "Return a repo's local file/feature index plus its live CairnStone V5 chain manifest (HEAD, stones, edges). For monorepos with multiple app chains, pass chain (or a path under the app) explicitly - a bare repo name only resolves correctly for single-app repos.", inputSchema: { type: "object", properties: { repo: { type: "string" }, chain: { type: "string" }, path: { type: "string" } }, required: ["repo"] } },
   { name: "discover_repo_combinations", description: "Find likely repo/file combinations by shared capabilities and complementary patterns (tool/code compatibility). Every call is persisted and searchable later via search_query_history.", inputSchema: { type: "object", properties: { query: { type: "string" }, repo: { type: "string" }, limit: { type: "number" } } } },
   { name: "search_query_history", description: "Search previously run query_github_vault / discover_repo_combinations calls and their persisted results, without re-running them.", inputSchema: { type: "object", properties: { query: { type: "string" }, kind: { type: "string", enum: ["query_github_vault","discover_repo_combinations"] }, repo: { type: "string" }, limit: { type: "number" } } } },
   { name: "refresh_changed_repos", description: "Refresh repos whose default branch SHA changed since the last index.", inputSchema: { type: "object", properties: { owner: { type: "string" }, limit: { type: "number" }, max_files_per_repo: { type: "number" } }, required: ["owner"] } }
@@ -96,8 +96,18 @@ function kindFor(path, feats) {
   return "github_file";
 }
 // CairnStone V5 chain naming convention used across this Project: bare repo
-// name (no owner prefix), e.g. "OpenMontage", "cairnstone-github-vault-mcp".
-function chainFor(repo) { return repo.split("/").pop(); }
+// name for single-app repos (e.g. "OpenMontage"). For monorepos like
+// repo-copilot, that would collapse every app into one chain - wrong, since
+// each app already has its own chain (e.g. "cairnstone-github-vault-mcp").
+// When the path falls under a known monorepo top-level dir, use that app's
+// folder name as the chain instead.
+function chainFor(repo, path) {
+  if (path) {
+    const m = path.match(/^(?:apps|packages|workers|services)\/([^/]+)\//);
+    if (m) return m[1];
+  }
+  return repo.split("/").pop();
+}
 
 async function schema(env) {
   if (!env.DB) return { ok: false, error: "missing D1 binding DB" };
@@ -198,7 +208,7 @@ async function upsertRepo(env, meta, latestSha) {
 async function storeFileStone(env, repo, path, branch, sha, size, text) {
   const feats = features(path, text);
   const kind = kindFor(path, feats);
-  const chain = chainFor(repo);
+  const chain = chainFor(repo, path);
   const [owner, repoName] = repo.split("/");
   const v5 = await v5Call(env, "cairnstone_create_github_file_stone", {
     author: "cairnstone-github-vault-mcp",
@@ -257,7 +267,8 @@ async function stoneRepo(env, args) {
     }
   }
   const edges = await linkCandidates(env, repo);
-  return { ok: true, repo, branch, latest_sha: latest, chain: chainFor(repo), candidates: candidates.length, stoned_count: stoned.length, edge_count: edges, stoned, errors };
+  const chains = [...new Set(stoned.map(s => s.v5_chain))];
+  return { ok: true, repo, branch, latest_sha: latest, chains, candidates: candidates.length, stoned_count: stoned.length, edge_count: edges, stoned, errors };
 }
 async function stoneAccount(env, args) {
   const repos = await listRepos(env, args.owner, args.visibility || "all", Number(args.limit || 25));
@@ -330,7 +341,9 @@ async function searchVault(env, args) {
 
 async function manifest(env, args) {
   const repo = args.repo;
-  const chain = chainFor(repo);
+  // For monorepos, pass chain (or a path under the app you mean) explicitly -
+  // a bare repo name only resolves correctly for single-app repos.
+  const chain = args.chain || chainFor(repo, args.path);
   const files = await all(env, "SELECT files.path, files.branch, files.sha, files.language, files.stone_hash, stones.kind, stones.lod5, stones.flags_json FROM files JOIN stones ON files.stone_hash=stones.hash WHERE repo_full_name=? ORDER BY files.path", [repo]);
   const byKind = {};
   for (const f of files) byKind[f.kind] = (byKind[f.kind] || 0) + 1;
