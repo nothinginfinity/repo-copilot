@@ -1,0 +1,79 @@
+# Deploy CairnStone GitHub Vault MCP
+#
+# PRE-DEPLOY CHECKLIST (manual steps required before first deploy):
+#
+# 1. Create a Cloudflare D1 database:
+#      npx wrangler d1 create github_stone_vault
+#    Copy the returned database_id and replace REPLACE_WITH_D1_DATABASE_ID
+#    in apps/cairnstone-github-vault-mcp/wrangler.jsonc before this workflow
+#    will succeed.
+#
+# 2. Run the D1 schema migration once:
+#      npx wrangler d1 execute github_stone_vault \
+#        --file=apps/cairnstone-github-vault-mcp/schema/001_initial.sql
+#
+# 3. Add the following secrets to this GitHub repository
+#    (Settings → Secrets and variables → Actions → New repository secret):
+#
+#      CLOUDFLARE_API_TOKEN        — Cloudflare API token with Workers & D1 edit
+#      CLOUDFLARE_ACCOUNT_ID       — Your Cloudflare account ID
+#      GITHUB_TOKEN_FOR_INDEXING   — A GitHub PAT with repo read access
+#                                    (becomes the GITHUB_TOKEN secret on the Worker)
+#
+# NOTE: GITHUB_TOKEN is a reserved name in GitHub Actions. The PAT for the
+# Worker runtime is stored as GITHUB_TOKEN_FOR_INDEXING and pushed to
+# Cloudflare as GITHUB_TOKEN via `wrangler secret put` below.
+
+name: Deploy CairnStone GitHub Vault MCP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/cairnstone-github-vault-mcp/**'
+      - '.github/workflows/deploy-github-vault-mcp.yml'
+
+defaults:
+  run:
+    working-directory: apps/cairnstone-github-vault-mcp
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/cairnstone-github-vault-mcp/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Syntax check worker
+        run: node --check src/worker.js
+
+      - name: Set Cloudflare Worker runtime secret (GITHUB_TOKEN)
+        # Pipes the GitHub Actions secret into wrangler non-interactively.
+        # The Worker reads this as env.GITHUB_TOKEN at runtime.
+        # NEVER echo this value into logs — wrangler handles masking on its side.
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN_FOR_INDEXING }}" | npx wrangler secret put GITHUB_TOKEN
+
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
