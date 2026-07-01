@@ -15,14 +15,16 @@
 # 3. Add the following secrets to this GitHub repository
 #    (Settings → Secrets and variables → Actions → New repository secret):
 #
-#      CLOUDFLARE_API_TOKEN        — Cloudflare API token with Workers & D1 edit
-#      CLOUDFLARE_ACCOUNT_ID       — Your Cloudflare account ID
-#      GITHUB_TOKEN_FOR_INDEXING   — A GitHub PAT with repo read access
-#                                    (becomes the GITHUB_TOKEN secret on the Worker)
+#      CLOUDFLARE_API_TOKEN   — Cloudflare API token with Workers & D1 edit
+#      CLOUDFLARE_ACCOUNT_ID  — Your Cloudflare account ID
+#      VAULT_INDEXING_TOKEN   — A GitHub PAT with repo read access
+#                               (becomes the GITHUB_TOKEN secret on the Worker)
 #
-# NOTE: GITHUB_TOKEN is a reserved name in GitHub Actions. The PAT for the
-# Worker runtime is stored as GITHUB_TOKEN_FOR_INDEXING and pushed to
-# Cloudflare as GITHUB_TOKEN via `wrangler secret put` below.
+# NOTE: GitHub Actions repository secret names cannot start with the
+# GITHUB_ prefix (reserved by GitHub) — that's why the PAT is stored under
+# a different name, VAULT_INDEXING_TOKEN, and pushed to Cloudflare as
+# GITHUB_TOKEN via `wrangler secret put` below. The Cloudflare Worker
+# secret name has no such restriction.
 
 name: Deploy CairnStone GitHub Vault MCP
 
@@ -70,7 +72,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN_FOR_INDEXING }}" | npx wrangler secret put GITHUB_TOKEN
+          echo "${{ secrets.VAULT_INDEXING_TOKEN }}" | npx wrangler secret put GITHUB_TOKEN
 
       - name: Deploy to Cloudflare Workers
         env:
