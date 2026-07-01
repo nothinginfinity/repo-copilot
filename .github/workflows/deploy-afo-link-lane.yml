@@ -1,0 +1,53 @@
+# Deploy afo-link-lane
+#
+# 3D WebGL link explorer (three.js flight sim). Bindings are D1
+# (afo-link-lane-db) and R2 (afo-site-content), both already live in
+# Cloudflare and declared in apps/afo-link-lane/wrangler.jsonc - no first-time
+# setup steps needed, unlike cairnstone-github-vault-mcp's deploy workflow.
+#
+# Requires repo secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
+# (already present in this repo - no new secrets needed for this workflow).
+
+name: Deploy afo-link-lane
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/afo-link-lane/**'
+      - '.github/workflows/deploy-afo-link-lane.yml'
+
+defaults:
+  run:
+    working-directory: apps/afo-link-lane
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: apps/afo-link-lane/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Syntax check worker
+        run: node --check worker.js
+
+      - name: Deploy to Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
