@@ -354,10 +354,10 @@ function buildGameScript(layout){
   L.push("    label.position.set(g.x,g.y+g.radius+55,g.z);scene.add(label);");
   L.push("  });");
   L.push("  const counts={};");
-  L.push("  LAYOUT.links.forEach(function(p){const k=p.domain||'other';counts[k]=(counts[k]||0)+1;});");
+  L.push("  LAYOUT.links.forEach(function(p){const k=p.group_name||p.domain||'other';counts[k]=(counts[k]||0)+1;});");
   L.push("  const idxCursor={};");
   L.push("  LAYOUT.links.forEach(function(p){");
-  L.push("    const k=p.domain||'other';");
+  L.push("    const k=p.group_name||p.domain||'other';");
   L.push("    const localIdx=idxCursor[k]=(idxCursor[k]||0);idxCursor[k]++;");
   L.push("    const geo=new THREE.BoxGeometry(28,28,28);");
   L.push("    const placeholderMat=new THREE.MeshBasicMaterial({color:0x223344});");
@@ -751,7 +751,7 @@ export default {
       return j({ok:true,results});
     }
     if(path==="/"||path===""){
-      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,added_at FROM links ORDER BY domain, added_at LIMIT 300").all();
+      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 300").all();
       const layout=layoutLinks(r.results||[]);
       return new Response(buildGameHTML(layout),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
