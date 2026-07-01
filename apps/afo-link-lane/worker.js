@@ -4,7 +4,8 @@ const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
 
 const SCHEMA = [
-  "CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY, url TEXT NOT NULL, title TEXT, description TEXT, domain TEXT, og_image_key TEXT, added_at TEXT DEFAULT (datetime('now')))"
+  "CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY, url TEXT NOT NULL, title TEXT, description TEXT, domain TEXT, og_image_key TEXT, group_name TEXT, added_at TEXT DEFAULT (datetime('now')))",
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_links_url ON links(url)"
 ];
 
 const R_GALAXY = 1500;
@@ -28,7 +29,7 @@ function clusterRadius(count){
 
 function layoutLinks(links){
   const groups={};
-  links.forEach(function(l){const d=l.domain||"other";(groups[d]=groups[d]||[]).push(l);});
+  links.forEach(function(l){const d=l.group_name||l.domain||"other";(groups[d]=groups[d]||[]).push(l);});
   const domains=Object.keys(groups);
   const anchors={};
   domains.forEach(function(d,i){const p=fibPoint(i,domains.length,R_GALAXY);anchors[d]={x:p.x,y:p.y,z:p.z,count:groups[d].length};});
@@ -134,6 +135,78 @@ async function storeOgImage(env,id,imageUrl){
 
 function domainOf(url){
   try{return new URL(url).hostname.replace(/^www\./,"");}catch{return "other";}
+}
+
+// =================== YouTube channel RSS (channel groups) ===================
+
+function extractChannelId(html){
+  let m=html.match(/<meta itemprop="channelId" content="([^"]+)"/i);
+  if(m) return m[1];
+  m=html.match(/"channelId":"(UC[0-9A-Za-z_-]{22})"/);
+  if(m) return m[1];
+  m=html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[0-9A-Za-z_-]{22})"/i);
+  if(m) return m[1];
+  return null;
+}
+
+async function resolveChannelId(input){
+  const raw=String(input||"").trim();
+  if(/^UC[0-9A-Za-z_-]{22}$/.test(raw)) return {channelId:raw,channelName:raw};
+  let pageUrl=raw;
+  if(!/^https?:\/\//i.test(pageUrl)) pageUrl="https://www.youtube.com/"+pageUrl.replace(/^\/+/,"");
+  const res=await fetch(pageUrl,{headers:{"User-Agent":"Mozilla/5.0 (compatible; AFOLinkLane/1.0)"}});
+  if(!res.ok) throw new Error("Could not load channel page: HTTP "+res.status);
+  const html=await res.text();
+  const channelId=extractChannelId(html);
+  if(!channelId) throw new Error("Could not resolve a channel ID from that input - try the full channel URL.");
+  const channelName=extractMetaProperty(html,"og:title")||raw;
+  return {channelId,channelName};
+}
+
+function parseAtomFeed(xml,limit){
+  const entries=[];
+  const blocks=xml.split("<entry>").slice(1);
+  for(const block of blocks.slice(0,limit)){
+    const videoId=(block.match(/<yt:videoId>([^<]+)<\/yt:videoId>/)||[])[1];
+    const title=decodeHtmlEntities((block.match(/<title>([^<]*)<\/title>/)||[])[1]||"");
+    const published=(block.match(/<published>([^<]+)<\/published>/)||[])[1]||"";
+    const thumb=(block.match(/<media:thumbnail url="([^"]+)"/)||[])[1]||null;
+    if(videoId) entries.push({videoId,title,published,thumb,url:"https://www.youtube.com/watch?v="+videoId});
+  }
+  return entries;
+}
+
+async function fetchChannelVideos(channelId,limit){
+  const res=await fetch("https://www.youtube.com/feeds/videos.xml?channel_id="+encodeURIComponent(channelId));
+  if(!res.ok) throw new Error("RSS feed fetch failed: HTTP "+res.status);
+  const xml=await res.text();
+  return parseAtomFeed(xml,limit);
+}
+
+async function apiAddChannel(env,req){
+  const body=await req.json().catch(()=>({}));
+  const input=body.input;
+  const max=Math.max(1,Math.min(Number(body.max||15),25));
+  if(!input) return j({ok:false,error:"input required"},400);
+  let resolved;
+  try{ resolved=await resolveChannelId(input); }catch(e){ return j({ok:false,error:e.message},400); }
+  let videos;
+  try{ videos=await fetchChannelVideos(resolved.channelId,max); }catch(e){ return j({ok:false,error:e.message},400); }
+  if(videos.length===0) return j({ok:false,error:"Channel RSS feed returned no videos."},400);
+  const groupName=resolved.channelName||resolved.channelId;
+  let added=0,skipped=0;
+  for(const v of videos){
+    const existing=await env.DB.prepare("SELECT id FROM links WHERE url=?").bind(v.url).first();
+    if(existing){ skipped++; continue; }
+    const id=uid();
+    let ogImageKey=null;
+    if(v.thumb) ogImageKey=await storeOgImage(env,id,v.thumb);
+    const desc=groupName+(v.published?(" \u2022 "+v.published.slice(0,10)):"");
+    await env.DB.prepare("INSERT OR IGNORE INTO links (id,url,title,description,domain,og_image_key,group_name) VALUES (?,?,?,?,?,?,?)")
+      .bind(id,v.url,v.title||v.url,desc,"youtube.com",ogImageKey,groupName).run();
+    added++;
+  }
+  return j({ok:true,channel:groupName,channel_id:resolved.channelId,added,skipped,found:videos.length});
 }
 
 // =================== GAME SCRIPT ===================
@@ -565,7 +638,16 @@ function buildAdminHTML(links){
     "</head><body>",
     "<h1>\uD83D\uDD17 Link Lane</h1>",
     "<a href='/'>\u2190 back to game</a>",
-    "<h2>Add Links</h2>",
+    "<h2>Add a YouTube Channel Group</h2>",
+    "<p class='note'>Paste a channel URL, @handle, or UC... channel ID. Pulls that channel's newest uploads straight from its public RSS feed (no API key) and drops them into their own 3D galaxy.</p>",
+    "<div id='chMsg'></div>",
+    "<input id='chInput' placeholder='@PowerfulJRE or https://youtube.com/@channel' style='width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:10px;font-family:monospace;font-size:14px;margin-bottom:8px;'>",
+    "<div style='display:flex;gap:8px;align-items:center;margin-bottom:8px;'>",
+    "  <label style='color:#666;font-size:11px;'>videos:</label>",
+    "  <input id='chMax' type='number' value='15' min='1' max='25' style='width:60px;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:8px;font-family:monospace;'>",
+    "</div>",
+    "<button class='go' onclick='addChannel()'>Add Channel Group \uD83D\uDCFA</button>",
+    "<h2>Add Individual Links</h2>",
     "<p class='note'>Paste one URL per line. Each one's real preview image and title are fetched automatically (the same image you'd see in an iMessage or Slack link preview).</p>",
     "<div id='msg'></div>",
     "<div id='progLabel'></div>",
@@ -575,6 +657,20 @@ function buildAdminHTML(links){
     links.length?"<div class='grid'>"+grid+"</div>":"<p style='color:#333;font-size:12px;'>None added yet.</p>",
     "<script>",
     "function msg(t,ok){const d=document.getElementById('msg');d.textContent=t;d.className=ok?'ok':'er';d.style.display='block';setTimeout(function(){d.style.display='none';},6000);}",
+    "function chMsg(t,ok){const d=document.getElementById('chMsg');d.textContent=t;d.className=ok?'ok':'er';d.style.display='block';}",
+    "async function addChannel(){",
+    "  const input=document.getElementById('chInput').value.trim();",
+    "  const max=document.getElementById('chMax').value||15;",
+    "  if(!input){chMsg('Enter a channel URL or handle',false);return;}",
+    "  const btn=document.querySelector('button[onclick=\"addChannel()\"]');btn.disabled=true;btn.textContent='Fetching channel...';",
+    "  try{",
+    "    const r=await fetch('/admin/add-channel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input:input,max:Number(max)})});",
+    "    const d=await r.json();",
+    "    if(d.ok) chMsg('Added '+d.added+' video(s) from \"'+d.channel+'\"'+(d.skipped?(' ('+d.skipped+' already had)'):'')+'. Refresh game to see the new galaxy.',true);",
+    "    else chMsg(d.error||'Failed to add channel',false);",
+    "  }catch(e){chMsg('Request failed: '+e.message,false);}",
+    "  btn.disabled=false;btn.textContent='Add Channel Group \uD83D\uDCFA';",
+    "}",
     "function setProg(t){const p=document.getElementById('progLabel');p.textContent=t;p.style.display=t?'block':'none';}",
     "async function addLinks(){",
     "  const lines=document.getElementById('urlsInput').value.split('\\n').map(function(s){return s.trim();}).filter(Boolean);",
@@ -646,6 +742,7 @@ export default {
       return new Response(buildAdminHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path==="/admin/add"&&method==="POST") return apiAddLink(env,request);
+    if(path==="/admin/add-channel"&&method==="POST") return apiAddChannel(env,request);
     if(path.startsWith("/admin/link/")&&method==="DELETE") return deleteLink(env,decodeURIComponent(path.slice(12)));
     if(path==="/health") return j({ok:true,worker:WORKER_NAME,version:VERSION});
     if(path==="/admin/setup"&&method==="POST"){
