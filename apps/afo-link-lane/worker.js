@@ -1,4 +1,4 @@
-const VERSION = "1.6.0";
+const VERSION = "1.7.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -235,7 +235,8 @@ function buildGameScript(layout){
   L.push("let insideGalaxy=null;");
   L.push("let gameState='menu';");
   L.push("let speed=3;");
-  L.push("let yawVel=0,pitchVel=0,rollAmt=0;");
+  L.push("let yaw=0,pitch=0,yawVel=0,pitchVel=0;");
+  L.push("const PITCH_LIMIT=1.3;");
   L.push("let touchActive=false,touchStartX=0,touchStartY=0,lastX=0,lastY=0,isTap=true;");
   L.push("let targeted=null;");
   L.push("let frame=0;");
@@ -245,7 +246,11 @@ function buildGameScript(layout){
   L.push("  scene=new THREE.Scene();");
   L.push("  camera=new THREE.PerspectiveCamera(72,wrap.clientWidth/wrap.clientHeight,0.1,6000);");
   L.push("  camera.position.set(LAYOUT.start.x,LAYOUT.start.y,LAYOUT.start.z);");
+  L.push("  camera.up.set(0,1,0);");
   L.push("  camera.lookAt(0,0,0);");
+  L.push("  camera.rotation.reorder('YXZ');");
+  L.push("  yaw=camera.rotation.y;pitch=Math.max(-PITCH_LIMIT,Math.min(PITCH_LIMIT,camera.rotation.x));");
+  L.push("  camera.quaternion.setFromEuler(new THREE.Euler(pitch,yaw,0,'YXZ'));");
   L.push("  renderer=new THREE.WebGLRenderer({antialias:true,canvas:document.getElementById('gc')});");
   L.push("  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));");
   L.push("  renderer.setSize(wrap.clientWidth,wrap.clientHeight);");
@@ -471,7 +476,6 @@ function buildGameScript(layout){
   L.push("  if(!touchActive) return;");
   L.push("  const dx=x-lastX,dy=y-lastY;");
   L.push("  yawVel=-dx*0.0028;pitchVel=-dy*0.0028;");
-  L.push("  rollAmt=Math.max(-0.5,Math.min(0.5,rollAmt-dx*0.003));");
   L.push("  lastX=x;lastY=y;");
   L.push("  if(Math.abs(x-touchStartX)>10||Math.abs(y-touchStartY)>10) isTap=false;");
   L.push("}");
@@ -535,8 +539,8 @@ function buildGameScript(layout){
   L.push("function update(){");
   L.push("  if(gameState!=='flying') return;");
   L.push("  frame++;");
-  L.push("  camera.rotateY(yawVel);camera.rotateX(pitchVel);");
-  L.push("  rollAmt*=0.92;camera.rotation.z=rollAmt;");
+  L.push("  yaw+=yawVel;pitch=Math.max(-PITCH_LIMIT,Math.min(PITCH_LIMIT,pitch+pitchVel));");
+  L.push("  camera.quaternion.setFromEuler(new THREE.Euler(pitch,yaw,0,'YXZ'));");
   L.push("  camera.translateZ(-speed);");
   L.push("  yawVel*=0.85;pitchVel*=0.85;");
   L.push("  updateTarget();updateLOD();billboardCubes();");
