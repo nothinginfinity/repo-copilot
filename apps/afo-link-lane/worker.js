@@ -1,4 +1,4 @@
-const VERSION = "2.2.0";
+const VERSION = "2.3.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -621,7 +621,7 @@ function buildGameScript(layout){
   L.push("  }");
   L.push("  targeted=best;");
   L.push("}");
-  L.push("function trySelect(){if(targeted) openLink(targeted.userData);}");
+  L.push("function trySelect(){if(targeted) startFocus(targeted);}");
 
   L.push("function openLink(p){");
   L.push("  const ov=document.getElementById('ov');if(!ov)return;");
@@ -636,6 +636,101 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function closeLink(){document.getElementById('ov').style.display='none';gameState='flying';}");
 
+  L.push("let focus=null;");
+  L.push("const FOCUS_CAM_DIST=110,FOCUS_GRID_DIST=64;");
+  L.push("function easeIO(t){return t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}");
+  L.push("const FACE_LOCAL=[[1,0,0,0,Math.PI/2,0],[-1,0,0,0,-Math.PI/2,0],[0,1,0,-Math.PI/2,0,0],[0,-1,0,Math.PI/2,0,0],[0,0,1,0,0,0],[0,0,-1,0,Math.PI,0]];");
+  L.push("const GRID_ORDER=[0,4,1,2,3,5];");
+  L.push("function startFocus(mesh){");
+  L.push("  if(!mesh||focus) return;");
+  L.push("  gameState='focusing';speed=0;targeted=null;yawVel=0;pitchVel=0;");
+  L.push("  document.getElementById('crosshair').classList.remove('locked');");
+  L.push("  document.getElementById('targetHint').style.display='none';");
+  L.push("  loadTierFor(mesh,'full');");
+  L.push("  const dir=camera.position.clone().sub(mesh.position);");
+  L.push("  if(dir.lengthSq()<1) dir.set(0,0,1);");
+  L.push("  dir.normalize();");
+  L.push("  const toPos=mesh.position.clone().add(dir.multiplyScalar(FOCUS_CAM_DIST));");
+  L.push("  const lm=new THREE.Matrix4().lookAt(toPos,mesh.position,new THREE.Vector3(0,1,0));");
+  L.push("  const toQ=new THREE.Quaternion().setFromRotationMatrix(lm);");
+  L.push("  focus={mesh:mesh,phase:'camera',t:0,fromPos:camera.position.clone(),toPos:toPos,fromQ:camera.quaternion.clone(),toQ:toQ,planes:[]};");
+  L.push("}");
+  L.push("function spawnUnfold(){");
+  L.push("  const f=focus,mesh=f.mesh;");
+  L.push("  mesh.visible=false;");
+  L.push("  const vh=2*FOCUS_GRID_DIST*Math.tan(camera.fov*Math.PI/360);");
+  L.push("  const vw=vh*camera.aspect;");
+  L.push("  const cell=Math.min(vw/2.35,vh/3.6);");
+  L.push("  const gap=cell*0.1;");
+  L.push("  const right=new THREE.Vector3(1,0,0).applyQuaternion(f.toQ);");
+  L.push("  const up=new THREE.Vector3(0,1,0).applyQuaternion(f.toQ);");
+  L.push("  const fwd=new THREE.Vector3(0,0,-1).applyQuaternion(f.toQ);");
+  L.push("  const center=f.toPos.clone().add(fwd.multiplyScalar(FOCUS_GRID_DIST));");
+  L.push("  const s=cell/28;");
+  L.push("  for(let k=0;k<6;k++){");
+  L.push("    const fi=GRID_ORDER[k];");
+  L.push("    const d=FACE_LOCAL[fi];");
+  L.push("    const n=new THREE.Vector3(d[0],d[1],d[2]).applyQuaternion(mesh.quaternion);");
+  L.push("    const fromPos=mesh.position.clone().add(n.multiplyScalar(14));");
+  L.push("    const fromQ=mesh.quaternion.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(d[3],d[4],d[5])));");
+  L.push("    const col=k%2,row=Math.floor(k/2);");
+  L.push("    const toPos=center.clone().add(right.clone().multiplyScalar((col-0.5)*(cell+gap))).add(up.clone().multiplyScalar((1-row)*(cell+gap)));");
+  L.push("    const mat=mesh.material[fi];");
+  L.push("    mat.side=THREE.DoubleSide;mat.depthTest=false;mat.needsUpdate=true;");
+  L.push("    const plane=new THREE.Mesh(new THREE.PlaneGeometry(28,28),mat);");
+  L.push("    plane.renderOrder=999;");
+  L.push("    plane.position.copy(fromPos);plane.quaternion.copy(fromQ);");
+  L.push("    scene.add(plane);");
+  L.push("    f.planes.push({m:plane,fromPos:fromPos,toPos:toPos,fromQ:fromQ,toQ:f.toQ.clone(),s:s});");
+  L.push("  }");
+  L.push("}");
+  L.push("function updateFocus(){");
+  L.push("  if(!focus) return;");
+  L.push("  const f=focus;");
+  L.push("  if(f.phase==='camera'){");
+  L.push("    f.t=Math.min(1,f.t+0.03);");
+  L.push("    const e=easeIO(f.t);");
+  L.push("    camera.position.lerpVectors(f.fromPos,f.toPos,e);");
+  L.push("    camera.quaternion.slerpQuaternions(f.fromQ,f.toQ,e);");
+  L.push("    if(f.t>=1){spawnUnfold();f.phase='unfold';f.t=0;}");
+  L.push("  } else if(f.phase==='unfold'||f.phase==='refold'){");
+  L.push("    f.t=Math.min(1,f.t+0.04);");
+  L.push("    const e=f.phase==='unfold'?easeIO(f.t):easeIO(1-f.t);");
+  L.push("    f.planes.forEach(function(p){");
+  L.push("      p.m.position.lerpVectors(p.fromPos,p.toPos,e);");
+  L.push("      p.m.quaternion.slerpQuaternions(p.fromQ,p.toQ,e);");
+  L.push("      const sc=1+(p.s-1)*e;p.m.scale.set(sc,sc,1);");
+  L.push("    });");
+  L.push("    if(f.t>=1){");
+  L.push("      if(f.phase==='unfold'){f.phase='focused';gameState='focused';showFocusBar();}");
+  L.push("      else finishRefold();");
+  L.push("    }");
+  L.push("  }");
+  L.push("}");
+  L.push("function showFocusBar(){");
+  L.push("  const p=focus.mesh.userData;");
+  L.push("  document.getElementById('fbTitle').textContent=p.title||p.url||'';");
+  L.push("  document.getElementById('fbVisit').onclick=function(){window.open(p.url,'_blank');};");
+  L.push("  document.getElementById('focusBar').style.display='flex';");
+  L.push("}");
+  L.push("function closeFocus(){");
+  L.push("  if(!focus||focus.phase!=='focused') return;");
+  L.push("  document.getElementById('focusBar').style.display='none';");
+  L.push("  focus.phase='refold';focus.t=0;gameState='refolding';");
+  L.push("}");
+  L.push("function finishRefold(){");
+  L.push("  const f=focus;");
+  L.push("  f.planes.forEach(function(p){");
+  L.push("    p.m.material.side=THREE.FrontSide;p.m.material.depthTest=true;p.m.material.needsUpdate=true;");
+  L.push("    scene.remove(p.m);p.m.geometry.dispose();");
+  L.push("  });");
+  L.push("  f.mesh.visible=true;");
+  L.push("  const eu=new THREE.Euler().setFromQuaternion(camera.quaternion,'YXZ');");
+  L.push("  yaw=eu.y;pitch=Math.max(-PITCH_LIMIT,Math.min(PITCH_LIMIT,eu.x));");
+  L.push("  camera.quaternion.setFromEuler(new THREE.Euler(pitch,yaw,0,'YXZ'));");
+  L.push("  focus=null;gameState='flying';");
+  L.push("}");
+
   L.push("function startTouch(x,y){touchActive=true;touchStartX=x;touchStartY=y;lastX=x;lastY=y;isTap=true;}");
   L.push("function moveTouch(x,y){");
   L.push("  if(!touchActive) return;");
@@ -644,7 +739,7 @@ function buildGameScript(layout){
   L.push("  lastX=x;lastY=y;");
   L.push("  if(Math.abs(x-touchStartX)>10||Math.abs(y-touchStartY)>10) isTap=false;");
   L.push("}");
-  L.push("function endTouch(){if(isTap&&gameState==='flying')trySelect();touchActive=false;yawVel=0;pitchVel=0;}");
+  L.push("function endTouch(){if(isTap){if(gameState==='flying')trySelect();else if(gameState==='focused')closeFocus();}touchActive=false;yawVel=0;pitchVel=0;}");
 
   L.push("let isPinching=false,pinchStartDist=0,pinchStartSpeed=0;");
   L.push("const PINCH_SENSITIVITY=0.06;");
@@ -722,7 +817,7 @@ function buildGameScript(layout){
   L.push("}");
 
   L.push("function drawMenuBg(){}");
-  L.push("function loop(){update();renderer.render(scene,camera);requestAnimationFrame(loop);}");
+  L.push("function loop(){update();updateFocus();renderer.render(scene,camera);requestAnimationFrame(loop);}");
 
   L.push("function adjustSpeed(d){speed=Math.max(-6,Math.min(14,speed+d));}");
   L.push("function fullStop(){speed=0;showToast('\u23F8 Stopped');}");
@@ -791,6 +886,11 @@ function buildGameHTML(layout){
     "#speedLabel{color:#888;font-size:11px;text-align:center;flex:1;}",
     "#adminLink{color:#222;font-size:10px;padding:4px;text-align:center;width:100%;max-width:480px;}",
     "#adminLink a{color:#222;}",
+    "#focusBar{display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.88);border-top:1px solid rgba(0,255,136,0.35);backdrop-filter:blur(14px);padding:12px 16px calc(12px + env(safe-area-inset-bottom));flex-direction:column;gap:10px;z-index:250;}",
+    "#fbTitle{color:#fff;font-size:13px;text-align:center;max-height:3em;overflow:hidden;}",
+    ".fbRow{display:flex;gap:8px;}",
+    "#fbVisit{flex:2;padding:12px;background:#00ff88;color:#000;border:none;font-family:monospace;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    "#fbClose{flex:1;padding:12px;background:transparent;color:#888;border:1px solid #333;font-family:monospace;font-size:13px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "#ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.97);z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:20px;}",
     "#ovImg{max-width:100%;max-height:42vh;object-fit:contain;border-radius:4px;margin-bottom:14px;}",
     "#ovTitle{color:#fff;font-size:16px;text-align:center;margin-bottom:8px;max-width:90%;}",
@@ -832,6 +932,10 @@ function buildGameHTML(layout){
     "  </div>",
     "</div>",
     "<div id='adminLink'><a href='/admin'>add links</a></div>",
+    "<div id='focusBar'>",
+    "  <div id='fbTitle'></div>",
+    "  <div class='fbRow'><button id='fbVisit'>Visit \u2192</button><button id='fbClose' onclick='closeFocus()'>\u2715 Close</button></div>",
+    "</div>",
     "<div id='ov'>",
     "  <img id='ovImg' src='' alt='preview'>",
     "  <div id='ovTitle'></div>",
