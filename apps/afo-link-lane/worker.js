@@ -401,6 +401,58 @@ function buildGameScript(layout){
   L.push("  torus:function(r){return new THREE.TorusGeometry(r*0.78,r*0.32,8,24);}");
   L.push("};");
 
+  L.push("function superclusterRadius(count){return Math.max(300,Math.min(900,40*Math.sqrt(count)));}");
+  L.push("function repositionAll(){");
+  L.push("  const _rm4=new THREE.Matrix4();");
+  L.push("  if(clusterMode==='supercluster'){");
+  L.push("    const r=superclusterRadius(nodeData.length);");
+  L.push("    planetMeshes.forEach(function(mesh){");
+  L.push("      const off=FORMATIONS[currentFormation](mesh.userData.globalIdx,nodeData.length,r);");
+  L.push("      mesh.position.set(off.x,off.y,off.z);");
+  L.push("      mesh.userData.x=off.x;mesh.userData.y=off.y;mesh.userData.z=off.z;");
+  L.push("    });");
+  L.push("    nodeData.forEach(function(p){");
+  L.push("      if(p.promoted) return;");
+  L.push("      const off=FORMATIONS[currentFormation](p.globalIdx,nodeData.length,r);");
+  L.push("      p.x=off.x;p.y=off.y;p.z=off.z;");
+  L.push("      _rm4.makeTranslation(p.x,p.y,p.z);");
+  L.push("      farMesh.setMatrixAt(p.farSlot,_rm4);");
+  L.push("    });");
+  L.push("  } else {");
+  L.push("    planetMeshes.forEach(function(mesh){");
+  L.push("      const a=galaxyAnchors[mesh.userData.galaxyKey];if(!a) return;");
+  L.push("      const off=FORMATIONS[currentFormation](mesh.userData.localIdx,mesh.userData.localCount,a.radius);");
+  L.push("      mesh.position.set(a.x+off.x,a.y+off.y,a.z+off.z);");
+  L.push("      mesh.userData.x=a.x+off.x;mesh.userData.y=a.y+off.y;mesh.userData.z=a.z+off.z;");
+  L.push("    });");
+  L.push("    nodeData.forEach(function(p){");
+  L.push("      if(p.promoted) return;");
+  L.push("      const a=galaxyAnchors[p.galaxyKey];if(!a) return;");
+  L.push("      const off=FORMATIONS[currentFormation](p.localIdx,p.localCount,a.radius);");
+  L.push("      p.x=a.x+off.x;p.y=a.y+off.y;p.z=a.z+off.z;");
+  L.push("      _rm4.makeTranslation(p.x,p.y,p.z);");
+  L.push("      farMesh.setMatrixAt(p.farSlot,_rm4);");
+  L.push("    });");
+  L.push("  }");
+  L.push("  farMesh.instanceMatrix.needsUpdate=true;");
+  L.push("}");
+
+  L.push("function applyFormation(name){");
+  L.push("  if(!FORMATIONS[name]) return;");
+  L.push("  currentFormation=name;");
+  L.push("  repositionAll();");
+  L.push("  document.querySelectorAll('.fmtBtn').forEach(function(b){b.classList.toggle('active',b.dataset.f===name);});");
+  L.push("  showToast('Formation: '+name.charAt(0).toUpperCase()+name.slice(1));");
+  L.push("}");
+
+  L.push("function setClusterMode(mode){");
+  L.push("  if(mode===clusterMode) return;");
+  L.push("  clusterMode=mode;");
+  L.push("  galaxyLabels.forEach(function(l){l.visible=(mode==='galaxies');});");
+  L.push("  repositionAll();");
+  L.push("  document.querySelectorAll('.clusterBtn').forEach(function(b){b.classList.toggle('active',b.dataset.c===mode);});");
+  L.push("  showToast(mode==='supercluster'?'\uD83C\uDF0C Supercluster mode':'\uD83C\uDF10 Galaxy mode');");
+  L.push("}");
 
   L.push("function makeLabelSprite(text){");
   L.push("  const c=document.createElement('canvas');c.width=256;c.height=64;");
