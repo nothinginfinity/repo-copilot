@@ -1,4 +1,4 @@
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -375,26 +375,38 @@ function buildGameScript(layout){
   L.push("    const k=p.group_name||p.domain||'other';");
   L.push("    const localIdx=idxCursor[k]=(idxCursor[k]||0);idxCursor[k]++;");
   L.push("    const geo=new THREE.BoxGeometry(28,28,28);");
-  L.push("    const placeholderMat=new THREE.MeshBasicMaterial({color:0x223344});");
-  L.push("    const dateStr=(p.added_at||'').slice(0,10);");
-  L.push("    const isYT=p.domain==='youtube.com';");
-  L.push("    const typeLabel=isYT?(p.is_short?'\uD83D\uDCF1 SHORT':'\uD83C\uDFAC VIDEO'):'\uD83D\uDD17 LINK';");
-  L.push("    const typeColor=p.is_short?'#2a0a1a':'#0a0a18';");
-  L.push("    const pubDate=(p.published_at||dateStr||'');");
   L.push("    const materials=[");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('TITLE',p.title||p.url,'#0a0a18')}),");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('CHANNEL',p.group_name||p.domain,'#0a0a18')}),");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('TYPE',typeLabel,typeColor,Boolean(p.is_short))}),");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('PUBLISHED',pubDate,'#0a0a18')}),");
-  L.push("      placeholderMat,");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('SOURCE',p.domain,'#0a1f16',true)})");
+  L.push("      new THREE.MeshBasicMaterial({color:0x223344}),");
+  L.push("      new THREE.MeshBasicMaterial({color:0x223344}),");
+  L.push("      new THREE.MeshBasicMaterial({color:0x223344}),");
+  L.push("      new THREE.MeshBasicMaterial({color:0x223344}),");
+  L.push("      new THREE.MeshBasicMaterial({color:0x223344}),");
+  L.push("      new THREE.MeshBasicMaterial({color:0x223344})");
   L.push("    ];");
   L.push("    const mesh=new THREE.Mesh(geo,materials);");
   L.push("    mesh.position.set(p.x,p.y,p.z);");
   L.push("    mesh.userData=p;");
-  L.push("    mesh.userData.loadedTier='none';mesh.userData.loadingTier=null;");
+  L.push("    mesh.userData.loadedTier='none';mesh.userData.loadingTier=null;mesh.userData.labelsLoaded=false;");
   L.push("    mesh.userData.galaxyKey=k;mesh.userData.localIdx=localIdx;mesh.userData.localCount=counts[k];");
   L.push("    scene.add(mesh);planetMeshes.push(mesh);");
+  L.push("  });");
+  L.push("}");
+
+  L.push("function loadLabelsFor(mesh){");
+  L.push("  if(mesh.userData.labelsLoaded) return;");
+  L.push("  mesh.userData.labelsLoaded=true;");
+  L.push("  const p=mesh.userData;");
+  L.push("  const dateStr=(p.added_at||'').slice(0,10);");
+  L.push("  const isYT=p.domain==='youtube.com';");
+  L.push("  const typeLabel=isYT?(p.is_short?'\uD83D\uDCF1 SHORT':'\uD83C\uDFAC VIDEO'):'\uD83D\uDD17 LINK';");
+  L.push("  const typeColor=p.is_short?'#2a0a1a':'#0a0a18';");
+  L.push("  const pubDate=(p.published_at||dateStr||'');");
+  L.push("  const faces=[[0,'TITLE',p.title||p.url,'#0a0a18',false],[1,'CHANNEL',p.group_name||p.domain,'#0a0a18',false],[2,'TYPE',typeLabel,typeColor,Boolean(p.is_short)],[3,'PUBLISHED',pubDate,'#0a0a18',false],[5,'SOURCE',p.domain,'#0a1f16',true]];");
+  L.push("  faces.forEach(function(f){");
+  L.push("    const mat=mesh.material[f[0]];");
+  L.push("    mat.map=makeFaceTexture(f[1],f[2],f[3],f[4]);");
+  L.push("    mat.color.set(0xffffff);");
+  L.push("    mat.needsUpdate=true;");
   L.push("  });");
   L.push("}");
 
@@ -412,10 +424,11 @@ function buildGameScript(layout){
   L.push("}");
   L.push("let lodCursor=0;");
   L.push("function updateLOD(){");
-  L.push("  const batch=24;");
+  L.push("  const batch=40;");
   L.push("  for(let i=0;i<batch&&planetMeshes.length>0;i++){");
   L.push("    const mesh=planetMeshes[lodCursor%planetMeshes.length];lodCursor++;");
   L.push("    const dist=camera.position.distanceTo(mesh.position);");
+  L.push("    if(dist<900&&!mesh.userData.labelsLoaded) loadLabelsFor(mesh);");
   L.push("    const want=desiredTier(dist);");
   L.push("    if(TIER_RANK[want]>TIER_RANK[mesh.userData.loadedTier]) loadTierFor(mesh,want);");
   L.push("  }");
@@ -606,7 +619,7 @@ function buildGameHTML(layout){
     "<div id='menuUI'>",
     "  <h1>\uD83D\uDD17 LINK LANE</h1>",
     "  <p>fly through your bookmarks</p>",
-    "  <div id='statBadge'>"+(layout.links.length>0 ? layout.links.length+" links across "+layout.galaxies.length+" domains" : "add links at /admin to begin")+"</div>",
+    "  <div id='statBadge'>"+(layout.links.length>0 ? layout.links.length+" links across "+layout.galaxies.length+" galaxies" : "add links at /admin to begin")+"</div>",
     "  <button id='startBtn' onclick='startFlying()'>LAUNCH \uD83D\uDE80</button>",
     "</div>",
     "<div id='flyUI'>",
@@ -764,7 +777,7 @@ export default {
     if(method==="OPTIONS") return new Response(null,{status:204,headers:CORS});
     if(path.startsWith("/og-image/")) return apiOgImage(env,decodeURIComponent(path.slice(10)));
     if(path==="/admin"&&method==="GET"){
-      const r=await env.DB.prepare("SELECT id,url,title,domain,og_image_key,group_name,is_short FROM links ORDER BY added_at DESC LIMIT 300").all();
+      const r=await env.DB.prepare("SELECT id,url,title,domain,og_image_key,group_name,is_short FROM links ORDER BY added_at DESC LIMIT 1500").all();
       return new Response(buildAdminHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path==="/admin/add"&&method==="POST") return apiAddLink(env,request);
@@ -777,7 +790,7 @@ export default {
       return j({ok:true,results});
     }
     if(path==="/"||path===""){
-      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,is_short,published_at,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 300").all();
+      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,is_short,published_at,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 1500").all();
       const layout=layoutLinks(r.results||[]);
       return new Response(buildGameHTML(layout),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
