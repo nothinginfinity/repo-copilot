@@ -1,4 +1,4 @@
-const VERSION = "2.1.0";
+const VERSION = "2.2.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -311,6 +311,7 @@ function buildGameScript(layout){
   L.push("let speed=3;");
   L.push("let yaw=0,pitch=0,yawVel=0,pitchVel=0;");
   L.push("const PITCH_LIMIT=1.3;");
+  L.push("const MAX_PROMOTED=400;");
   L.push("let touchActive=false,touchStartX=0,touchStartY=0,lastX=0,lastY=0,isTap=true;");
   L.push("let targeted=null;");
   L.push("let frame=0;");
@@ -401,7 +402,7 @@ function buildGameScript(layout){
   L.push("  torus:function(r){return new THREE.TorusGeometry(r*0.78,r*0.32,8,24);}");
   L.push("};");
 
-  L.push("function superclusterRadius(count){return Math.max(300,Math.min(900,40*Math.sqrt(count)));}");
+  L.push("function superclusterRadius(count){return Math.max(1200,Math.min(3000,90*Math.sqrt(count)));}");
   L.push("function repositionAll(){");
   L.push("  const _rm4=new THREE.Matrix4();");
   L.push("  if(clusterMode==='supercluster'){");
@@ -582,12 +583,17 @@ function buildGameScript(layout){
   L.push("let lodCursor=0;");
   L.push("function updateLOD(){");
   L.push("  const promoteBatch=60;");
-  L.push("  for(let i=0;i<promoteBatch&&nodeData.length>0;i++){");
-  L.push("    const idx=lodCursor%nodeData.length;lodCursor++;");
-  L.push("    const p=nodeData[idx];");
-  L.push("    if(p.promoted) continue;");
-  L.push("    const dx=camera.position.x-p.x,dy=camera.position.y-p.y,dz=camera.position.z-p.z;");
-  L.push("    if(dx*dx+dy*dy+dz*dz<810000) promoteNode(idx);");
+  L.push("  if(planetMeshes.length<MAX_PROMOTED){");
+  L.push("    for(let i=0;i<promoteBatch&&nodeData.length>0;i++){");
+  L.push("      const idx=lodCursor%nodeData.length;lodCursor++;");
+  L.push("      const p=nodeData[idx];");
+  L.push("      if(p.promoted) continue;");
+  L.push("      const dx=camera.position.x-p.x,dy=camera.position.y-p.y,dz=camera.position.z-p.z;");
+  L.push("      if(dx*dx+dy*dy+dz*dz<810000){");
+  L.push("        promoteNode(idx);");
+  L.push("        if(planetMeshes.length>=MAX_PROMOTED) break;");
+  L.push("      }");
+  L.push("    }");
   L.push("  }");
   L.push("  const thumbBatch=24;");
   L.push("  for(let i=0;i<thumbBatch&&planetMeshes.length>0;i++){");
