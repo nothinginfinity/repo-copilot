@@ -1,4 +1,4 @@
-const VERSION = "2.3.0";
+const VERSION = "2.3.5";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -731,6 +731,121 @@ function buildGameScript(layout){
   L.push("  focus=null;gameState='flying';");
   L.push("}");
 
+  L.push("let ccOpen=false,ccTab='registry',ccPrevState=null,ccRegistryBuilt=false,activeLoadout='explorer';");
+  L.push("function openCommandCenter(){");
+  L.push("  if(ccOpen) return;");
+  L.push("  ccOpen=true;");
+  L.push("  if(gameState==='flying'){ccPrevState='flying';gameState='ccPaused';}else ccPrevState=null;");
+  L.push("  if(!ccRegistryBuilt){ccRenderRegistry();ccRegistryBuilt=true;}");
+  L.push("  ccRenderSystems();");
+  L.push("  document.getElementById('ccDim').classList.add('open');");
+  L.push("  document.getElementById('ccOverlay').classList.add('open');");
+  L.push("}");
+  L.push("function closeCommandCenter(){");
+  L.push("  if(!ccOpen) return;");
+  L.push("  ccOpen=false;");
+  L.push("  document.getElementById('ccDim').classList.remove('open');");
+  L.push("  document.getElementById('ccOverlay').classList.remove('open');");
+  L.push("  if(ccPrevState==='flying'&&gameState==='ccPaused') gameState='flying';");
+  L.push("  ccPrevState=null;");
+  L.push("}");
+  L.push("function ccSetTab(name){");
+  L.push("  ccTab=name;");
+  L.push("  ['registry','cargo','systems'].forEach(function(t){");
+  L.push("    document.getElementById('ccTab-'+t).classList.toggle('active',t===name);");
+  L.push("    document.getElementById('ccPanel-'+t).classList.toggle('ccActive',t===name);");
+  L.push("  });");
+  L.push("  if(name==='systems') ccRenderSystems();");
+  L.push("}");
+  L.push("function ccEl(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}");
+  L.push("function ccMsgIn(id,t,ok){const d=document.getElementById(id);d.textContent=t;d.className='ccMsg '+(ok?'ok':'er');d.style.display='block';setTimeout(function(){d.style.display='none';},6000);}");
+  L.push("function ccRenderRegistry(){");
+  L.push("  const list=document.getElementById('ccList');");
+  L.push("  list.innerHTML='';");
+  L.push("  const links=LAYOUT.links;");
+  L.push("  document.getElementById('ccCount').textContent='Your Links ('+links.length+')';");
+  L.push("  const cap=Math.min(links.length,200);");
+  L.push("  for(let i=0;i<cap;i++){");
+  L.push("    (function(l){");
+  L.push("      const row=ccEl('div','ccRow');");
+  L.push("      if(l.og_image_key){const img=document.createElement('img');img.src='/og-image/'+l.id;img.className='ccThumb';img.loading='lazy';row.appendChild(img);}");
+  L.push("      else row.appendChild(ccEl('div','ccThumb ccThumbEmpty','\uD83D\uDD17'));");
+  L.push("      const mid=ccEl('div','ccRowMid');");
+  L.push("      mid.appendChild(ccEl('div','ccRowTitle',l.title||l.url));");
+  L.push("      mid.appendChild(ccEl('div','ccRowDomain',l.group_name||l.domain||''));");
+  L.push("      row.appendChild(mid);");
+  L.push("      const db=ccEl('button','ccDelBtn','x');");
+  L.push("      db.onclick=function(){ccDel(l.id,row);};");
+  L.push("      row.appendChild(db);");
+  L.push("      list.appendChild(row);");
+  L.push("    })(links[i]);");
+  L.push("  }");
+  L.push("  if(links.length>cap) list.appendChild(ccEl('div','ccNote','Showing first '+cap+' of '+links.length+'.'));");
+  L.push("}");
+  L.push("function ccDel(id,row){");
+  L.push("  if(!confirm('Remove this link?')) return;");
+  L.push("  fetch('/admin/link/'+encodeURIComponent(id),{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){");
+  L.push("    if(d.ok){");
+  L.push("      if(row&&row.parentNode) row.parentNode.removeChild(row);");
+  L.push("      const idx=LAYOUT.links.findIndex(function(l){return l.id===id;});");
+  L.push("      if(idx>=0) LAYOUT.links.splice(idx,1);");
+  L.push("      document.getElementById('ccCount').textContent='Your Links ('+LAYOUT.links.length+')';");
+  L.push("      showToast('Removed. Refresh to update 3D.');");
+  L.push("    }");
+  L.push("  }).catch(function(){});");
+  L.push("}");
+  L.push("async function ccAddFeed(){");
+  L.push("  const feedUrl=document.getElementById('ccFdInput').value.trim();");
+  L.push("  const name=document.getElementById('ccFdName').value.trim();");
+  L.push("  const max=document.getElementById('ccFdMax').value||15;");
+  L.push("  if(!feedUrl){ccMsgIn('ccFdMsg','Enter a feed URL',false);return;}");
+  L.push("  const btn=document.getElementById('ccFdBtn');btn.disabled=true;btn.textContent='Fetching feed...';");
+  L.push("  try{");
+  L.push("    const r=await fetch('/admin/add-feed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feed_url:feedUrl,name:name||undefined,max:Number(max)})});");
+  L.push("    const d=await r.json();");
+  L.push("    if(d.ok) ccMsgIn('ccFdMsg','Added '+d.added+' item(s) from '+d.feed+(d.skipped?(' ('+d.skipped+' already had)'):'')+'. Refresh game to see the new galaxy.',true);");
+  L.push("    else ccMsgIn('ccFdMsg',d.error||'Failed to add feed',false);");
+  L.push("  }catch(e){ccMsgIn('ccFdMsg','Request failed: '+e.message,false);}");
+  L.push("  btn.disabled=false;btn.textContent='Add Feed Group \uD83D\uDCF0';");
+  L.push("}");
+  L.push("async function ccAddChannel(){");
+  L.push("  const input=document.getElementById('ccChInput').value.trim();");
+  L.push("  const max=document.getElementById('ccChMax').value||15;");
+  L.push("  if(!input){ccMsgIn('ccChMsg','Enter a channel URL or handle',false);return;}");
+  L.push("  const btn=document.getElementById('ccChBtn');btn.disabled=true;btn.textContent='Fetching channel...';");
+  L.push("  try{");
+  L.push("    const r=await fetch('/admin/add-channel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input:input,max:Number(max)})});");
+  L.push("    const d=await r.json();");
+  L.push("    if(d.ok) ccMsgIn('ccChMsg','Added '+d.added+' video(s) from '+d.channel+(d.skipped?(' ('+d.skipped+' already had)'):'')+'. Refresh game to see the new galaxy.',true);");
+  L.push("    else ccMsgIn('ccChMsg',d.error||'Failed to add channel',false);");
+  L.push("  }catch(e){ccMsgIn('ccChMsg','Request failed: '+e.message,false);}");
+  L.push("  btn.disabled=false;btn.textContent='Add Channel Group \uD83D\uDCFA';");
+  L.push("}");
+  L.push("function ccProg(t){const p=document.getElementById('ccProg');p.textContent=t;p.style.display=t?'block':'none';}");
+  L.push("async function ccAddLinks(){");
+  L.push("  const lines=document.getElementById('ccUrls').value.split('\\n').map(function(s){return s.trim();}).filter(Boolean);");
+  L.push("  if(!lines.length){ccMsgIn('ccAddMsg','No URLs entered',false);return;}");
+  L.push("  const btn=document.getElementById('ccAddBtn');btn.disabled=true;");
+  L.push("  let done=0,errors=0;");
+  L.push("  for(const u of lines){");
+  L.push("    ccProg('Fetching '+(done+errors+1)+' / '+lines.length+'...');");
+  L.push("    try{const r=await fetch('/admin/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:u})});const d=await r.json();if(d.ok)done++;else errors++;}catch(e){errors++;}");
+  L.push("  }");
+  L.push("  ccProg('');btn.disabled=false;");
+  L.push("  if(errors) ccMsgIn('ccAddMsg','Added '+done+', '+errors+' failed',done>0);");
+  L.push("  else ccMsgIn('ccAddMsg','Added '+done+' link'+(done===1?'':'s')+'! Refresh game to see them.',true);");
+  L.push("}");
+  L.push("function ccRenderSystems(){");
+  L.push("  const el=document.getElementById('ccSysCurrent');");
+  L.push("  if(el) el.textContent='Formation: '+currentFormation+' \u00B7 Mode: '+clusterMode+' \u00B7 Speed: '+speed.toFixed(1)+'x \u00B7 Loadout: '+activeLoadout;");
+  L.push("}");
+  L.push("function ccSetLoadout(name){");
+  L.push("  activeLoadout=name;");
+  L.push("  ['explorer','research','bounty'].forEach(function(n){document.getElementById('ccLo-'+n).classList.toggle('active',n===name);});");
+  L.push("  ccRenderSystems();");
+  L.push("  showToast('Loadout: '+name+' (visual only for now)');");
+  L.push("}");
+
   L.push("function startTouch(x,y){touchActive=true;touchStartX=x;touchStartY=y;lastX=x;lastY=y;isTap=true;}");
   L.push("function moveTouch(x,y){");
   L.push("  if(!touchActive) return;");
@@ -886,6 +1001,48 @@ function buildGameHTML(layout){
     "#speedLabel{color:#888;font-size:11px;text-align:center;flex:1;}",
     "#adminLink{color:#222;font-size:10px;padding:4px;text-align:center;width:100%;max-width:480px;}",
     "#adminLink a{color:#222;}",
+    "#ccLaunchRow{width:100%;max-width:480px;padding:6px 10px 10px;display:flex;flex-direction:column;gap:4px;align-items:center;}",
+    "#ccOpenBtn{width:100%;background:rgba(0,255,136,0.12);color:#00ff88;border:1px solid rgba(0,255,136,0.5);padding:12px;font-family:monospace;font-size:14px;font-weight:bold;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 0 14px rgba(0,255,136,0.15);letter-spacing:1px;}",
+    "#ccAdminFallback{color:#222;font-size:10px;text-decoration:none;}",
+    "#ccDim{display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(3px);z-index:390;opacity:0;pointer-events:none;transition:opacity 0.3s ease;}",
+    "#ccDim.open{opacity:1;pointer-events:auto;}",
+    "#ccOverlay{position:fixed;bottom:0;left:50%;transform:translate(-50%,102%);width:100%;max-width:480px;height:82dvh;background:rgba(10,10,15,0.88);backdrop-filter:blur(8px);border-top:1px solid rgba(0,255,136,0.45);border-radius:14px 14px 0 0;box-shadow:0 -18px 50px rgba(0,255,136,0.12);z-index:400;display:flex;flex-direction:column;transition:transform 0.35s ease;padding-bottom:env(safe-area-inset-bottom);}",
+    "#ccOverlay.open{transform:translate(-50%,0);}",
+    "#ccHandleWrap{padding:8px 0 2px;cursor:pointer;}",
+    "#ccHandle{width:44px;height:4px;border-radius:2px;background:rgba(255,255,255,0.25);margin:0 auto;}",
+    "#ccHeader{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 8px;}",
+    "#ccTitle{color:#00ff88;font-size:14px;font-weight:bold;letter-spacing:1px;}",
+    "#ccClose{background:transparent;color:#888;border:1px solid #333;border-radius:6px;padding:4px 10px;font-family:monospace;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    "#ccTabs{display:flex;gap:6px;padding:0 12px 10px;}",
+    ".ccTabBtn{flex:1;background:rgba(0,255,255,0.05);color:#7ab;border:1px solid rgba(0,255,255,0.25);padding:8px 4px;border-radius:8px;font-family:monospace;font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    ".ccTabBtn.active{background:rgba(0,255,136,0.14);color:#00ff88;border-color:rgba(0,255,136,0.55);}",
+    "#ccPanels{flex:1;position:relative;}",
+    ".ccPanel{position:absolute;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:4px 14px 20px;visibility:hidden;pointer-events:none;}",
+    ".ccPanel.ccActive{visibility:visible;pointer-events:auto;}",
+    ".ccH{color:#ffdd00;font-size:12px;margin:14px 0 6px;}",
+    ".ccMsg{display:none;padding:8px;margin:4px 0;border-radius:4px;font-size:11px;}",
+    ".ccMsg.ok{background:#003300;color:#4f4;border:1px solid #4f4;}",
+    ".ccMsg.er{background:#330000;color:#f44;border:1px solid #f44;}",
+    ".ccInput{width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:9px;font-family:monospace;font-size:13px;margin-bottom:6px;box-sizing:border-box;}",
+    ".ccNum{width:60px;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:7px;font-family:monospace;}",
+    ".ccInline{display:flex;gap:8px;align-items:center;margin-bottom:6px;}",
+    ".ccInline label{color:#666;font-size:11px;}",
+    ".ccTextarea{width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:9px;font-family:monospace;font-size:13px;min-height:80px;margin-bottom:6px;box-sizing:border-box;}",
+    ".ccGo{width:100%;background:#00ff88;color:#000;border:none;padding:11px;font-family:monospace;font-size:13px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;margin-bottom:4px;}",
+    ".ccGo:disabled{opacity:0.5;}",
+    ".ccRow{background:#06040c;border:1px solid #1a1a2a;border-radius:5px;padding:7px;display:flex;gap:8px;align-items:center;margin-bottom:6px;}",
+    ".ccThumb{width:44px;height:44px;object-fit:cover;border-radius:4px;flex-shrink:0;}",
+    ".ccThumbEmpty{background:#111;display:flex;align-items:center;justify-content:center;font-size:18px;}",
+    ".ccRowMid{flex:1;overflow:hidden;}",
+    ".ccRowTitle{color:#ccc;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}",
+    ".ccRowDomain{color:#00ff88;font-size:10px;}",
+    ".ccDelBtn{background:#440000;color:#f88;border:1px solid #600;padding:6px 10px;border-radius:4px;cursor:pointer;font-family:monospace;flex-shrink:0;-webkit-tap-highlight-color:transparent;}",
+    ".ccNote{color:#556;font-size:10px;line-height:1.5;margin:4px 0;}",
+    ".ccEmpty{text-align:center;color:#667;font-size:13px;padding:60px 20px;line-height:2;}",
+    ".ccLoadout{background:rgba(0,255,255,0.04);border:1px solid rgba(0,255,255,0.2);border-radius:8px;padding:10px;margin-bottom:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;gap:3px;}",
+    ".ccLoadout b{color:#cde;font-size:13px;}",
+    ".ccLoadout span{color:#667;font-size:10px;}",
+    ".ccLoadout.active{border-color:rgba(0,255,136,0.6);background:rgba(0,255,136,0.08);box-shadow:0 0 10px rgba(0,255,136,0.15);}",
     "#focusBar{display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(0,0,0,0.88);border-top:1px solid rgba(0,255,136,0.35);backdrop-filter:blur(14px);padding:12px 16px calc(12px + env(safe-area-inset-bottom));flex-direction:column;gap:10px;z-index:250;}",
     "#fbTitle{color:#fff;font-size:13px;text-align:center;max-height:3em;overflow:hidden;}",
     ".fbRow{display:flex;gap:8px;}",
@@ -931,7 +1088,54 @@ function buildGameHTML(layout){
     "    <button class='sBtn' onclick='adjustSpeed(1)'>\u23E9</button>",
     "  </div>",
     "</div>",
-    "<div id='adminLink'><a href='/admin'>add links</a></div>",
+    "<div id='ccLaunchRow'>",
+    "  <button id='ccOpenBtn' onclick='openCommandCenter()'>\u2B06 COMMAND CENTER</button>",
+    "  <a id='ccAdminFallback' href='/admin'>debug: /admin</a>",
+    "</div>",
+    "<div id='ccDim' onclick='closeCommandCenter()'></div>",
+    "<div id='ccOverlay'>",
+    "  <div id='ccHandleWrap' onclick='closeCommandCenter()'><div id='ccHandle'></div></div>",
+    "  <div id='ccHeader'><span id='ccTitle'>\uD83D\uDEF8 COMMAND CENTER</span><button id='ccClose' onclick='closeCommandCenter()'>\u2715</button></div>",
+    "  <div id='ccTabs'>",
+    "    <button id='ccTab-registry' class='ccTabBtn active' onclick='ccSetTab(\"registry\")'>Registry</button>",
+    "    <button id='ccTab-cargo' class='ccTabBtn' onclick='ccSetTab(\"cargo\")'>Cargo Bay</button>",
+    "    <button id='ccTab-systems' class='ccTabBtn' onclick='ccSetTab(\"systems\")'>Systems</button>",
+    "  </div>",
+    "  <div id='ccPanels'>",
+    "    <div id='ccPanel-registry' class='ccPanel ccActive'>",
+    "      <h3 class='ccH'>Add an RSS/Article Feed Group</h3>",
+    "      <div id='ccFdMsg' class='ccMsg'></div>",
+    "      <input id='ccFdInput' class='ccInput' placeholder='https://example.com/feed/'>",
+    "      <input id='ccFdName' class='ccInput' placeholder='Group name (optional)'>",
+    "      <div class='ccInline'><label>items:</label><input id='ccFdMax' class='ccNum' type='number' value='15' min='1' max='30'></div>",
+    "      <button id='ccFdBtn' class='ccGo' onclick='ccAddFeed()'>Add Feed Group \uD83D\uDCF0</button>",
+    "      <h3 class='ccH'>Add a YouTube Channel Group</h3>",
+    "      <div id='ccChMsg' class='ccMsg'></div>",
+    "      <input id='ccChInput' class='ccInput' placeholder='@PowerfulJRE or channel URL'>",
+    "      <div class='ccInline'><label>videos:</label><input id='ccChMax' class='ccNum' type='number' value='15' min='1' max='25'></div>",
+    "      <button id='ccChBtn' class='ccGo' onclick='ccAddChannel()'>Add Channel Group \uD83D\uDCFA</button>",
+    "      <h3 class='ccH'>Add Individual Links</h3>",
+    "      <div id='ccAddMsg' class='ccMsg'></div>",
+    "      <div id='ccProg' class='ccNote' style='display:none;'></div>",
+    "      <textarea id='ccUrls' class='ccTextarea' placeholder='one URL per line'></textarea>",
+    "      <button id='ccAddBtn' class='ccGo' onclick='ccAddLinks()'>Add Links \u2191</button>",
+    "      <h3 class='ccH' id='ccCount'>Your Links</h3>",
+    "      <div id='ccList'></div>",
+    "    </div>",
+    "    <div id='ccPanel-cargo' class='ccPanel'>",
+    "      <div class='ccEmpty'>\uD83D\uDCE6<br>Captured nodes will appear here.<br><span class='ccNote'>Selected cards, tractor-beam captures, and the research queue land in the Cargo Bay in a future update.</span></div>",
+    "    </div>",
+    "    <div id='ccPanel-systems' class='ccPanel'>",
+    "      <h3 class='ccH'>Active Systems</h3>",
+    "      <div id='ccSysCurrent' class='ccNote'></div>",
+    "      <div class='ccNote'>Control slots: left thumb \u00B7 center \u00B7 right thumb \u00B7 HUD \u00B7 gesture \u2014 customization arrives with loadouts.</div>",
+    "      <h3 class='ccH'>Loadouts</h3>",
+    "      <div id='ccLo-explorer' class='ccLoadout active' onclick='ccSetLoadout(\"explorer\")'><b>\uD83D\uDE80 Explorer</b><span>reverse/stop \u00B7 speed + formation \u00B7 forward \u00B7 free-look</span></div>",
+    "      <div id='ccLo-research' class='ccLoadout' onclick='ccSetLoadout(\"research\")'><b>\uD83D\uDD2C Research</b><span>back/refold \u00B7 inspect/save \u00B7 next node \u00B7 face carousel (soon)</span></div>",
+    "      <div id='ccLo-bounty' class='ccLoadout' onclick='ccSetLoadout(\"bounty\")'><b>\uD83C\uDFAF Bounty Hunter</b><span>shield/dodge \u00B7 bounty scanner \u00B7 blaster (soon)</span></div>",
+    "    </div>",
+    "  </div>",
+    "</div>",
     "<div id='focusBar'>",
     "  <div id='fbTitle'></div>",
     "  <div class='fbRow'><button id='fbVisit'>Visit \u2192</button><button id='fbClose' onclick='closeFocus()'>\u2715 Close</button></div>",
