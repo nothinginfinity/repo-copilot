@@ -1,4 +1,4 @@
-const VERSION = "1.5.0";
+const VERSION = "1.6.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -434,10 +434,22 @@ function buildGameScript(layout){
   L.push("  }");
   L.push("}");
 
+  L.push("const _toMesh=new THREE.Vector3(),_fwd=new THREE.Vector3();");
   L.push("function updateTarget(){");
-  L.push("  raycaster.setFromCamera({x:0,y:0},camera);");
-  L.push("  const hits=raycaster.intersectObjects(planetMeshes);");
-  L.push("  targeted=hits.length>0?hits[0].object:null;");
+  L.push("  camera.getWorldDirection(_fwd);");
+  L.push("  let best=null,bestScore=Infinity;");
+  L.push("  for(let i=0;i<planetMeshes.length;i++){");
+  L.push("    const mesh=planetMeshes[i];");
+  L.push("    _toMesh.copy(mesh.position).sub(camera.position);");
+  L.push("    const dist=_toMesh.length();");
+  L.push("    if(dist>1400||dist<1) continue;");
+  L.push("    _toMesh.multiplyScalar(1/dist);");
+  L.push("    const dot=_toMesh.dot(_fwd);");
+  L.push("    if(dot<0.85) continue;");
+  L.push("    const score=(1-dot)+dist*0.0006;");
+  L.push("    if(score<bestScore){bestScore=score;best=mesh;}");
+  L.push("  }");
+  L.push("  targeted=best;");
   L.push("}");
   L.push("function trySelect(){if(targeted) openLink(targeted.userData);}");
 
@@ -465,16 +477,16 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function endTouch(){if(isTap&&gameState==='flying')trySelect();touchActive=false;yawVel=0;pitchVel=0;}");
 
-  L.push("let isPinching=false,pinchStartDist=0;");
+  L.push("let isPinching=false,pinchStartDist=0,pinchStartSpeed=0;");
   L.push("const PINCH_SENSITIVITY=0.06;");
   L.push("function touchDist(t1,t2){const dx=t1.clientX-t2.clientX,dy=t1.clientY-t2.clientY;return Math.sqrt(dx*dx+dy*dy);}");
-  L.push("function startPinch(t1,t2){isPinching=true;pinchStartDist=touchDist(t1,t2);touchActive=false;}");
+  L.push("function startPinch(t1,t2){isPinching=true;pinchStartDist=touchDist(t1,t2);pinchStartSpeed=speed;touchActive=false;}");
   L.push("function movePinch(t1,t2){");
   L.push("  const dist=touchDist(t1,t2);");
   L.push("  const delta=pinchStartDist-dist;");
-  L.push("  speed=Math.max(-6,Math.min(14,delta*PINCH_SENSITIVITY));");
+  L.push("  speed=Math.max(-6,Math.min(14,pinchStartSpeed+delta*PINCH_SENSITIVITY));");
   L.push("}");
-  L.push("function endPinch(){isPinching=false;speed=0;}");
+  L.push("function endPinch(){isPinching=false;}");
 
   L.push("const canvas=document.getElementById('gc');");
   L.push("canvas.addEventListener('touchstart',function(e){");
@@ -528,6 +540,10 @@ function buildGameScript(layout){
   L.push("  camera.translateZ(-speed);");
   L.push("  yawVel*=0.85;pitchVel*=0.85;");
   L.push("  updateTarget();updateLOD();billboardCubes();");
+  L.push("  if(targeted&&speed>0.3){");
+  L.push("    const td=camera.position.distanceTo(targeted.position);");
+  L.push("    if(td<220) speed*=0.965;");
+  L.push("  }");
   L.push("  if(frame%10===0) checkZoneEntry();");
   L.push("  if(frame%4===0) updateHUD();");
   L.push("}");
