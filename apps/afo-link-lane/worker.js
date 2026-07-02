@@ -1,4 +1,4 @@
-const VERSION = "1.9.0";
+const VERSION = "2.0.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -167,6 +167,71 @@ async function resolveChannelId(input){
   if(!channelId) throw new Error("Could not resolve a channel ID from that input - try the full channel URL.");
   const channelName=extractMetaProperty(html,"og:title")||raw;
   return {channelId,channelName};
+}
+
+// Generic RSS 2.0 / Atom parser (unlike parseAtomFeed above, which is
+// YouTube-specific and relies on yt:videoId). Handles <item> (RSS) or
+// <entry> (Atom) blocks, common image sources (enclosure, media:content,
+// media:thumbnail, first <img> in description), and CDATA-wrapped text.
+function stripCdata(s){
+  const m=String(s||"").match(/^<!\[CDATA\[([\s\S]*)\]\]>$/);
+  return m?m[1]:(s||"");
+}
+function parseGenericFeed(xml,limit){
+  const entries=[];
+  let blocks=xml.split(/<item[\s>]/i).slice(1);
+  if(blocks.length===0) blocks=xml.split(/<entry[\s>]/i).slice(1);
+  for(const raw of blocks.slice(0,limit)){
+    const block=raw.split(/<\/(item|entry)>/i)[0];
+    const title=decodeHtmlEntities(stripCdata((block.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||"")).trim();
+    let link=null;
+    let m=block.match(/<link[^>]*href=["']([^"']+)["']/i);
+    if(m) link=m[1];
+    else { m=block.match(/<link[^>]*>([^<]*)<\/link>/i); if(m) link=m[1].trim(); }
+    const pub=(block.match(/<(?:pubDate|published|updated)>([^<]+)<\/(?:pubDate|published|updated)>/i)||[])[1]||"";
+    let desc=stripCdata((block.match(/<(?:description|summary|content)[^>]*>([\s\S]*?)<\/(?:description|summary|content)>/i)||[])[1]||"");
+    desc=decodeHtmlEntities(desc.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()).slice(0,300);
+    let image=null;
+    m=block.match(/<enclosure[^>]*url=["']([^"']+)["'][^>]*type=["']image\/[^"']*["']/i)
+      ||block.match(/<media:content[^>]*url=["']([^"']+)["']/i)
+      ||block.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i);
+    if(m) image=m[1];
+    if(!image){ m=block.match(/<img[^>]+src=["']([^"']+)["']/i); if(m) image=m[1]; }
+    if(title&&link) entries.push({title,link,published:pub,description:desc,image});
+  }
+  return entries;
+}
+async function apiAddFeed(env,req){
+  const body=await req.json().catch(()=>({}));
+  const feedUrl=body.feed_url;
+  const max=Math.max(1,Math.min(Number(body.max||15),30));
+  if(!feedUrl) return j({ok:false,error:"feed_url required"},400);
+  let xml;
+  try{
+    const res=await fetch(feedUrl,{headers:{"User-Agent":"Mozilla/5.0 (compatible; AFOLinkLane/1.0)"},redirect:"follow"});
+    if(!res.ok) throw new Error("Feed fetch failed: HTTP "+res.status);
+    xml=await res.text();
+  }catch(e){ return j({ok:false,error:e.message},400); }
+  const feedTitleMatch=xml.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const groupName=(body.name&&String(body.name).trim())||decodeHtmlEntities(stripCdata(feedTitleMatch?feedTitleMatch[1]:"")).trim()||domainOf(feedUrl);
+  const items=parseGenericFeed(xml,max);
+  if(items.length===0) return j({ok:false,error:"No entries found in feed (unsupported format or empty feed)."},400);
+  let added=0,skipped=0;
+  for(const it of items){
+    const url=it.link;
+    if(!url) continue;
+    const existing=await env.DB.prepare("SELECT id FROM links WHERE url=?").bind(url).first();
+    if(existing){ skipped++; continue; }
+    const id=uid();
+    let ogImageKey=null;
+    if(it.image) ogImageKey=await storeOgImage(env,id,it.image);
+    let publishedAt=null;
+    if(it.published){ const d=new Date(it.published); if(!isNaN(d.getTime())) publishedAt=d.toISOString().slice(0,10); }
+    await env.DB.prepare("INSERT OR IGNORE INTO links (id,url,title,description,domain,og_image_key,group_name,published_at) VALUES (?,?,?,?,?,?,?,?)")
+      .bind(id,url,it.title||url,it.description||"",domainOf(url),ogImageKey,groupName,publishedAt).run();
+    added++;
+  }
+  return j({ok:true,feed:groupName,added,skipped,found:items.length});
 }
 
 function parseAtomFeed(xml,limit){
@@ -751,6 +816,16 @@ function buildAdminHTML(links){
     "</head><body>",
     "<h1>\uD83D\uDD17 Link Lane</h1>",
     "<a href='/'>\u2190 back to game</a>",
+    "<h2>Add an RSS/Article Feed Group</h2>",
+    "<p class='note'>Any site with an RSS or Atom feed works - news, blogs, podcasts, tech/science publications. Paste the feed URL directly (not the site's homepage).</p>",
+    "<div id='fdMsg'></div>",
+    "<input id='fdInput' placeholder='https://example.com/feed/' style='width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:10px;font-family:monospace;font-size:14px;margin-bottom:8px;'>",
+    "<input id='fdName' placeholder='Group name (optional - auto-detected from feed)' style='width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:10px;font-family:monospace;font-size:14px;margin-bottom:8px;'>",
+    "<div style='display:flex;gap:8px;align-items:center;margin-bottom:8px;'>",
+    "  <label style='color:#666;font-size:11px;'>items:</label>",
+    "  <input id='fdMax' type='number' value='15' min='1' max='30' style='width:60px;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:8px;font-family:monospace;'>",
+    "</div>",
+    "<button class='go' onclick='addFeed()'>Add Feed Group \uD83D\uDCF0</button>",
     "<h2>Add a YouTube Channel Group</h2>",
     "<p class='note'>Paste a channel URL, @handle, or UC... channel ID. Pulls that channel's newest uploads straight from its public RSS feed (no API key) and drops them into their own 3D galaxy.</p>",
     "<div id='chMsg'></div>",
@@ -771,6 +846,21 @@ function buildAdminHTML(links){
     "<script>",
     "function msg(t,ok){const d=document.getElementById('msg');d.textContent=t;d.className=ok?'ok':'er';d.style.display='block';setTimeout(function(){d.style.display='none';},6000);}",
     "function chMsg(t,ok){const d=document.getElementById('chMsg');d.textContent=t;d.className=ok?'ok':'er';d.style.display='block';}",
+    "function fdMsg(t,ok){const d=document.getElementById('fdMsg');d.textContent=t;d.className=ok?'ok':'er';d.style.display='block';}",
+    "async function addFeed(){",
+    "  const feedUrl=document.getElementById('fdInput').value.trim();",
+    "  const name=document.getElementById('fdName').value.trim();",
+    "  const max=document.getElementById('fdMax').value||15;",
+    "  if(!feedUrl){fdMsg('Enter a feed URL',false);return;}",
+    "  const btn=document.querySelector('button[onclick=\"addFeed()\"]');btn.disabled=true;btn.textContent='Fetching feed...';",
+    "  try{",
+    "    const r=await fetch('/admin/add-feed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({feed_url:feedUrl,name:name||undefined,max:Number(max)})});",
+    "    const d=await r.json();",
+    "    if(d.ok) fdMsg('Added '+d.added+' item(s) from \"'+d.feed+'\"'+(d.skipped?(' ('+d.skipped+' already had)'):'')+'. Refresh game to see the new galaxy.',true);",
+    "    else fdMsg(d.error||'Failed to add feed',false);",
+    "  }catch(e){fdMsg('Request failed: '+e.message,false);}",
+    "  btn.disabled=false;btn.textContent='Add Feed Group \uD83D\uDCF0';",
+    "}",
     "async function addChannel(){",
     "  const input=document.getElementById('chInput').value.trim();",
     "  const max=document.getElementById('chMax').value||15;",
@@ -862,6 +952,7 @@ export default {
     }
     if(path==="/admin/add"&&method==="POST") return apiAddLink(env,request);
     if(path==="/admin/add-channel"&&method==="POST") return apiAddChannel(env,request);
+    if(path==="/admin/add-feed"&&method==="POST") return apiAddFeed(env,request);
     if(path.startsWith("/admin/link/")&&method==="DELETE") return deleteLink(env,decodeURIComponent(path.slice(12)));
     if(path==="/health") return j({ok:true,worker:WORKER_NAME,version:VERSION});
     if(path==="/admin/setup"&&method==="POST"){
