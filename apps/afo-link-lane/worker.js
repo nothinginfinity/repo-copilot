@@ -1,4 +1,4 @@
-const VERSION = "2.0.0";
+const VERSION = "2.1.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -304,6 +304,8 @@ function buildGameScript(layout){
   L.push("let planetMeshes=[],galaxyMeshes={},galaxyAnchors={};");
   L.push("let nodeData=[],farMesh=null,farOwner=[],farActiveCount=0,thumbCursor=0;");
   L.push("let currentFormation='sphere';");
+  L.push("let clusterMode='galaxies';");
+  L.push("let galaxyLabels=[];");
   L.push("let insideGalaxy=null;");
   L.push("let gameState='menu';");
   L.push("let speed=3;");
@@ -357,6 +359,7 @@ function buildGameScript(layout){
   L.push("}");
 
   L.push("function checkZoneEntry(){");
+  L.push("  if(clusterMode==='supercluster'){insideGalaxy=null;return;}");
   L.push("  let inside=null;");
   L.push("  Object.keys(galaxyAnchors).forEach(function(k){");
   L.push("    const a=galaxyAnchors[k];");
@@ -397,28 +400,7 @@ function buildGameScript(layout){
   L.push("  cube:function(r){return new THREE.BoxGeometry(r*1.5,r*1.5,r*1.5);},");
   L.push("  torus:function(r){return new THREE.TorusGeometry(r*0.78,r*0.32,8,24);}");
   L.push("};");
-  L.push("function applyFormation(name){");
-  L.push("  if(!FORMATIONS[name]) return;");
-  L.push("  currentFormation=name;");
-  L.push("  planetMeshes.forEach(function(mesh){");
-  L.push("    const a=galaxyAnchors[mesh.userData.galaxyKey];if(!a) return;");
-  L.push("    const off=FORMATIONS[name](mesh.userData.localIdx,mesh.userData.localCount,a.radius);");
-  L.push("    mesh.position.set(a.x+off.x,a.y+off.y,a.z+off.z);");
-  L.push("    mesh.userData.x=a.x+off.x;mesh.userData.y=a.y+off.y;mesh.userData.z=a.z+off.z;");
-  L.push("  });");
-  L.push("  const _fm4=new THREE.Matrix4();");
-  L.push("  nodeData.forEach(function(p){");
-  L.push("    if(p.promoted) return;");
-  L.push("    const a=galaxyAnchors[p.galaxyKey];if(!a) return;");
-  L.push("    const off=FORMATIONS[name](p.localIdx,p.localCount,a.radius);");
-  L.push("    p.x=a.x+off.x;p.y=a.y+off.y;p.z=a.z+off.z;");
-  L.push("    _fm4.makeTranslation(p.x,p.y,p.z);");
-  L.push("    farMesh.setMatrixAt(p.farSlot,_fm4);");
-  L.push("  });");
-  L.push("  farMesh.instanceMatrix.needsUpdate=true;");
-  L.push("  document.querySelectorAll('.fmtBtn').forEach(function(b){b.classList.toggle('active',b.dataset.f===name);});");
-  L.push("  showToast('Formation: '+name.charAt(0).toUpperCase()+name.slice(1));");
-  L.push("}");
+
 
   L.push("function makeLabelSprite(text){");
   L.push("  const c=document.createElement('canvas');c.width=256;c.height=64;");
@@ -454,7 +436,7 @@ function buildGameScript(layout){
   L.push("  LAYOUT.galaxies.forEach(function(g){");
   L.push("    galaxyAnchors[g.name]={x:g.x,y:g.y,z:g.z,radius:g.radius};");
   L.push("    const label=makeLabelSprite('\uD83C\uDF10 '+g.name);");
-  L.push("    label.position.set(g.x,g.y+g.radius+55,g.z);scene.add(label);");
+  L.push("    label.position.set(g.x,g.y+g.radius+55,g.z);scene.add(label);galaxyLabels.push(label);");
   L.push("  });");
   L.push("  const counts={};");
   L.push("  LAYOUT.links.forEach(function(p){const k=p.group_name||p.domain||'other';counts[k]=(counts[k]||0)+1;});");
@@ -468,7 +450,7 @@ function buildGameScript(layout){
   L.push("  LAYOUT.links.forEach(function(p,i){");
   L.push("    const k=p.group_name||p.domain||'other';");
   L.push("    const localIdx=idxCursor[k]=(idxCursor[k]||0);idxCursor[k]++;");
-  L.push("    const entry=Object.assign({},p,{galaxyKey:k,localIdx:localIdx,localCount:counts[k],promoted:false,farSlot:i,loadedTier:'none',loadingTier:null});");
+  L.push("    const entry=Object.assign({},p,{galaxyKey:k,localIdx:localIdx,localCount:counts[k],globalIdx:i,promoted:false,farSlot:i,loadedTier:'none',loadingTier:null});");
   L.push("    nodeData.push(entry);");
   L.push("    _bm4.makeTranslation(p.x,p.y,p.z);");
   L.push("    farMesh.setMatrixAt(i,_bm4);");
@@ -645,13 +627,17 @@ function buildGameScript(layout){
   L.push("  const sl=document.getElementById('speedLabel');");
   L.push("  sl.textContent=speed===0?'\u23F8 STOPPED':speed<0?'\u25C0 REVERSE '+Math.abs(speed).toFixed(1)+'x':'\uD83D\uDE80 '+speed.toFixed(1)+'x';");
   L.push("  sl.style.color=speed<0?'#ffaa44':'#888';");
-  L.push("  let nearest=null,nd=Infinity;");
-  L.push("  LAYOUT.galaxies.forEach(function(g){const d=camera.position.distanceTo(new THREE.Vector3(g.x,g.y,g.z));if(d<nd&&d>g.radius+80){nd=d;nearest=g;}});");
   L.push("  const arrow=document.getElementById('compass');");
-  L.push("  if(nearest){const v=new THREE.Vector3(nearest.x,nearest.y,nearest.z).project(camera);const ang=Math.atan2(v.y,v.x);");
-  L.push("    arrow.style.display='block';arrow.style.transform='translate(-50%,-50%) rotate('+(-ang)+'rad)';");
-  L.push("    document.getElementById('compassLabel').textContent=nearest.name+' \u2014 '+Math.round(nd)+'u';");
-  L.push("  } else { arrow.style.display='none'; document.getElementById('compassLabel').textContent=''; }");
+  L.push("  if(clusterMode==='supercluster'){");
+  L.push("    arrow.style.display='none'; document.getElementById('compassLabel').textContent='';");
+  L.push("  } else {");
+  L.push("    let nearest=null,nd=Infinity;");
+  L.push("    LAYOUT.galaxies.forEach(function(g){const d=camera.position.distanceTo(new THREE.Vector3(g.x,g.y,g.z));if(d<nd&&d>g.radius+80){nd=d;nearest=g;}});");
+  L.push("    if(nearest){const v=new THREE.Vector3(nearest.x,nearest.y,nearest.z).project(camera);const ang=Math.atan2(v.y,v.x);");
+  L.push("      arrow.style.display='block';arrow.style.transform='translate(-50%,-50%) rotate('+(-ang)+'rad)';");
+  L.push("      document.getElementById('compassLabel').textContent=nearest.name+' \u2014 '+Math.round(nd)+'u';");
+  L.push("    } else { arrow.style.display='none'; document.getElementById('compassLabel').textContent=''; }");
+  L.push("  }");
   L.push("}");
 
   L.push("function billboardCubes(){");
@@ -737,6 +723,8 @@ function buildGameHTML(layout){
     "#flyUI{width:100%;max-width:480px;background:rgba(0,0,0,0.85);border-top:1px solid rgba(0,255,255,0.2);backdrop-filter:blur(20px);padding:8px 10px;display:none;flex-direction:column;gap:6px;}",
     ".speedRow{display:flex;align-items:center;justify-content:space-between;gap:6px;}",
     ".fmtRow{display:flex;gap:5px;justify-content:center;}",
+    ".clusterBtn{background:rgba(255,140,0,0.06);color:#fa8;border:1px solid rgba(255,140,0,0.3);font-size:11px;padding:6px 12px;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;flex:1;}",
+    ".clusterBtn.active{background:rgba(255,140,0,0.25);border-color:#ff8c00;color:#fff;box-shadow:0 0 10px rgba(255,140,0,0.3);}",
     ".fmtBtn{background:rgba(0,255,255,0.06);color:#7ab;border:1px solid rgba(0,255,255,0.25);font-size:10px;padding:5px 10px;border-radius:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
     ".fmtBtn.active{background:rgba(0,255,255,0.25);border-color:#00ffff;color:#fff;box-shadow:0 0 10px rgba(0,255,255,0.3);}",
     ".sBtn{background:rgba(0,255,255,0.06);color:#fff;border:1px solid rgba(0,255,255,0.25);font-size:15px;padding:9px 14px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;}",
@@ -768,6 +756,10 @@ function buildGameHTML(layout){
     "  <button id='startBtn' onclick='startFlying()'>LAUNCH \uD83D\uDE80</button>",
     "</div>",
     "<div id='flyUI'>",
+    "  <div class='fmtRow'>",
+    "    <button class='clusterBtn active' data-c='galaxies' onclick='setClusterMode(\"galaxies\")'>\uD83C\uDF10 Galaxies</button>",
+    "    <button class='clusterBtn' data-c='supercluster' onclick='setClusterMode(\"supercluster\")'>\uD83C\uDF0C Supercluster</button>",
+    "  </div>",
     "  <div class='fmtRow'>",
     "    <button class='fmtBtn active' data-f='sphere' onclick='applyFormation(\"sphere\")'>Sphere</button>",
     "    <button class='fmtBtn' data-f='spiral' onclick='applyFormation(\"spiral\")'>Spiral</button>",
