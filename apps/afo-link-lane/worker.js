@@ -183,14 +183,14 @@ async function fetchChannelVideos(channelId,limit){
   return parseAtomFeed(xml,limit);
 }
 
-// Shorts are portrait (height > width); regular uploads are landscape.
-// The RSS feed itself doesn't distinguish, but oEmbed reports true dimensions.
-async function detectShort(videoUrl){
+// A real Short stays on /shorts/{id}; a regular video gets redirected to
+// /watch?v={id}. (oEmbed's width/height is just a scaled default embed size,
+// not the video's true aspect ratio - it does not distinguish Shorts.)
+async function detectShort(videoId){
   try{
-    const res=await fetch("https://www.youtube.com/oembed?url="+encodeURIComponent(videoUrl)+"&format=json");
-    if(!res.ok) return false;
-    const data=await res.json();
-    return Boolean(data.height&&data.width&&data.height>data.width);
+    const res=await fetch("https://www.youtube.com/shorts/"+videoId,{headers:{"User-Agent":"Mozilla/5.0 (compatible; AFOLinkLane/1.0)"},redirect:"follow"});
+    res.body&&res.body.cancel&&res.body.cancel();
+    return res.url.includes("/shorts/");
   }catch{return false;}
 }
 
@@ -209,7 +209,7 @@ async function apiAddChannel(env,req){
   for(const v of videos){
     const existing=await env.DB.prepare("SELECT id FROM links WHERE video_id=? OR url=?").bind(v.videoId,v.url).first();
     if(existing){ skipped++; continue; }
-    const isShort=await detectShort(v.url);
+    const isShort=await detectShort(v.videoId);
     if(isShort) shorts++;
     const finalUrl=isShort?("https://www.youtube.com/shorts/"+v.videoId):v.url;
     const id=uid();
@@ -732,7 +732,7 @@ async function apiAddLink(env,req){
   const vidId=youtubeVideoId(normalizedUrl);
   let isShort=0,finalUrl=normalizedUrl;
   if(vidId){
-    isShort=(await detectShort(normalizedUrl))?1:0;
+    isShort=(await detectShort(vidId))?1:0;
     if(isShort) finalUrl="https://www.youtube.com/shorts/"+vidId;
   }
   const domain=domainOf(finalUrl);
