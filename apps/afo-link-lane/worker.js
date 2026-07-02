@@ -1,10 +1,10 @@
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
 
 const SCHEMA = [
-  "CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY, url TEXT NOT NULL, title TEXT, description TEXT, domain TEXT, og_image_key TEXT, group_name TEXT, added_at TEXT DEFAULT (datetime('now')))",
+  "CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY, url TEXT NOT NULL, title TEXT, description TEXT, domain TEXT, og_image_key TEXT, group_name TEXT, video_id TEXT, is_short INTEGER DEFAULT 0, published_at TEXT, added_at TEXT DEFAULT (datetime('now')))",
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_links_url ON links(url)"
 ];
 
@@ -183,6 +183,17 @@ async function fetchChannelVideos(channelId,limit){
   return parseAtomFeed(xml,limit);
 }
 
+// Shorts are portrait (height > width); regular uploads are landscape.
+// The RSS feed itself doesn't distinguish, but oEmbed reports true dimensions.
+async function detectShort(videoUrl){
+  try{
+    const res=await fetch("https://www.youtube.com/oembed?url="+encodeURIComponent(videoUrl)+"&format=json");
+    if(!res.ok) return false;
+    const data=await res.json();
+    return Boolean(data.height&&data.width&&data.height>data.width);
+  }catch{return false;}
+}
+
 async function apiAddChannel(env,req){
   const body=await req.json().catch(()=>({}));
   const input=body.input;
@@ -194,19 +205,23 @@ async function apiAddChannel(env,req){
   try{ videos=await fetchChannelVideos(resolved.channelId,max); }catch(e){ return j({ok:false,error:e.message},400); }
   if(videos.length===0) return j({ok:false,error:"Channel RSS feed returned no videos."},400);
   const groupName=resolved.channelName||resolved.channelId;
-  let added=0,skipped=0;
+  let added=0,skipped=0,shorts=0;
   for(const v of videos){
-    const existing=await env.DB.prepare("SELECT id FROM links WHERE url=?").bind(v.url).first();
+    const existing=await env.DB.prepare("SELECT id FROM links WHERE video_id=? OR url=?").bind(v.videoId,v.url).first();
     if(existing){ skipped++; continue; }
+    const isShort=await detectShort(v.url);
+    if(isShort) shorts++;
+    const finalUrl=isShort?("https://www.youtube.com/shorts/"+v.videoId):v.url;
     const id=uid();
     let ogImageKey=null;
     if(v.thumb) ogImageKey=await storeOgImage(env,id,v.thumb);
-    const desc=groupName+(v.published?(" \u2022 "+v.published.slice(0,10)):"");
-    await env.DB.prepare("INSERT OR IGNORE INTO links (id,url,title,description,domain,og_image_key,group_name) VALUES (?,?,?,?,?,?,?)")
-      .bind(id,v.url,v.title||v.url,desc,"youtube.com",ogImageKey,groupName).run();
+    const publishedAt=v.published?v.published.slice(0,10):null;
+    const desc="by "+groupName;
+    await env.DB.prepare("INSERT OR IGNORE INTO links (id,url,title,description,domain,og_image_key,group_name,video_id,is_short,published_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
+      .bind(id,finalUrl,v.title||finalUrl,desc,"youtube.com",ogImageKey,groupName,v.videoId,isShort?1:0,publishedAt).run();
     added++;
   }
-  return j({ok:true,channel:groupName,channel_id:resolved.channelId,added,skipped,found:videos.length});
+  return j({ok:true,channel:groupName,channel_id:resolved.channelId,added,skipped,shorts,found:videos.length});
 }
 
 // =================== GAME SCRIPT ===================
@@ -362,11 +377,15 @@ function buildGameScript(layout){
   L.push("    const geo=new THREE.BoxGeometry(28,28,28);");
   L.push("    const placeholderMat=new THREE.MeshBasicMaterial({color:0x223344});");
   L.push("    const dateStr=(p.added_at||'').slice(0,10);");
+  L.push("    const isYT=p.domain==='youtube.com';");
+  L.push("    const typeLabel=isYT?(p.is_short?'\uD83D\uDCF1 SHORT':'\uD83C\uDFAC VIDEO'):'\uD83D\uDD17 LINK';");
+  L.push("    const typeColor=p.is_short?'#2a0a1a':'#0a0a18';");
+  L.push("    const pubDate=(p.published_at||dateStr||'');");
   L.push("    const materials=[");
   L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('TITLE',p.title||p.url,'#0a0a18')}),");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('ADDED',dateStr,'#0a0a18')}),");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('ABOUT',p.description,'#0a0a18')}),");
-  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('URL',p.url,'#0a0a18')}),");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('CHANNEL',p.group_name||p.domain,'#0a0a18')}),");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('TYPE',typeLabel,typeColor,Boolean(p.is_short))}),");
+  L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('PUBLISHED',pubDate,'#0a0a18')}),");
   L.push("      placeholderMat,");
   L.push("      new THREE.MeshBasicMaterial({map:makeFaceTexture('SOURCE',p.domain,'#0a1f16',true)})");
   L.push("    ];");
@@ -415,7 +434,8 @@ function buildGameScript(layout){
   L.push("  if(p.og_image_key){img.src='/og-image/'+p.id;img.style.display='block';}else{img.style.display='none';}");
   L.push("  document.getElementById('ovTitle').textContent=p.title||p.url;");
   L.push("  document.getElementById('ovDesc').textContent=p.description||'';");
-  L.push("  document.getElementById('ovDomain').textContent='\uD83C\uDF10 '+(p.domain||'');");
+  L.push("  const badge=p.domain==='youtube.com'?(p.is_short?'\uD83D\uDCF1 Short':'\uD83C\uDFAC Video'):'\uD83D\uDD17 Link';");
+  L.push("  document.getElementById('ovDomain').textContent='\uD83C\uDF10 '+(p.group_name||p.domain||'')+' \u00B7 '+badge;");
   L.push("  document.getElementById('ovVisit').onclick=function(){window.open(p.url,'_blank');};");
   L.push("  ov.style.display='flex';gameState='paused';");
   L.push("}");
@@ -709,10 +729,16 @@ async function apiAddLink(env,req){
   }catch(e){
     // Still save the link even if preview fetch failed - just without an image
   }
-  const domain=domainOf(normalizedUrl);
-  await env.DB.prepare("INSERT INTO links (id,url,title,description,domain,og_image_key) VALUES (?,?,?,?,?,?)")
-    .bind(id,normalizedUrl,title,description,domain,ogImageKey).run();
-  return j({ok:true,id,domain,has_image:Boolean(ogImageKey)});
+  const vidId=youtubeVideoId(normalizedUrl);
+  let isShort=0,finalUrl=normalizedUrl;
+  if(vidId){
+    isShort=(await detectShort(normalizedUrl))?1:0;
+    if(isShort) finalUrl="https://www.youtube.com/shorts/"+vidId;
+  }
+  const domain=domainOf(finalUrl);
+  await env.DB.prepare("INSERT INTO links (id,url,title,description,domain,og_image_key,video_id,is_short) VALUES (?,?,?,?,?,?,?,?)")
+    .bind(id,finalUrl,title,description,domain,ogImageKey,vidId,isShort).run();
+  return j({ok:true,id,domain,has_image:Boolean(ogImageKey),is_short:Boolean(isShort)});
 }
 
 async function apiOgImage(env,id){
@@ -738,7 +764,7 @@ export default {
     if(method==="OPTIONS") return new Response(null,{status:204,headers:CORS});
     if(path.startsWith("/og-image/")) return apiOgImage(env,decodeURIComponent(path.slice(10)));
     if(path==="/admin"&&method==="GET"){
-      const r=await env.DB.prepare("SELECT id,url,title,domain,og_image_key FROM links ORDER BY added_at DESC LIMIT 300").all();
+      const r=await env.DB.prepare("SELECT id,url,title,domain,og_image_key,group_name,is_short FROM links ORDER BY added_at DESC LIMIT 300").all();
       return new Response(buildAdminHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path==="/admin/add"&&method==="POST") return apiAddLink(env,request);
@@ -751,7 +777,7 @@ export default {
       return j({ok:true,results});
     }
     if(path==="/"||path===""){
-      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 300").all();
+      const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,is_short,published_at,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 300").all();
       const layout=layoutLinks(r.results||[]);
       return new Response(buildGameHTML(layout),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
