@@ -1,4 +1,4 @@
-const VERSION = "1.8.0";
+const VERSION = "1.9.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -140,11 +140,17 @@ function domainOf(url){
 // =================== YouTube channel RSS (channel groups) ===================
 
 function extractChannelId(html){
-  let m=html.match(/<meta itemprop="channelId" content="([^"]+)"/i);
+  // Canonical link is authoritative by construction - always the page's own
+  // channel. The generic 'channelId':'UC...' JSON pattern is NOT reliable:
+  // it matches the first such string anywhere in the page's data blob,
+  // which is often a recommended video, ad, or related channel instead of
+  // the one actually being viewed - confirmed via a real mismatch on
+  // @mrbeast. Check canonical first, meta itemprop second, loose JSON last.
+  let m=html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[0-9A-Za-z_-]{22})"/i);
+  if(m) return m[1];
+  m=html.match(/<meta itemprop="channelId" content="([^"]+)"/i);
   if(m) return m[1];
   m=html.match(/"channelId":"(UC[0-9A-Za-z_-]{22})"/);
-  if(m) return m[1];
-  m=html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[0-9A-Za-z_-]{22})"/i);
   if(m) return m[1];
   return null;
 }
