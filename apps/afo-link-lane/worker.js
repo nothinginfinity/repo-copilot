@@ -1,4 +1,4 @@
-const VERSION = "2.5.1";
+const VERSION = "2.6.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -13,7 +13,18 @@ const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS selected_card_events (id TEXT PRIMARY KEY, card_id TEXT, event_type TEXT, event_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
   "CREATE INDEX IF NOT EXISTS idx_sce_card ON selected_card_events(card_id, created_at)",
   "CREATE TABLE IF NOT EXISTS card_notes (id TEXT PRIMARY KEY, card_id TEXT, note_text TEXT, tags_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
-  "CREATE INDEX IF NOT EXISTS idx_card_notes_card ON card_notes(card_id, created_at)"
+  "CREATE INDEX IF NOT EXISTS idx_card_notes_card ON card_notes(card_id, created_at)",
+  "CREATE TABLE IF NOT EXISTS ad_campaigns (id TEXT PRIMARY KEY, advertiser_id TEXT, name TEXT, status TEXT, budget_json TEXT, targeting_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE TABLE IF NOT EXISTS ad_creatives (id TEXT PRIMARY KEY, campaign_id TEXT, creative_type TEXT, title TEXT, copy TEXT, media_r2_key TEXT, landing_url TEXT, reward_json TEXT, terms_json TEXT, status TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_creatives_campaign ON ad_creatives(campaign_id)",
+  "CREATE TABLE IF NOT EXISTS ad_entities (id TEXT PRIMARY KEY, campaign_id TEXT, creative_id TEXT, entity_type TEXT, spawn_json TEXT, state TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE TABLE IF NOT EXISTS bounty_vault_items (id TEXT PRIMARY KEY, user_id TEXT, ad_entity_id TEXT, campaign_id TEXT, creative_id TEXT, status TEXT, reward_type TEXT, reward_value TEXT, coupon_code TEXT, claim_url TEXT, expires_at TEXT, captured_context_json TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_bounty_vault_status ON bounty_vault_items(status, created_at)",
+  "CREATE TABLE IF NOT EXISTS ad_interaction_events (id TEXT PRIMARY KEY, user_id TEXT, ad_entity_id TEXT, campaign_id TEXT, creative_id TEXT, vault_item_id TEXT, event_type TEXT, event_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_interaction_vault ON ad_interaction_events(vault_item_id, created_at)",
+  "CREATE TABLE IF NOT EXISTS ad_rewards (id TEXT PRIMARY KEY, vault_item_id TEXT, user_id TEXT, reward_type TEXT, amount TEXT, status TEXT, reason TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_rewards_vault ON ad_rewards(vault_item_id)",
+  "CREATE TABLE IF NOT EXISTS user_ad_preferences (user_id TEXT PRIMARY KEY, preferences_json TEXT, blocked_categories_json TEXT, updated_at TEXT DEFAULT (datetime('now')))"
 ];
 
 const R_GALAXY = 1500;
@@ -1636,6 +1647,79 @@ function buildCardDetailHTML(card,faces,notes){
   return parts.join("\n");
 }
 
+function statusColor(s){
+  if(s==="captured"||s==="claimed"||s==="redeemed") return "#00ff88";
+  if(s==="expired"||s==="discarded") return "#f66";
+  if(s==="released"||s==="transferred") return "#6cf";
+  return "#ffdd00";
+}
+
+function entityEmoji(t){
+  if(t==="boss_ship") return "\uD83D\uDEF8";
+  if(t==="alien") return "\uD83D\uDC7D";
+  if(t==="satellite") return "\uD83D\uDEF0";
+  return "\u2604";
+}
+
+function buildBountyVaultHTML(items){
+  const rows=items.map(function(it){
+    return "<a class='cardRow' href='/bounty/"+safe(it.id)+"'>"+
+      "<div class='cardThumb'>"+entityEmoji(it.entity_type)+"</div>"+
+      "<div class='cardMid'><div class='cardTitle'>"+safe(it.creative_title||"Untitled bounty")+"</div>"+
+      "<div class='cardMeta'>"+safe(it.reward_value||it.reward_type||"")+"</div></div>"+
+      "<div class='bvStatus' style='color:"+statusColor(it.status)+"'>"+safe(it.status)+"</div>"+
+      "</a>";
+  }).join("");
+  const parts=[
+    "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
+    "<title>Link Lane - Bounty Vault</title>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:20px;margin-bottom:4px;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.cardRow{display:flex;gap:10px;align-items:center;background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;text-decoration:none;}.cardThumb{width:44px;height:44px;border-radius:4px;background:#111;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}.cardMid{flex:1;overflow:hidden;}.cardTitle{color:#ccc;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.cardMeta{color:#00ff88;font-size:10px;margin-top:2px;}.bvStatus{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}.empty{color:#333;font-size:13px;}</style>",
+    "</head><body>",
+    "<a class='back' href='/'>\u2190 back to game</a>",
+    "<h1>\uD83C\uDFF0 Bounty Vault ("+items.length+")</h1>",
+    items.length?rows:"<p class='empty'>Nothing captured yet. Ad asteroids arrive in a future update.</p>",
+    "</body></html>"
+  ];
+  return parts.join("\n");
+}
+
+function buildBountyDetailHTML(item,rewards){
+  let reward={},terms={};
+  try{reward=JSON.parse(item.reward_json||"{}");}catch(e){}
+  try{terms=JSON.parse(item.terms_json||"{}");}catch(e){}
+  const rewardKeys=Object.keys(reward);
+  const rewardHtml=rewardKeys.length?rewardKeys.map(function(k){
+    return "<div class='bvRow'><span class='bvKey'>"+safe(k)+"</span><span class='bvVal'>"+safe(String(reward[k]))+"</span></div>";
+  }).join(""):"<div class='bvRow'><span class='bvKey'>type</span><span class='bvVal'>"+safe(item.reward_type||"\u2014")+"</span></div><div class='bvRow'><span class='bvKey'>value</span><span class='bvVal'>"+safe(item.reward_value||"\u2014")+"</span></div>";
+  const termsKeys=Object.keys(terms);
+  const termsHtml=termsKeys.length?termsKeys.map(function(k){
+    return "<div class='bvRow'><span class='bvKey'>"+safe(k)+"</span><span class='bvVal'>"+safe(String(terms[k]))+"</span></div>";
+  }).join(""):"<p style='color:#333;font-size:12px;'>No terms recorded.</p>";
+  const rewardLedgerHtml=rewards.map(function(r){
+    return "<div class='noteRow'><div class='noteText'>"+safe(r.reward_type)+" \u2014 "+safe(r.amount||"")+" ("+safe(r.status)+")</div><div class='noteDate'>"+safe((r.created_at||"").slice(0,16).replace("T"," "))+"</div></div>";
+  }).join("");
+  const sc=statusColor(item.status);
+  const parts=[
+    "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
+    "<title>"+safe(item.creative_title||"Bounty")+" - Link Lane</title>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:18px;margin-bottom:4px;word-break:break-word;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.meta{color:#556;font-size:11px;margin-bottom:14px;}.bvBadge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-left:6px;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}.bvBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.bvRow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #161622;}.bvRow:last-child{border-bottom:none;}.bvKey{color:#667;text-transform:uppercase;font-size:10px;letter-spacing:1px;}.bvVal{color:#ddd;text-align:right;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}.btn{display:block;width:100%;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;text-decoration:none;background:#00ff88;color:#000;box-sizing:border-box;margin:16px 0;}.sampleNote{color:#665;font-size:10px;margin-top:16px;font-style:italic;}</style>",
+    "</head><body>",
+    "<a class='back' href='/bounty-vault'>\u2190 all bounties</a>",
+    "<h1>"+safe(item.creative_title||"Untitled bounty")+"<span class='bvBadge' style='background:"+sc+"22;color:"+sc+";border:1px solid "+sc+"'>"+safe(item.status)+"</span></h1>",
+    "<div class='meta'>"+safe(item.campaign_name||"")+" \u00B7 "+safe(item.entity_type||"")+" \u00B7 captured "+safe((item.created_at||"").slice(0,10))+(item.expires_at?(" \u00B7 expires "+safe(String(item.expires_at).slice(0,10))):"")+"</div>",
+    item.coupon_code?("<div class='bvBlock'><div class='bvRow'><span class='bvKey'>Coupon Code</span><span class='bvVal'>"+safe(item.coupon_code)+"</span></div></div>"):"",
+    "<h2>Reward</h2>",
+    "<div class='bvBlock'>"+rewardHtml+"</div>",
+    "<h2>Terms</h2>",
+    "<div class='bvBlock'>"+termsHtml+"</div>",
+    item.landing_url?("<a class='btn' href='"+safe(item.landing_url)+"' target='_blank'>Visit Offer \u2192</a>"):"",
+    rewards.length?("<h2>Reward Ledger</h2>"+rewardLedgerHtml):"",
+    "<p class='sampleNote'>This is a v2.6.0 foundation build \u2014 claim/discard/release actions arrive in v2.6.5.</p>",
+    "</body></html>"
+  ];
+  return parts.join("\n");
+}
+
 // =================== ROUTER ===================
 
 export default {
@@ -1673,6 +1757,17 @@ export default {
       const faces=await env.DB.prepare("SELECT face_index,label,value,text,image_key FROM selected_card_faces WHERE card_id=? ORDER BY face_index").bind(safe(cardId)).all();
       const notes=await env.DB.prepare("SELECT id,note_text,tags_json,created_at FROM card_notes WHERE card_id=? ORDER BY created_at DESC").bind(safe(cardId)).all();
       return new Response(buildCardDetailHTML(card,faces.results||[],notes.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
+    }
+    if(path==="/bounty-vault"&&method==="GET"){
+      const r=await env.DB.prepare("SELECT bv.id,bv.status,bv.reward_type,bv.reward_value,bv.coupon_code,bv.expires_at,bv.created_at,c.title AS creative_title,c.creative_type,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id ORDER BY bv.created_at DESC LIMIT 200").all();
+      return new Response(buildBountyVaultHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
+    }
+    if(path.startsWith("/bounty/")&&method==="GET"){
+      const bId=decodeURIComponent(path.slice(8));
+      const item=await env.DB.prepare("SELECT bv.*,c.title AS creative_title,c.copy,c.creative_type,c.landing_url,c.terms_json,c.reward_json,camp.name AS campaign_name,camp.advertiser_id,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_campaigns camp ON camp.id=bv.campaign_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id WHERE bv.id=?").bind(safe(bId)).first();
+      if(!item) return new Response("Not found",{status:404});
+      const rewards=await env.DB.prepare("SELECT id,reward_type,amount,status,reason,created_at FROM ad_rewards WHERE vault_item_id=? ORDER BY created_at DESC").bind(safe(bId)).all();
+      return new Response(buildBountyDetailHTML(item,rewards.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path==="/"||path===""){
       const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,is_short,published_at,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 1500").all();
