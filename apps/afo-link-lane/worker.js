@@ -1,4 +1,4 @@
-const VERSION = "2.4.0";
+const VERSION = "2.4.5";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -316,6 +316,27 @@ function buildGameScript(layout){
   L.push("let targeted=null;");
   L.push("let frame=0;");
 
+  L.push("let AFO_EVENTS=[];");
+  L.push("function logEvent(type,data){");
+  L.push("  const evt={type:type,t:Date.now(),data:data||{}};");
+  L.push("  AFO_EVENTS.push(evt);");
+  L.push("  if(AFO_EVENTS.length>200) AFO_EVENTS.shift();");
+  L.push("  console.debug('[afo-event]',type,evt.data);");
+  L.push("}");
+  L.push("window.AFO_EVENTS=AFO_EVENTS;");
+  L.push("let viewportWarned=false;");
+  L.push("function checkViewport(){");
+  L.push("  const wrap=document.getElementById('wrap');");
+  L.push("  const w=wrap.clientWidth,h=wrap.clientHeight;");
+  L.push("  const cramped=w<340||h<480;");
+  L.push("  if(cramped&&!viewportWarned){");
+  L.push("    viewportWarned=true;");
+  L.push("    logEvent('mobile_viewport_warning',{width:w,height:h});");
+  L.push("  }else if(!cramped&&viewportWarned){");
+  L.push("    viewportWarned=false;");
+  L.push("  }");
+  L.push("}");
+
   L.push("function initScene(){");
   L.push("  const wrap=document.getElementById('wrap');");
   L.push("  scene=new THREE.Scene();");
@@ -330,13 +351,14 @@ function buildGameScript(layout){
   L.push("  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));");
   L.push("  renderer.setSize(wrap.clientWidth,wrap.clientHeight);");
   L.push("  raycaster=new THREE.Raycaster();raycaster.far=4000;");
+  L.push("  checkViewport();");
   L.push("  buildStarfield();buildGalaxies();");
   L.push("  const ld=document.getElementById('loadScreen');");
   L.push("  if(ld){ld.classList.add('fadeOut');setTimeout(function(){ld.style.display='none';},700);}");
   L.push("  window.addEventListener('resize',onResize);");
   L.push("}");
 
-  L.push("function onResize(){const wrap=document.getElementById('wrap');camera.aspect=wrap.clientWidth/wrap.clientHeight;camera.updateProjectionMatrix();renderer.setSize(wrap.clientWidth,wrap.clientHeight);}");
+  L.push("function onResize(){const wrap=document.getElementById('wrap');camera.aspect=wrap.clientWidth/wrap.clientHeight;camera.updateProjectionMatrix();renderer.setSize(wrap.clientWidth,wrap.clientHeight);checkViewport();}");
 
   L.push("function buildStarfield(){");
   L.push("  const n=2500;const pos=new Float32Array(n*3);");
@@ -643,6 +665,7 @@ function buildGameScript(layout){
   L.push("const GRID_ORDER=[0,4,1,2,3,5];");
   L.push("function startFocus(mesh){");
   L.push("  if(!mesh||focus) return;");
+  L.push("  logEvent('focus_start',{node_id:mesh.userData.id});");
   L.push("  gameState='focusing';speed=0;targeted=null;yawVel=0;pitchVel=0;");
   L.push("  document.getElementById('crosshair').classList.remove('locked');");
   L.push("  document.getElementById('targetHint').style.display='none';");
@@ -702,7 +725,7 @@ function buildGameScript(layout){
   L.push("      const sc=1+(p.s-1)*e;p.m.scale.set(sc,sc,1);");
   L.push("    });");
   L.push("    if(f.t>=1){");
-  L.push("      if(f.phase==='unfold'){f.phase='focused';gameState='focused';showFocusBar();}");
+  L.push("      if(f.phase==='unfold'){f.phase='focused';gameState='focused';showFocusBar();logEvent('focus_unfold_complete',{node_id:f.mesh.userData.id});}");
   L.push("      else finishRefold();");
   L.push("    }");
   L.push("  }");
@@ -715,6 +738,7 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function closeFocus(){");
   L.push("  if(!focus||focus.phase!=='focused') return;");
+  L.push("  logEvent('focus_refold',{node_id:focus.mesh.userData.id});");
   L.push("  document.getElementById('focusBar').style.display='none';");
   L.push("  focus.phase='refold';focus.t=0;gameState='refolding';");
   L.push("}");
@@ -779,6 +803,7 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function openFaceInspector(k){");
   L.push("  if(!focus||focus.phase!=='focused') return;");
+  L.push("  logEvent('face_inspector_open',{node_id:focus.mesh.userData.id,face_index:k});");
   L.push("  gameState='inspecting';");
   L.push("  focus.inspectIndex=k;");
   L.push("  renderFaceInspector();");
@@ -786,20 +811,24 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function closeFaceInspector(){");
   L.push("  if(gameState!=='inspecting') return;");
+  L.push("  logEvent('face_inspector_back',{node_id:focus.mesh.userData.id,face_index:focus.inspectIndex});");
   L.push("  document.getElementById('faceInspector').classList.remove('open');");
   L.push("  gameState='focused';");
   L.push("}");
   L.push("function faceCarouselStep(delta){");
   L.push("  if(!focus||gameState!=='inspecting') return;");
   L.push("  focus.inspectIndex=(focus.inspectIndex+delta+6)%6;");
+  L.push("  logEvent(delta>0?'face_carousel_next':'face_carousel_prev',{node_id:focus.mesh.userData.id,face_index:focus.inspectIndex});");
   L.push("  renderFaceInspector();");
   L.push("}");
-  L.push("let fiTouchX=0,fiTouchActive=false;");
-  L.push("function fiTouchStart(x){fiTouchActive=true;fiTouchX=x;}");
-  L.push("function fiTouchEnd(x){");
+  L.push("let fiTouchX=0,fiTouchY=0,fiTouchActive=false;");
+  L.push("function fiTouchStart(x,y){fiTouchActive=true;fiTouchX=x;fiTouchY=y;}");
+  L.push("function fiTouchEnd(x,y){");
   L.push("  if(!fiTouchActive) return;fiTouchActive=false;");
-  L.push("  const dx=x-fiTouchX;");
-  L.push("  if(dx<=-40) faceCarouselStep(1);");
+  L.push("  const dx=x-fiTouchX,dy=y-fiTouchY;");
+  L.push("  if(Math.abs(dy)>Math.abs(dx)&&dy<=-40){");
+  L.push("    if(focus) logEvent('save_gesture_attempt',{node_id:focus.mesh.userData.id,face_index:focus.inspectIndex});");
+  L.push("  }else if(dx<=-40) faceCarouselStep(1);");
   L.push("  else if(dx>=40) faceCarouselStep(-1);");
   L.push("}");
 
@@ -931,16 +960,16 @@ function buildGameScript(layout){
   L.push("    if(gameState==='flying') trySelect();");
   L.push("    else if(gameState==='focused'){");
   L.push("      const k=hitTestGridFace(touchStartX,touchStartY);");
-  L.push("      if(k>=0) openFaceInspector(k); else closeFocus();");
+  L.push("      if(k>=0){logEvent('face_tap',{node_id:focus.mesh.userData.id,face_index:k});openFaceInspector(k);}else closeFocus();");
   L.push("    }");
   L.push("  }");
   L.push("  touchActive=false;yawVel=0;pitchVel=0;");
   L.push("}");
   L.push("const fiEl=document.getElementById('faceInspector');");
-  L.push("fiEl.addEventListener('touchstart',function(e){fiTouchStart(e.touches[0].clientX);},{passive:true});");
-  L.push("fiEl.addEventListener('touchend',function(e){fiTouchEnd(e.changedTouches[0].clientX);},{passive:true});");
-  L.push("fiEl.addEventListener('mousedown',function(e){fiTouchStart(e.clientX);});");
-  L.push("fiEl.addEventListener('mouseup',function(e){fiTouchEnd(e.clientX);});");
+  L.push("fiEl.addEventListener('touchstart',function(e){fiTouchStart(e.touches[0].clientX,e.touches[0].clientY);},{passive:true});");
+  L.push("fiEl.addEventListener('touchend',function(e){fiTouchEnd(e.changedTouches[0].clientX,e.changedTouches[0].clientY);},{passive:true});");
+  L.push("fiEl.addEventListener('mousedown',function(e){fiTouchStart(e.clientX,e.clientY);});");
+  L.push("fiEl.addEventListener('mouseup',function(e){fiTouchEnd(e.clientX,e.clientY);});");
 
   L.push("let isPinching=false,pinchStartDist=0,pinchStartSpeed=0;");
   L.push("const PINCH_SENSITIVITY=0.06;");
