@@ -1,4 +1,4 @@
-const VERSION = "2.8.0";
+const VERSION = "2.9.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -24,7 +24,13 @@ const SCHEMA = [
   "CREATE INDEX IF NOT EXISTS idx_ad_interaction_vault ON ad_interaction_events(vault_item_id, created_at)",
   "CREATE TABLE IF NOT EXISTS ad_rewards (id TEXT PRIMARY KEY, vault_item_id TEXT, user_id TEXT, reward_type TEXT, amount TEXT, status TEXT, reason TEXT, created_at TEXT DEFAULT (datetime('now')))",
   "CREATE INDEX IF NOT EXISTS idx_ad_rewards_vault ON ad_rewards(vault_item_id)",
-  "CREATE TABLE IF NOT EXISTS user_ad_preferences (user_id TEXT PRIMARY KEY, preferences_json TEXT, blocked_categories_json TEXT, updated_at TEXT DEFAULT (datetime('now')))"
+  "CREATE TABLE IF NOT EXISTS user_ad_preferences (user_id TEXT PRIMARY KEY, preferences_json TEXT, blocked_categories_json TEXT, updated_at TEXT DEFAULT (datetime('now')))",
+  "CREATE TABLE IF NOT EXISTS ad_variants (id TEXT PRIMARY KEY, campaign_id TEXT, parent_ad_id TEXT, parent_creative_id TEXT, creator_user_id TEXT, source_capture_id TEXT, variant_type TEXT, title TEXT, copy TEXT, media_r2_key TEXT, prompt_r2_key TEXT, status TEXT DEFAULT 'draft', created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_variants_capture ON ad_variants(source_capture_id, created_at)",
+  "CREATE TABLE IF NOT EXISTS ad_variant_changes (id TEXT PRIMARY KEY, variant_id TEXT, change_type TEXT, before_json TEXT, after_json TEXT, rationale TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_variant_changes_variant ON ad_variant_changes(variant_id)",
+  "CREATE TABLE IF NOT EXISTS ad_variant_reviews (id TEXT PRIMARY KEY, variant_id TEXT, reviewer_type TEXT, status TEXT, notes TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_variant_reviews_variant ON ad_variant_reviews(variant_id)"
 ];
 
 const R_GALAXY = 1500;
@@ -1764,6 +1770,27 @@ async function apiCaptureAdEntity(env,req){
   return j({ok:true,id,status,title:(creative&&creative.title)||null,reward_value:reward.value||null});
 }
 
+async function apiImproveAd(env,id,req){
+  const item=await env.DB.prepare("SELECT id,campaign_id,creative_id,ad_entity_id,reward_type,reward_value FROM bounty_vault_items WHERE id=?").bind(safe(id)).first();
+  if(!item) return j({ok:false,error:"not found"},404);
+  const body=await req.json().catch(()=>({}));
+  const {variant_type,title,copy,rationale}=body;
+  if(!rationale) return j({ok:false,error:"rationale is required"},400);
+  const creative=await env.DB.prepare("SELECT title,copy FROM ad_creatives WHERE id=?").bind(safe(item.creative_id||"")).first();
+  const variantId=uid();
+  const now=new Date().toISOString();
+  await env.DB.prepare("INSERT INTO ad_variants (id,campaign_id,parent_ad_id,parent_creative_id,creator_user_id,source_capture_id,variant_type,title,copy,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+    .bind(variantId,safe(item.campaign_id||""),safe(item.ad_entity_id||""),safe(item.creative_id||""),"user_device",safe(id),variant_type||"general",title||null,copy||null,"draft",now).run();
+  await env.DB.prepare("INSERT INTO ad_variant_changes (id,variant_id,change_type,before_json,after_json,rationale,created_at) VALUES (?,?,?,?,?,?,?)")
+    .bind(uid(),variantId,variant_type||"general",
+      JSON.stringify({title:(creative&&creative.title)||null,reward_value:item.reward_value||null}),
+      JSON.stringify({title:title||null,copy:copy||null}),
+      rationale,now).run();
+  await env.DB.prepare("INSERT INTO ad_interaction_events (id,vault_item_id,event_type,event_json) VALUES (?,?,?,?)")
+    .bind(uid(),safe(id),"improved",JSON.stringify({variant_id:variantId,variant_type:variant_type||"general"})).run();
+  return j({ok:true,variant_id:variantId});
+}
+
 function buildCardsHTML(cards){
   const rows=cards.map(function(c){
     return "<a class='cardRow' href='/card/"+safe(c.id)+"'>"+
@@ -1865,7 +1892,7 @@ function buildBountyVaultHTML(items){
   return parts.join("\n");
 }
 
-function buildBountyDetailHTML(item,rewards){
+function buildBountyDetailHTML(item,rewards,variants){
   let reward={},terms={};
   try{reward=JSON.parse(item.reward_json||"{}");}catch(e){}
   try{terms=JSON.parse(item.terms_json||"{}");}catch(e){}
@@ -1881,29 +1908,70 @@ function buildBountyDetailHTML(item,rewards){
     return "<div class='noteRow'><div class='noteText'>"+safe(r.reward_type)+" \u2014 "+safe(r.amount||"")+" ("+safe(r.status)+")</div><div class='noteDate'>"+safe((r.created_at||"").slice(0,16).replace("T"," "))+"</div></div>";
   }).join("");
   const sc=statusColor(item.status);
+  const copyText=item.coupon_code||item.reward_value||"";
+  const variantsHtml=variants.map(function(v){
+    return "<div class='noteRow'><div class='noteText'><b>"+safe(v.variant_type||"")+"</b>"+(v.title?(" \u2014 "+safe(v.title)):"")+"<br>"+safe(v.rationale||"")+"</div><div class='noteDate'>"+safe(v.status)+" \u00B7 "+safe((v.created_at||"").slice(0,16).replace("T"," "))+"</div></div>";
+  }).join("");
   const parts=[
     "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
     "<title>"+safe(item.creative_title||"Bounty")+" - Link Lane</title>",
-    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:18px;margin-bottom:4px;word-break:break-word;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.meta{color:#556;font-size:11px;margin-bottom:14px;}.bvBadge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-left:6px;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}.bvBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.bvRow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #161622;}.bvRow:last-child{border-bottom:none;}.bvKey{color:#667;text-transform:uppercase;font-size:10px;letter-spacing:1px;}.bvVal{color:#ddd;text-align:right;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}.btn{display:block;width:100%;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;text-decoration:none;background:#00ff88;color:#000;box-sizing:border-box;margin:16px 0;}.btnRow{display:flex;gap:8px;margin:16px 0;}.btnHalf{flex:1;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;cursor:pointer;border:none;box-sizing:border-box;}.btnDiscard{background:#330000;color:#f88;border:1px solid #600;}.btnRelease{background:#00263a;color:#6cf;border:1px solid #069;}.sampleNote{color:#665;font-size:10px;margin-top:16px;font-style:italic;}</style>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:18px;margin-bottom:4px;word-break:break-word;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.meta{color:#556;font-size:11px;margin-bottom:14px;}.bvBadge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-left:6px;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}.bvBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.bvRow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #161622;}.bvRow:last-child{border-bottom:none;}.bvKey{color:#667;text-transform:uppercase;font-size:10px;letter-spacing:1px;}.bvVal{color:#ddd;text-align:right;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}.btn{display:block;width:100%;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;text-decoration:none;background:#00ff88;color:#000;box-sizing:border-box;margin:16px 0;}.btnRow{display:flex;gap:8px;margin:16px 0;}.btnHalf{flex:1;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;cursor:pointer;border:none;box-sizing:border-box;}.btnWatch{background:#002a33;color:#4dd0e1;border:1px solid #00838f;}.btnDiscard{background:#330000;color:#f88;border:1px solid #600;}.btnRelease{background:#00263a;color:#6cf;border:1px solid #069;}.sampleNote{color:#665;font-size:10px;margin-top:16px;font-style:italic;}.impSelect,.impInput,.impTextarea{width:100%;background:#000;color:#ccc;border:1px solid #2a1a10;border-radius:4px;padding:9px;font-family:monospace;font-size:13px;margin-bottom:8px;box-sizing:border-box;}.impTextarea{min-height:60px;}#impMsg{display:none;padding:8px;margin:6px 0 0;border-radius:4px;font-size:11px;}#impMsg.ok{background:#003300;color:#4f4;border:1px solid #4f4;display:block;}#impMsg.er{background:#330000;color:#f88;border:1px solid #f88;display:block;}</style>",
     "</head><body>",
     "<a class='back' href='/bounty-vault'>\u2190 all bounties</a>",
     "<h1>"+safe(item.creative_title||"Untitled bounty")+"<span class='bvBadge' style='background:"+sc+"22;color:"+sc+";border:1px solid "+sc+"'>"+safe(item.status)+"</span></h1>",
     "<div class='meta'>"+safe(item.campaign_name||"")+" \u00B7 "+safe(item.entity_type||"")+" \u00B7 captured "+safe((item.created_at||"").slice(0,10))+(item.expires_at?(" \u00B7 expires "+safe(String(item.expires_at).slice(0,10))):"")+"</div>",
     "<div class='bvBlock'><div class='bvRow'><span class='bvKey'>Source</span><span class='bvVal'>"+safe(item.advertiser_id||item.campaign_name||"\u2014")+"</span></div><div class='bvRow'><span class='bvKey'>Status</span><span class='bvVal' style='color:"+sc+"'>"+safe(item.status)+"</span></div></div>",
     item.coupon_code?("<div class='bvBlock'><div class='bvRow'><span class='bvKey'>Coupon Code</span><span class='bvVal'>"+safe(item.coupon_code)+"</span></div></div>"):"",
+    copyText?("<button class='btn' style='background:rgba(255,255,255,0.1);color:#ddd;border:1px solid rgba(255,255,255,0.25);margin:0 0 16px;' onclick='saveCoupon()'>\uD83D\uDCCB Save Coupon</button>"):"",
     "<h2>Reward</h2>",
     "<div class='bvBlock'>"+rewardHtml+"</div>",
     "<h2>Terms</h2>",
     "<div class='bvBlock'>"+termsHtml+"</div>",
     item.landing_url?("<a class='btn' href='"+safe(item.landing_url)+"' target='_blank'>Visit Offer \u2192</a>"):"",
-    (item.status!=="discarded"&&item.status!=="released")?("<div class='btnRow'><button class='btnHalf btnDiscard' onclick=\"setBountyStatus('discarded')\">\uD83D\uDDD1 Discard</button><button class='btnHalf btnRelease' onclick=\"setBountyStatus('released')\">\uD83D\uDD13 Release</button></div>"):"",
+    (item.status!=="discarded"&&item.status!=="released")?("<div class='btnRow'><button class='btnHalf btnWatch' onclick=\"setBountyStatus('watched')\">\u25B6\uFE0F Watch</button><button class='btnHalf btnDiscard' onclick=\"setBountyStatus('discarded')\">\uD83D\uDDD1 Discard</button><button class='btnHalf btnRelease' onclick=\"setBountyStatus('released')\">\uD83D\uDD13 Release</button></div>"):"",
     rewards.length?("<h2>Reward Ledger</h2>"+rewardLedgerHtml):"",
+    variants.length?("<h2>Your Improvements</h2>"+variantsHtml):"",
+    (item.status!=="discarded"&&item.status!=="released")?(
+      "<h2>Improve This Ad</h2>"+
+      "<div class='bvBlock'>"+
+      "<select id='impType' class='impSelect'>"+
+        "<option value='clearer'>Make this clearer</option>"+
+        "<option value='stronger_reward'>Make the reward stronger</option>"+
+        "<option value='better_fit'>Make this fit my interests better</option>"+
+        "<option value='headline'>Rewrite headline</option>"+
+        "<option value='visual_hook'>Improve visual hook</option>"+
+        "<option value='ten_sec'>Create better 10-second version</option>"+
+        "<option value='cta'>Improve CTA</option>"+
+        "<option value='targeting'>Suggest better targeting</option>"+
+        "<option value='why_discarded'>Explain why I almost discarded this</option>"+
+      "</select>"+
+      "<input id='impTitle' class='impInput' placeholder='Proposed new headline (optional)'>"+
+      "<textarea id='impRationale' class='impTextarea' placeholder='What would you change, and why?'></textarea>"+
+      "<button class='go' onclick='submitImprovement()'>Submit Improvement</button>"+
+      "<div id='impMsg'></div>"+
+      "</div>"
+    ):"",
     item.status==="discarded"?"<p class='sampleNote'>This item has been discarded and removed from your active vault.</p>":"",
     item.status==="released"?"<p class='sampleNote'>This item has been released back into circulation.</p>":"",
     "<script>",
     "function setBountyStatus(action){",
-    "  if(!confirm((action==='discarded'?'Discard':'Release')+' this vault item?'))return;",
+    "  if(!confirm((action==='discarded'?'Discard':action==='released'?'Release':'Mark watched -')+' this vault item?'))return;",
     "  fetch('/api/bounty-vault/"+safe(item.id)+"/'+action,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok)location.reload();else alert(d.error||'Failed');});",
+    "}",
+    "function saveCoupon(){",
+    "  const text="+JSON.stringify(copyText)+";",
+    "  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){alert('Copied: '+text);}).catch(function(){prompt('Copy this:',text);});}",
+    "  else{prompt('Copy this:',text);}",
+    "}",
+    "async function submitImprovement(){",
+    "  const variant_type=document.getElementById('impType').value;",
+    "  const title=document.getElementById('impTitle').value.trim();",
+    "  const rationale=document.getElementById('impRationale').value.trim();",
+    "  const msg=document.getElementById('impMsg');",
+    "  if(!rationale){msg.textContent='Please explain what you would change.';msg.className='er';return;}",
+    "  const r=await fetch('/api/bounty-vault/"+safe(item.id)+"/improve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({variant_type:variant_type,title:title,rationale:rationale})});",
+    "  const d=await r.json();",
+    "  if(d.ok){location.reload();}else{msg.textContent=d.error||'Failed to submit improvement';msg.className='er';}",
     "}",
     "</script>",
     "</body></html>"
@@ -1951,6 +2019,8 @@ export default {
     }
     if(/^\/api\/bounty-vault\/[^/]+\/discard$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"discarded");
     if(/^\/api\/bounty-vault\/[^/]+\/release$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"released");
+    if(/^\/api\/bounty-vault\/[^/]+\/watch$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"watched");
+    if(/^\/api\/bounty-vault\/[^/]+\/improve$/.test(path)&&method==="POST") return apiImproveAd(env,path.split("/")[3],request);
     if(path==="/api/bounty-vault"&&method==="POST") return apiCaptureAdEntity(env,request);
     if(path==="/bounty-vault"&&method==="GET"){
       const r=await env.DB.prepare("SELECT bv.id,bv.status,bv.reward_type,bv.reward_value,bv.coupon_code,bv.expires_at,bv.created_at,c.title AS creative_title,c.creative_type,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id WHERE bv.status NOT IN ('discarded','released') ORDER BY bv.created_at DESC LIMIT 200").all();
@@ -1961,7 +2031,8 @@ export default {
       const item=await env.DB.prepare("SELECT bv.*,c.title AS creative_title,c.copy,c.creative_type,c.landing_url,c.terms_json,c.reward_json,camp.name AS campaign_name,camp.advertiser_id,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_campaigns camp ON camp.id=bv.campaign_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id WHERE bv.id=?").bind(safe(bId)).first();
       if(!item) return new Response("Not found",{status:404});
       const rewards=await env.DB.prepare("SELECT id,reward_type,amount,status,reason,created_at FROM ad_rewards WHERE vault_item_id=? ORDER BY created_at DESC").bind(safe(bId)).all();
-      return new Response(buildBountyDetailHTML(item,rewards.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
+      const variants=await env.DB.prepare("SELECT v.id,v.variant_type,v.title,v.copy,v.status,v.created_at,c.rationale FROM ad_variants v LEFT JOIN ad_variant_changes c ON c.variant_id=v.id WHERE v.source_capture_id=? ORDER BY v.created_at DESC").bind(safe(bId)).all();
+      return new Response(buildBountyDetailHTML(item,rewards.results||[],variants.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path==="/"||path===""){
       const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,is_short,published_at,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 1500").all();
