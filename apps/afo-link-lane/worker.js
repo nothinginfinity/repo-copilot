@@ -1,4 +1,4 @@
-const VERSION = "2.6.5";
+const VERSION = "2.7.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -334,6 +334,9 @@ function buildGameScript(layout){
   L.push("let touchActive=false,touchStartX=0,touchStartY=0,lastX=0,lastY=0,isTap=true;");
   L.push("let targeted=null;");
   L.push("let frame=0;");
+  L.push("const MAX_AD_ENTITIES=1;");
+  L.push("const AD_WARN_RADIUS=260,AD_CONTACT_RADIUS=90,AD_CONTACT_RESET_RADIUS=150;");
+  L.push("let adEntities=[],adContactNotified=false;");
 
   L.push("let AFO_EVENTS=[];");
   L.push("function logEvent(type,data){");
@@ -371,7 +374,7 @@ function buildGameScript(layout){
   L.push("  renderer.setSize(wrap.clientWidth,wrap.clientHeight);");
   L.push("  raycaster=new THREE.Raycaster();raycaster.far=4000;");
   L.push("  checkViewport();");
-  L.push("  buildStarfield();buildGalaxies();");
+  L.push("  buildStarfield();buildGalaxies();spawnAdEntity();");
   L.push("  const ld=document.getElementById('loadScreen');");
   L.push("  if(ld){ld.classList.add('fadeOut');setTimeout(function(){ld.style.display='none';},700);}");
   L.push("  window.addEventListener('resize',onResize);");
@@ -391,6 +394,47 @@ function buildGameScript(layout){
   L.push("  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));");
   L.push("  const mat=new THREE.PointsMaterial({color:0xaaccff,size:3,sizeAttenuation:true});");
   L.push("  scene.add(new THREE.Points(geo,mat));");
+  L.push("}");
+
+  L.push("function spawnAdEntity(){");
+  L.push("  if(adEntities.length>=MAX_AD_ENTITIES) return;");
+  L.push("  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(16,0),new THREE.MeshBasicMaterial({color:0xff5522}));");
+  L.push("  const shell=new THREE.Mesh(new THREE.IcosahedronGeometry(22,0),new THREE.MeshBasicMaterial({color:0xff9944,wireframe:true,transparent:true,opacity:0.5}));");
+  L.push("  const mesh=new THREE.Group();");
+  L.push("  mesh.add(core);mesh.add(shell);");
+  L.push("  const sx=LAYOUT.start.x,sy=LAYOUT.start.y,sz=LAYOUT.start.z;");
+  L.push("  mesh.position.set(sx+70,sy+25,sz-260);");
+  L.push("  mesh.userData={");
+  L.push("    id:'ad_entity_test_1',is_ad:true,entity_type:'asteroid',");
+  L.push("    campaign_id:'camp_sample_1',creative_id:'creative_sample_1',");
+  L.push("    title:'20% Off QuantumBrew Summer Blend',reward_value:'20% off',");
+  L.push("    anchor:mesh.position.clone()");
+  L.push("  };");
+  L.push("  scene.add(mesh);");
+  L.push("  adEntities.push(mesh);");
+  L.push("}");
+
+  L.push("function updateAdEntities(){");
+  L.push("  if(!adEntities.length) return;");
+  L.push("  const badge=document.getElementById('adWarnBadge');");
+  L.push("  let anyWarn=false;");
+  L.push("  adEntities.forEach(function(mesh){");
+  L.push("    const a=mesh.userData.anchor;");
+  L.push("    const t=frame*0.01;");
+  L.push("    mesh.position.set(a.x+Math.sin(t)*40,a.y+Math.cos(t*0.7)*18,a.z+Math.cos(t)*40);");
+  L.push("    mesh.rotation.x+=0.01;mesh.rotation.y+=0.014;");
+  L.push("    const pulse=1+Math.sin(frame*0.08)*0.08;mesh.scale.set(pulse,pulse,pulse);");
+  L.push("    const d=camera.position.distanceTo(mesh.position);");
+  L.push("    if(d<AD_WARN_RADIUS) anyWarn=true;");
+  L.push("    if(d<AD_CONTACT_RADIUS&&!adContactNotified){");
+  L.push("      adContactNotified=true;");
+  L.push("      showToast('\u26A0\uFE0F '+mesh.userData.title+' \u2014 '+mesh.userData.reward_value+' (debug: '+mesh.userData.campaign_id+')');");
+  L.push("      logEvent('ad_entity_contact',{ad_id:mesh.userData.id,entity_type:mesh.userData.entity_type,campaign_id:mesh.userData.campaign_id});");
+  L.push("    } else if(d>AD_CONTACT_RESET_RADIUS&&adContactNotified){");
+  L.push("      adContactNotified=false;");
+  L.push("    }");
+  L.push("  });");
+  L.push("  if(badge) badge.classList.toggle('show',anyWarn);");
   L.push("}");
 
   L.push("function showToast(msg){");
@@ -1111,7 +1155,7 @@ function buildGameScript(layout){
   L.push("  camera.quaternion.setFromEuler(new THREE.Euler(pitch,yaw,0,'YXZ'));");
   L.push("  camera.translateZ(-speed);");
   L.push("  yawVel*=0.85;pitchVel*=0.85;");
-  L.push("  updateTarget();updateLOD();billboardCubes();");
+  L.push("  updateTarget();updateLOD();billboardCubes();updateAdEntities();");
   L.push("  if(targeted&&speed>0.3){");
   L.push("    const td=camera.position.distanceTo(targeted.position);");
   L.push("    if(td<220) speed*=0.965;");
@@ -1170,6 +1214,9 @@ function buildGameHTML(layout){
     "#compass{position:absolute;top:50%;left:50%;width:0;height:0;display:none;}",
     "#compass:before{content:'\u25B2';position:absolute;left:-150px;top:-10px;color:#ffdd00;font-size:14px;}",
     "#compassLabel{position:absolute;top:8px;left:50%;transform:translateX(-50%);color:#ffdd00;font-size:11px;background:rgba(0,0,0,0.55);padding:2px 8px;border-radius:4px;white-space:nowrap;}",
+    "#adWarnBadge{display:none;position:absolute;top:36px;left:50%;transform:translateX(-50%);color:#ff5522;font-size:11px;font-weight:bold;letter-spacing:1px;background:rgba(40,10,0,0.75);border:1px solid rgba(255,85,34,0.6);padding:3px 10px;border-radius:4px;white-space:nowrap;animation:adPulse 0.9s ease-in-out infinite;}",
+    "#adWarnBadge.show{display:block;}",
+    "@keyframes adPulse{0%,100%{opacity:0.6;}50%{opacity:1;}}",
     "#cockpitBottom{position:absolute;bottom:0;left:0;width:100%;height:14%;background:linear-gradient(to top, rgba(10,10,15,0.85), transparent);}",
     "#shipIcon{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:26px;opacity:0.85;}",
     "#menuUI{width:100%;max-width:480px;background:rgba(0,0,0,0.85);border-top:1px solid rgba(0,255,255,0.2);backdrop-filter:blur(20px);padding:14px 16px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;}",
@@ -1269,6 +1316,7 @@ function buildGameHTML(layout){
     "  <div id='crosshair'></div><div id='targetHint'></div>",
     "  <div id='compassLabel'></div><div id='compass'></div>",
     "  <div id='cockpitBottom'></div><div id='shipIcon'>\uD83D\uDE80</div>",
+    "  <div id='adWarnBadge'>\u26A0\uFE0F AD CONTACT</div>",
     "</div></div>",
     "<div id='menuUI'>",
     "  <h1>\uD83D\uDD17 LINK LANE</h1>",
