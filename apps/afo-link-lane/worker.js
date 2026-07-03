@@ -1,4 +1,4 @@
-const VERSION = "2.7.0";
+const VERSION = "2.8.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -337,6 +337,8 @@ function buildGameScript(layout){
   L.push("const MAX_AD_ENTITIES=1;");
   L.push("const AD_WARN_RADIUS=260,AD_CONTACT_RADIUS=90,AD_CONTACT_RESET_RADIUS=150;");
   L.push("let adEntities=[],adContactNotified=false;");
+  L.push("const FIRE_RANGE=500,FIRE_CONE_DOT=0.85;");
+  L.push("let currentAdCapture=null;");
 
   L.push("let AFO_EVENTS=[];");
   L.push("function logEvent(type,data){");
@@ -428,7 +430,7 @@ function buildGameScript(layout){
   L.push("    if(d<AD_WARN_RADIUS) anyWarn=true;");
   L.push("    if(d<AD_CONTACT_RADIUS&&!adContactNotified){");
   L.push("      adContactNotified=true;");
-  L.push("      showToast('\u26A0\uFE0F '+mesh.userData.title+' \u2014 '+mesh.userData.reward_value+' (debug: '+mesh.userData.campaign_id+')');");
+  L.push("      showToast('\uD83D\uDEE1\uFE0F Ad breached your shield \u2014 shoot to claim, or let it pass');");
   L.push("      logEvent('ad_entity_contact',{ad_id:mesh.userData.id,entity_type:mesh.userData.entity_type,campaign_id:mesh.userData.campaign_id});");
   L.push("    } else if(d>AD_CONTACT_RESET_RADIUS&&adContactNotified){");
   L.push("      adContactNotified=false;");
@@ -707,6 +709,75 @@ function buildGameScript(layout){
   L.push("  targeted=best;");
   L.push("}");
   L.push("function trySelect(){if(targeted) startFocus(targeted);}");
+
+  L.push("function fireAtAdEntity(){");
+  L.push("  if(gameState!=='flying') return;");
+  L.push("  camera.getWorldDirection(_fwd);");
+  L.push("  let best=null,bestScore=Infinity;");
+  L.push("  for(let i=0;i<adEntities.length;i++){");
+  L.push("    const mesh=adEntities[i];");
+  L.push("    _toMesh.copy(mesh.position).sub(camera.position);");
+  L.push("    const dist=_toMesh.length();");
+  L.push("    if(dist>FIRE_RANGE||dist<1) continue;");
+  L.push("    _toMesh.multiplyScalar(1/dist);");
+  L.push("    const dot=_toMesh.dot(_fwd);");
+  L.push("    if(dot<FIRE_CONE_DOT) continue;");
+  L.push("    const score=(1-dot)+dist*0.0006;");
+  L.push("    if(score<bestScore){bestScore=score;best=mesh;}");
+  L.push("  }");
+  L.push("  if(!best){showToast('\uD83C\uDFAF No target in range \u2014 aim closer');return;}");
+  L.push("  triggerAdImpact(best);");
+  L.push("}");
+
+  L.push("function triggerAdImpact(mesh){");
+  L.push("  if(gameState!=='flying') return;");
+  L.push("  currentAdCapture=mesh;");
+  L.push("  gameState='ad_impact';");
+  L.push("  logEvent('ad_shot',{ad_id:mesh.userData.id,campaign_id:mesh.userData.campaign_id,creative_id:mesh.userData.creative_id});");
+  L.push("  const flash=document.getElementById('impactFlash');");
+  L.push("  if(flash){flash.classList.add('show');setTimeout(function(){flash.classList.remove('show');},300);}");
+  L.push("  setTimeout(function(){openAdPrompt(mesh);},350);");
+  L.push("}");
+
+  L.push("function openAdPrompt(mesh){");
+  L.push("  document.getElementById('adPromptTitle').textContent=mesh.userData.title;");
+  L.push("  document.getElementById('adPromptReward').textContent='Reward: '+mesh.userData.reward_value;");
+  L.push("  document.getElementById('adPromptOverlay').classList.add('open');");
+  L.push("}");
+
+  L.push("async function captureAd(status){");
+  L.push("  const mesh=currentAdCapture;");
+  L.push("  if(!mesh) return;");
+  L.push("  try{");
+  L.push("    const r=await fetch('/api/bounty-vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({");
+  L.push("      ad_entity_id:mesh.userData.id,campaign_id:mesh.userData.campaign_id,creative_id:mesh.userData.creative_id,status:status");
+  L.push("    })});");
+  L.push("    const d=await r.json();");
+  L.push("    if(d.ok){");
+  L.push("      const label=status==='claimed'?'Claimed':status==='watched'?'Watched':'Vaulted';");
+  L.push("      showToast('\uD83C\uDF89 '+label+'! '+(d.reward_value||mesh.userData.reward_value)+' \u2014 view in Bounty Vault');");
+  L.push("    } else showToast('Capture failed: '+(d.error||'unknown error'));");
+  L.push("  }catch(e){showToast('Capture failed: '+e.message);}");
+  L.push("  finishAdEncounter();");
+  L.push("}");
+
+  L.push("function releaseAdEncounter(){");
+  L.push("  showToast('\uD83D\uDD13 Released \u2014 it got away');");
+  L.push("  finishAdEncounter();");
+  L.push("}");
+
+  L.push("function finishAdEncounter(){");
+  L.push("  const mesh=currentAdCapture;");
+  L.push("  document.getElementById('adPromptOverlay').classList.remove('open');");
+  L.push("  if(mesh){");
+  L.push("    scene.remove(mesh);");
+  L.push("    const idx=adEntities.indexOf(mesh);");
+  L.push("    if(idx>=0) adEntities.splice(idx,1);");
+  L.push("  }");
+  L.push("  currentAdCapture=null;");
+  L.push("  gameState='flying';");
+  L.push("  setTimeout(function(){spawnAdEntity();},4000);");
+  L.push("}");
 
   L.push("function openLink(p){");
   L.push("  const ov=document.getElementById('ov');if(!ov)return;");
@@ -1235,6 +1306,22 @@ function buildGameHTML(layout){
     ".sBtn:active{background:rgba(0,255,255,0.18);}",
     ".sBtn.stopBtn{background:rgba(170,30,30,0.15);border-color:#aa3333;color:#ff6666;font-size:12px;padding:9px 10px;}",
     "#speedLabel{color:#888;font-size:11px;text-align:center;flex:1;}",
+    ".fireRow{margin-top:6px;}",
+    "#fireBtn{width:100%;background:rgba(255,85,34,0.15);color:#ff7744;border:1px solid rgba(255,85,34,0.5);font-size:13px;font-weight:bold;padding:10px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:monospace;letter-spacing:1px;}",
+    "#impactFlash{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(circle,rgba(255,120,40,0.55),rgba(255,60,0,0.15) 60%,transparent 80%);z-index:280;pointer-events:none;opacity:0;transition:opacity 0.3s ease;}",
+    "#impactFlash.show{display:block;opacity:1;}",
+    "#adPromptOverlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);z-index:290;align-items:center;justify-content:center;backdrop-filter:blur(4px);}",
+    "#adPromptOverlay.open{display:flex;}",
+    "#adPromptCard{width:88%;max-width:340px;background:rgba(20,8,4,0.95);border:1px solid rgba(255,120,40,0.5);border-radius:12px;padding:20px;box-shadow:0 0 30px rgba(255,90,20,0.3);}",
+    "#adPromptTitle{color:#fff;font-size:15px;font-weight:bold;margin-bottom:6px;text-align:center;}",
+    "#adPromptReward{color:#ff9944;font-size:13px;text-align:center;margin-bottom:16px;}",
+    ".apRow{display:flex;gap:8px;margin-bottom:8px;}",
+    ".apRow:last-child{margin-bottom:0;}",
+    ".apBtn{flex:1;padding:11px;border-radius:6px;font-family:monospace;font-size:12px;font-weight:bold;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent;}",
+    ".apClaim{background:#00ff88;color:#000;}",
+    ".apWatch{background:#44aaff;color:#000;}",
+    ".apVault{background:rgba(255,255,255,0.12);color:#ddd;border:1px solid rgba(255,255,255,0.25);}",
+    ".apRelease{background:rgba(255,80,80,0.12);color:#ff8888;border:1px solid rgba(255,80,80,0.35);}",
     "#adminLink{color:#222;font-size:10px;padding:4px;text-align:center;width:100%;max-width:480px;}",
     "#adminLink a{color:#222;}",
     "#ccLaunchRow{width:100%;max-width:480px;padding:6px 10px 10px;display:flex;flex-direction:column;gap:4px;align-items:center;}",
@@ -1311,6 +1398,21 @@ function buildGameHTML(layout){
     "</style></head><body>",
     "<div id='loadScreen'><div id='loadLogo'>LINK LANE</div><div id='loadText'>Initializing flight systems</div><div id='loadBarTrack'><div id='loadBar'></div></div></div>",
     "<div id='toast'></div>",
+    "<div id='impactFlash'></div>",
+    "<div id='adPromptOverlay'>",
+    "  <div id='adPromptCard'>",
+    "    <div id='adPromptTitle'></div>",
+    "    <div id='adPromptReward'></div>",
+    "    <div class='apRow'>",
+    "      <button class='apBtn apClaim' onclick=\"captureAd('claimed')\">\uD83D\uDCB0 Claim</button>",
+    "      <button class='apBtn apWatch' onclick=\"captureAd('watched')\">\u25B6\uFE0F Watch</button>",
+    "    </div>",
+    "    <div class='apRow'>",
+    "      <button class='apBtn apVault' onclick=\"captureAd('captured')\">\uD83D\uDCE6 Vault</button>",
+    "      <button class='apBtn apRelease' onclick='releaseAdEncounter()'>\uD83D\uDD13 Release</button>",
+    "    </div>",
+    "  </div>",
+    "</div>",
     "<div id='wrap'><canvas id='gc'></canvas>",
     "<div id='hud'>",
     "  <div id='crosshair'></div><div id='targetHint'></div>",
@@ -1340,6 +1442,9 @@ function buildGameHTML(layout){
     "    <button class='sBtn stopBtn' onclick='fullStop()'>\u23F9 STOP</button>",
     "    <div id='speedLabel'>\uD83D\uDE80 3.0x</div>",
     "    <button class='sBtn' onclick='adjustSpeed(1)'>\u23E9</button>",
+    "  </div>",
+    "  <div class='fireRow'>",
+    "    <button id='fireBtn' onclick='fireAtAdEntity()'>\uD83C\uDFAF FIRE</button>",
     "  </div>",
     "</div>",
     "<div id='ccLaunchRow'>",
@@ -1642,6 +1747,23 @@ async function apiSetBountyStatus(env,id,newStatus){
   return j({ok:true,status:newStatus});
 }
 
+async function apiCaptureAdEntity(env,req){
+  const body=await req.json().catch(()=>({}));
+  const {ad_entity_id,campaign_id,creative_id,status,user_id}=body;
+  const validStatuses=["claimed","watched","captured"];
+  if(!campaign_id||!creative_id||!validStatuses.includes(status)) return j({ok:false,error:"campaign_id, creative_id and a valid status are required"},400);
+  const creative=await env.DB.prepare("SELECT title,reward_json FROM ad_creatives WHERE id=?").bind(safe(creative_id)).first();
+  let reward={};
+  try{reward=JSON.parse((creative&&creative.reward_json)||"{}");}catch(e){}
+  const id=uid();
+  const now=new Date().toISOString();
+  await env.DB.prepare("INSERT INTO bounty_vault_items (id,user_id,ad_entity_id,campaign_id,creative_id,status,reward_type,reward_value,captured_context_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+    .bind(id,user_id||"user_device",safe(ad_entity_id||""),safe(campaign_id),safe(creative_id),status,reward.type||null,reward.value||null,JSON.stringify({source:"shoot_freeze_claim",captured_at:now}),now,now).run();
+  await env.DB.prepare("INSERT INTO ad_interaction_events (id,vault_item_id,event_type,event_json) VALUES (?,?,?,?)")
+    .bind(uid(),id,"captured_"+status,JSON.stringify({campaign_id,creative_id})).run();
+  return j({ok:true,id,status,title:(creative&&creative.title)||null,reward_value:reward.value||null});
+}
+
 function buildCardsHTML(cards){
   const rows=cards.map(function(c){
     return "<a class='cardRow' href='/card/"+safe(c.id)+"'>"+
@@ -1829,6 +1951,7 @@ export default {
     }
     if(/^\/api\/bounty-vault\/[^/]+\/discard$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"discarded");
     if(/^\/api\/bounty-vault\/[^/]+\/release$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"released");
+    if(path==="/api/bounty-vault"&&method==="POST") return apiCaptureAdEntity(env,request);
     if(path==="/bounty-vault"&&method==="GET"){
       const r=await env.DB.prepare("SELECT bv.id,bv.status,bv.reward_type,bv.reward_value,bv.coupon_code,bv.expires_at,bv.created_at,c.title AS creative_title,c.creative_type,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id WHERE bv.status NOT IN ('discarded','released') ORDER BY bv.created_at DESC LIMIT 200").all();
       return new Response(buildBountyVaultHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
