@@ -1,4 +1,4 @@
-const VERSION = "2.6.0";
+const VERSION = "2.6.5";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -1584,6 +1584,16 @@ async function apiArchiveSelectedCard(env,id){
   return j({ok:true});
 }
 
+async function apiSetBountyStatus(env,id,newStatus){
+  const item=await env.DB.prepare("SELECT id,status FROM bounty_vault_items WHERE id=?").bind(safe(id)).first();
+  if(!item) return j({ok:false,error:"not found"},404);
+  if(item.status==="discarded"||item.status==="released") return j({ok:false,error:"already "+item.status},400);
+  await env.DB.prepare("UPDATE bounty_vault_items SET status=?,updated_at=? WHERE id=?").bind(newStatus,new Date().toISOString(),safe(id)).run();
+  await env.DB.prepare("INSERT INTO ad_interaction_events (id,vault_item_id,event_type,event_json) VALUES (?,?,?,?)")
+    .bind(uid(),safe(id),newStatus,JSON.stringify({previous_status:item.status})).run();
+  return j({ok:true,status:newStatus});
+}
+
 function buildCardsHTML(cards){
   const rows=cards.map(function(c){
     return "<a class='cardRow' href='/card/"+safe(c.id)+"'>"+
@@ -1598,6 +1608,7 @@ function buildCardsHTML(cards){
     "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:20px;margin-bottom:4px;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.cardRow{display:flex;gap:10px;align-items:center;background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;text-decoration:none;}.cardThumb{width:44px;height:44px;border-radius:4px;background:#111;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;}.cardThumb img{width:100%;height:100%;object-fit:cover;}.cardMid{flex:1;overflow:hidden;}.cardTitle{color:#ccc;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.cardMeta{color:#00ff88;font-size:10px;margin-top:2px;}.empty{color:#333;font-size:13px;}</style>",
     "</head><body>",
     "<a class='back' href='/'>\u2190 back to game</a>",
+    "<a class='back' href='/bounty-vault' style='margin-left:14px;'>\uD83C\uDFF0 Bounty Vault</a>",
     "<h1>\uD83D\uDCE6 Selected Cards ("+cards.length+")</h1>",
     cards.length?rows:"<p class='empty'>None saved yet. Open a node in-game, tap a face, and Save or swipe up.</p>",
     "</body></html>"
@@ -1676,6 +1687,7 @@ function buildBountyVaultHTML(items){
     "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:20px;margin-bottom:4px;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.cardRow{display:flex;gap:10px;align-items:center;background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;text-decoration:none;}.cardThumb{width:44px;height:44px;border-radius:4px;background:#111;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}.cardMid{flex:1;overflow:hidden;}.cardTitle{color:#ccc;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.cardMeta{color:#00ff88;font-size:10px;margin-top:2px;}.bvStatus{font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;flex-shrink:0;}.empty{color:#333;font-size:13px;}</style>",
     "</head><body>",
     "<a class='back' href='/'>\u2190 back to game</a>",
+    "<a class='back' href='/cards' style='margin-left:14px;'>\uD83D\uDCE6 Selected Cards</a>",
     "<h1>\uD83C\uDFF0 Bounty Vault ("+items.length+")</h1>",
     items.length?rows:"<p class='empty'>Nothing captured yet. Ad asteroids arrive in a future update.</p>",
     "</body></html>"
@@ -1702,19 +1714,28 @@ function buildBountyDetailHTML(item,rewards){
   const parts=[
     "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
     "<title>"+safe(item.creative_title||"Bounty")+" - Link Lane</title>",
-    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:18px;margin-bottom:4px;word-break:break-word;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.meta{color:#556;font-size:11px;margin-bottom:14px;}.bvBadge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-left:6px;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}.bvBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.bvRow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #161622;}.bvRow:last-child{border-bottom:none;}.bvKey{color:#667;text-transform:uppercase;font-size:10px;letter-spacing:1px;}.bvVal{color:#ddd;text-align:right;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}.btn{display:block;width:100%;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;text-decoration:none;background:#00ff88;color:#000;box-sizing:border-box;margin:16px 0;}.sampleNote{color:#665;font-size:10px;margin-top:16px;font-style:italic;}</style>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:18px;margin-bottom:4px;word-break:break-word;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.meta{color:#556;font-size:11px;margin-bottom:14px;}.bvBadge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin-left:6px;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}.bvBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.bvRow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #161622;}.bvRow:last-child{border-bottom:none;}.bvKey{color:#667;text-transform:uppercase;font-size:10px;letter-spacing:1px;}.bvVal{color:#ddd;text-align:right;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}.btn{display:block;width:100%;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;text-decoration:none;background:#00ff88;color:#000;box-sizing:border-box;margin:16px 0;}.btnRow{display:flex;gap:8px;margin:16px 0;}.btnHalf{flex:1;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;font-weight:bold;cursor:pointer;border:none;box-sizing:border-box;}.btnDiscard{background:#330000;color:#f88;border:1px solid #600;}.btnRelease{background:#00263a;color:#6cf;border:1px solid #069;}.sampleNote{color:#665;font-size:10px;margin-top:16px;font-style:italic;}</style>",
     "</head><body>",
     "<a class='back' href='/bounty-vault'>\u2190 all bounties</a>",
     "<h1>"+safe(item.creative_title||"Untitled bounty")+"<span class='bvBadge' style='background:"+sc+"22;color:"+sc+";border:1px solid "+sc+"'>"+safe(item.status)+"</span></h1>",
     "<div class='meta'>"+safe(item.campaign_name||"")+" \u00B7 "+safe(item.entity_type||"")+" \u00B7 captured "+safe((item.created_at||"").slice(0,10))+(item.expires_at?(" \u00B7 expires "+safe(String(item.expires_at).slice(0,10))):"")+"</div>",
+    "<div class='bvBlock'><div class='bvRow'><span class='bvKey'>Source</span><span class='bvVal'>"+safe(item.advertiser_id||item.campaign_name||"\u2014")+"</span></div><div class='bvRow'><span class='bvKey'>Status</span><span class='bvVal' style='color:"+sc+"'>"+safe(item.status)+"</span></div></div>",
     item.coupon_code?("<div class='bvBlock'><div class='bvRow'><span class='bvKey'>Coupon Code</span><span class='bvVal'>"+safe(item.coupon_code)+"</span></div></div>"):"",
     "<h2>Reward</h2>",
     "<div class='bvBlock'>"+rewardHtml+"</div>",
     "<h2>Terms</h2>",
     "<div class='bvBlock'>"+termsHtml+"</div>",
     item.landing_url?("<a class='btn' href='"+safe(item.landing_url)+"' target='_blank'>Visit Offer \u2192</a>"):"",
+    (item.status!=="discarded"&&item.status!=="released")?("<div class='btnRow'><button class='btnHalf btnDiscard' onclick=\"setBountyStatus('discarded')\">\uD83D\uDDD1 Discard</button><button class='btnHalf btnRelease' onclick=\"setBountyStatus('released')\">\uD83D\uDD13 Release</button></div>"):"",
     rewards.length?("<h2>Reward Ledger</h2>"+rewardLedgerHtml):"",
-    "<p class='sampleNote'>This is a v2.6.0 foundation build \u2014 claim/discard/release actions arrive in v2.6.5.</p>",
+    item.status==="discarded"?"<p class='sampleNote'>This item has been discarded and removed from your active vault.</p>":"",
+    item.status==="released"?"<p class='sampleNote'>This item has been released back into circulation.</p>":"",
+    "<script>",
+    "function setBountyStatus(action){",
+    "  if(!confirm((action==='discarded'?'Discard':'Release')+' this vault item?'))return;",
+    "  fetch('/api/bounty-vault/"+safe(item.id)+"/'+action,{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok)location.reload();else alert(d.error||'Failed');});",
+    "}",
+    "</script>",
     "</body></html>"
   ];
   return parts.join("\n");
@@ -1758,8 +1779,10 @@ export default {
       const notes=await env.DB.prepare("SELECT id,note_text,tags_json,created_at FROM card_notes WHERE card_id=? ORDER BY created_at DESC").bind(safe(cardId)).all();
       return new Response(buildCardDetailHTML(card,faces.results||[],notes.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
+    if(/^\/api\/bounty-vault\/[^/]+\/discard$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"discarded");
+    if(/^\/api\/bounty-vault\/[^/]+\/release$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"released");
     if(path==="/bounty-vault"&&method==="GET"){
-      const r=await env.DB.prepare("SELECT bv.id,bv.status,bv.reward_type,bv.reward_value,bv.coupon_code,bv.expires_at,bv.created_at,c.title AS creative_title,c.creative_type,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id ORDER BY bv.created_at DESC LIMIT 200").all();
+      const r=await env.DB.prepare("SELECT bv.id,bv.status,bv.reward_type,bv.reward_value,bv.coupon_code,bv.expires_at,bv.created_at,c.title AS creative_title,c.creative_type,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id WHERE bv.status NOT IN ('discarded','released') ORDER BY bv.created_at DESC LIMIT 200").all();
       return new Response(buildBountyVaultHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path.startsWith("/bounty/")&&method==="GET"){
