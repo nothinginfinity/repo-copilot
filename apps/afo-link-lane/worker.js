@@ -1,4 +1,4 @@
-const VERSION = "2.3.5";
+const VERSION = "2.4.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -731,6 +731,78 @@ function buildGameScript(layout){
   L.push("  focus=null;gameState='flying';");
   L.push("}");
 
+  L.push("function faceContent(p,fi){");
+  L.push("  const dateStr=(p.added_at||'').slice(0,10);");
+  L.push("  const isYT=p.domain==='youtube.com';");
+  L.push("  const typeLabel=isYT?(p.is_short?'\uD83D\uDCF1 SHORT':'\uD83C\uDFAC VIDEO'):'\uD83D\uDD17 LINK';");
+  L.push("  const pubDate=(p.published_at||dateStr||'');");
+  L.push("  if(fi===0) return {label:'TITLE',text:p.title||p.url||'',image:false};");
+  L.push("  if(fi===1) return {label:'CHANNEL',text:p.group_name||p.domain||'',image:false};");
+  L.push("  if(fi===2) return {label:'TYPE',text:typeLabel,image:false};");
+  L.push("  if(fi===3) return {label:'PUBLISHED',text:pubDate||'\u2014',image:false};");
+  L.push("  if(fi===4) return {label:'IMAGE',text:'',image:true};");
+  L.push("  return {label:'SOURCE',text:p.domain||'',image:false};");
+  L.push("}");
+  L.push("const _fiProjV=new THREE.Vector3();");
+  L.push("function projectToScreen(vec3){");
+  L.push("  _fiProjV.copy(vec3).project(camera);");
+  L.push("  return {x:(_fiProjV.x*0.5+0.5)*canvas.clientWidth,y:(-_fiProjV.y*0.5+0.5)*canvas.clientHeight};");
+  L.push("}");
+  L.push("function hitTestGridFace(x,y){");
+  L.push("  if(!focus||focus.phase!=='focused') return -1;");
+  L.push("  const halfW=canvas.clientWidth/4,halfH=canvas.clientHeight/6;");
+  L.push("  let best=-1,bestScore=Infinity;");
+  L.push("  for(let k=0;k<focus.planes.length;k++){");
+  L.push("    const s=projectToScreen(focus.planes[k].m.position);");
+  L.push("    const dx=(s.x-x)/halfW,dy=(s.y-y)/halfH;");
+  L.push("    const score=dx*dx+dy*dy;");
+  L.push("    if(score<bestScore){bestScore=score;best=k;}");
+  L.push("  }");
+  L.push("  return bestScore<=1.3?best:-1;");
+  L.push("}");
+  L.push("function renderFaceInspector(){");
+  L.push("  const f=focus;if(!f)return;");
+  L.push("  const fi=GRID_ORDER[f.inspectIndex];");
+  L.push("  const p=f.mesh.userData;");
+  L.push("  const c=faceContent(p,fi);");
+  L.push("  document.getElementById('fiLabel').textContent=c.label;");
+  L.push("  const img=document.getElementById('fiImg'),txt=document.getElementById('fiText');");
+  L.push("  if(c.image){");
+  L.push("    txt.style.display='none';img.style.display='block';");
+  L.push("    if(p.og_image_key){img.src='/og-image/'+p.id;}else{img.removeAttribute('src');}");
+  L.push("  }else{");
+  L.push("    img.style.display='none';txt.style.display='block';txt.textContent=c.text||'\u2014';");
+  L.push("  }");
+  L.push("  const dots=document.getElementById('fiDots').children;");
+  L.push("  for(let i=0;i<dots.length;i++) dots[i].classList.toggle('active',i===f.inspectIndex);");
+  L.push("  document.getElementById('fiVisit').onclick=function(){window.open(p.url,'_blank');};");
+  L.push("}");
+  L.push("function openFaceInspector(k){");
+  L.push("  if(!focus||focus.phase!=='focused') return;");
+  L.push("  gameState='inspecting';");
+  L.push("  focus.inspectIndex=k;");
+  L.push("  renderFaceInspector();");
+  L.push("  document.getElementById('faceInspector').classList.add('open');");
+  L.push("}");
+  L.push("function closeFaceInspector(){");
+  L.push("  if(gameState!=='inspecting') return;");
+  L.push("  document.getElementById('faceInspector').classList.remove('open');");
+  L.push("  gameState='focused';");
+  L.push("}");
+  L.push("function faceCarouselStep(delta){");
+  L.push("  if(!focus||gameState!=='inspecting') return;");
+  L.push("  focus.inspectIndex=(focus.inspectIndex+delta+6)%6;");
+  L.push("  renderFaceInspector();");
+  L.push("}");
+  L.push("let fiTouchX=0,fiTouchActive=false;");
+  L.push("function fiTouchStart(x){fiTouchActive=true;fiTouchX=x;}");
+  L.push("function fiTouchEnd(x){");
+  L.push("  if(!fiTouchActive) return;fiTouchActive=false;");
+  L.push("  const dx=x-fiTouchX;");
+  L.push("  if(dx<=-40) faceCarouselStep(1);");
+  L.push("  else if(dx>=40) faceCarouselStep(-1);");
+  L.push("}");
+
   L.push("let ccOpen=false,ccTab='registry',ccPrevState=null,ccRegistryBuilt=false,activeLoadout='explorer';");
   L.push("function openCommandCenter(){");
   L.push("  if(ccOpen) return;");
@@ -854,7 +926,21 @@ function buildGameScript(layout){
   L.push("  lastX=x;lastY=y;");
   L.push("  if(Math.abs(x-touchStartX)>10||Math.abs(y-touchStartY)>10) isTap=false;");
   L.push("}");
-  L.push("function endTouch(){if(isTap){if(gameState==='flying')trySelect();else if(gameState==='focused')closeFocus();}touchActive=false;yawVel=0;pitchVel=0;}");
+  L.push("function endTouch(){");
+  L.push("  if(isTap){");
+  L.push("    if(gameState==='flying') trySelect();");
+  L.push("    else if(gameState==='focused'){");
+  L.push("      const k=hitTestGridFace(touchStartX,touchStartY);");
+  L.push("      if(k>=0) openFaceInspector(k); else closeFocus();");
+  L.push("    }");
+  L.push("  }");
+  L.push("  touchActive=false;yawVel=0;pitchVel=0;");
+  L.push("}");
+  L.push("const fiEl=document.getElementById('faceInspector');");
+  L.push("fiEl.addEventListener('touchstart',function(e){fiTouchStart(e.touches[0].clientX);},{passive:true});");
+  L.push("fiEl.addEventListener('touchend',function(e){fiTouchEnd(e.changedTouches[0].clientX);},{passive:true});");
+  L.push("fiEl.addEventListener('mousedown',function(e){fiTouchStart(e.clientX);});");
+  L.push("fiEl.addEventListener('mouseup',function(e){fiTouchEnd(e.clientX);});");
 
   L.push("let isPinching=false,pinchStartDist=0,pinchStartSpeed=0;");
   L.push("const PINCH_SENSITIVITY=0.06;");
@@ -1048,6 +1134,20 @@ function buildGameHTML(layout){
     ".fbRow{display:flex;gap:8px;}",
     "#fbVisit{flex:2;padding:12px;background:#00ff88;color:#000;border:none;font-family:monospace;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "#fbClose{flex:1;padding:12px;background:transparent;color:#888;border:1px solid #333;font-family:monospace;font-size:13px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    "#faceInspector{display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:100%;height:100dvh;background:rgba(6,4,12,0.97);z-index:260;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}",
+    "#faceInspector.open{display:flex;}",
+    "#fiTop{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(0,255,136,0.2);}",
+    "#fiBack{background:transparent;color:#00ff88;border:1px solid rgba(0,255,136,0.4);border-radius:6px;padding:8px 12px;font-family:monospace;font-size:12px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    "#fiLabel{color:#ffdd00;font-size:12px;letter-spacing:2px;font-weight:bold;}",
+    "#fiDots{display:flex;gap:5px;}",
+    ".fiDot{width:6px;height:6px;border-radius:50%;background:#333;}",
+    ".fiDot.active{background:#00ff88;box-shadow:0 0 6px rgba(0,255,136,0.6);}",
+    "#fiBody{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;overflow:hidden;}",
+    "#fiText{color:#eee;font-size:22px;line-height:1.5;text-align:center;word-break:break-word;max-height:100%;overflow-y:auto;}",
+    "#fiImg{display:none;max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;}",
+    "#fiBottom{display:flex;gap:8px;padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid rgba(0,255,136,0.2);}",
+    "#fiPrev,#fiNext{flex:0 0 52px;background:rgba(255,255,255,0.06);color:#ccc;border:1px solid #333;border-radius:6px;font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    "#fiVisit{flex:1;padding:12px;background:#00ff88;color:#000;border:none;font-family:monospace;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "#ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.97);z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:20px;}",
     "#ovImg{max-width:100%;max-height:42vh;object-fit:contain;border-radius:4px;margin-bottom:14px;}",
     "#ovTitle{color:#fff;font-size:16px;text-align:center;margin-bottom:8px;max-width:90%;}",
@@ -1139,6 +1239,25 @@ function buildGameHTML(layout){
     "<div id='focusBar'>",
     "  <div id='fbTitle'></div>",
     "  <div class='fbRow'><button id='fbVisit'>Visit \u2192</button><button id='fbClose' onclick='closeFocus()'>\u2715 Close</button></div>",
+    "</div>",
+    "<div id='faceInspector'>",
+    "  <div id='fiTop'>",
+    "    <button id='fiBack' onclick='closeFaceInspector()'>\u2190 Back</button>",
+    "    <span id='fiLabel'></span>",
+    "    <div id='fiDots'>",
+    "      <span class='fiDot'></span><span class='fiDot'></span><span class='fiDot'></span>",
+    "      <span class='fiDot'></span><span class='fiDot'></span><span class='fiDot'></span>",
+    "    </div>",
+    "  </div>",
+    "  <div id='fiBody'>",
+    "    <div id='fiText'></div>",
+    "    <img id='fiImg' alt='preview'>",
+    "  </div>",
+    "  <div id='fiBottom'>",
+    "    <button id='fiPrev' onclick='faceCarouselStep(-1)'>\u2039</button>",
+    "    <button id='fiVisit'>Visit \u2192</button>",
+    "    <button id='fiNext' onclick='faceCarouselStep(1)'>\u203A</button>",
+    "  </div>",
     "</div>",
     "<div id='ov'>",
     "  <img id='ovImg' src='' alt='preview'>",
