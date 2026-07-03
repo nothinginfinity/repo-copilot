@@ -1,11 +1,19 @@
-const VERSION = "2.4.5";
+const VERSION = "2.5.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
 
 const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS links (id TEXT PRIMARY KEY, url TEXT NOT NULL, title TEXT, description TEXT, domain TEXT, og_image_key TEXT, group_name TEXT, video_id TEXT, is_short INTEGER DEFAULT 0, published_at TEXT, added_at TEXT DEFAULT (datetime('now')))",
-  "CREATE UNIQUE INDEX IF NOT EXISTS idx_links_url ON links(url)"
+  "CREATE UNIQUE INDEX IF NOT EXISTS idx_links_url ON links(url)",
+  "CREATE TABLE IF NOT EXISTS selected_cards (id TEXT PRIMARY KEY, link_id TEXT, selected_face INTEGER, gesture TEXT, status TEXT DEFAULT 'saved', priority INTEGER DEFAULT 0, title TEXT, url TEXT, domain TEXT, face_snapshot_json TEXT, r2_snapshot_key TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_selected_cards_status ON selected_cards(status, created_at)",
+  "CREATE TABLE IF NOT EXISTS selected_card_faces (id TEXT PRIMARY KEY, card_id TEXT, face_index INTEGER, label TEXT, value TEXT, text TEXT, image_key TEXT, vector_id TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_scf_card ON selected_card_faces(card_id, face_index)",
+  "CREATE TABLE IF NOT EXISTS selected_card_events (id TEXT PRIMARY KEY, card_id TEXT, event_type TEXT, event_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_sce_card ON selected_card_events(card_id, created_at)",
+  "CREATE TABLE IF NOT EXISTS card_notes (id TEXT PRIMARY KEY, card_id TEXT, note_text TEXT, tags_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_card_notes_card ON card_notes(card_id, created_at)"
 ];
 
 const R_GALAXY = 1500;
@@ -826,11 +834,32 @@ function buildGameScript(layout){
   L.push("function fiTouchEnd(x,y){");
   L.push("  if(!fiTouchActive) return;fiTouchActive=false;");
   L.push("  const dx=x-fiTouchX,dy=y-fiTouchY;");
-  L.push("  if(Math.abs(dy)>Math.abs(dx)&&dy<=-40){");
-  L.push("    if(focus) logEvent('save_gesture_attempt',{node_id:focus.mesh.userData.id,face_index:focus.inspectIndex});");
+  L.push("  if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>=40){");
+  L.push("    if(focus){");
+  L.push("      logEvent('save_gesture_attempt',{node_id:focus.mesh.userData.id,face_index:focus.inspectIndex,direction:dy<0?'up':'down'});");
+  L.push("      if(dy<0) saveSelectedCard(focus.inspectIndex,'swipe_up');");
+  L.push("      else saveSelectedCard(null,'swipe_down');");
+  L.push("    }");
   L.push("  }else if(dx<=-40) faceCarouselStep(1);");
   L.push("  else if(dx>=40) faceCarouselStep(-1);");
   L.push("}");
+  L.push("async function saveSelectedCard(selectedFace,gesture){");
+  L.push("  if(!focus) return;");
+  L.push("  const p=focus.mesh.userData;");
+  L.push("  const faces=[0,1,2,3,4,5].map(function(fi){");
+  L.push("    const c=faceContent(p,fi);");
+  L.push("    return {index:fi,label:c.label,text:c.image?'':(c.text||''),image_key:c.image?(p.og_image_key||null):null};");
+  L.push("  });");
+  L.push("  const body={link_id:p.id,selected_face:selectedFace,gesture:gesture,title:p.title||p.url||'',url:p.url,domain:p.domain||'',faces:faces};");
+  L.push("  try{");
+  L.push("    const r=await fetch('/api/selected-cards',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});");
+  L.push("    const d=await r.json();");
+  L.push("    if(d.ok) showToast(selectedFace===null?'Saved for later \uD83D\uDCE6':'Saved \uD83D\uDCE6 view in Cards');");
+  L.push("    else showToast('Save failed: '+(d.error||'unknown error'));");
+  L.push("  }catch(e){showToast('Save failed: '+e.message);}");
+  L.push("}");
+  L.push("function fiSaveClick(){if(focus) saveSelectedCard(focus.inspectIndex,'button');}");
+  L.push("function fiAskLaterClick(){if(focus) saveSelectedCard(null,'button');}");
 
   L.push("let ccOpen=false,ccTab='registry',ccPrevState=null,ccRegistryBuilt=false,activeLoadout='explorer';");
   L.push("function openCommandCenter(){");
@@ -1177,6 +1206,9 @@ function buildGameHTML(layout){
     "#fiBottom{display:flex;gap:8px;padding:14px 16px calc(14px + env(safe-area-inset-bottom));border-top:1px solid rgba(0,255,136,0.2);}",
     "#fiPrev,#fiNext{flex:0 0 52px;background:rgba(255,255,255,0.06);color:#ccc;border:1px solid #333;border-radius:6px;font-size:20px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
     "#fiVisit{flex:1;padding:12px;background:#00ff88;color:#000;border:none;font-family:monospace;font-size:14px;font-weight:bold;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}",
+    "#fiActions{display:flex;gap:8px;padding:0 16px 10px;}",
+    "#fiSaveBtn,#fiLaterBtn{flex:1;padding:10px;font-family:monospace;font-size:12px;border-radius:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;border:1px solid rgba(0,255,136,0.35);background:rgba(0,255,136,0.08);color:#00ff88;}",
+    "#fiLaterBtn{border-color:rgba(255,221,0,0.35);background:rgba(255,221,0,0.06);color:#ffdd00;}",
     "#ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.97);z-index:200;flex-direction:column;align-items:center;justify-content:center;padding:20px;}",
     "#ovImg{max-width:100%;max-height:42vh;object-fit:contain;border-radius:4px;margin-bottom:14px;}",
     "#ovTitle{color:#fff;font-size:16px;text-align:center;margin-bottom:8px;max-width:90%;}",
@@ -1281,6 +1313,10 @@ function buildGameHTML(layout){
     "  <div id='fiBody'>",
     "    <div id='fiText'></div>",
     "    <img id='fiImg' alt='preview'>",
+    "  </div>",
+    "  <div id='fiActions'>",
+    "    <button id='fiSaveBtn' onclick='fiSaveClick()'>\uD83D\uDCBE Save</button>",
+    "    <button id='fiLaterBtn' onclick='fiAskLaterClick()'>\uD83D\uDD52 Later</button>",
     "  </div>",
     "  <div id='fiBottom'>",
     "    <button id='fiPrev' onclick='faceCarouselStep(-1)'>\u2039</button>",
@@ -1445,6 +1481,126 @@ async function deleteLink(env,id){
   return j({ok:true});
 }
 
+async function apiCreateSelectedCard(env,req){
+  const body=await req.json().catch(()=>({}));
+  const linkId=body.link_id;
+  if(!linkId) return j({ok:false,error:"link_id required"},400);
+  const faces=Array.isArray(body.faces)?body.faces:[];
+  const selectedFace=(body.selected_face===0||body.selected_face)?Number(body.selected_face):null;
+  const gesture=body.gesture||"button";
+  const status=selectedFace===null?"later":"saved";
+  const id=uid();
+  const now=new Date().toISOString();
+  await env.DB.prepare("INSERT INTO selected_cards (id,link_id,selected_face,gesture,status,title,url,domain,face_snapshot_json,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)")
+    .bind(id,safe(linkId),selectedFace,gesture,status,body.title||"",body.url||"",body.domain||"",JSON.stringify(faces),now,now).run();
+  for(const f of faces){
+    await env.DB.prepare("INSERT INTO selected_card_faces (id,card_id,face_index,label,value,text,image_key) VALUES (?,?,?,?,?,?,?)")
+      .bind(uid(),id,f.index,f.label||"",f.value||"",f.text||"",f.image_key||null).run();
+  }
+  await env.DB.prepare("INSERT INTO selected_card_events (id,card_id,event_type,event_json) VALUES (?,?,?,?)")
+    .bind(uid(),id,"created",JSON.stringify({selected_face:selectedFace,gesture:gesture})).run();
+  return j({ok:true,id,status});
+}
+
+async function apiListSelectedCards(env){
+  const r=await env.DB.prepare("SELECT sc.id,sc.link_id,sc.selected_face,sc.status,sc.priority,sc.title,sc.url,sc.domain,sc.created_at,l.og_image_key FROM selected_cards sc LEFT JOIN links l ON l.id=sc.link_id WHERE sc.status!='archived' ORDER BY sc.created_at DESC LIMIT 500").all();
+  return j({ok:true,cards:r.results||[]});
+}
+
+async function apiGetSelectedCard(env,id){
+  const card=await env.DB.prepare("SELECT * FROM selected_cards WHERE id=?").bind(safe(id)).first();
+  if(!card) return j({ok:false,error:"not found"},404);
+  const faces=await env.DB.prepare("SELECT face_index,label,value,text,image_key FROM selected_card_faces WHERE card_id=? ORDER BY face_index").bind(safe(id)).all();
+  const notes=await env.DB.prepare("SELECT id,note_text,tags_json,created_at FROM card_notes WHERE card_id=? ORDER BY created_at DESC").bind(safe(id)).all();
+  return j({ok:true,card,faces:faces.results||[],notes:notes.results||[]});
+}
+
+async function apiAddCardNote(env,req,id){
+  const card=await env.DB.prepare("SELECT id FROM selected_cards WHERE id=?").bind(safe(id)).first();
+  if(!card) return j({ok:false,error:"not found"},404);
+  const body=await req.json().catch(()=>({}));
+  const noteText=body.note_text;
+  if(!noteText) return j({ok:false,error:"note_text required"},400);
+  const noteId=uid();
+  await env.DB.prepare("INSERT INTO card_notes (id,card_id,note_text,tags_json) VALUES (?,?,?,?)")
+    .bind(noteId,safe(id),noteText,JSON.stringify(body.tags||[])).run();
+  await env.DB.prepare("INSERT INTO selected_card_events (id,card_id,event_type,event_json) VALUES (?,?,?,?)")
+    .bind(uid(),safe(id),"note_added",JSON.stringify({note_id:noteId})).run();
+  return j({ok:true,id:noteId});
+}
+
+async function apiArchiveSelectedCard(env,id){
+  const card=await env.DB.prepare("SELECT id FROM selected_cards WHERE id=?").bind(safe(id)).first();
+  if(!card) return j({ok:false,error:"not found"},404);
+  await env.DB.prepare("UPDATE selected_cards SET status='archived',updated_at=? WHERE id=?").bind(new Date().toISOString(),safe(id)).run();
+  await env.DB.prepare("INSERT INTO selected_card_events (id,card_id,event_type,event_json) VALUES (?,?,?,?)")
+    .bind(uid(),safe(id),"archived",JSON.stringify({})).run();
+  return j({ok:true});
+}
+
+function buildCardsHTML(cards){
+  const rows=cards.map(function(c){
+    return "<a class='cardRow' href='/card/"+safe(c.id)+"'>"+
+      "<div class='cardThumb'>"+(c.og_image_key?"<img src='/og-image/"+safe(c.link_id)+"'>":"\uD83D\uDCC7")+"</div>"+
+      "<div class='cardMid'><div class='cardTitle'>"+safe(c.title||c.url)+"</div>"+
+      "<div class='cardMeta'>"+safe(c.domain||"")+" \u00B7 "+safe(c.status)+" \u00B7 "+safe((c.created_at||"").slice(0,10))+"</div></div>"+
+      "</a>";
+  }).join("");
+  const parts=[
+    "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
+    "<title>Link Lane - Cards</title>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:20px;margin-bottom:4px;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.cardRow{display:flex;gap:10px;align-items:center;background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;text-decoration:none;}.cardThumb{width:44px;height:44px;border-radius:4px;background:#111;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;}.cardThumb img{width:100%;height:100%;object-fit:cover;}.cardMid{flex:1;overflow:hidden;}.cardTitle{color:#ccc;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.cardMeta{color:#00ff88;font-size:10px;margin-top:2px;}.empty{color:#333;font-size:13px;}</style>",
+    "</head><body>",
+    "<a class='back' href='/'>\u2190 back to game</a>",
+    "<h1>\uD83D\uDCE6 Selected Cards ("+cards.length+")</h1>",
+    cards.length?rows:"<p class='empty'>None saved yet. Open a node in-game, tap a face, and Save or swipe up.</p>",
+    "</body></html>"
+  ];
+  return parts.join("\n");
+}
+
+function buildCardDetailHTML(card,faces,notes){
+  const faceHtml=faces.map(function(f){
+    if(f.label==="IMAGE"){
+      return "<div class='faceBlock'><div class='faceLabel'>"+safe(f.label)+"</div>"+(f.image_key?"<img class='faceImg' src='/og-image/"+safe(card.link_id)+"'>":"<div class='faceText'>\u2014</div>")+"</div>";
+    }
+    return "<div class='faceBlock'><div class='faceLabel'>"+safe(f.label)+"</div><div class='faceText'>"+safe(f.text||f.value||"\u2014")+"</div></div>";
+  }).join("");
+  const noteHtml=notes.map(function(n){
+    return "<div class='noteRow'><div class='noteText'>"+safe(n.note_text)+"</div><div class='noteDate'>"+safe((n.created_at||"").slice(0,16).replace("T"," "))+"</div></div>";
+  }).join("");
+  const parts=[
+    "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
+    "<title>"+safe(card.title||"Card")+" - Link Lane</title>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:18px;margin-bottom:4px;word-break:break-word;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}.meta{color:#556;font-size:11px;margin-bottom:14px;}.faceBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.faceLabel{color:#ffdd00;font-size:10px;letter-spacing:1px;margin-bottom:4px;}.faceText{color:#ddd;font-size:13px;}.faceImg{max-width:100%;border-radius:4px;}.btnRow{display:flex;gap:8px;margin:16px 0;}.btn{flex:1;padding:11px;text-align:center;border-radius:6px;font-family:monospace;font-size:13px;cursor:pointer;text-decoration:none;border:none;box-sizing:border-box;}.btnVisit{background:#00ff88;color:#000;font-weight:bold;}.btnArchive{background:#330000;color:#f88;border:1px solid #600;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}#noteMsg{display:none;padding:8px;margin:6px 0;border-radius:4px;font-size:11px;}#noteMsg.ok{background:#003300;color:#4f4;border:1px solid #4f4;display:block;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}textarea{width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:9px;font-family:monospace;font-size:13px;min-height:60px;margin-bottom:6px;box-sizing:border-box;}.go{width:100%;background:#00ff88;color:#000;border:none;padding:10px;font-family:monospace;font-size:13px;font-weight:bold;border-radius:6px;cursor:pointer;}.archived{color:#f88;font-size:11px;}</style>",
+    "</head><body>",
+    "<a class='back' href='/cards'>\u2190 all cards</a>",
+    "<h1>"+safe(card.title||card.url||"Untitled")+"</h1>",
+    "<div class='meta'>"+safe(card.domain||"")+" \u00B7 "+safe(card.status)+(card.status==="archived"?" <span class='archived'>(archived)</span>":"")+" \u00B7 saved "+safe((card.created_at||"").slice(0,10))+"</div>",
+    "<div class='btnRow'><a class='btn btnVisit' href='"+safe(card.url||"#")+"' target='_blank'>Visit \u2192</a>"+
+      (card.status==="archived"?"":"<button class='btn btnArchive' onclick='archiveCard()'>Archive</button>")+"</div>",
+    "<h2>Original Faces</h2>",
+    faceHtml,
+    "<h2>Notes</h2>",
+    "<div id='noteMsg'></div>",
+    notes.length?noteHtml:"<p style='color:#333;font-size:12px;'>No notes yet.</p>",
+    "<textarea id='noteInput' placeholder='Add a note...'></textarea>",
+    "<button class='go' onclick='addNote()'>Add Note</button>",
+    "<script>",
+    "function archiveCard(){if(!confirm('Archive this card?'))return;fetch('/api/selected-cards/"+safe(card.id)+"/archive',{method:'POST'}).then(function(r){return r.json();}).then(function(d){if(d.ok)location.reload();});}",
+    "function addNote(){",
+    "  const t=document.getElementById('noteInput').value.trim();",
+    "  if(!t)return;",
+    "  fetch('/api/selected-cards/"+safe(card.id)+"/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({note_text:t})}).then(function(r){return r.json();}).then(function(d){",
+    "    if(d.ok){const m=document.getElementById('noteMsg');m.textContent='Note added';m.className='ok';location.reload();}",
+    "  });",
+    "}",
+    "</script>",
+    "</body></html>"
+  ];
+  return parts.join("\n");
+}
+
 // =================== ROUTER ===================
 
 export default {
@@ -1465,6 +1621,23 @@ export default {
       const results=[];
       for(const sql of SCHEMA){try{await env.DB.prepare(sql).run();results.push({ok:true});}catch(e){results.push({ok:false,error:e.message});}}
       return j({ok:true,results});
+    }
+    if(path==="/api/selected-cards"&&method==="POST") return apiCreateSelectedCard(env,request);
+    if(path==="/api/selected-cards"&&method==="GET") return apiListSelectedCards(env);
+    if(/^\/api\/selected-cards\/[^/]+\/notes$/.test(path)&&method==="POST") return apiAddCardNote(env,request,path.split("/")[3]);
+    if(/^\/api\/selected-cards\/[^/]+\/archive$/.test(path)&&method==="POST") return apiArchiveSelectedCard(env,path.split("/")[3]);
+    if(/^\/api\/selected-cards\/[^/]+$/.test(path)&&method==="GET") return apiGetSelectedCard(env,path.split("/")[3]);
+    if(path==="/cards"&&method==="GET"){
+      const r=await env.DB.prepare("SELECT sc.id,sc.link_id,sc.selected_face,sc.status,sc.priority,sc.title,sc.url,sc.domain,sc.created_at,l.og_image_key FROM selected_cards sc LEFT JOIN links l ON l.id=sc.link_id WHERE sc.status!='archived' ORDER BY sc.created_at DESC LIMIT 500").all();
+      return new Response(buildCardsHTML(r.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
+    }
+    if(path.startsWith("/card/")&&method==="GET"){
+      const cardId=decodeURIComponent(path.slice(6));
+      const card=await env.DB.prepare("SELECT * FROM selected_cards WHERE id=?").bind(safe(cardId)).first();
+      if(!card) return new Response("Not found",{status:404});
+      const faces=await env.DB.prepare("SELECT face_index,label,value,text,image_key FROM selected_card_faces WHERE card_id=? ORDER BY face_index").bind(safe(cardId)).all();
+      const notes=await env.DB.prepare("SELECT id,note_text,tags_json,created_at FROM card_notes WHERE card_id=? ORDER BY created_at DESC").bind(safe(cardId)).all();
+      return new Response(buildCardDetailHTML(card,faces.results||[],notes.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
     }
     if(path==="/"||path===""){
       const r=await env.DB.prepare("SELECT id,url,title,description,domain,og_image_key,group_name,is_short,published_at,added_at FROM links ORDER BY COALESCE(group_name,domain), added_at LIMIT 1500").all();
