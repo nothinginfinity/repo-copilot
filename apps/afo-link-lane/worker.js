@@ -1,4 +1,4 @@
-const VERSION = "2.5.0";
+const VERSION = "2.5.1";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -782,15 +782,16 @@ function buildGameScript(layout){
   L.push("}");
   L.push("function hitTestGridFace(x,y){");
   L.push("  if(!focus||focus.phase!=='focused') return -1;");
-  L.push("  const halfW=canvas.clientWidth/4,halfH=canvas.clientHeight/6;");
+  L.push("  const pts=focus.planes.map(function(p){return projectToScreen(p.m.position);});");
+  L.push("  const colGap=Math.abs(pts[1].x-pts[0].x)||1,rowGap=Math.abs(pts[2].y-pts[0].y)||1;");
+  L.push("  const halfW=colGap/2*0.85,halfH=rowGap/2*0.85;");
   L.push("  let best=-1,bestScore=Infinity;");
-  L.push("  for(let k=0;k<focus.planes.length;k++){");
-  L.push("    const s=projectToScreen(focus.planes[k].m.position);");
-  L.push("    const dx=(s.x-x)/halfW,dy=(s.y-y)/halfH;");
+  L.push("  for(let k=0;k<pts.length;k++){");
+  L.push("    const dx=(pts[k].x-x)/halfW,dy=(pts[k].y-y)/halfH;");
   L.push("    const score=dx*dx+dy*dy;");
   L.push("    if(score<bestScore){bestScore=score;best=k;}");
   L.push("  }");
-  L.push("  return bestScore<=1.3?best:-1;");
+  L.push("  return bestScore<=1.0?best:-1;");
   L.push("}");
   L.push("function renderFaceInspector(){");
   L.push("  const f=focus;if(!f)return;");
@@ -879,13 +880,46 @@ function buildGameScript(layout){
   L.push("  if(ccPrevState==='flying'&&gameState==='ccPaused') gameState='flying';");
   L.push("  ccPrevState=null;");
   L.push("}");
-  L.push("function ccSetTab(name){");
+  L.push("async function ccSetTab(name){");
   L.push("  ccTab=name;");
   L.push("  ['registry','cargo','systems'].forEach(function(t){");
   L.push("    document.getElementById('ccTab-'+t).classList.toggle('active',t===name);");
   L.push("    document.getElementById('ccPanel-'+t).classList.toggle('ccActive',t===name);");
   L.push("  });");
   L.push("  if(name==='systems') ccRenderSystems();");
+  L.push("  if(name==='cargo') await ccRenderCargo();");
+  L.push("}");
+  L.push("async function ccRenderCargo(){");
+  L.push("  const list=document.getElementById('ccCargoList');");
+  L.push("  list.innerHTML='';");
+  L.push("  let cards=[];");
+  L.push("  try{");
+  L.push("    const r=await fetch('/api/selected-cards');");
+  L.push("    const d=await r.json();");
+  L.push("    cards=(d.ok&&d.cards)?d.cards:[];");
+  L.push("  }catch(e){");
+  L.push("    document.getElementById('ccCargoCount').textContent='Cargo Bay';");
+  L.push("    list.appendChild(ccEl('div','ccNote','Failed to load: '+e.message));");
+  L.push("    return;");
+  L.push("  }");
+  L.push("  document.getElementById('ccCargoCount').textContent='Cargo Bay ('+cards.length+')';");
+  L.push("  if(!cards.length){");
+  L.push("    list.appendChild(ccEl('div','ccEmpty','\uD83D\uDCE6 Nothing saved yet. Open a node, tap a face, and Save or swipe up.'));");
+  L.push("    return;");
+  L.push("  }");
+  L.push("  cards.forEach(function(c){");
+  L.push("    const row=ccEl('div','ccRow');");
+  L.push("    if(c.og_image_key){const img=document.createElement('img');img.src='/og-image/'+c.link_id;img.className='ccThumb';img.loading='lazy';row.appendChild(img);}");
+  L.push("    else row.appendChild(ccEl('div','ccThumb ccThumbEmpty','\uD83D\uDCE6'));");
+  L.push("    const mid=ccEl('div','ccRowMid');");
+  L.push("    mid.appendChild(ccEl('div','ccRowTitle',c.title||c.url));");
+  L.push("    mid.appendChild(ccEl('div','ccRowDomain',(c.domain||'')+' \u00B7 '+c.status));");
+  L.push("    row.appendChild(mid);");
+  L.push("    const openBtn=ccEl('button','ccDelBtn','\u2192');");
+  L.push("    openBtn.onclick=function(){window.open('/card/'+c.id,'_blank');};");
+  L.push("    row.appendChild(openBtn);");
+  L.push("    list.appendChild(row);");
+  L.push("  });");
   L.push("}");
   L.push("function ccEl(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}");
   L.push("function ccMsgIn(id,t,ok){const d=document.getElementById(id);d.textContent=t;d.className='ccMsg '+(ok?'ok':'er');d.style.display='block';setTimeout(function(){d.style.display='none';},6000);}");
@@ -1284,7 +1318,8 @@ function buildGameHTML(layout){
     "      <div id='ccList'></div>",
     "    </div>",
     "    <div id='ccPanel-cargo' class='ccPanel'>",
-    "      <div class='ccEmpty'>\uD83D\uDCE6<br>Captured nodes will appear here.<br><span class='ccNote'>Selected cards, tractor-beam captures, and the research queue land in the Cargo Bay in a future update.</span></div>",
+    "      <h3 class='ccH' id='ccCargoCount'>Cargo Bay</h3>",
+    "      <div id='ccCargoList'></div>",
     "    </div>",
     "    <div id='ccPanel-systems' class='ccPanel'>",
     "      <h3 class='ccH'>Active Systems</h3>",
