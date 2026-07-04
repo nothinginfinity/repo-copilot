@@ -1,4 +1,4 @@
-const VERSION = "2.9.0";
+const VERSION = "3.0.0";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -30,7 +30,13 @@ const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS ad_variant_changes (id TEXT PRIMARY KEY, variant_id TEXT, change_type TEXT, before_json TEXT, after_json TEXT, rationale TEXT, created_at TEXT DEFAULT (datetime('now')))",
   "CREATE INDEX IF NOT EXISTS idx_ad_variant_changes_variant ON ad_variant_changes(variant_id)",
   "CREATE TABLE IF NOT EXISTS ad_variant_reviews (id TEXT PRIMARY KEY, variant_id TEXT, reviewer_type TEXT, status TEXT, notes TEXT, created_at TEXT DEFAULT (datetime('now')))",
-  "CREATE INDEX IF NOT EXISTS idx_ad_variant_reviews_variant ON ad_variant_reviews(variant_id)"
+  "CREATE INDEX IF NOT EXISTS idx_ad_variant_reviews_variant ON ad_variant_reviews(variant_id)",
+  "CREATE TABLE IF NOT EXISTS ad_release_events (id TEXT PRIMARY KEY, variant_id TEXT, released_by_user_id TEXT, release_pool TEXT, status TEXT, release_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_release_events_variant ON ad_release_events(variant_id)",
+  "CREATE TABLE IF NOT EXISTS ad_performance_events (id TEXT PRIMARY KEY, variant_id TEXT, campaign_id TEXT, event_type TEXT, value TEXT, context_json TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_performance_events_variant ON ad_performance_events(variant_id, created_at)",
+  "CREATE TABLE IF NOT EXISTS ad_contributor_rewards (id TEXT PRIMARY KEY, user_id TEXT, variant_id TEXT, reward_type TEXT, amount TEXT, status TEXT, reason TEXT, created_at TEXT DEFAULT (datetime('now')))",
+  "CREATE INDEX IF NOT EXISTS idx_ad_contributor_rewards_user ON ad_contributor_rewards(user_id, created_at)"
 ];
 
 const R_GALAXY = 1500;
@@ -345,6 +351,7 @@ function buildGameScript(layout){
   L.push("let adEntities=[],adContactNotified=false;");
   L.push("const FIRE_RANGE=500,FIRE_CONE_DOT=0.85;");
   L.push("let currentAdCapture=null;");
+  L.push("const MAX_VARIANT_ENTITIES=3;");
 
   L.push("let AFO_EVENTS=[];");
   L.push("function logEvent(type,data){");
@@ -382,7 +389,7 @@ function buildGameScript(layout){
   L.push("  renderer.setSize(wrap.clientWidth,wrap.clientHeight);");
   L.push("  raycaster=new THREE.Raycaster();raycaster.far=4000;");
   L.push("  checkViewport();");
-  L.push("  buildStarfield();buildGalaxies();spawnAdEntity();");
+  L.push("  buildStarfield();buildGalaxies();spawnAdEntity();spawnReleasedVariants();");
   L.push("  const ld=document.getElementById('loadScreen');");
   L.push("  if(ld){ld.classList.add('fadeOut');setTimeout(function(){ld.style.display='none';},700);}");
   L.push("  window.addEventListener('resize',onResize);");
@@ -422,6 +429,36 @@ function buildGameScript(layout){
   L.push("  adEntities.push(mesh);");
   L.push("}");
 
+  L.push("async function spawnReleasedVariants(){");
+  L.push("  try{");
+  L.push("    const r=await fetch('/api/ad-variants/released');");
+  L.push("    const d=await r.json();");
+  L.push("    if(!d.ok||!d.variants) return;");
+  L.push("    const sx=LAYOUT.start.x,sy=LAYOUT.start.y,sz=LAYOUT.start.z;");
+  L.push("    d.variants.slice(0,MAX_VARIANT_ENTITIES).forEach(function(v,i){");
+  L.push("      const core=new THREE.Mesh(new THREE.IcosahedronGeometry(16,0),new THREE.MeshBasicMaterial({color:0x22ff77}));");
+  L.push("      const shell=new THREE.Mesh(new THREE.IcosahedronGeometry(22,0),new THREE.MeshBasicMaterial({color:0x66ffaa,wireframe:true,transparent:true,opacity:0.5}));");
+  L.push("      const mesh=new THREE.Group();");
+  L.push("      mesh.add(core);mesh.add(shell);");
+  L.push("      mesh.position.set(sx-90-(i*60),sy-20,sz-320-(i*40));");
+  L.push("      mesh.userData={");
+  L.push("        id:'variant_entity_'+v.id,is_ad:true,is_variant:true,entity_type:'satellite',");
+  L.push("        campaign_id:v.campaign_id,creative_id:v.parent_creative_id,variant_id:v.id,");
+  L.push("        title:v.title||v.original_title||'Improved Ad',reward_value:v.reward_value||'',");
+  L.push("        anchor:mesh.position.clone(),approachedLogged:false");
+  L.push("      };");
+  L.push("      scene.add(mesh);");
+  L.push("      adEntities.push(mesh);");
+  L.push("      logAdPerformance(v.id,v.campaign_id,'spawned',null);");
+  L.push("    });");
+  L.push("  }catch(e){}");
+  L.push("}");
+
+  L.push("function logAdPerformance(variant_id,campaign_id,event_type,value){");
+  L.push("  if(!variant_id) return;");
+  L.push("  fetch('/api/ad-performance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({variant_id:variant_id,campaign_id:campaign_id,event_type:event_type,value:value})}).catch(function(){});");
+  L.push("}");
+
   L.push("function updateAdEntities(){");
   L.push("  if(!adEntities.length) return;");
   L.push("  const badge=document.getElementById('adWarnBadge');");
@@ -433,7 +470,15 @@ function buildGameScript(layout){
   L.push("    mesh.rotation.x+=0.01;mesh.rotation.y+=0.014;");
   L.push("    const pulse=1+Math.sin(frame*0.08)*0.08;mesh.scale.set(pulse,pulse,pulse);");
   L.push("    const d=camera.position.distanceTo(mesh.position);");
-  L.push("    if(d<AD_WARN_RADIUS) anyWarn=true;");
+  L.push("    if(d<AD_WARN_RADIUS){");
+  L.push("      anyWarn=true;");
+  L.push("      if(mesh.userData.is_variant&&!mesh.userData.approachedLogged){");
+  L.push("        mesh.userData.approachedLogged=true;");
+  L.push("        logAdPerformance(mesh.userData.variant_id,mesh.userData.campaign_id,'approached',null);");
+  L.push("      }");
+  L.push("    } else if(mesh.userData.is_variant&&mesh.userData.approachedLogged&&d>AD_WARN_RADIUS*1.3){");
+  L.push("      mesh.userData.approachedLogged=false;");
+  L.push("    }");
   L.push("    if(d<AD_CONTACT_RADIUS&&!adContactNotified){");
   L.push("      adContactNotified=true;");
   L.push("      showToast('\uD83D\uDEE1\uFE0F Ad breached your shield \u2014 shoot to claim, or let it pass');");
@@ -740,6 +785,7 @@ function buildGameScript(layout){
   L.push("  currentAdCapture=mesh;");
   L.push("  gameState='ad_impact';");
   L.push("  logEvent('ad_shot',{ad_id:mesh.userData.id,campaign_id:mesh.userData.campaign_id,creative_id:mesh.userData.creative_id});");
+  L.push("  if(mesh.userData.is_variant) logAdPerformance(mesh.userData.variant_id,mesh.userData.campaign_id,'shot',null);");
   L.push("  const flash=document.getElementById('impactFlash');");
   L.push("  if(flash){flash.classList.add('show');setTimeout(function(){flash.classList.remove('show');},300);}");
   L.push("  setTimeout(function(){openAdPrompt(mesh);},350);");
@@ -756,7 +802,7 @@ function buildGameScript(layout){
   L.push("  if(!mesh) return;");
   L.push("  try{");
   L.push("    const r=await fetch('/api/bounty-vault',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({");
-  L.push("      ad_entity_id:mesh.userData.id,campaign_id:mesh.userData.campaign_id,creative_id:mesh.userData.creative_id,status:status");
+  L.push("      ad_entity_id:mesh.userData.id,campaign_id:mesh.userData.campaign_id,creative_id:mesh.userData.creative_id,status:status,variant_id:mesh.userData.variant_id||null");
   L.push("    })});");
   L.push("    const d=await r.json();");
   L.push("    if(d.ok){");
@@ -1755,7 +1801,7 @@ async function apiSetBountyStatus(env,id,newStatus){
 
 async function apiCaptureAdEntity(env,req){
   const body=await req.json().catch(()=>({}));
-  const {ad_entity_id,campaign_id,creative_id,status,user_id}=body;
+  const {ad_entity_id,campaign_id,creative_id,status,user_id,variant_id}=body;
   const validStatuses=["claimed","watched","captured"];
   if(!campaign_id||!creative_id||!validStatuses.includes(status)) return j({ok:false,error:"campaign_id, creative_id and a valid status are required"},400);
   const creative=await env.DB.prepare("SELECT title,reward_json FROM ad_creatives WHERE id=?").bind(safe(creative_id)).first();
@@ -1767,6 +1813,15 @@ async function apiCaptureAdEntity(env,req){
     .bind(id,user_id||"user_device",safe(ad_entity_id||""),safe(campaign_id),safe(creative_id),status,reward.type||null,reward.value||null,JSON.stringify({source:"shoot_freeze_claim",captured_at:now}),now,now).run();
   await env.DB.prepare("INSERT INTO ad_interaction_events (id,vault_item_id,event_type,event_json) VALUES (?,?,?,?)")
     .bind(uid(),id,"captured_"+status,JSON.stringify({campaign_id,creative_id})).run();
+  if(variant_id){
+    await env.DB.prepare("INSERT INTO ad_performance_events (id,variant_id,campaign_id,event_type,value,created_at) VALUES (?,?,?,?,?,?)")
+      .bind(uid(),safe(variant_id),safe(campaign_id),"captured",status,now).run();
+    const variant=await env.DB.prepare("SELECT creator_user_id FROM ad_variants WHERE id=?").bind(safe(variant_id)).first();
+    if(variant){
+      await env.DB.prepare("INSERT INTO ad_contributor_rewards (id,user_id,variant_id,reward_type,amount,status,reason,created_at) VALUES (?,?,?,?,?,?,?,?)")
+        .bind(uid(),variant.creator_user_id||"user_device",safe(variant_id),"contribution_bonus","$0.10","granted","Your improved ad was captured ("+status+")",now).run();
+    }
+  }
   return j({ok:true,id,status,title:(creative&&creative.title)||null,reward_value:reward.value||null});
 }
 
@@ -1789,6 +1844,63 @@ async function apiImproveAd(env,id,req){
   await env.DB.prepare("INSERT INTO ad_interaction_events (id,vault_item_id,event_type,event_json) VALUES (?,?,?,?)")
     .bind(uid(),safe(id),"improved",JSON.stringify({variant_id:variantId,variant_type:variant_type||"general"})).run();
   return j({ok:true,variant_id:variantId});
+}
+
+async function apiReleaseVariant(env,id){
+  const variant=await env.DB.prepare("SELECT id,status,creator_user_id FROM ad_variants WHERE id=?").bind(safe(id)).first();
+  if(!variant) return j({ok:false,error:"not found"},404);
+  if(variant.status!=="draft") return j({ok:false,error:"only a draft variant can be released (current status: "+variant.status+")"},400);
+  const now=new Date().toISOString();
+  await env.DB.prepare("UPDATE ad_variants SET status='released' WHERE id=?").bind(safe(id)).run();
+  await env.DB.prepare("INSERT INTO ad_release_events (id,variant_id,released_by_user_id,release_pool,status,release_json,created_at) VALUES (?,?,?,?,?,?,?)")
+    .bind(uid(),safe(id),variant.creator_user_id||"user_device","demo","released",JSON.stringify({}),now).run();
+  return j({ok:true,status:"released"});
+}
+
+async function apiListReleasedVariants(env){
+  const r=await env.DB.prepare("SELECT v.id,v.campaign_id,v.parent_creative_id,v.title,v.copy,c.title AS original_title,c.reward_json FROM ad_variants v LEFT JOIN ad_creatives c ON c.id=v.parent_creative_id WHERE v.status='released' ORDER BY v.created_at DESC LIMIT 50").all();
+  const variants=(r.results||[]).map(function(v){
+    let reward={};
+    try{reward=JSON.parse(v.reward_json||"{}");}catch(e){}
+    return {id:v.id,campaign_id:v.campaign_id,parent_creative_id:v.parent_creative_id,title:v.title,original_title:v.original_title,reward_value:reward.value||null};
+  });
+  return j({ok:true,variants});
+}
+
+async function apiLogPerformance(env,req){
+  const body=await req.json().catch(()=>({}));
+  const {variant_id,campaign_id,event_type,value,context_json}=body;
+  if(!variant_id||!event_type) return j({ok:false,error:"variant_id and event_type are required"},400);
+  await env.DB.prepare("INSERT INTO ad_performance_events (id,variant_id,campaign_id,event_type,value,context_json,created_at) VALUES (?,?,?,?,?,?,?)")
+    .bind(uid(),safe(variant_id),safe(campaign_id||""),event_type,value||null,context_json?JSON.stringify(context_json):null,new Date().toISOString()).run();
+  return j({ok:true});
+}
+
+function buildContributorDashboardHTML(variants,perfCounts,rewards){
+  const rows=variants.map(function(v){
+    const counts=perfCounts[v.id]||{};
+    const summary=["spawned","seen","approached","shot","captured"].map(function(t){return t+": "+(counts[t]||0);}).join(" \u00B7 ");
+    return "<div class='bvBlock'><div class='bvRow'><span class='bvKey'>"+safe(v.variant_type||"variant")+"</span><span class='bvVal'>"+safe(v.status)+"</span></div>"+
+      "<div class='noteText' style='margin-top:6px;'>"+(v.title?safe(v.title):"<i>no proposed title</i>")+"</div>"+
+      "<div class='noteDate' style='margin-top:6px;'>"+safe(summary)+"</div></div>";
+  }).join("");
+  const rewardRows=rewards.map(function(r){
+    return "<div class='noteRow'><div class='noteText'>"+safe(r.reward_type)+" \u2014 "+safe(r.amount||"")+" ("+safe(r.status)+")<br>"+safe(r.reason||"")+"</div><div class='noteDate'>"+safe((r.created_at||"").slice(0,16).replace("T"," "))+"</div></div>";
+  }).join("");
+  const parts=[
+    "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
+    "<title>Contributor Dashboard - Link Lane</title>",
+    "<style>body{background:#06040c;color:#aaa;font-family:monospace;padding:20px;max-width:600px;margin:0 auto;}h1{color:#00ff88;font-size:20px;margin-bottom:4px;}a.back{color:#00ff88;display:inline-block;margin-bottom:14px;}h2{color:#ffdd00;font-size:13px;margin:18px 0 8px;}.bvBlock{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:10px;margin-bottom:8px;}.bvRow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;}.bvKey{color:#667;text-transform:uppercase;font-size:10px;letter-spacing:1px;}.bvVal{color:#ddd;}.noteRow{background:#0a0814;border:1px solid #1a1a2a;border-radius:6px;padding:8px;margin-bottom:6px;}.noteText{color:#ccc;font-size:12px;}.noteDate{color:#445;font-size:10px;margin-top:3px;}.empty{color:#333;font-size:13px;}</style>",
+    "</head><body>",
+    "<a class='back' href='/bounty-vault'>\u2190 all bounties</a>",
+    "<h1>\uD83D\uDCC8 Contributor Dashboard</h1>",
+    "<h2>Your Improvements ("+variants.length+")</h2>",
+    variants.length?rows:"<p class='empty'>You haven't submitted any improvements yet. Open a captured ad and try Improve This Ad.</p>",
+    "<h2>Reward Ledger ("+rewards.length+")</h2>",
+    rewards.length?rewardRows:"<p class='empty'>No rewards yet. Rewards are granted when someone captures your released improvement.</p>",
+    "</body></html>"
+  ];
+  return parts.join("\n");
 }
 
 function buildCardsHTML(cards){
@@ -1910,7 +2022,8 @@ function buildBountyDetailHTML(item,rewards,variants){
   const sc=statusColor(item.status);
   const copyText=item.coupon_code||item.reward_value||"";
   const variantsHtml=variants.map(function(v){
-    return "<div class='noteRow'><div class='noteText'><b>"+safe(v.variant_type||"")+"</b>"+(v.title?(" \u2014 "+safe(v.title)):"")+"<br>"+safe(v.rationale||"")+"</div><div class='noteDate'>"+safe(v.status)+" \u00B7 "+safe((v.created_at||"").slice(0,16).replace("T"," "))+"</div></div>";
+    const releaseBtn=v.status==="draft"?("<button class='btnHalf btnWatch' style='margin-top:8px;width:100%;' onclick=\"releaseVariant('"+safe(v.id)+"')\">\uD83D\uDE80 Release</button>"):"";
+    return "<div class='noteRow'><div class='noteText'><b>"+safe(v.variant_type||"")+"</b>"+(v.title?(" \u2014 "+safe(v.title)):"")+"<br>"+safe(v.rationale||"")+"</div><div class='noteDate'>"+safe(v.status)+" \u00B7 "+safe((v.created_at||"").slice(0,16).replace("T"," "))+"</div>"+releaseBtn+"</div>";
   }).join("");
   const parts=[
     "<!DOCTYPE html><html lang='en'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
@@ -1962,6 +2075,12 @@ function buildBountyDetailHTML(item,rewards,variants){
     "  const text="+JSON.stringify(copyText)+";",
     "  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){alert('Copied: '+text);}).catch(function(){prompt('Copy this:',text);});}",
     "  else{prompt('Copy this:',text);}",
+    "}",
+    "async function releaseVariant(id){",
+    "  if(!confirm('Release this improvement into 3D space?'))return;",
+    "  const r=await fetch('/api/ad-variants/'+id+'/release',{method:'POST'});",
+    "  const d=await r.json();",
+    "  if(d.ok)location.reload();else alert(d.error||'Failed');",
     "}",
     "async function submitImprovement(){",
     "  const variant_type=document.getElementById('impType').value;",
@@ -2021,6 +2140,23 @@ export default {
     if(/^\/api\/bounty-vault\/[^/]+\/release$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"released");
     if(/^\/api\/bounty-vault\/[^/]+\/watch$/.test(path)&&method==="POST") return apiSetBountyStatus(env,path.split("/")[3],"watched");
     if(/^\/api\/bounty-vault\/[^/]+\/improve$/.test(path)&&method==="POST") return apiImproveAd(env,path.split("/")[3],request);
+    if(/^\/api\/ad-variants\/[^/]+\/release$/.test(path)&&method==="POST") return apiReleaseVariant(env,path.split("/")[3]);
+    if(path==="/api/ad-variants/released"&&method==="GET") return apiListReleasedVariants(env);
+    if(path==="/api/ad-performance"&&method==="POST") return apiLogPerformance(env,request);
+    if(path==="/contributor-dashboard"&&method==="GET"){
+      const uid_="user_device";
+      const vr=await env.DB.prepare("SELECT id,variant_type,title,status,created_at FROM ad_variants WHERE creator_user_id=? ORDER BY created_at DESC").bind(uid_).all();
+      const variants=vr.results||[];
+      const perfCounts={};
+      for(const v of variants){
+        const pr=await env.DB.prepare("SELECT event_type,COUNT(*) as c FROM ad_performance_events WHERE variant_id=? GROUP BY event_type").bind(v.id).all();
+        const counts={};
+        (pr.results||[]).forEach(function(row){counts[row.event_type]=row.c;});
+        perfCounts[v.id]=counts;
+      }
+      const rr=await env.DB.prepare("SELECT id,reward_type,amount,status,reason,created_at FROM ad_contributor_rewards WHERE user_id=? ORDER BY created_at DESC").bind(uid_).all();
+      return new Response(buildContributorDashboardHTML(variants,perfCounts,rr.results||[]),{headers:{"Content-Type":"text/html;charset=UTF-8"}});
+    }
     if(path==="/api/bounty-vault"&&method==="POST") return apiCaptureAdEntity(env,request);
     if(path==="/bounty-vault"&&method==="GET"){
       const r=await env.DB.prepare("SELECT bv.id,bv.status,bv.reward_type,bv.reward_value,bv.coupon_code,bv.expires_at,bv.created_at,c.title AS creative_title,c.creative_type,e.entity_type FROM bounty_vault_items bv LEFT JOIN ad_creatives c ON c.id=bv.creative_id LEFT JOIN ad_entities e ON e.id=bv.ad_entity_id WHERE bv.status NOT IN ('discarded','released') ORDER BY bv.created_at DESC LIMIT 200").all();
