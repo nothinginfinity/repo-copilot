@@ -1,4 +1,4 @@
-const VERSION = "3.0.5";
+const VERSION = "3.0.6";
 const WORKER_NAME = "afo-link-lane";
 const R2_PREFIX = "link-lane/og-images/";
 const CORS = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,POST,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type"};
@@ -1437,6 +1437,7 @@ function buildGameHTML(layout){
     "#adminLink a{color:#222;}",
     "#ccLaunchRow{width:100%;max-width:480px;padding:6px 10px 10px;display:flex;flex-direction:column;gap:4px;align-items:center;}",
     "#ccOpenBtn{width:100%;background:rgba(0,255,136,0.12);color:#00ff88;border:1px solid rgba(0,255,136,0.5);padding:12px;font-family:monospace;font-size:14px;font-weight:bold;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 0 14px rgba(0,255,136,0.15);letter-spacing:1px;}",
+    "#ccBountyBtn{width:100%;background:rgba(255,140,0,0.1);color:#ffaa44;border:1px solid rgba(255,140,0,0.45);padding:10px;font-family:monospace;font-size:13px;font-weight:bold;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent;letter-spacing:1px;}",
     "#ccAdminFallback{color:#222;font-size:10px;text-decoration:none;}",
     "#ccDim{display:block;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(3px);z-index:390;opacity:0;pointer-events:none;transition:opacity 0.3s ease;}",
     "#ccDim.open{opacity:1;pointer-events:auto;}",
@@ -1561,6 +1562,7 @@ function buildGameHTML(layout){
     "</div>",
     "<div id='ccLaunchRow'>",
     "  <button id='ccOpenBtn' onclick='openCommandCenter()'>\u2B06 COMMAND CENTER</button>",
+    "  <button id='ccBountyBtn' onclick=\"window.open('/bounty-vault','_blank')\">\uD83C\uDFF0 BOUNTY VAULT</button>",
     "  <a id='ccAdminFallback' href='/admin'>debug: /admin</a>",
     "</div>",
     "<div id='ccDim' onclick='closeCommandCenter()'></div>",
@@ -1595,6 +1597,7 @@ function buildGameHTML(layout){
     "    </div>",
     "    <div id='ccPanel-cargo' class='ccPanel'>",
     "      <h3 class='ccH' id='ccCargoCount'>Cargo Bay</h3>",
+    "      <p class='ccNote'>This is your saved links. Looking for ads you\u2019ve shot/claimed in flight? <a href='/bounty-vault' target='_blank' style='color:#00ff88;'>\uD83C\uDFF0 Open Bounty Vault \u2192</a></p>",
     "      <div id='ccCargoList'></div>",
     "    </div>",
     "    <div id='ccPanel-systems' class='ccPanel'>",
@@ -1683,7 +1686,7 @@ function buildAdminHTML(links){
     "<h2>Add a YouTube Channel Group</h2>",
     "<p class='note'>Paste a channel URL, @handle, or UC... channel ID. Pulls that channel's newest uploads straight from its public RSS feed (no API key) and drops them into their own 3D galaxy.</p>",
     "<div id='chMsg'></div>",
-    "<input id='chInput' placeholder='@PowerfulJRE or https://youtube.com/@channel' style='width:100%;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:10px;font-family:monospace;font-size:14px;margin-bottom:8px;'>",
+    "<input id='chInput' placeholder='@PowerfulJRE or https://youtube.com/@channel' style='width:100%;background:#000;color:#ccc;border:1px solid #1a1a2-a;border-radius:4px;padding:10px;font-family:monospace;font-size:14px;margin-bottom:8px;'>",
     "<div style='display:flex;gap:8px;align-items:center;margin-bottom:8px;'>",
     "  <label style='color:#666;font-size:11px;'>videos:</label>",
     "  <input id='chMax' type='number' value='15' min='1' max='25' style='width:60px;background:#000;color:#ccc;border:1px solid #1a1a2a;border-radius:4px;padding:8px;font-family:monospace;'>",
