@@ -447,7 +447,7 @@ async function askGithub(env, args) {
   if (!candidates.length) throw new Error("No candidate GitHub endpoints found in spec index. Try seed_spec or a more specific request.");
   const deterministic = chooseDeterministicGithubEndpoint(index, request, args, env);
   const ai = deterministic ? null : await aiSelectGithub(env, request, candidates, args).catch(() => null);
-  const choice = ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" };
+  const choice = deterministic || (ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" });
   if (mutationMethod(choice.method) && !args.allow_mutation) {
     return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
   }
