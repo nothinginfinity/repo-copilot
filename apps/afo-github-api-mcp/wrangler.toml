@@ -6,9 +6,13 @@ compatibility_date = "2026-05-31"
 binding = "SPEC"
 bucket_name = "afo-site-content"
 
+[ai]
+binding = "AI"
+
 [vars]
 DEFAULT_OWNER = "nothinginfinity"
 DEFAULT_REPO = "repo-copilot"
 
 # Required secret - set via Cloudflare dashboard (Workers & Pages > afo-github-api-mcp > Settings > Variables and Secrets):
 # GITHUB_TOKEN
+# AI binding is configured in wrangler for ask_github.
