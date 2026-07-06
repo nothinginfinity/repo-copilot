@@ -9,8 +9,9 @@
     "cf_api_status",
     "search",
     "call",
+    "ask_cloudflare",
     "seed_spec"
   ],
   "source_path": "apps/afo-cloudflare-api-mcp/worker.js",
-  "status": "v0.1.0"
+  "status": "v0.4.1"
 }
