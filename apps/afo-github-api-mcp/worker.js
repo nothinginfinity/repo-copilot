@@ -1,4 +1,4 @@
-const VERSION = "0.3.1";
+const VERSION = "0.3.2";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
@@ -350,11 +350,23 @@ function numericGithubParam(request, args, name, labels) {
   return value && /^[0-9]+$/.test(value) ? value : null;
 }
 
+function validWorkflowIdValue(value) {
+  const v = cleanGithubParam(value);
+  if (!v) return null;
+  const blocked = new Set(["run", "runs", "history", "recent", "latest", "repo", "repository", "action", "actions", "workflow", "workflows", "list", "show", "get", "for"]);
+  if (blocked.has(v.toLowerCase())) return null;
+  if (/^[0-9]+$/.test(v)) return v;
+  if (/^[A-Za-z0-9._-]+\.ya?ml$/i.test(v)) return v;
+  return v;
+}
+
 function workflowIdParam(request, args) {
   const explicit = readGithubParam(args, "workflow_id");
-  if (explicit) return explicit;
-  const direct = valueAfterLabels(request, ["workflow_id", "workflow id", "workflow file", "workflow"]);
-  if (direct) return direct;
+  const explicitOk = validWorkflowIdValue(explicit);
+  if (explicitOk) return explicitOk;
+  const direct = valueAfterLabels(request, ["workflow_id", "workflow id", "workflow file", "workflow filename", "workflow name", "workflow named", "workflow called"]);
+  const directOk = validWorkflowIdValue(direct);
+  if (directOk) return directOk;
   const yaml = String(request || "").split(/\s+/).find(t => /\.ya?ml["',.;:)]*$/i.test(t));
   return yaml ? cleanGithubParam(yaml) : null;
 }
