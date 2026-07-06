@@ -516,8 +516,8 @@ function extractValueAfterLabels(request, labels) {
   for (const label of labels) {
     const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const patterns = [
-      new RegExp(`${escaped}\\s*(?:is|=|:)?\\s*(?:exactly\\s+)?["'\\`]?([A-Za-z0-9][A-Za-z0-9._:-]{1,160})`, "i"),
-      new RegExp(`${escaped}\\s+(?:named|called)\\s+["'\\`]?([A-Za-z0-9][A-Za-z0-9._:-]{1,160})`, "i")
+      new RegExp(`${escaped}\\s*(?:is|=|:)?\\s*(?:exactly\\s+)?["']?([A-Za-z0-9][A-Za-z0-9._:-]{1,160})`, "i"),
+      new RegExp(`${escaped}\\s+(?:named|called)\\s+["']?([A-Za-z0-9][A-Za-z0-9._:-]{1,160})`, "i")
     ];
     for (const rx of patterns) {
       const m = text.match(rx);
