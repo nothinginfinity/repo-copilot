@@ -1,4 +1,4 @@
-const VERSION = "0.4.0";
+const VERSION = "0.4.1";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -478,21 +478,173 @@ function compactCloudflareData(data) {
   return Object.keys(keep).length ? keep : data;
 }
 
+function unique(arr) {
+  return Array.from(new Set(arr.filter(Boolean)));
+}
+
+function pathParamNames(path) {
+  return unique(Array.from(String(path || "").matchAll(/\{([a-zA-Z0-9_]+)\}/g)).map(m => m[1]));
+}
+
+function cleanParamValue(value) {
+  return String(value || "")
+    .trim()
+    .replace(/^["'`]+/, "")
+    .replace(/["'`,.;:)\]}]+$/, "");
+}
+
+function readArgPathParam(args, name) {
+  if (!args || typeof args !== "object") return null;
+  const stores = [args.path_params, args.params, args];
+  for (const store of stores) {
+    if (store && Object.prototype.hasOwnProperty.call(store, name) && store[name] !== undefined && store[name] !== null) {
+      const v = cleanParamValue(store[name]);
+      if (v) return v;
+    }
+  }
+  return null;
+}
+
+function labelVariants(name) {
+  const spaced = name.replace(/_/g, " ");
+  const dashed = name.replace(/_/g, "-");
+  return unique([name, spaced, dashed, name.replace(/_/g, "")]);
+}
+
+function extractValueAfterLabels(request, labels) {
+  const text = String(request || "");
+  for (const label of labels) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const patterns = [
+      new RegExp(`${escaped}\\s*(?:is|=|:)?\\s*(?:exactly\\s+)?["'\\`]?([A-Za-z0-9][A-Za-z0-9._:-]{1,160})`, "i"),
+      new RegExp(`${escaped}\\s+(?:named|called)\\s+["'\\`]?([A-Za-z0-9][A-Za-z0-9._:-]{1,160})`, "i")
+    ];
+    for (const rx of patterns) {
+      const m = text.match(rx);
+      if (m) {
+        const v = cleanParamValue(m[1]);
+        if (v && !["for", "and", "with", "visible", "return", "read", "list"].includes(v.toLowerCase())) return v;
+      }
+    }
+  }
+  return null;
+}
+
+function extractWorkerScriptName(request, args) {
+  const explicit = readArgPathParam(args, "script_name");
+  if (explicit) return explicit;
+  const text = String(request || "");
+  const direct = extractValueAfterLabels(text, ["script_name", "script name", "worker script", "worker", "script"]);
+  if (direct && direct.includes("-")) return direct;
+  const quoted = text.match(/["'`]([a-z0-9][a-z0-9._-]*-[a-z0-9._-]*[a-z0-9])["'`]/i);
+  if (quoted) return cleanParamValue(quoted[1]);
+  const hyphenated = text.match(/\b([a-z0-9][a-z0-9._-]*-[a-z0-9._-]*[a-z0-9])\b/i);
+  return hyphenated ? cleanParamValue(hyphenated[1]) : null;
+}
+
+function extractPathParam(name, request, args) {
+  if (name === "script_name") return extractWorkerScriptName(request, args);
+  const explicit = readArgPathParam(args, name);
+  if (explicit) return explicit;
+  if (name === "database_id") {
+    const uuid = String(request || "").match(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i);
+    if (uuid) return uuid[0];
+  }
+  return extractValueAfterLabels(request, labelVariants(name));
+}
+
+function workerSettingsRequested(request) {
+  const text = String(request || "").toLowerCase();
+  return /\bworker(s)?\b/.test(text) && /\b(settings?|bindings?|compatibility|inspect)\b/.test(text);
+}
+
+function endpointFromIndex(index, method, path) {
+  return (index || []).find(e => e.method === method && e.path === path) || { method, path, tags: ["workers"], summary: "Worker script settings" };
+}
+
+function chooseDeterministicEndpoint(index, request, args) {
+  const scriptName = extractWorkerScriptName(request, args);
+  if (workerSettingsRequested(request) && scriptName) {
+    return {
+      ...endpointFromIndex(index, "GET", "/accounts/{account_id}/workers/scripts/{script_name}/settings"),
+      query: {},
+      body: null,
+      reason: "deterministic worker settings route",
+      deterministic_path_params: { script_name: scriptName }
+    };
+  }
+  return null;
+}
+
+function resolvePath(path, request, args, env, preset = {}) {
+  const names = pathParamNames(path);
+  const rawParams = {};
+  for (const name of names) {
+    if (name === "account_id") rawParams[name] = args.account_id || env.CF_ACCOUNT_ID || null;
+    else rawParams[name] = preset[name] || extractPathParam(name, request, args);
+  }
+  const required = names.map(name => ({
+    name,
+    filled: Boolean(rawParams[name]),
+    value: name === "account_id" ? (rawParams[name] ? "<account_id>" : null) : rawParams[name]
+  }));
+  const missing = required.filter(p => !p.filled).map(p => p.name);
+  const resolvedPath = String(path || "").replace(/\{([a-zA-Z0-9_]+)\}/g, (_, name) => {
+    const v = rawParams[name];
+    return v ? encodeURIComponent(String(v)) : `{${name}}`;
+  });
+  let auditPath = resolvedPath;
+  if (rawParams.account_id) auditPath = auditPath.replace(encodeURIComponent(String(rawParams.account_id)), "<account_id>");
+  return { rawParams, required, missing, resolvedPath, auditPath };
+}
+
+function compactCandidates(candidates) {
+  return (candidates || []).slice(0, 12).map(c => ({ method: c.method, path: c.path, summary: c.summary, tags: c.tags }));
+}
+
 async function askCloudflare(env, args) {
   const request = String(args.request || "").trim();
   if (!request) throw new Error("request is required");
   const index = await loadIndex(env);
   const candidates = endpointCandidates(index, request, args.limit || 8);
   if (!candidates.length) throw new Error("No candidate Cloudflare endpoints found in spec index. Try seed_spec or a more specific request.");
-  const ai = await aiSelectCloudflare(env, request, candidates, args).catch(() => null);
-  const choice = ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" };
+
+  const deterministic = chooseDeterministicEndpoint(index, request, args);
+  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, args).catch(() => null);
+  const choice = deterministic || (ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" });
+
   if (mutationMethod(choice.method) && !args.allow_mutation) {
-    return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
+    return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, audit: { candidates: compactCandidates(candidates) } };
   }
-  const planned = { method: choice.method, path: choice.path, query: choice.query || {}, body: choice.body || undefined, account_id: args.account_id, reason: choice.reason || (ai && ai.reason) || "selected" };
-  if (args.dry_run) return { ok: true, dry_run: true, planned, candidates };
-  const res = await cfApi(env, planned.method, planned.path, planned.query, planned.body, planned.account_id);
-  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, data: compactCloudflareData(res.data), rate_limit: res.rate_limit, audit: { candidates } };
+
+  const pathResolution = resolvePath(choice.path, request, args, env, choice.deterministic_path_params || {});
+  const selected = {
+    method: choice.method,
+    path: choice.path,
+    endpoint_template: choice.path,
+    query: choice.query || {},
+    body: choice.body || undefined,
+    account_id: args.account_id ? "provided" : "default",
+    reason: choice.reason || (ai && ai.reason) || "selected"
+  };
+  const audit = {
+    selected_endpoint_template: choice.path,
+    extracted_path_params: Object.fromEntries(Object.entries(pathResolution.rawParams).map(([k, v]) => [k, k === "account_id" ? (v ? "<account_id>" : null) : v])),
+    required_path_params: pathResolution.required,
+    unresolved_path_params: pathResolution.missing,
+    final_resolved_path: pathResolution.auditPath,
+    query_params: selected.query,
+    candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates)
+  };
+
+  if (pathResolution.missing.length) {
+    return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected, audit };
+  }
+
+  if (args.dry_run) return { ok: true, dry_run: true, selected, planned: { ...selected, final_resolved_path: pathResolution.auditPath }, audit };
+
+  const res = await cfApi(env, selected.method, pathResolution.resolvedPath, selected.query, selected.body, args.account_id);
+  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactCloudflareData(res.data), rate_limit: res.rate_limit, audit };
 }
 
 async function dispatch(name, args, env) {
