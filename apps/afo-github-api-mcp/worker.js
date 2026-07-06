@@ -305,6 +305,140 @@ function compactGithubData(data) {
   return Object.keys(keep).length ? keep : data;
 }
 
+function uniqueValues(arr) {
+  return Array.from(new Set((arr || []).filter(Boolean)));
+}
+
+function githubPathParamNames(path) {
+  return uniqueValues(Array.from(String(path || "").matchAll(/\{([a-zA-Z0-9_]+)\}/g)).map(m => m[1]));
+}
+
+function cleanGithubParam(value) {
+  return String(value || "").trim().replace(/^["']+/, "").replace(/["',.;:)\]}]+$/, "");
+}
+
+function readGithubParam(args, name) {
+  if (!args || typeof args !== "object") return null;
+  const stores = [args.path_params, args.params, args];
+  for (const store of stores) {
+    if (store && Object.prototype.hasOwnProperty.call(store, name) && store[name] !== undefined && store[name] !== null) {
+      const value = cleanGithubParam(store[name]);
+      if (value) return value;
+    }
+  }
+  return null;
+}
+
+function valueAfterLabels(request, labels) {
+  const source = String(request || "");
+  const lower = source.toLowerCase();
+  for (const label of labels) {
+    const idx = lower.indexOf(String(label).toLowerCase());
+    if (idx < 0) continue;
+    let tail = source.slice(idx + String(label).length).trim();
+    tail = tail.replace(/^(is|exactly|named|called|=|:)\s*/i, "").trim();
+    const token = cleanGithubParam((tail.split(/\s+/)[0]) || "");
+    if (token && !["for", "and", "with", "return", "read", "list", "show", "get"].includes(token.toLowerCase())) return token;
+  }
+  return null;
+}
+
+function numericGithubParam(request, args, name, labels) {
+  const explicit = readGithubParam(args, name);
+  if (explicit) return explicit;
+  const value = valueAfterLabels(request, labels || [name, name.replace(/_/g, " ")]);
+  return value && /^[0-9]+$/.test(value) ? value : null;
+}
+
+function workflowIdParam(request, args) {
+  const explicit = readGithubParam(args, "workflow_id");
+  if (explicit) return explicit;
+  const direct = valueAfterLabels(request, ["workflow_id", "workflow id", "workflow file", "workflow"]);
+  if (direct) return direct;
+  const yaml = String(request || "").split(/\s+/).find(t => /\.ya?ml["',.;:)]*$/i.test(t));
+  return yaml ? cleanGithubParam(yaml) : null;
+}
+
+function githubPathParam(name, request, args, env) {
+  const defaults = resolveOwnerRepo(env, args || {});
+  if (name === "owner") return readGithubParam(args, name) || defaults.owner;
+  if (name === "repo") return readGithubParam(args, name) || defaults.repo;
+  if (name === "run_id") return numericGithubParam(request, args, name, ["run_id", "run id", "run"]);
+  if (name === "job_id") return numericGithubParam(request, args, name, ["job_id", "job id", "job"]);
+  if (name === "issue_number") return numericGithubParam(request, args, name, ["issue_number", "issue number", "issue"]);
+  if (name === "pull_number") return numericGithubParam(request, args, name, ["pull_number", "pull number", "pull request", "pr"]);
+  if (name === "workflow_id") return workflowIdParam(request, args);
+  const explicit = readGithubParam(args, name);
+  if (explicit) return explicit;
+  if (name === "path") return valueAfterLabels(request, ["path", "file path", "content path", "file"]);
+  if (name === "ref") return valueAfterLabels(request, ["ref", "branch", "tag"]);
+  if (name === "branch") return valueAfterLabels(request, ["branch", "ref"]);
+  return valueAfterLabels(request, [name, name.replace(/_/g, " "), name.replace(/_/g, "-")]);
+}
+
+function encodeGithubParam(name, value) {
+  if (name === "path") return String(value).split("/").map(part => encodeURIComponent(part)).join("/");
+  return encodeURIComponent(String(value));
+}
+
+function resolveGithubPath(path, request, args, env, preset = {}) {
+  const names = githubPathParamNames(path);
+  const rawParams = {};
+  for (const name of names) rawParams[name] = preset[name] || githubPathParam(name, request, args, env);
+  const required = names.map(name => ({ name, filled: Boolean(rawParams[name]), value: rawParams[name] || null }));
+  const missing = required.filter(p => !p.filled).map(p => p.name);
+  const resolvedPath = String(path || "").replace(/\{([a-zA-Z0-9_]+)\}/g, (_, name) => rawParams[name] ? encodeGithubParam(name, rawParams[name]) : `{${name}}`);
+  return { rawParams, required, missing, resolvedPath };
+}
+
+function endpointFromIndex(index, method, path) {
+  return (index || []).find(e => e.method === method && e.path === path) || { method, path, tags: ["github"], summary: "Deterministic GitHub route" };
+}
+
+function requestText(request) {
+  return String(request || "").toLowerCase();
+}
+
+function workflowRunsRequested(request) {
+  const text = requestText(request);
+  return /\b(workflow|action|actions)\b/.test(text) && /\b(runs?|history|recent|list|show)\b/.test(text);
+}
+
+function workflowRunJobsRequested(request) {
+  const text = requestText(request);
+  return /\b(run|workflow|action|actions)\b/.test(text) && /\b(jobs?|steps?)\b/.test(text);
+}
+
+function repoContentsRequested(request) {
+  const text = requestText(request);
+  return /\b(contents?|file|source|read)\b/.test(text) && /\b(path|file|contents?)\b/.test(text);
+}
+
+function repoInfoRequested(request) {
+  const text = requestText(request);
+  return /\b(repo|repository)\b/.test(text) && /\b(info|metadata|details|default branch|private|visibility)\b/.test(text);
+}
+
+function chooseDeterministicGithubEndpoint(index, request, args, env) {
+  const runId = githubPathParam("run_id", request, args, env);
+  const workflowId = githubPathParam("workflow_id", request, args, env);
+  const contentPath = githubPathParam("path", request, args, env);
+  if (workflowRunJobsRequested(request) && runId) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs/{run_id}/jobs"), query: {}, body: null, reason: "deterministic workflow run jobs route", deterministic_path_params: { run_id: runId } };
+  if (runId && /\b(status|conclusion|inspect|details|read|get)\b/.test(requestText(request))) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs/{run_id}"), query: {}, body: null, reason: "deterministic workflow run route", deterministic_path_params: { run_id: runId } };
+  if (workflowRunsRequested(request)) {
+    const path = workflowId ? "/repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs" : "/repos/{owner}/{repo}/actions/runs";
+    const params = workflowId ? { workflow_id: workflowId } : {};
+    return { ...endpointFromIndex(index, "GET", path), query: { per_page: args.per_page || args.limit || 10 }, body: null, reason: "deterministic workflow runs list route", deterministic_path_params: params };
+  }
+  if (repoContentsRequested(request) && contentPath) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/contents/{path}"), query: {}, body: null, reason: "deterministic repository contents route", deterministic_path_params: { path: contentPath } };
+  if (repoInfoRequested(request)) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}"), query: {}, body: null, reason: "deterministic repository info route" };
+  return null;
+}
+
+function compactCandidates(candidates) {
+  return (candidates || []).slice(0, 12).map(c => ({ method: c.method, path: c.path, summary: c.summary, tags: c.tags }));
+}
+
 async function askGithub(env, args) {
   const request = String(args.request || "").trim();
   if (!request) throw new Error("request is required");
