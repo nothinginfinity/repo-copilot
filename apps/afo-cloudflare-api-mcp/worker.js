@@ -1,4 +1,4 @@
-const VERSION = "0.4.1";
+const VERSION = "0.4.2";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -558,6 +558,26 @@ function workerSettingsRequested(request) {
   return /\bworker(s)?\b/.test(text) && /\b(settings?|bindings?|compatibility|inspect)\b/.test(text);
 }
 
+function dispatchNamespaceRequested(request, args) {
+  const text = String(request || "").toLowerCase();
+  return Boolean(
+    readArgPathParam(args, "dispatch_namespace") ||
+    args?.dispatch_namespace ||
+    /\bdispatch[_ -]?namespace\b/.test(text) ||
+    /\bworkers?\s+for\s+platforms\b/.test(text) ||
+    /\bnamespace\s+scripts\b/.test(text)
+  );
+}
+
+function workerScriptsListRequested(request, args) {
+  if (dispatchNamespaceRequested(request, args)) return false;
+  const text = String(request || "").toLowerCase();
+  const wantsList = /\b(list|show|get|inventory|visible|account|normal)\b/.test(text);
+  const mentionsWorkers = /\bworker(s)?\b/.test(text);
+  const mentionsSettings = /\b(settings?|bindings?|compatibility|inspect)\b/.test(text);
+  return wantsList && mentionsWorkers && !mentionsSettings;
+}
+
 function endpointFromIndex(index, method, path) {
   return (index || []).find(e => e.method === method && e.path === path) || { method, path, tags: ["workers"], summary: "Worker script settings" };
 }
@@ -571,6 +591,14 @@ function chooseDeterministicEndpoint(index, request, args) {
       body: null,
       reason: "deterministic worker settings route",
       deterministic_path_params: { script_name: scriptName }
+    };
+  }
+  if (workerScriptsListRequested(request, args)) {
+    return {
+      ...endpointFromIndex(index, "GET", "/accounts/{account_id}/workers/scripts"),
+      query: {},
+      body: null,
+      reason: "deterministic normal Workers list route"
     };
   }
   return null;
