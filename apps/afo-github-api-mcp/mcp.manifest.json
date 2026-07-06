@@ -9,6 +9,7 @@
     "gh_api_status",
     "search",
     "call",
+    "ask_github",
     "seed_spec",
     "trigger_workflow_dispatch",
     "list_workflow_runs",
@@ -16,5 +17,5 @@
     "list_workflow_run_jobs"
   ],
   "source_path": "apps/afo-github-api-mcp/worker.js",
-  "status": "v0.1.0"
+  "status": "v0.3.1"
 }
