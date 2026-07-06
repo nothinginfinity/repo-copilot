@@ -463,9 +463,12 @@ async function askGithub(env, args) {
     query_params: planned.query,
     candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates)
   };
-  if (args.dry_run) return { ok: true, dry_run: true, planned, candidates };
-  const res = await ghApi(env, planned.method, planned.path, planned.query, planned.body, owner, repo);
-  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, data: compactGithubData(res.data), rate_limit: res.rate_limit, audit: { candidates } };
+  if (pathResolution.missing.length) {
+    return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected: planned, audit };
+  }
+  if (args.dry_run) return { ok: true, dry_run: true, selected: planned, planned: { ...planned, final_resolved_path: pathResolution.resolvedPath }, path_params: audit.extracted_path_params, audit };
+  const res = await ghApi(env, planned.method, pathResolution.resolvedPath, planned.query, planned.body, owner, repo);
+  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactGithubData(res.data), rate_limit: res.rate_limit, audit };
 }
 
 async function dispatch(name, args, env) {
