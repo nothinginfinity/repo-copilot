@@ -1,4 +1,5 @@
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
+const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -47,6 +48,22 @@ const TOOLS = [
         paginate: { type: "boolean", description: "Follow pagination if the response is a top-level array. Default false." }
       },
       required: ["method", "path"]
+    }
+  },
+  {
+    name: "ask_github",
+    description: "AI-assisted GitHub API investigator. Takes a natural-language request, searches the GitHub OpenAPI index, selects a safe endpoint, builds parameters, executes it, and returns a compact answer with an audit trail. Defaults to read-only GET operations unless allow_mutation=true.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        request: { type: "string", description: "Natural-language GitHub API task or investigation question" },
+        owner: { type: "string" },
+        repo: { type: "string" },
+        allow_mutation: { type: "boolean", description: "Default false. Required for POST/PUT/PATCH/DELETE." },
+        dry_run: { type: "boolean", description: "If true, select endpoint and params but do not call GitHub." },
+        limit: { type: "number", description: "Candidate endpoint limit, default 8" }
+      },
+      required: ["request"]
     }
   },
   {
@@ -233,6 +250,79 @@ async function ghFetchAbsolute(env, url) {
   return { status: res.status, data: parsed, rate_limit: extractRateLimit(res.headers), links: parseLinkHeader(res.headers.get("link")) };
 }
 
+function mutationMethod(method) {
+  return !["GET", "HEAD"].includes(String(method || "GET").toUpperCase());
+}
+
+function scoreEndpoint(endpoint, terms) {
+  const hay = `${endpoint.method} ${endpoint.path} ${(endpoint.tags || []).join(" ")} ${endpoint.summary || ""} ${endpoint.operationId || ""}`.toLowerCase();
+  let score = 0;
+  for (const term of terms) if (term && hay.includes(term)) score += term.length > 3 ? 3 : 1;
+  if (endpoint.method === "GET") score += 2;
+  return score;
+}
+
+function endpointCandidates(index, request, limit = 8) {
+  const terms = String(request || "").toLowerCase().split(/[^a-z0-9_./-]+/).filter(Boolean).slice(0, 18);
+  return index.map(e => ({ ...e, _score: scoreEndpoint(e, terms) }))
+    .filter(e => e._score > 0)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, Math.max(1, Math.min(Number(limit) || 8, 20)))
+    .map(({ _score, ...e }) => e);
+}
+
+function extractJson(text) {
+  const raw = String(text || "").trim();
+  try { return JSON.parse(raw); } catch {}
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch {} }
+  return null;
+}
+
+async function aiSelectGithub(env, request, candidates, args) {
+  if (!env.AI) return null;
+  const prompt = [
+    "You are selecting a GitHub REST API endpoint for an MCP worker.",
+    "Return strict JSON only with keys: method,path,query,body,reason.",
+    "Default to safe read-only GET endpoints. Do not choose POST/PUT/PATCH/DELETE unless allow_mutation is true.",
+    `allow_mutation=${Boolean(args.allow_mutation)}`,
+    `default_owner=${args.owner || env.DEFAULT_OWNER || ""}`,
+    `default_repo=${args.repo || env.DEFAULT_REPO || ""}`,
+    `request=${request}`,
+    `candidates=${JSON.stringify(candidates).slice(0, 12000)}`
+  ].join("\n");
+  const out = await env.AI.run(AI_MODEL, { messages: [{ role: "user", content: prompt }], max_tokens: 900 });
+  return extractJson(out.response || out.result || out.output_text || "");
+}
+
+function compactGithubData(data) {
+  if (Array.isArray(data)) return data.slice(0, 20);
+  if (!data || typeof data !== "object") return data;
+  const keep = {};
+  for (const key of ["id", "name", "full_name", "private", "html_url", "status", "conclusion", "state", "head_branch", "head_sha", "message", "total_count", "workflow_runs", "jobs", "default_branch", "updated_at", "created_at"]) {
+    if (data[key] !== undefined) keep[key] = Array.isArray(data[key]) ? data[key].slice(0, 20) : data[key];
+  }
+  return Object.keys(keep).length ? keep : data;
+}
+
+async function askGithub(env, args) {
+  const request = String(args.request || "").trim();
+  if (!request) throw new Error("request is required");
+  const index = await loadIndex(env);
+  const candidates = endpointCandidates(index, request, args.limit || 8);
+  if (!candidates.length) throw new Error("No candidate GitHub endpoints found in spec index. Try seed_spec or a more specific request.");
+  const ai = await aiSelectGithub(env, request, candidates, args).catch(() => null);
+  const choice = ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" };
+  if (mutationMethod(choice.method) && !args.allow_mutation) {
+    return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
+  }
+  const { owner, repo } = resolveOwnerRepo(env, args);
+  const planned = { method: choice.method, path: choice.path, query: choice.query || {}, body: choice.body || undefined, owner, repo, reason: choice.reason || (ai && ai.reason) || "selected" };
+  if (args.dry_run) return { ok: true, dry_run: true, planned, candidates };
+  const res = await ghApi(env, planned.method, planned.path, planned.query, planned.body, owner, repo);
+  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, data: compactGithubData(res.data), rate_limit: res.rate_limit, audit: { candidates } };
+}
+
 async function dispatch(name, args, env) {
   if (name === "gh_api_status") {
     let seeded = false, count = null;
@@ -244,6 +334,7 @@ async function dispatch(name, args, env) {
       bindings: {
         GITHUB_TOKEN: Boolean(env.GITHUB_TOKEN),
         SPEC: Boolean(env.SPEC),
+        AI: Boolean(env.AI),
         DEFAULT_OWNER: env.DEFAULT_OWNER || null,
         DEFAULT_REPO: env.DEFAULT_REPO || null
       },
@@ -252,6 +343,8 @@ async function dispatch(name, args, env) {
       tools: TOOLS.map(t => t.name)
     };
   }
+
+  if (name === "ask_github") return await askGithub(env, args || {});
 
   if (name === "seed_spec") return await buildIndex(env);
 
@@ -367,7 +460,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-    if (url.pathname === "/health") return j({ status: "ok", worker: WORKER_NAME, version: VERSION });
+    if (url.pathname === "/health" || url.pathname === "/status") return j(await dispatch("gh_api_status", {}, env));
+    if (url.pathname === "/tools") return j({ ok: true, tools: TOOLS });
     if (url.pathname === "/admin/seed") {
       try { return j(await buildIndex(env)); } catch (e) { return j({ error: e.message }, 500); }
     }
