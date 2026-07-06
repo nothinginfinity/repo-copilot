@@ -13,5 +13,5 @@
     "seed_spec"
   ],
   "source_path": "apps/afo-cloudflare-api-mcp/worker.js",
-  "status": "v0.4.1"
+  "status": "v0.4.2"
 }
