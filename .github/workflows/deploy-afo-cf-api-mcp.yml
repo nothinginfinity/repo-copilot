@@ -1,0 +1,21 @@
+name: Deploy AFO CF API MCP
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/deploy-afo-cf-api-mcp.yml
+      - apps/afo-cloudflare-api-mcp/**
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Deploy
+        run: npx wrangler@latest deploy --config apps/afo-cloudflare-api-mcp/wrangler.toml
