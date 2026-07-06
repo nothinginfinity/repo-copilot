@@ -1,4 +1,4 @@
-const VERSION = "0.5.0";
+const VERSION = "0.5.1";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -589,12 +589,56 @@ function workerScriptsListRequested(request, args) {
   return wantsList && mentionsWorkers && !mentionsSettings;
 }
 
+function d1Requested(request) {
+  const text = String(request || "").toLowerCase();
+  return /\bd1\b/.test(text) || (/\bdatabase\b/.test(text) && /\b(sql|query|schema|migration|tables?|inventory)\b/.test(text));
+}
+
+function d1ListRequested(request) {
+  const text = String(request || "").toLowerCase();
+  return /\b(list|show|get|inventory|databases?|dbs?)\b/.test(text) || /\b(schema|migration|sql|query)\b/.test(text);
+}
+
+function d1TablesRequested(request) {
+  const text = String(request || "").toLowerCase();
+  return /\btables?\b/.test(text) && /\bd1\b/.test(text);
+}
+
 function endpointFromIndex(index, method, path) {
   return (index || []).find(e => e.method === method && e.path === path) || { method, path, tags: ["workers"], summary: "Worker script settings" };
 }
 
 function chooseDeterministicEndpoint(index, request, args) {
   const scriptName = extractWorkerScriptName(request, args);
+  if (d1Requested(request)) {
+    const databaseId = extractPathParam("database_id", request, args);
+    if (d1TablesRequested(request) && databaseId) {
+      return {
+        ...endpointFromIndex(index, "POST", "/accounts/{account_id}/d1/database/{database_id}/query"),
+        query: {},
+        body: { sql: "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name" },
+        reason: "deterministic D1 table inventory route",
+        deterministic_path_params: { database_id: databaseId }
+      };
+    }
+    if (databaseId && /\b(info|details|inspect|get|bookmark|time travel)\b/.test(String(request || "").toLowerCase())) {
+      return {
+        ...endpointFromIndex(index, "GET", "/accounts/{account_id}/d1/database/{database_id}"),
+        query: {},
+        body: null,
+        reason: "deterministic D1 database detail route",
+        deterministic_path_params: { database_id: databaseId }
+      };
+    }
+    if (d1ListRequested(request) || !databaseId) {
+      return {
+        ...endpointFromIndex(index, "GET", "/accounts/{account_id}/d1/database"),
+        query: {},
+        body: null,
+        reason: "deterministic D1 database list route"
+      };
+    }
+  }
   if (workerSettingsRequested(request) && scriptName) {
     return {
       ...endpointFromIndex(index, "GET", "/accounts/{account_id}/workers/scripts/{script_name}/settings"),
