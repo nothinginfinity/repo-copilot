@@ -452,7 +452,17 @@ async function askGithub(env, args) {
     return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
   }
   const { owner, repo } = resolveOwnerRepo(env, args);
-  const planned = { method: choice.method, path: choice.path, query: choice.query || {}, body: choice.body || undefined, owner, repo, reason: choice.reason || (ai && ai.reason) || "selected" };
+  const pathResolution = resolveGithubPath(choice.path, request, args, env, choice.deterministic_path_params || {});
+  const planned = { method: choice.method, path: choice.path, endpoint_template: choice.path, query: choice.query || {}, body: choice.body || undefined, owner, repo, reason: choice.reason || (ai && ai.reason) || "selected" };
+  const audit = {
+    selected_endpoint_template: choice.path,
+    extracted_path_params: pathResolution.rawParams,
+    required_path_params: pathResolution.required,
+    unresolved_path_params: pathResolution.missing,
+    final_resolved_path: pathResolution.resolvedPath,
+    query_params: planned.query,
+    candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates)
+  };
   if (args.dry_run) return { ok: true, dry_run: true, planned, candidates };
   const res = await ghApi(env, planned.method, planned.path, planned.query, planned.body, owner, repo);
   return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, data: compactGithubData(res.data), rate_limit: res.rate_limit, audit: { candidates } };
