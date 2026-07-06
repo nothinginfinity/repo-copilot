@@ -1,4 +1,4 @@
-const VERSION = "0.5.1";
+const VERSION = "0.5.2";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -82,6 +82,23 @@ const TOOLS = [
     name: "upsert_skill",
     description: "Add or update one Cloudflare API skill. Pass skill:{id,title,triggers[],endpoints[],guidance,response_note,enabled}. guidance is injected into ask_cloudflare when a trigger matches; response_note is attached when the chosen endpoint matches. Set enabled:false to disable without deleting.",
     inputSchema: { type: "object", properties: { skill: { type: "object" } }, required: ["skill"] }
+  },
+  {
+    name: "d1_migration_preflight",
+    description: "Read-only D1 migration inspector. Lists D1 databases, resolves a target DB, optionally inspects a Worker D1 binding, reads sqlite_master, detects migration ledger tables, and splits proposed SQL into one-statement units without executing it.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        database_name: { type: "string", description: "Target D1 database name" },
+        database_id: { type: "string", description: "Target D1 database UUID" },
+        script_name: { type: "string", description: "Optional Worker script to inspect for D1 bindings" },
+        migration_sql: { type: "string", description: "Optional SQL text to split and audit, never executed by this tool" },
+        include_table_details: { type: "boolean", description: "If true, also inspect table_info, index_list, and foreign_key_list for a small number of tables" },
+        max_table_details: { type: "number", description: "Default 5, max 20" },
+        account_id: { type: "string" }
+      },
+      required: []
+    }
   },
   {
     name: "seed_spec",
@@ -429,6 +446,115 @@ async function d1Query(env, databaseId, sql, params, accountId) {
   const r = await cfApi(env, "POST", `/accounts/{account_id}/d1/database/${databaseId}/query`, null, { sql, params: params || [] }, accountId);
   if (!r.data.success) throw new Error(`D1 query failed: ${JSON.stringify(r.data.errors)}`);
   return r.data.result;
+}
+
+function d1Rows(result) {
+  return result?.[0]?.results || result?.results || [];
+}
+
+function sqlIdent(name) {
+  return `"${String(name || "").replaceAll('"', '""')}"`;
+}
+
+function migrationLedgerNames(rows) {
+  const patterns = [/migration/i, /schema.*version/i, /drizzle/i, /knex/i, /prisma/i, /_cf/i];
+  return (rows || []).filter(r => r.type === "table" && patterns.some(rx => rx.test(String(r.name || ""))));
+}
+
+function splitSqlPreview(sqlText) {
+  if (!sqlText) return null;
+  const statements = splitStatements(sqlText);
+  return {
+    statement_count: statements.length,
+    one_statement_per_call_required: true,
+    execute_allowed_here: false,
+    statements: statements.slice(0, 40).map((sql, i) => ({ index: i, chars: sql.length, preview: sql.slice(0, 220) }))
+  };
+}
+
+function bindingMatches(settings, target) {
+  const bindings = settings?.bindings || [];
+  return bindings.filter(b => {
+    const type = String(b.type || "").toLowerCase();
+    if (!type.includes("d1")) return false;
+    if (!target) return true;
+    const id = b.id || b.database_id || b.databaseId;
+    const dbName = b.database_name || b.database || b.name;
+    return id === target.uuid || String(dbName || "").toLowerCase() === String(target.name || "").toLowerCase();
+  });
+}
+
+async function d1MigrationPreflight(env, args) {
+  const accountId = args.account_id;
+  const playbook = [
+    "Resolve account and confirm API auth",
+    "List D1 databases visible to the token",
+    "Resolve target database by name or UUID",
+    "Inspect Worker bindings when script_name is provided",
+    "Read sqlite_master for tables, indexes, triggers, and views",
+    "Optionally inspect table_info, index_list, and foreign_key_list",
+    "Detect likely migration ledger tables",
+    "Split proposed SQL into one-statement units without executing",
+    "Require explicit confirmation before any write/DDL execution",
+    "Write an audit receipt after execution in a separate workflow"
+  ];
+  const databases = await listD1(env, accountId);
+  let target = null;
+  if (args.database_id) target = databases.find(d => d.uuid === args.database_id) || { uuid: args.database_id, name: args.database_name || null, unresolved_name: !args.database_name };
+  else if (args.database_name) target = databases.find(d => String(d.name || "").toLowerCase() === String(args.database_name).toLowerCase()) || null;
+
+  let worker = null;
+  if (args.script_name) {
+    const settings = await getWorkerSettings(env, args.script_name, accountId);
+    worker = {
+      script_name: args.script_name,
+      compatibility_date: settings.compatibility_date,
+      bindings: settings.bindings || [],
+      d1_bindings: bindingMatches(settings, target)
+    };
+  }
+
+  let schema = null;
+  if (target?.uuid) {
+    const masterSql = "SELECT name, type, sql FROM sqlite_master WHERE type IN ('table', 'index', 'trigger', 'view') ORDER BY type, name";
+    const master = d1Rows(await d1Query(env, target.uuid, masterSql, null, accountId));
+    const ledgers = migrationLedgerNames(master);
+    schema = {
+      query: masterSql,
+      object_count: master.length,
+      objects: master.slice(0, 200),
+      migration_ledger_candidates: ledgers.map(r => ({ name: r.name, sql: r.sql }))
+    };
+    if (args.include_table_details) {
+      const max = Math.max(1, Math.min(Number(args.max_table_details) || 5, 20));
+      const tables = master.filter(r => r.type === "table").slice(0, max);
+      schema.table_details = [];
+      for (const table of tables) {
+        const name = table.name;
+        const columns = d1Rows(await d1Query(env, target.uuid, `PRAGMA table_info(${sqlIdent(name)})`, null, accountId));
+        const indexes = d1Rows(await d1Query(env, target.uuid, `PRAGMA index_list(${sqlIdent(name)})`, null, accountId));
+        const foreign_keys = d1Rows(await d1Query(env, target.uuid, `PRAGMA foreign_key_list(${sqlIdent(name)})`, null, accountId));
+        schema.table_details.push({ name, columns, indexes, foreign_keys });
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    mode: "read_only_d1_migration_preflight",
+    playbook,
+    account_id: accountId ? "provided" : "default",
+    databases: { count: databases.length, matches: target ? [target] : [], list_preview: databases.slice(0, 50).map(d => ({ name: d.name, uuid: d.uuid, created_at: d.created_at, file_size: d.file_size })) },
+    target_database: target,
+    worker,
+    schema,
+    sql_split: splitSqlPreview(args.migration_sql),
+    safety: {
+      mutates_cloudflare: false,
+      executes_sql: false,
+      write_or_ddl_requires: "Use execute_d1_sql separately, one statement per call, only after explicit confirmation."
+    }
+  };
 }
 
 function mutationMethod(method) {
@@ -792,6 +918,7 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "ask_cloudflare") return await askCloudflare(env, args || {});
+  if (name === "d1_migration_preflight") return await d1MigrationPreflight(env, args || {});
   if (name === "list_skills") return { ...(await loadSkills(env)), worker: WORKER_NAME, how_to_extend: (await loadSkills(env)).how_to_extend || "Copy an existing skill's shape; use triggers, endpoints, guidance, response_note, enabled." };
   if (name === "upsert_skill") return await upsertSkill(env, args || {});
 
