@@ -1,4 +1,5 @@
-const VERSION = "0.3.1";
+const VERSION = "0.4.0";
+const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -54,6 +55,21 @@ const TOOLS = [
         paginate: { type: "boolean", description: "Follow pagination if the response has result_info.total_pages. Default false." }
       },
       required: ["method", "path"]
+    }
+  },
+  {
+    name: "ask_cloudflare",
+    description: "AI-assisted Cloudflare API investigator. Takes a natural-language request, searches the Cloudflare OpenAPI index, selects a safe endpoint, builds parameters, executes it, and returns a compact answer with an audit trail. Defaults to read-only GET operations unless allow_mutation=true.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        request: { type: "string", description: "Natural-language Cloudflare API task or investigation question" },
+        account_id: { type: "string" },
+        allow_mutation: { type: "boolean", description: "Default false. Required for POST/PUT/PATCH/DELETE." },
+        dry_run: { type: "boolean", description: "If true, select endpoint and params but do not call Cloudflare." },
+        limit: { type: "number", description: "Candidate endpoint limit, default 8" }
+      },
+      required: ["request"]
     }
   },
   {
@@ -404,6 +420,81 @@ async function d1Query(env, databaseId, sql, params, accountId) {
   return r.data.result;
 }
 
+function mutationMethod(method) {
+  return !["GET", "HEAD"].includes(String(method || "GET").toUpperCase());
+}
+
+function scoreEndpoint(endpoint, terms) {
+  const hay = `${endpoint.method} ${endpoint.path} ${(endpoint.tags || []).join(" ")} ${endpoint.summary || ""} ${endpoint.operationId || ""}`.toLowerCase();
+  let score = 0;
+  for (const term of terms) if (term && hay.includes(term)) score += term.length > 3 ? 3 : 1;
+  if (endpoint.method === "GET") score += 2;
+  return score;
+}
+
+function endpointCandidates(index, request, limit = 8) {
+  const terms = String(request || "").toLowerCase().split(/[^a-z0-9_./-]+/).filter(Boolean).slice(0, 18);
+  return index.map(e => ({ ...e, _score: scoreEndpoint(e, terms) }))
+    .filter(e => e._score > 0)
+    .sort((a, b) => b._score - a._score)
+    .slice(0, Math.max(1, Math.min(Number(limit) || 8, 20)))
+    .map(({ _score, ...e }) => e);
+}
+
+function extractJson(text) {
+  const raw = String(text || "").trim();
+  try { return JSON.parse(raw); } catch {}
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (match) { try { return JSON.parse(match[0]); } catch {} }
+  return null;
+}
+
+async function aiSelectCloudflare(env, request, candidates, args) {
+  if (!env.AI) return null;
+  const prompt = [
+    "You are selecting a Cloudflare API v4 endpoint for an MCP worker.",
+    "Return strict JSON only with keys: method,path,query,body,reason.",
+    "Default to safe read-only GET endpoints. Do not choose POST/PUT/PATCH/DELETE unless allow_mutation is true.",
+    "Preserve literal placeholders such as {account_id} in paths when candidates include them.",
+    `allow_mutation=${Boolean(args.allow_mutation)}`,
+    `default_account_id_present=${Boolean(args.account_id || env.CF_ACCOUNT_ID)}`,
+    `request=${request}`,
+    `candidates=${JSON.stringify(candidates).slice(0, 12000)}`
+  ].join("\n");
+  const out = await env.AI.run(AI_MODEL, { messages: [{ role: "user", content: prompt }], max_tokens: 900 });
+  return extractJson(out.response || out.result || out.output_text || "");
+}
+
+function compactCloudflareData(data) {
+  if (Array.isArray(data)) return data.slice(0, 20);
+  if (!data || typeof data !== "object") return data;
+  const base = data.result !== undefined ? data.result : data;
+  if (Array.isArray(base)) return { ...data, result: base.slice(0, 20) };
+  if (!base || typeof base !== "object") return data;
+  const keep = {};
+  for (const key of ["id", "name", "script_name", "status", "success", "errors", "messages", "result", "result_info", "bindings", "compatibility_date", "compatibility_flags", "subdomain", "hostname", "pattern", "service", "zone_name"]) {
+    if (data[key] !== undefined) keep[key] = Array.isArray(data[key]) ? data[key].slice(0, 20) : data[key];
+  }
+  return Object.keys(keep).length ? keep : data;
+}
+
+async function askCloudflare(env, args) {
+  const request = String(args.request || "").trim();
+  if (!request) throw new Error("request is required");
+  const index = await loadIndex(env);
+  const candidates = endpointCandidates(index, request, args.limit || 8);
+  if (!candidates.length) throw new Error("No candidate Cloudflare endpoints found in spec index. Try seed_spec or a more specific request.");
+  const ai = await aiSelectCloudflare(env, request, candidates, args).catch(() => null);
+  const choice = ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" };
+  if (mutationMethod(choice.method) && !args.allow_mutation) {
+    return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
+  }
+  const planned = { method: choice.method, path: choice.path, query: choice.query || {}, body: choice.body || undefined, account_id: args.account_id, reason: choice.reason || (ai && ai.reason) || "selected" };
+  if (args.dry_run) return { ok: true, dry_run: true, planned, candidates };
+  const res = await cfApi(env, planned.method, planned.path, planned.query, planned.body, planned.account_id);
+  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, data: compactCloudflareData(res.data), rate_limit: res.rate_limit, audit: { candidates } };
+}
+
 async function dispatch(name, args, env) {
   if (name === "cf_api_status") {
     let seeded = false, count = null;
@@ -416,13 +507,16 @@ async function dispatch(name, args, env) {
         CF_API_TOKEN: Boolean(env.CF_API_TOKEN),
         CF_ACCOUNT_ID: Boolean(env.CF_ACCOUNT_ID),
         GITHUB_TOKEN: Boolean(env.GITHUB_TOKEN),
-        SPEC: Boolean(env.SPEC)
+        SPEC: Boolean(env.SPEC),
+        AI: Boolean(env.AI)
       },
       spec_seeded: seeded,
       indexed_endpoints: count,
       tools: TOOLS.map(t => t.name)
     };
   }
+
+  if (name === "ask_cloudflare") return await askCloudflare(env, args || {});
 
   if (name === "seed_spec") return await buildIndex(env);
 
@@ -603,7 +697,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
-    if (url.pathname === "/health") return j({ status: "ok", worker: WORKER_NAME, version: VERSION });
+    if (url.pathname === "/health" || url.pathname === "/status") return j(await dispatch("cf_api_status", {}, env));
+    if (url.pathname === "/tools") return j({ ok: true, tools: TOOLS });
     if (url.pathname === "/admin/seed") {
       try { return j(await buildIndex(env)); } catch (e) { return j({ error: e.message }, 500); }
     }
