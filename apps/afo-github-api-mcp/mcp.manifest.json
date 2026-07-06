@@ -17,5 +17,5 @@
     "list_workflow_run_jobs"
   ],
   "source_path": "apps/afo-github-api-mcp/worker.js",
-  "status": "v0.3.1"
+  "status": "v0.3.2"
 }
