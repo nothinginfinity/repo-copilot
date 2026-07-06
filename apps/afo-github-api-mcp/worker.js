@@ -1,4 +1,4 @@
-const VERSION = "0.3.2";
+const VERSION = "0.3.3";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
@@ -353,7 +353,7 @@ function numericGithubParam(request, args, name, labels) {
 function validWorkflowIdValue(value) {
   const v = cleanGithubParam(value);
   if (!v) return null;
-  const blocked = new Set(["run", "runs", "history", "recent", "latest", "repo", "repository", "action", "actions", "workflow", "workflows", "list", "show", "get", "for"]);
+  const blocked = new Set(["run", "runs", "history", "recent", "latest", "repo", "repository", "action", "actions", "workflow", "workflows", "list", "show", "get", "for", "explicit", "explicitly", "provided", "provide", "unless", "endpoint", "specific", "scoped"]);
   if (blocked.has(v.toLowerCase())) return null;
   if (/^[0-9]+$/.test(v)) return v;
   if (/^[A-Za-z0-9._-]+\.ya?ml$/i.test(v)) return v;
@@ -421,6 +421,11 @@ function workflowRunJobsRequested(request) {
   return /\b(run|workflow|action|actions)\b/.test(text) && /\b(jobs?|steps?)\b/.test(text);
 }
 
+function workflowRunArtifactsRequested(request) {
+  const text = requestText(request);
+  return /\b(run|workflow|action|actions)\b/.test(text) && /\b(artifacts?|artifact lookup|artifact list)\b/.test(text);
+}
+
 function repoContentsRequested(request) {
   const text = requestText(request);
   return /\b(contents?|file|source|read)\b/.test(text) && /\b(path|file|contents?)\b/.test(text);
@@ -435,6 +440,7 @@ function chooseDeterministicGithubEndpoint(index, request, args, env) {
   const runId = githubPathParam("run_id", request, args, env);
   const workflowId = githubPathParam("workflow_id", request, args, env);
   const contentPath = githubPathParam("path", request, args, env);
+  if (workflowRunArtifactsRequested(request)) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"), query: {}, body: null, reason: "deterministic workflow run artifacts route", deterministic_path_params: runId ? { run_id: runId } : {} };
   if (workflowRunJobsRequested(request) && runId) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs/{run_id}/jobs"), query: {}, body: null, reason: "deterministic workflow run jobs route", deterministic_path_params: { run_id: runId } };
   if (runId && /\b(status|conclusion|inspect|details|read|get)\b/.test(requestText(request))) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs/{run_id}"), query: {}, body: null, reason: "deterministic workflow run route", deterministic_path_params: { run_id: runId } };
   if (workflowRunsRequested(request)) {
