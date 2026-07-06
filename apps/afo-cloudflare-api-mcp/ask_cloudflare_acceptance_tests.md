@@ -98,3 +98,42 @@ Expected:
 - extracted `script_name` is `afo-agent-router-mcp`
 - final resolved path contains `/workers/scripts/afo-agent-router-mcp/`
 - unresolved path params is empty
+
+## F. Normal Workers list route preference
+
+Tool: `ask_cloudflare`
+
+Input:
+
+```json
+{
+  "request": "Read-only test: list Worker scripts visible to this account. Return count, first few script names, selected endpoint, final resolved path, and audit trail. Do not mutate anything.",
+  "dry_run": false
+}
+```
+
+Expected:
+
+- `ok: true`
+- HTTP status `200`
+- selected endpoint is `GET /accounts/{account_id}/workers/scripts`
+- selected endpoint is not a dispatch namespace endpoint
+- audit includes `final_resolved_path`
+
+## G. Dispatch namespace exception
+
+Tool: `ask_cloudflare`
+
+Input:
+
+```json
+{
+  "request": "Dry run only: list Workers for Platforms dispatch namespace scripts for dispatch_namespace exactly example-namespace.",
+  "dry_run": true
+}
+```
+
+Expected:
+
+- deterministic normal Workers list route is not forced
+- dispatch namespace candidates may be selected only because the request explicitly mentions dispatch namespace
