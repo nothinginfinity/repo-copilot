@@ -1,4 +1,4 @@
-const VERSION = "0.4.2";
+const VERSION = "0.5.0";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -9,6 +9,7 @@ const CORS = {
 
 const SPEC_URL = "https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json";
 const SPEC_KEY = "cf-openapi-spec/index.json";
+const SKILLS_KEY = "skills/cloudflare-api.json";
 const MAX_RESPONSE_CHARS = 30000;
 const MAX_PAGINATION_PAGES = 10;
 const MAX_PAGINATION_ITEMS = 2000;
@@ -71,6 +72,16 @@ const TOOLS = [
       },
       required: ["request"]
     }
+  },
+  {
+    name: "list_skills",
+    description: "List the skills document this subagent applies during ask_cloudflare (stored as data in R2, editable without redeploys). Read this before writing new skills - the how_to_extend field documents the format.",
+    inputSchema: { type: "object", properties: {}, required: [] }
+  },
+  {
+    name: "upsert_skill",
+    description: "Add or update one Cloudflare API skill. Pass skill:{id,title,triggers[],endpoints[],guidance,response_note,enabled}. guidance is injected into ask_cloudflare when a trigger matches; response_note is attached when the chosen endpoint matches. Set enabled:false to disable without deleting.",
+    inputSchema: { type: "object", properties: { skill: { type: "object" } }, required: ["skill"] }
   },
   {
     name: "seed_spec",
@@ -630,15 +641,52 @@ function compactCandidates(candidates) {
   return (candidates || []).slice(0, 12).map(c => ({ method: c.method, path: c.path, summary: c.summary, tags: c.tags }));
 }
 
+async function loadSkills(env) {
+  try {
+    if (!env.SPEC) return { version: 0, skills: [], load_error: "SPEC binding missing" };
+    const obj = await env.SPEC.get(SKILLS_KEY);
+    return obj ? JSON.parse(await obj.text()) : { version: 0, skills: [] };
+  } catch (e) {
+    return { version: 0, skills: [], load_error: String(e.message || e) };
+  }
+}
+
+function matchSkillsByRequest(doc, request) {
+  const text = String(request || "").toLowerCase();
+  return (doc.skills || []).filter(s => s.enabled !== false && (s.triggers || []).some(t => text.includes(String(t).toLowerCase())));
+}
+
+function matchSkillsByEndpoint(doc, path) {
+  return (doc.skills || []).filter(s => s.enabled !== false && (s.endpoints || []).some(p => String(path || "").startsWith(String(p))));
+}
+
+async function upsertSkill(env, args) {
+  const skill = args && args.skill;
+  if (!skill || !skill.id || !skill.guidance) throw new Error("skill object with at least {id, guidance} required");
+  if (!env.SPEC) throw new Error("SPEC R2 binding missing");
+  const doc = await loadSkills(env);
+  const existing = (doc.skills || []).findIndex(s => s.id === skill.id);
+  if (existing >= 0) doc.skills[existing] = { ...doc.skills[existing], ...skill };
+  else (doc.skills = doc.skills || []).push(skill);
+  doc.version = (doc.version || 0) + 1;
+  doc.updated_at = new Date().toISOString();
+  doc.worker = WORKER_NAME;
+  doc.how_to_extend = doc.how_to_extend || "Copy an existing skill's shape. Write guidance as dense imperative instructions for a small model with no other context. triggers = lowercase substrings of user requests; endpoints = API path prefixes the note should attach to. Keep guidance under ~120 words. Test with ask_cloudflare dry_run=true and check skills_applied in the audit.";
+  await env.SPEC.put(SKILLS_KEY, JSON.stringify(doc, null, 2));
+  return { ok: true, id: skill.id, version: doc.version, total_skills: doc.skills.length };
+}
+
 async function askCloudflare(env, args) {
   const request = String(args.request || "").trim();
   if (!request) throw new Error("request is required");
   const index = await loadIndex(env);
+  const skillDoc = await loadSkills(env);
+  const requestSkills = matchSkillsByRequest(skillDoc, request);
   const candidates = endpointCandidates(index, request, args.limit || 8);
   if (!candidates.length) throw new Error("No candidate Cloudflare endpoints found in spec index. Try seed_spec or a more specific request.");
 
   const deterministic = chooseDeterministicEndpoint(index, request, args);
-  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, args).catch(() => null);
+  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, { ...args, skills: requestSkills }).catch(() => null);
   const choice = deterministic || (ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" });
 
   if (mutationMethod(choice.method) && !args.allow_mutation) {
@@ -662,17 +710,20 @@ async function askCloudflare(env, args) {
     unresolved_path_params: pathResolution.missing,
     final_resolved_path: pathResolution.auditPath,
     query_params: selected.query,
-    candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates)
+    candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates),
+    skills_applied: requestSkills.map(s => s.id)
   };
+  const endpointSkills = matchSkillsByEndpoint(skillDoc, choice.path);
+  const responseNotes = unique([].concat(requestSkills, endpointSkills).map(s => s.response_note));
 
   if (pathResolution.missing.length) {
-    return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected, audit };
+    return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected, response_notes: responseNotes, audit };
   }
 
-  if (args.dry_run) return { ok: true, dry_run: true, selected, planned: { ...selected, final_resolved_path: pathResolution.auditPath }, audit };
+  if (args.dry_run) return { ok: true, dry_run: true, selected, planned: { ...selected, final_resolved_path: pathResolution.auditPath }, response_notes: responseNotes, audit };
 
   const res = await cfApi(env, selected.method, pathResolution.resolvedPath, selected.query, selected.body, args.account_id);
-  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactCloudflareData(res.data), rate_limit: res.rate_limit, audit };
+  return { ok: res.status >= 200 && res.status < 300, status: res.status, selected, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactCloudflareData(res.data), response_notes: responseNotes, rate_limit: res.rate_limit, audit };
 }
 
 async function dispatch(name, args, env) {
@@ -697,6 +748,8 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "ask_cloudflare") return await askCloudflare(env, args || {});
+  if (name === "list_skills") return { ...(await loadSkills(env)), worker: WORKER_NAME, how_to_extend: (await loadSkills(env)).how_to_extend || "Copy an existing skill's shape; use triggers, endpoints, guidance, response_note, enabled." };
+  if (name === "upsert_skill") return await upsertSkill(env, args || {});
 
   if (name === "seed_spec") return await buildIndex(env);
 
