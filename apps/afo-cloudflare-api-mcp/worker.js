@@ -759,6 +759,8 @@ function extractJson(text) {
 
 async function aiSelectCloudflare(env, request, candidates, args) {
   if (!env.AI) return null;
+  const skillLines = (args.skills || []).map(s => `SKILL [${s.id}]: ${s.guidance}`);
+  const docsLines = (args.docs_hits || []).map((d, i) => `DOC [${i + 1}] ${d.title} ${d.url}: ${String(d.snippet || "").slice(0, 700)}`);
   const prompt = [
     "You are selecting a Cloudflare API v4 endpoint for an MCP worker.",
     "Return strict JSON only with keys: method,path,query,body,reason.",
@@ -767,6 +769,8 @@ async function aiSelectCloudflare(env, request, candidates, args) {
     `allow_mutation=${Boolean(args.allow_mutation)}`,
     `default_account_id_present=${Boolean(args.account_id || env.CF_ACCOUNT_ID)}`,
     `request=${request}`,
+    ...skillLines,
+    ...docsLines,
     `candidates=${JSON.stringify(candidates).slice(0, 12000)}`
   ].join("\n");
   const out = await env.AI.run(AI_MODEL, { messages: [{ role: "user", content: prompt }], max_tokens: 900 });
@@ -1023,11 +1027,12 @@ async function askCloudflare(env, args) {
   const index = await loadIndex(env);
   const skillDoc = await loadSkills(env);
   const requestSkills = matchSkillsByRequest(skillDoc, request);
+  const docsHits = await docsForAsk(env, request, args.docs_limit || 3);
   const candidates = endpointCandidates(index, request, args.limit || 8);
   if (!candidates.length) throw new Error("No candidate Cloudflare endpoints found in spec index. Try seed_spec or a more specific request.");
 
   const deterministic = chooseDeterministicEndpoint(index, request, args);
-  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, { ...args, skills: requestSkills }).catch(() => null);
+  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, { ...args, skills: requestSkills, docs_hits: docsHits }).catch(() => null);
   const choice = deterministic || (ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" });
 
   if (mutationMethod(choice.method) && !args.allow_mutation) {
@@ -1052,7 +1057,8 @@ async function askCloudflare(env, args) {
     final_resolved_path: pathResolution.auditPath,
     query_params: selected.query,
     candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates),
-    skills_applied: requestSkills.map(s => s.id)
+    skills_applied: requestSkills.map(s => s.id),
+    docs_hits: docsHits.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet }))
   };
   const endpointSkills = matchSkillsByEndpoint(skillDoc, choice.path);
   const responseNotes = unique([].concat(requestSkills, endpointSkills).map(s => s.response_note));
@@ -1089,6 +1095,9 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "ask_cloudflare") return await askCloudflare(env, args || {});
+  if (name === "refresh_cloudflare_docs") return await refreshCloudflareDocs(env, args || {});
+  if (name === "search_cloudflare_docs") return await searchCloudflareDocs(env, args || {});
+  if (name === "get_cloudflare_doc") return await getCloudflareDoc(env, args || {});
   if (name === "d1_migration_preflight") return await d1MigrationPreflight(env, args || {});
   if (name === "list_skills") return { ...(await loadSkills(env)), worker: WORKER_NAME, how_to_extend: (await loadSkills(env)).how_to_extend || "Copy an existing skill's shape; use triggers, endpoints, guidance, response_note, enabled." };
   if (name === "upsert_skill") return await upsertSkill(env, args || {});
