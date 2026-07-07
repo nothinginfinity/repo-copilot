@@ -1,4 +1,4 @@
-const VERSION = "0.6.0";
+const VERSION = "0.6.1";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -126,7 +126,7 @@ const TOOLS = [
   },
   {
     name: "d1_migration_preflight",
-    description: "Read-only D1 migration inspector. Lists D1 databases, resolves a target DB, optionally inspects a Worker D1 binding, reads sqlite_master, detects migration ledger tables, and splits proposed SQL into one-statement units without executing it.",
+    description: "Canonical first-class D1 migration entrypoint. Read-only inspector that lists D1 databases, resolves a target DB, optionally inspects Worker D1 bindings, reads sqlite_master, returns tables/warnings/recommended next tools, detects migration ledger tables, and splits proposed SQL into one-statement units without executing it.",
     inputSchema: {
       type: "object",
       properties: {
@@ -710,11 +710,51 @@ async function d1MigrationPreflight(env, args) {
     }
   }
 
+  const tables = (schema?.objects || []).filter(o => o.type === "table").map(o => o.name);
+  const currentBindings = worker?.bindings || [];
+  const d1Bindings = worker?.d1_bindings || [];
+  const warnings = [
+    "Worker deploy will replace all bindings; inspect current bindings before any deploy.",
+    "D1 SQL must be executed one statement per call.",
+    "This preflight is read-only and does not execute migration SQL."
+  ];
+  if (!target) warnings.push("No target D1 database resolved yet; pass database_name or database_id before schema inspection.");
+  if (args.script_name && !worker) warnings.push("Worker settings could not be inspected.");
+  if (args.script_name && worker && !d1Bindings.length) warnings.push("No D1 binding matched the target database on the inspected Worker.");
+  if (schema?.migration_ledger_candidates?.length) warnings.push("Migration ledger table candidate found; inspect it before applying new migrations.");
+
   return {
     ok: true,
     mode: "read_only_d1_migration_preflight",
+    canonical_entrypoint: true,
     playbook,
     account_id: accountId ? "provided" : "default",
+    database_found: Boolean(target?.uuid),
+    database_id: target?.uuid || null,
+    database_name: target?.name || args.database_name || null,
+    worker_found: Boolean(worker),
+    worker_name: args.script_name || null,
+    current_bindings: currentBindings,
+    d1_bindings: d1Bindings,
+    tables,
+    warnings,
+    recommended_next_tools: [
+      "get_worker_settings",
+      "resolve_d1_database",
+      "list_d1_tables",
+      "query_d1_sql",
+      "execute_d1_sql"
+    ],
+    recommended_execution_sequence: [
+      "get_worker_settings",
+      "resolve_d1_database",
+      "list_d1_tables",
+      "query_d1_sql sqlite_master",
+      "split migration SQL",
+      "execute_d1_sql one statement at a time only after confirmation",
+      "query_d1_sql to verify",
+      "write audit receipt"
+    ],
     databases: { count: databases.length, matches: target ? [target] : [], list_preview: databases.slice(0, 50).map(d => ({ name: d.name, uuid: d.uuid, created_at: d.created_at, file_size: d.file_size })) },
     target_database: target,
     worker,
