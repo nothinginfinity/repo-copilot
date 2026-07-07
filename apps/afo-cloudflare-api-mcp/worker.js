@@ -1421,27 +1421,91 @@ async function cloudForwardEndpointPacket(env, request, args = {}, router = null
   }
 }
 
+function inferWorkerScriptName(request, args = {}) {
+  if (args.script_name) return String(args.script_name).trim();
+  const text = String(request || "");
+  const patterns = [
+    /\bscript(?:\s+name)?\s+[`'\"]?([a-z0-9][a-z0-9_-]{1,80})[`'\"]?/i,
+    /\bworker(?:\s+script)?\s+[`'\"]?([a-z0-9][a-z0-9_-]{1,80})[`'\"]?/i
+  ];
+  const stop = new Set(["settings", "setting", "bindings", "binding", "deploy", "deployment", "inspection", "inspect", "script", "worker"]);
+  for (const pattern of patterns) {
+    const hit = text.match(pattern);
+    const candidate = hit && hit[1] ? hit[1].trim() : "";
+    if (candidate && !stop.has(candidate.toLowerCase())) return candidate;
+  }
+  return null;
+}
+
+function compactWorkerBindingForLoop(binding = {}) {
+  const out = { name: binding.name, type: binding.type };
+  for (const key of ["id", "database_id", "bucket_name", "namespace_id", "index_name", "service", "environment", "class_name", "script_name"]) {
+    if (binding[key] !== undefined && binding[key] !== null && binding[key] !== "") out[key] = binding[key];
+  }
+  if (String(binding.type || "").includes("secret")) out.secret_value_readable = false;
+  if (binding.type === "plain_text") out.text = "<redacted_plain_text>";
+  return out;
+}
+
+function compactWorkerSettingsForLoop(settings = {}) {
+  return {
+    compatibility_date: settings.compatibility_date || null,
+    compatibility_flags: settings.compatibility_flags || [],
+    usage_model: settings.usage_model || null,
+    logpush: settings.logpush || false,
+    bindings: (settings.bindings || []).map(compactWorkerBindingForLoop)
+  };
+}
+
 async function cloudForwardRuntimePacket(env, request, args = {}, router = null) {
   if (args.include_runtime === false) {
     return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 1, { unknowns: ["include_runtime was false"] });
   }
-  if (router?.selected_next_tool !== "d1_migration_preflight") {
-    return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 0.78, { inferred_guidance: ["No runtime read was required for this dry-run route."], data: { mutates_cloudflare: false } });
+  if (router?.selected_next_tool === "d1_migration_preflight") {
+    const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false }) || { arguments: args };
+    const toolArgs = compactLoopToolArgs({ ...(specialized.arguments || {}), account_id: args.account_id });
+    try {
+      const result = await d1MigrationPreflight(env, toolArgs);
+      return makePacket("RuntimeReadOnlyAgent", "forward", "success", 0.84, {
+        direct_claims: ["d1_migration_preflight completed as a read-only runtime inspection and did not execute migration SQL."],
+        evidence: [{ tool: "d1_migration_preflight", database_found: result.database_found, worker_found: result.worker_found, warnings: result.warnings, tables_preview: (result.tables || []).slice(0, 20), sql_split: result.sql_split }],
+        inferred_guidance: result.recommended_execution_sequence || [],
+        recommended_next_actions: (result.recommended_next_tools || []).map(name => ({ name, reason: "Recommended by d1_migration_preflight" })),
+        data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false, executes_sql: false }
+      });
+    } catch (e) {
+      return makePacket("RuntimeReadOnlyAgent", "forward", "warning", 0.35, { unknowns: [`Read-only D1 preflight failed: ${e.message}`], data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false } });
+    }
   }
-  const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false }) || { arguments: args };
-  const toolArgs = compactLoopToolArgs({ ...(specialized.arguments || {}), account_id: args.account_id });
-  try {
-    const result = await d1MigrationPreflight(env, toolArgs);
-    return makePacket("RuntimeReadOnlyAgent", "forward", "success", 0.84, {
-      direct_claims: ["d1_migration_preflight completed as a read-only runtime inspection and did not execute migration SQL."],
-      evidence: [{ tool: "d1_migration_preflight", database_found: result.database_found, worker_found: result.worker_found, warnings: result.warnings, tables_preview: (result.tables || []).slice(0, 20), sql_split: result.sql_split }],
-      inferred_guidance: result.recommended_execution_sequence || [],
-      recommended_next_actions: (result.recommended_next_tools || []).map(name => ({ name, reason: "Recommended by d1_migration_preflight" })),
-      data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false, executes_sql: false }
-    });
-  } catch (e) {
-    return makePacket("RuntimeReadOnlyAgent", "forward", "warning", 0.35, { unknowns: [`Read-only D1 preflight failed: ${e.message}`], data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false } });
+  const scriptName = inferWorkerScriptName(request, args);
+  const workerRuntimeRequested = router?.mode === "read_only" && (router?.intents?.worker_settings || router?.intents?.deploy_or_binding);
+  if (workerRuntimeRequested) {
+    if (!scriptName) {
+      return makePacket("RuntimeReadOnlyAgent", "forward", "warning", 0.42, {
+        unknowns: ["Read-only Worker runtime inspection needs script_name or an unambiguous Worker script name in the request."],
+        recommended_next_actions: [{ name: "ask_cloud_loop", reason: "Retry with script_name and mode:'read_only'." }],
+        data: { mutates_cloudflare: false }
+      });
+    }
+    try {
+      const settings = await getWorkerSettings(env, scriptName, args.account_id);
+      const snapshot = compactWorkerSettingsForLoop(settings);
+      return makePacket("RuntimeReadOnlyAgent", "forward", "success", 0.86, {
+        direct_claims: ["get_worker_settings completed as a read-only Worker settings and bindings inspection."],
+        evidence: [{ tool: "get_worker_settings", script_name: scriptName, ...snapshot }],
+        inferred_guidance: ["Preserve the complete binding manifest before any deploy because Worker deploy APIs replace bindings rather than merging them."],
+        recommended_next_actions: [{ name: "get_worker_settings", reason: "Review current bindings/settings before any deploy or binding change." }],
+        data: {
+          called_tool: "get_worker_settings",
+          mutates_cloudflare: false,
+          read_only_api_calls: [{ method: "GET", path: "/accounts/{account_id}/workers/scripts/{script_name}/settings", script_name: scriptName }]
+        }
+      });
+    } catch (e) {
+      return makePacket("RuntimeReadOnlyAgent", "forward", "warning", 0.35, { unknowns: [`Read-only Worker settings inspection failed: ${e.message}`], data: { called_tool: "get_worker_settings", mutates_cloudflare: false } });
+    }
   }
+  return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 0.78, { inferred_guidance: ["No runtime read was required for this dry-run route."], data: { mutates_cloudflare: false } });
 }
 
 function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router = null) {
