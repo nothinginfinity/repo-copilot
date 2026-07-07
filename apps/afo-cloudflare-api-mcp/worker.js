@@ -1584,6 +1584,7 @@ function synthesizeCloudLoop(request, router, forwardPackets, inversePackets, ri
 function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, riskPackets, verificationPackets, selectedNextAction) {
   const docs = forwardPackets.flatMap(p => p.evidence || []).flatMap(e => Array.isArray(e) ? e : [e]).filter(e => e && e.doc_id);
   const runtimeCalls = forwardPackets.filter(p => p.data?.called_tool).map(p => p.data.called_tool);
+  const readOnlyApiCalls = forwardPackets.flatMap(p => p.data?.read_only_api_calls || []);
   return {
     loop_id: loopId,
     worker: WORKER_NAME,
@@ -1592,6 +1593,8 @@ function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, r
     tools_called: unique(runtimeCalls),
     api_endpoints_considered: forwardPackets.flatMap(p => p.evidence || []).flatMap(e => e.endpoint_candidates || []).map(e => ({ method: e.method, path: e.path })),
     api_calls_made: [],
+    read_only_api_calls_made: readOnlyApiCalls,
+    cloudflare_write_calls_made: [],
     mutations_made: [],
     docs_consulted: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url })),
     runtime_inspection: runtimeCalls.map(name => ({ tool: name, mode: "read_only" })),
