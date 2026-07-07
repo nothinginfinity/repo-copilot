@@ -1,4 +1,4 @@
-const VERSION = "0.5.2";
+const VERSION = "0.6.0";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -10,6 +10,11 @@ const CORS = {
 const SPEC_URL = "https://raw.githubusercontent.com/cloudflare/api-schemas/main/openapi.json";
 const SPEC_KEY = "cf-openapi-spec/index.json";
 const SKILLS_KEY = "skills/cloudflare-api.json";
+const CF_DOCS_INDEX_KEY = "docs/cloudflare/index.json";
+const CF_DOCS_DOC_PREFIX = "docs/cloudflare/pages/";
+const CF_DOCS_DEFAULT_INDEX = "https://developers.cloudflare.com/llms.txt";
+const CF_DOCS_MAX_DOCS = 40;
+const CF_DOCS_MAX_DOC_CHARS = 120000;
 const MAX_RESPONSE_CHARS = 30000;
 const MAX_PAGINATION_PAGES = 10;
 const MAX_PAGINATION_ITEMS = 2000;
@@ -82,6 +87,42 @@ const TOOLS = [
     name: "upsert_skill",
     description: "Add or update one Cloudflare API skill. Pass skill:{id,title,triggers[],endpoints[],guidance,response_note,enabled}. guidance is injected into ask_cloudflare when a trigger matches; response_note is attached when the chosen endpoint matches. Set enabled:false to disable without deleting.",
     inputSchema: { type: "object", properties: { skill: { type: "object" } }, required: ["skill"] }
+  },
+  {
+    name: "refresh_cloudflare_docs",
+    description: "Fetch Cloudflare docs llms.txt/markdown links into the SPEC R2 bucket for local search. R2-only MVP: no Vectorize binding required. Defaults to developers.cloudflare.com/llms.txt and caps fetched docs for safety.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        index_url: { type: "string", description: "Optional llms.txt URL" },
+        product: { type: "string", description: "Optional product/topic filter, e.g. d1, workers, r2" },
+        limit: { type: "number", description: "Max docs to fetch, default 20, max 40" },
+        force: { type: "boolean", description: "Refetch docs even if cached" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "search_cloudflare_docs",
+    description: "Search the locally cached Cloudflare docs knowledge base in R2 and return source-backed snippets for ask_cloudflare or direct answers.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        product: { type: "string" },
+        limit: { type: "number", description: "Default 5, max 10" }
+      },
+      required: ["query"]
+    }
+  },
+  {
+    name: "get_cloudflare_doc",
+    description: "Read a cached Cloudflare docs page by doc_id returned from search_cloudflare_docs.",
+    inputSchema: {
+      type: "object",
+      properties: { doc_id: { type: "string" }, max_chars: { type: "number" } },
+      required: ["doc_id"]
+    }
   },
   {
     name: "d1_migration_preflight",
@@ -332,6 +373,136 @@ async function loadIndex(env) {
   const obj = await env.SPEC.get(SPEC_KEY);
   if (!obj) throw new Error("Spec index not seeded yet. Run seed_spec first.");
   return JSON.parse(await obj.text());
+}
+
+function stableDocId(url) {
+  return String(url || "").replace(/^https?:\/\//, "").replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 180);
+}
+
+function normalizeDocUrl(href, base) {
+  try { return new URL(href, base || CF_DOCS_DEFAULT_INDEX).toString(); } catch { return null; }
+}
+
+function parseLlmsLinks(text, base) {
+  const links = [];
+  for (const m of String(text || "").matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
+    const title = m[1].trim();
+    const url = normalizeDocUrl(m[2].trim(), base);
+    if (url) links.push({ title, url });
+  }
+  for (const m of String(text || "").matchAll(/https?:\/\/[^\s)]+/g)) {
+    const url = normalizeDocUrl(m[0], base);
+    if (url && !links.some(l => l.url === url)) links.push({ title: url.split("/").filter(Boolean).slice(-2).join(" / "), url });
+  }
+  return links;
+}
+
+function docsTerms(query) {
+  return String(query || "").toLowerCase().split(/[^a-z0-9_./-]+/).filter(t => t.length > 1).slice(0, 24);
+}
+
+function scoreDoc(doc, terms) {
+  const hay = `${doc.title || ""} ${doc.url || ""} ${doc.product || ""} ${doc.text || ""}`.toLowerCase();
+  let score = 0;
+  for (const term of terms) {
+    if (!term) continue;
+    const hits = hay.split(term).length - 1;
+    if (hits) score += hits * (term.length > 4 ? 3 : 1);
+    if (String(doc.title || "").toLowerCase().includes(term)) score += 8;
+    if (String(doc.url || "").toLowerCase().includes(term)) score += 5;
+  }
+  return score;
+}
+
+function docSnippet(text, terms, chars = 700) {
+  const source = String(text || "");
+  const lower = source.toLowerCase();
+  let pos = -1;
+  for (const t of terms) { pos = lower.indexOf(t); if (pos >= 0) break; }
+  if (pos < 0) pos = 0;
+  const start = Math.max(0, pos - Math.floor(chars / 3));
+  return source.slice(start, start + chars).replace(/\s+/g, " ").trim();
+}
+
+async function loadDocsIndex(env) {
+  if (!env.SPEC) throw new Error("SPEC R2 binding missing");
+  const obj = await env.SPEC.get(CF_DOCS_INDEX_KEY);
+  if (!obj) return { version: 0, docs: [], updated_at: null };
+  return JSON.parse(await obj.text());
+}
+
+async function readCachedDoc(env, docId) {
+  const obj = await env.SPEC.get(`${CF_DOCS_DOC_PREFIX}${docId}.json`);
+  return obj ? JSON.parse(await obj.text()) : null;
+}
+
+async function writeCachedDoc(env, doc) {
+  await env.SPEC.put(`${CF_DOCS_DOC_PREFIX}${doc.id}.json`, JSON.stringify(doc, null, 2));
+}
+
+async function refreshCloudflareDocs(env, args = {}) {
+  if (!env.SPEC) throw new Error("SPEC R2 binding missing");
+  const indexUrl = args.index_url || CF_DOCS_DEFAULT_INDEX;
+  const product = String(args.product || "").toLowerCase();
+  const limit = Math.max(1, Math.min(Number(args.limit) || 20, CF_DOCS_MAX_DOCS));
+  const indexRes = await fetch(indexUrl, { headers: { "User-Agent": WORKER_NAME, "Accept": "text/markdown,text/plain,*/*" } });
+  if (!indexRes.ok) throw new Error(`Cloudflare docs index fetch failed: HTTP ${indexRes.status}`);
+  const indexText = await indexRes.text();
+  let links = parseLlmsLinks(indexText, indexUrl).filter(l => /developers\.cloudflare\.com/.test(l.url));
+  if (product) links = links.filter(l => `${l.title} ${l.url}`.toLowerCase().includes(product));
+  links = links.slice(0, limit);
+  const existing = await loadDocsIndex(env);
+  const byId = new Map((existing.docs || []).map(d => [d.id, d]));
+  const fetched = [];
+  const skipped = [];
+  for (const link of links) {
+    const id = stableDocId(link.url);
+    if (!args.force && byId.has(id)) { skipped.push(id); continue; }
+    const res = await fetch(link.url, { headers: { "User-Agent": WORKER_NAME, "Accept": "text/markdown,text/plain,text/html,*/*" } });
+    if (!res.ok) { fetched.push({ id, url: link.url, ok: false, status: res.status }); continue; }
+    let text = await res.text();
+    if (text.length > CF_DOCS_MAX_DOC_CHARS) text = text.slice(0, CF_DOCS_MAX_DOC_CHARS);
+    const doc = { id, title: link.title, url: link.url, product: product || null, text, fetched_at: new Date().toISOString(), chars: text.length };
+    await writeCachedDoc(env, doc);
+    byId.set(id, { id, title: doc.title, url: doc.url, product: doc.product, fetched_at: doc.fetched_at, chars: doc.chars });
+    fetched.push({ id, url: link.url, ok: true, chars: text.length });
+  }
+  const next = { version: (existing.version || 0) + 1, updated_at: new Date().toISOString(), index_url: indexUrl, docs: Array.from(byId.values()) };
+  await env.SPEC.put(CF_DOCS_INDEX_KEY, JSON.stringify(next, null, 2));
+  return { ok: true, index_url: indexUrl, product: product || null, fetched_count: fetched.filter(f => f.ok).length, failed_count: fetched.filter(f => !f.ok).length, skipped_count: skipped.length, docs_total: next.docs.length, fetched };
+}
+
+async function searchCloudflareDocs(env, args = {}) {
+  const query = String(args.query || "").trim();
+  if (!query) throw new Error("query is required");
+  const product = String(args.product || "").toLowerCase();
+  const limit = Math.max(1, Math.min(Number(args.limit) || 5, 10));
+  const index = await loadDocsIndex(env);
+  const terms = docsTerms(query);
+  const results = [];
+  for (const meta of index.docs || []) {
+    if (product && !`${meta.title} ${meta.url} ${meta.product || ""}`.toLowerCase().includes(product)) continue;
+    const doc = await readCachedDoc(env, meta.id);
+    if (!doc) continue;
+    const score = scoreDoc(doc, terms);
+    if (score > 0) results.push({ doc_id: doc.id, title: doc.title, url: doc.url, product: doc.product, score, snippet: docSnippet(doc.text, terms), fetched_at: doc.fetched_at });
+  }
+  results.sort((a, b) => b.score - a.score);
+  return { ok: true, query, product: product || null, docs_indexed: (index.docs || []).length, results: results.slice(0, limit), how_to_refresh: "Call refresh_cloudflare_docs with product:'d1' or product:'workers' if results are empty or stale." };
+}
+
+async function getCloudflareDoc(env, args = {}) {
+  const doc = await readCachedDoc(env, args.doc_id);
+  if (!doc) throw new Error("Cached doc not found. Run refresh_cloudflare_docs first.");
+  const max = Math.max(500, Math.min(Number(args.max_chars) || 12000, 50000));
+  return { ok: true, doc_id: doc.id, title: doc.title, url: doc.url, product: doc.product, fetched_at: doc.fetched_at, chars: doc.chars, text: String(doc.text || "").slice(0, max) };
+}
+
+async function docsForAsk(env, request, limit = 3) {
+  try {
+    const r = await searchCloudflareDocs(env, { query: request, limit });
+    return r.results || [];
+  } catch { return []; }
 }
 
 async function cfApi(env, method, path, query, body, accountIdOverride) {
