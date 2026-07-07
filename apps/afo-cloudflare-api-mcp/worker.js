@@ -1,4 +1,4 @@
-const VERSION = "0.7.3";
+const VERSION = "0.7.4";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -98,7 +98,7 @@ const TOOLS = [
         include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
         include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
       },
-      required: ["request"]
+      required: []
     }
   },
   {
@@ -1059,16 +1059,32 @@ function extractValueAfterLabels(request, labels) {
   return null;
 }
 
+function invalidWorkerScriptCandidate(value) {
+  const v = cleanParamValue(value);
+  const lower = v.toLowerCase();
+  const stop = new Set(["dry", "dry-run", "read-only", "migration", "schema", "database", "existing-database", "d1", "sql", "preflight", "planning", "cloud-loop", "cloudflare", "worker", "script", "settings", "bindings", "test-run"]);
+  return !v || stop.has(lower) || lower.length < 3;
+}
+
+function looksLikeWorkerScriptCandidate(value, options = {}) {
+  const v = cleanParamValue(value);
+  if (invalidWorkerScriptCandidate(v)) return false;
+  if (!/^[a-z0-9][a-z0-9._-]{1,100}[a-z0-9]$/i.test(v)) return false;
+  if (options.allowBare === true) return /[-_.]/.test(v) && !/^(dry|read|test|pre|post|one|no)-/i.test(v);
+  return /[-_.]/.test(v);
+}
+
 function extractWorkerScriptName(request, args) {
   const explicit = readArgPathParam(args, "script_name");
   if (explicit) return explicit;
   const text = String(request || "");
   const direct = extractValueAfterLabels(text, ["script_name", "script name", "worker script", "worker", "script"]);
-  if (direct && direct.includes("-")) return direct;
-  const quoted = text.match(/["'`]([a-z0-9][a-z0-9._-]*-[a-z0-9._-]*[a-z0-9])["'`]/i);
-  if (quoted) return cleanParamValue(quoted[1]);
-  const hyphenated = text.match(/\b([a-z0-9][a-z0-9._-]*-[a-z0-9._-]*[a-z0-9])\b/i);
-  return hyphenated ? cleanParamValue(hyphenated[1]) : null;
+  if (looksLikeWorkerScriptCandidate(direct)) return cleanParamValue(direct);
+  const quoted = text.match(/["'`]([a-z0-9][a-z0-9._-]*[-_.][a-z0-9._-]*[a-z0-9])["'`]/i);
+  if (quoted && looksLikeWorkerScriptCandidate(quoted[1])) return cleanParamValue(quoted[1]);
+  const workerContext = /\b(worker|script|worker script)\b/i.test(text);
+  const hyphenated = workerContext ? text.match(/\b([a-z0-9][a-z0-9._-]*[-_.][a-z0-9._-]*[a-z0-9])\b/i) : null;
+  return hyphenated && looksLikeWorkerScriptCandidate(hyphenated[1], { allowBare: true }) ? cleanParamValue(hyphenated[1]) : null;
 }
 
 function extractPathParam(name, request, args) {
@@ -1487,13 +1503,11 @@ function inferWorkerScriptName(request, args = {}) {
     /\bscript(?:\s+name)?\s+[`'\"]?([a-z0-9][a-z0-9_-]{1,80})[`'\"]?/i,
     /\bworker(?:\s+script)?\s+[`'\"]?([a-z0-9][a-z0-9_-]{1,80})[`'\"]?/i
   ];
-  const stop = new Set(["settings", "setting", "bindings", "binding", "deploy", "deployment", "inspection", "inspect", "script", "worker", "dry", "dry-run", "migration", "planning", "loop", "adding", "existing", "database", "d1", "schema", "read", "only", "cloudflare"]);
   for (const pattern of patterns) {
     const hit = text.match(pattern);
     const candidate = hit && hit[1] ? cleanParamValue(hit[1]) : "";
-    const lower = candidate.toLowerCase();
     const explicitScriptNameLabel = /script\s+name/i.test(hit?.[0] || "");
-    if (candidate && !stop.has(lower) && (explicitScriptNameLabel || /[-_.]/.test(candidate))) return candidate;
+    if (candidate && looksLikeWorkerScriptCandidate(candidate, { allowBare: explicitScriptNameLabel })) return candidate;
   }
   return null;
 }
@@ -1668,7 +1682,10 @@ function cloudVerificationPacket(forwardPackets = [], inversePackets = [], riskP
 
 function synthesizeCloudLoop(request, router, forwardPackets, inversePackets, riskPackets, verificationPackets) {
   const endpointPacket = forwardPackets.find(p => p.agent === "EndpointSelectionAgent");
-  const selected = endpointPacket?.recommended_next_actions?.[0] || { name: router.selected_next_tool || "ask_cloudflare", type: "mcp_tool", arguments: { request, dry_run: true, allow_mutation: false } };
+  const runtimePacket = forwardPackets.find(p => p.agent === "RuntimeReadOnlyAgent");
+  const selected = router?.selected_next_tool === "get_worker_settings" && runtimePacket?.status === "success"
+    ? { name: "get_worker_settings", type: "mcp_tool", mode: "read_only", reason: "Runtime read completed Worker settings inspection." }
+    : endpointPacket?.recommended_next_actions?.[0] || { name: router.selected_next_tool || "ask_cloudflare", type: "mcp_tool", arguments: { request, dry_run: true, allow_mutation: false } };
   const blocked = router.unsupported || riskPackets.concat(inversePackets).some(p => p.status === "error");
   const packetStatuses = forwardPackets.concat(inversePackets, riskPackets, verificationPackets).map(p => p.status);
   return {
