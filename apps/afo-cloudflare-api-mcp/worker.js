@@ -1,4 +1,4 @@
-const VERSION = "0.7.1";
+const VERSION = "0.7.2";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -80,7 +80,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.1 never mutates Cloudflare write paths, selects d1_migration_preflight for D1 schema migration dry-runs, and can perform read-only Worker settings inspection.",
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.2 never mutates Cloudflare write paths, resolves bound D1 databases from Worker settings for D1 dry-runs, and can perform read-only Worker settings inspection.",
     inputSchema: {
       type: "object",
       properties: {
@@ -771,14 +771,24 @@ function splitSqlPreview(sqlText) {
   };
 }
 
+function d1BindingDatabaseId(binding = {}) {
+  return binding.id || binding.database_id || binding.databaseId || null;
+}
+
+function d1BindingDatabaseName(binding = {}) {
+  return binding.database_name || binding.database || null;
+}
+
+function d1BindingsFromWorkerSettings(settings = {}) {
+  return (settings?.bindings || []).filter(b => String(b.type || "").toLowerCase().includes("d1"));
+}
+
 function bindingMatches(settings, target) {
-  const bindings = settings?.bindings || [];
+  const bindings = d1BindingsFromWorkerSettings(settings);
   return bindings.filter(b => {
-    const type = String(b.type || "").toLowerCase();
-    if (!type.includes("d1")) return false;
     if (!target) return true;
-    const id = b.id || b.database_id || b.databaseId;
-    const dbName = b.database_name || b.database || b.name;
+    const id = d1BindingDatabaseId(b);
+    const dbName = d1BindingDatabaseName(b) || b.name;
     return id === target.uuid || String(dbName || "").toLowerCase() === String(target.name || "").toLowerCase();
   });
 }
@@ -799,18 +809,45 @@ async function d1MigrationPreflight(env, args) {
   ];
   const databases = await listD1(env, accountId);
   let target = null;
-  if (args.database_id) target = databases.find(d => d.uuid === args.database_id) || { uuid: args.database_id, name: args.database_name || null, unresolved_name: !args.database_name };
-  else if (args.database_name) target = databases.find(d => String(d.name || "").toLowerCase() === String(args.database_name).toLowerCase()) || null;
+  const requestedDatabaseName = placeholderD1DatabaseName(args.database_name) ? null : args.database_name;
+  if (args.database_id) target = databases.find(d => d.uuid === args.database_id) || { uuid: args.database_id, name: requestedDatabaseName || null, unresolved_name: !requestedDatabaseName };
+  else if (requestedDatabaseName) target = databases.find(d => String(d.name || "").toLowerCase() === String(requestedDatabaseName).toLowerCase()) || null;
 
   let worker = null;
   if (args.script_name) {
     const settings = await getWorkerSettings(env, args.script_name, accountId);
+    const allD1Bindings = bindingMatches(settings, null);
     worker = {
       script_name: args.script_name,
       compatibility_date: settings.compatibility_date,
       bindings: settings.bindings || [],
-      d1_bindings: bindingMatches(settings, target)
+      d1_bindings: target ? bindingMatches(settings, target) : allD1Bindings
     };
+    if (!target && allD1Bindings.length === 1) {
+      const binding = allD1Bindings[0];
+      const resolvedId = d1BindingDatabaseId(binding);
+      if (resolvedId) {
+        target = databases.find(d => d.uuid === resolvedId) || {
+          uuid: resolvedId,
+          name: d1BindingDatabaseName(binding),
+          unresolved_name: !d1BindingDatabaseName(binding)
+        };
+        worker.bound_d1_resolution = {
+          status: "resolved_single_binding",
+          binding_name: binding.name,
+          database_id: resolvedId,
+          database_name: target.name || d1BindingDatabaseName(binding) || null
+        };
+        worker.d1_bindings = bindingMatches(settings, target);
+      }
+    } else if (!target && allD1Bindings.length > 1) {
+      worker.bound_d1_resolution = {
+        status: "ambiguous_multiple_bindings",
+        choices: allD1Bindings.map(b => ({ name: b.name, database_id: d1BindingDatabaseId(b), database_name: d1BindingDatabaseName(b) }))
+      };
+    } else if (!target && allD1Bindings.length === 0) {
+      worker.bound_d1_resolution = { status: "no_d1_bindings" };
+    }
   }
 
   let schema = null;
@@ -846,8 +883,9 @@ async function d1MigrationPreflight(env, args) {
     "D1 SQL must be executed one statement per call.",
     "This preflight is read-only and does not execute migration SQL."
   ];
-  if (!target) warnings.push("No target D1 database resolved yet; pass database_name or database_id before schema inspection.");
+  if (!target) warnings.push("No target D1 database resolved yet; pass database_name, database_id, or a Worker with exactly one D1 binding before schema inspection.");
   if (args.script_name && !worker) warnings.push("Worker settings could not be inspected.");
+  if (args.script_name && worker?.bound_d1_resolution?.status === "ambiguous_multiple_bindings") warnings.push("Multiple D1 bindings found on the inspected Worker; pass database_id or a specific binding/database name.");
   if (args.script_name && worker && !d1Bindings.length) warnings.push("No D1 binding matched the target database on the inspected Worker.");
   if (schema?.migration_ledger_candidates?.length) warnings.push("Migration ledger table candidate found; inspect it before applying new migrations.");
 
@@ -864,6 +902,7 @@ async function d1MigrationPreflight(env, args) {
     worker_name: args.script_name || null,
     current_bindings: currentBindings,
     d1_bindings: d1Bindings,
+    bound_d1_resolution: worker?.bound_d1_resolution || null,
     tables,
     warnings,
     recommended_next_tools: [
@@ -1086,21 +1125,33 @@ function endpointFromIndex(index, method, path) {
   return (index || []).find(e => e.method === method && e.path === path) || { method, path, tags: ["workers"], summary: "Worker script settings" };
 }
 
+function placeholderD1DatabaseName(value) {
+  const v = String(value || "").trim().toLowerCase();
+  return !v || ["bound", "attached", "existing", "target", "database", "db", "d1", "worker", "schema", "migration"].includes(v);
+}
+
+function boundD1Requested(request, args = {}) {
+  const text = String(request || "").toLowerCase();
+  return Boolean(args.resolve_bound_d1 || /\b(bound|attached|binding|bindings|from worker|for worker|on worker)\b/.test(text));
+}
+
 function specializedToolForRequest(request, args) {
   const text = String(request || "").toLowerCase();
   const wantsD1Migration = d1Requested(request) && /\b(migration|preflight|schema|sql|statement|sqlite_master|tables?|bindings?)\b/.test(text);
   if (!wantsD1Migration) return null;
+  const rawDatabaseName = args.database_name || args.d1_database_name || extractValueAfterLabels(request, ["database_name", "database name", "d1 database"]);
   return {
     tool: "d1_migration_preflight",
     reason: "D1 migration/preflight intent is better handled by the canonical D1 migration preflight tool before raw endpoint execution.",
     arguments: {
-      database_name: args.database_name || args.d1_database_name || extractValueAfterLabels(request, ["database_name", "database name", "d1 database"]),
+      database_name: placeholderD1DatabaseName(rawDatabaseName) ? null : rawDatabaseName,
       database_id: args.database_id || extractPathParam("database_id", request, args),
       script_name: args.script_name || extractWorkerScriptName(request, args),
       migration_sql: args.migration_sql || args.sql || null,
       include_table_details: Boolean(args.include_table_details),
       max_table_details: args.max_table_details,
-      account_id: args.account_id
+      account_id: args.account_id,
+      resolve_bound_d1: boundD1Requested(request, args)
     }
   };
 }
@@ -1389,7 +1440,13 @@ async function cloudForwardEndpointPacket(env, request, args = {}, router = null
     const candidates = endpointCandidates(index, request, args.limit || 8);
     const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false });
     const deterministic = specialized ? null : chooseDeterministicEndpoint(index, request, { ...args, allow_mutation: false });
-    const toolArgs = specialized ? compactLoopToolArgs(specialized.arguments || {}) : null;
+    let toolArgs = specialized ? compactLoopToolArgs(specialized.arguments || {}) : null;
+    let boundD1Resolution = null;
+    if (specialized?.tool === "d1_migration_preflight") {
+      const enriched = await enrichD1PreflightArgsFromWorker(env, request, toolArgs);
+      toolArgs = enriched.args;
+      boundD1Resolution = enriched.resolution;
+    }
     const selected = specialized ? {
       name: specialized.tool,
       type: "mcp_tool",
@@ -1411,7 +1468,7 @@ async function cloudForwardEndpointPacket(env, request, args = {}, router = null
       arguments: { request, dry_run: true, allow_mutation: false }
     };
     return makePacket("EndpointSelectionAgent", "forward", "success", specialized || deterministic ? 0.86 : 0.62, {
-      evidence: [{ endpoint_candidates: compactCandidates(candidates), specialized_tool: specialized ? specialized.tool : null, deterministic_endpoint: deterministic ? { method: deterministic.method, path: deterministic.path } : null }],
+      evidence: [{ endpoint_candidates: compactCandidates(candidates), specialized_tool: specialized ? specialized.tool : null, deterministic_endpoint: deterministic ? { method: deterministic.method, path: deterministic.path } : null, d1_binding_resolution: boundD1Resolution }],
       inferred_guidance: ["Select one focused next action; do not execute write, DDL, deploy, or delete operations in Cloud-Loop v0.7.1."],
       recommended_next_actions: [selected],
       data: { selected, candidate_count: candidates.length }
@@ -1457,18 +1514,61 @@ function compactWorkerSettingsForLoop(settings = {}) {
   };
 }
 
+async function enrichD1PreflightArgsFromWorker(env, request, args = {}) {
+  const enriched = { ...(args || {}) };
+  if (placeholderD1DatabaseName(enriched.database_name)) delete enriched.database_name;
+  if (!enriched.script_name) enriched.script_name = inferWorkerScriptName(request, enriched);
+  const shouldResolve = Boolean(enriched.script_name && !enriched.database_id && (!enriched.database_name || boundD1Requested(request, enriched)));
+  if (!shouldResolve) return { args: compactLoopToolArgs(enriched), resolution: null };
+  try {
+    const settings = await getWorkerSettings(env, enriched.script_name, enriched.account_id);
+    const d1Bindings = d1BindingsFromWorkerSettings(settings);
+    const choices = d1Bindings.map(b => ({ name: b.name, database_id: d1BindingDatabaseId(b), database_name: d1BindingDatabaseName(b) }));
+    if (d1Bindings.length === 1) {
+      const binding = d1Bindings[0];
+      const databaseId = d1BindingDatabaseId(binding);
+      if (databaseId) {
+        enriched.database_id = databaseId;
+        delete enriched.database_name;
+        return {
+          args: compactLoopToolArgs(enriched),
+          resolution: {
+            status: "resolved_single_binding",
+            script_name: enriched.script_name,
+            binding_name: binding.name,
+            database_id: databaseId,
+            database_name: d1BindingDatabaseName(binding)
+          }
+        };
+      }
+    }
+    return {
+      args: compactLoopToolArgs(enriched),
+      resolution: {
+        status: d1Bindings.length > 1 ? "ambiguous_multiple_bindings" : "no_d1_bindings",
+        script_name: enriched.script_name,
+        choices
+      }
+    };
+  } catch (e) {
+    return { args: compactLoopToolArgs(enriched), resolution: { status: "error", script_name: enriched.script_name, message: e.message } };
+  }
+}
+
 async function cloudForwardRuntimePacket(env, request, args = {}, router = null) {
   if (args.include_runtime === false) {
     return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 1, { unknowns: ["include_runtime was false"] });
   }
   if (router?.selected_next_tool === "d1_migration_preflight") {
     const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false }) || { arguments: args };
-    const toolArgs = compactLoopToolArgs({ ...(specialized.arguments || {}), account_id: args.account_id });
+    const initialToolArgs = compactLoopToolArgs({ ...(specialized.arguments || {}), account_id: args.account_id });
+    const enriched = await enrichD1PreflightArgsFromWorker(env, request, initialToolArgs);
+    const toolArgs = enriched.args;
     try {
       const result = await d1MigrationPreflight(env, toolArgs);
       return makePacket("RuntimeReadOnlyAgent", "forward", "success", 0.84, {
         direct_claims: ["d1_migration_preflight completed as a read-only runtime inspection and did not execute migration SQL."],
-        evidence: [{ tool: "d1_migration_preflight", database_found: result.database_found, worker_found: result.worker_found, warnings: result.warnings, tables_preview: (result.tables || []).slice(0, 20), sql_split: result.sql_split }],
+        evidence: [{ tool: "d1_migration_preflight", database_found: result.database_found, database_id: result.database_id, worker_found: result.worker_found, bound_d1_resolution: enriched.resolution || result.bound_d1_resolution || null, warnings: result.warnings, tables_preview: (result.tables || []).slice(0, 20), sql_split: result.sql_split }],
         inferred_guidance: result.recommended_execution_sequence || [],
         recommended_next_actions: (result.recommended_next_tools || []).map(name => ({ name, reason: "Recommended by d1_migration_preflight" })),
         data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false, executes_sql: false }
@@ -1513,7 +1613,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
   const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
   const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.1 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.2 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
   const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
   if (d1Intent) {
@@ -1598,7 +1698,7 @@ function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, r
     mutations_made: [],
     docs_consulted: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url })),
     runtime_inspection: runtimeCalls.map(name => ({ tool: name, mode: "read_only" })),
-    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.1 is dry-run/read-only only"] : [],
+    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.2 is dry-run/read-only only"] : [],
     selected_next_action: selectedNextAction,
     requires_confirmation: false
   };
