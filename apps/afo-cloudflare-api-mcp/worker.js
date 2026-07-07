@@ -1,4 +1,4 @@
-const VERSION = "0.6.2";
+const VERSION = "0.6.3";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -838,9 +838,18 @@ function scoreEndpoint(endpoint, terms) {
   return score;
 }
 
+function productIntentFilteredEndpoints(index, request) {
+  const endpoints = index || [];
+  if (d1Requested(request)) {
+    const d1 = endpoints.filter(e => String(e.path || "").includes("/d1/") || (e.tags || []).some(t => String(t).toLowerCase() === "d1"));
+    if (d1.length) return d1;
+  }
+  return endpoints;
+}
+
 function endpointCandidates(index, request, limit = 8) {
   const terms = String(request || "").toLowerCase().split(/[^a-z0-9_./-]+/).filter(Boolean).slice(0, 18);
-  return index.map(e => ({ ...e, _score: scoreEndpoint(e, terms) }))
+  return productIntentFilteredEndpoints(index, request).map(e => ({ ...e, _score: scoreEndpoint(e, terms) }))
     .filter(e => e._score > 0)
     .sort((a, b) => b._score - a._score)
     .slice(0, Math.max(1, Math.min(Number(limit) || 8, 20)))
