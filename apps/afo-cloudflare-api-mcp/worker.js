@@ -1223,7 +1223,7 @@ async function askCloudflare(env, args) {
   const index = await loadIndex(env);
   const skillDoc = await loadSkills(env);
   const requestSkills = matchSkillsByRequest(skillDoc, request);
-  const docsHits = await docsForAsk(env, request, args.docs_limit || 3);
+  const docsHits = await docsForAsk(env, request, args.docs_limit || 3, args);
   const candidates = endpointCandidates(index, request, args.limit || 8);
   const specialized = specializedToolForRequest(request, args);
   if (specialized && args.use_specialized !== false) {
@@ -1370,7 +1370,7 @@ async function cloudForwardDocsPacket(env, request, args = {}) {
     return makePacket("DocsEvidenceAgent", "forward", "skipped", 1, { unknowns: ["include_docs was false"] });
   }
   try {
-    const docs = await docsForAsk(env, request, args.docs_limit || 3);
+    const docs = await docsForAsk(env, request, args.docs_limit || 3, args);
     const claims = docs.flatMap(d => d.structured_claims || []);
     return makePacket("DocsEvidenceAgent", "forward", docs.length ? "success" : "warning", docs.length ? 0.74 : 0.35, {
       direct_claims: claims,
