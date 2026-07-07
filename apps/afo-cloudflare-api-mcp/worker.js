@@ -1,4 +1,4 @@
-const VERSION = "0.6.1";
+const VERSION = "0.6.2";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -117,10 +117,19 @@ const TOOLS = [
   },
   {
     name: "get_cloudflare_doc",
-    description: "Read a cached Cloudflare docs page by doc_id returned from search_cloudflare_docs.",
+    description: "Read a cached Cloudflare docs page by doc_id returned from search_cloudflare_docs. Prefer get_cloudflare_doc_excerpt for safer, smaller retrieval.",
     inputSchema: {
       type: "object",
       properties: { doc_id: { type: "string" }, max_chars: { type: "number" } },
+      required: ["doc_id"]
+    }
+  },
+  {
+    name: "get_cloudflare_doc_excerpt",
+    description: "Safely read a focused excerpt from a cached Cloudflare docs page. Returns a sanitized excerpt around a query plus structured claims; never returns the full doc blob by default.",
+    inputSchema: {
+      type: "object",
+      properties: { doc_id: { type: "string" }, query: { type: "string" }, max_chars: { type: "number", description: "Default 1800, max 5000" } },
       required: ["doc_id"]
     }
   },
@@ -485,17 +494,66 @@ async function searchCloudflareDocs(env, args = {}) {
     const doc = await readCachedDoc(env, meta.id);
     if (!doc) continue;
     const score = scoreDoc(doc, terms);
-    if (score > 0) results.push({ doc_id: doc.id, title: doc.title, url: doc.url, product: doc.product, score, snippet: docSnippet(doc.text, terms), fetched_at: doc.fetched_at });
+    if (score > 0) results.push({ doc_id: doc.id, title: doc.title, url: doc.url, product: doc.product, score, snippet: docSnippet(doc.text, terms), structured_claims: structuredDocClaims(doc, terms, 3), fetched_at: doc.fetched_at });
   }
   results.sort((a, b) => b.score - a.score);
   return { ok: true, query, product: product || null, docs_indexed: (index.docs || []).length, results: results.slice(0, limit), how_to_refresh: "Call refresh_cloudflare_docs with product:'d1' or product:'workers' if results are empty or stale." };
 }
 
+function sentenceSplit(text) {
+  return String(text || "").replace(/\s+/g, " ").split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+}
+
+function structuredDocClaims(doc, terms, limit = 4) {
+  const sentences = sentenceSplit(doc.text || "");
+  const scored = sentences.map(sentence => {
+    const lower = sentence.toLowerCase();
+    const hits = terms.filter(t => lower.includes(t));
+    return { sentence, hits, score: hits.length + (hits.some(t => t.length > 5) ? 1 : 0) };
+  }).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, limit);
+  return scored.map(x => ({
+    claim: x.sentence.slice(0, 260),
+    source_title: doc.title,
+    source_url: doc.url,
+    supporting_excerpt: x.sentence.slice(0, 500),
+    confidence: x.hits.length >= 2 ? "high" : "medium"
+  }));
+}
+
+function focusedDocExcerpt(doc, query, maxChars) {
+  const terms = docsTerms(query || doc.title || "");
+  const text = String(doc.text || "").replace(/\s+/g, " ").trim();
+  let pos = -1;
+  for (const term of terms) { pos = text.toLowerCase().indexOf(term); if (pos >= 0) break; }
+  if (pos < 0) pos = 0;
+  const start = Math.max(0, pos - Math.floor(maxChars / 3));
+  return text.slice(start, start + maxChars).trim();
+}
+
 async function getCloudflareDoc(env, args = {}) {
   const doc = await readCachedDoc(env, args.doc_id);
   if (!doc) throw new Error("Cached doc not found. Run refresh_cloudflare_docs first.");
-  const max = Math.max(500, Math.min(Number(args.max_chars) || 12000, 50000));
-  return { ok: true, doc_id: doc.id, title: doc.title, url: doc.url, product: doc.product, fetched_at: doc.fetched_at, chars: doc.chars, text: String(doc.text || "").slice(0, max) };
+  const max = Math.max(500, Math.min(Number(args.max_chars) || 8000, 12000));
+  return { ok: true, safe_mode: "capped_doc_preview", doc_id: doc.id, title: doc.title, url: doc.url, product: doc.product, fetched_at: doc.fetched_at, chars: doc.chars, text: String(doc.text || "").slice(0, max), safer_alternative: "get_cloudflare_doc_excerpt" };
+}
+
+async function getCloudflareDocExcerpt(env, args = {}) {
+  const doc = await readCachedDoc(env, args.doc_id);
+  if (!doc) throw new Error("Cached doc not found. Run refresh_cloudflare_docs first.");
+  const max = Math.max(300, Math.min(Number(args.max_chars) || 1800, 5000));
+  const query = String(args.query || doc.title || "");
+  const terms = docsTerms(query);
+  return {
+    ok: true,
+    safe_mode: "focused_excerpt",
+    doc_id: doc.id,
+    title: doc.title,
+    url: doc.url,
+    product: doc.product,
+    query,
+    excerpt: focusedDocExcerpt(doc, query, max),
+    structured_claims: structuredDocClaims(doc, terms, 6)
+  };
 }
 
 async function docsForAsk(env, request, limit = 3) {
@@ -949,6 +1007,25 @@ function endpointFromIndex(index, method, path) {
   return (index || []).find(e => e.method === method && e.path === path) || { method, path, tags: ["workers"], summary: "Worker script settings" };
 }
 
+function specializedToolForRequest(request, args) {
+  const text = String(request || "").toLowerCase();
+  const wantsD1Migration = d1Requested(request) && /\b(migration|preflight|schema|sql|statement|sqlite_master|tables?|bindings?)\b/.test(text);
+  if (!wantsD1Migration) return null;
+  return {
+    tool: "d1_migration_preflight",
+    reason: "D1 migration/preflight intent is better handled by the canonical D1 migration preflight tool before raw endpoint execution.",
+    arguments: {
+      database_name: args.database_name || args.d1_database_name || extractValueAfterLabels(request, ["database_name", "database name", "d1 database"]),
+      database_id: args.database_id || extractPathParam("database_id", request, args),
+      script_name: args.script_name || extractWorkerScriptName(request, args),
+      migration_sql: args.migration_sql || args.sql || null,
+      include_table_details: Boolean(args.include_table_details),
+      max_table_details: args.max_table_details,
+      account_id: args.account_id
+    }
+  };
+}
+
 function chooseDeterministicEndpoint(index, request, args) {
   const scriptName = extractWorkerScriptName(request, args);
   if (d1Requested(request)) {
@@ -1069,6 +1146,21 @@ async function askCloudflare(env, args) {
   const requestSkills = matchSkillsByRequest(skillDoc, request);
   const docsHits = await docsForAsk(env, request, args.docs_limit || 3);
   const candidates = endpointCandidates(index, request, args.limit || 8);
+  const specialized = specializedToolForRequest(request, args);
+  if (specialized && args.use_specialized !== false) {
+    const toolArgs = Object.fromEntries(Object.entries(specialized.arguments || {}).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+    const delegationAudit = {
+      selected_tool: specialized.tool,
+      reason: specialized.reason,
+      tool_arguments: toolArgs,
+      skills_applied: requestSkills.map(s => s.id),
+      docs_hits: docsHits.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet, structured_claims: d.structured_claims || [] })),
+      endpoint_candidates: compactCandidates(candidates)
+    };
+    if (args.dry_run) return { ok: true, dry_run: true, delegated: true, selected_tool: specialized.tool, recommended_next_tool: specialized.tool, reason: specialized.reason, planned_tool_call: { name: specialized.tool, arguments: toolArgs }, audit: delegationAudit };
+    const result = await d1MigrationPreflight(env, toolArgs);
+    return { ok: true, delegated: true, selected_tool: specialized.tool, recommended_next_tool: null, reason: specialized.reason, result, audit: delegationAudit };
+  }
   if (!candidates.length) throw new Error("No candidate Cloudflare endpoints found in spec index. Try seed_spec or a more specific request.");
 
   const deterministic = chooseDeterministicEndpoint(index, request, args);
@@ -1098,7 +1190,8 @@ async function askCloudflare(env, args) {
     query_params: selected.query,
     candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates),
     skills_applied: requestSkills.map(s => s.id),
-    docs_hits: docsHits.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet }))
+    docs_hits: docsHits.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet, structured_claims: d.structured_claims || [] })),
+    recommended_next_tool: specialized?.tool || null
   };
   const endpointSkills = matchSkillsByEndpoint(skillDoc, choice.path);
   const responseNotes = unique([].concat(requestSkills, endpointSkills).map(s => s.response_note));
@@ -1138,6 +1231,7 @@ async function dispatch(name, args, env) {
   if (name === "refresh_cloudflare_docs") return await refreshCloudflareDocs(env, args || {});
   if (name === "search_cloudflare_docs") return await searchCloudflareDocs(env, args || {});
   if (name === "get_cloudflare_doc") return await getCloudflareDoc(env, args || {});
+  if (name === "get_cloudflare_doc_excerpt") return await getCloudflareDocExcerpt(env, args || {});
   if (name === "d1_migration_preflight") return await d1MigrationPreflight(env, args || {});
   if (name === "list_skills") return { ...(await loadSkills(env)), worker: WORKER_NAME, how_to_extend: (await loadSkills(env)).how_to_extend || "Copy an existing skill's shape; use triggers, endpoints, guidance, response_note, enabled." };
   if (name === "upsert_skill") return await upsertSkill(env, args || {});
