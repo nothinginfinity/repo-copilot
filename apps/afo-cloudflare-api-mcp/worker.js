@@ -1,4 +1,4 @@
-const VERSION = "0.6.3";
+const VERSION = "0.7.0";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -74,6 +74,28 @@ const TOOLS = [
         allow_mutation: { type: "boolean", description: "Default false. Required for POST/PUT/PATCH/DELETE." },
         dry_run: { type: "boolean", description: "If true, select endpoint and params but do not call Cloudflare." },
         limit: { type: "number", description: "Candidate endpoint limit, default 8" }
+      },
+      required: ["request"]
+    }
+  },
+  {
+    name: "ask_cloud_loop",
+    description: "Supervised Cloud-Loop dry-run orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.0 never mutates Cloudflare and selects d1_migration_preflight for D1 schema migration dry-runs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        request: { type: "string", description: "Natural-language Cloudflare investigation or dry-run task" },
+        domain: { type: "string", description: "cloudflare|github|auto. v0.7.0 handles Cloudflare and records non-Cloudflare as blocked/unsupported." },
+        mode: { type: "string", description: "dry_run|read_only. v0.7.0 forces safe dry-run/read-only behavior." },
+        account_id: { type: "string" },
+        database_name: { type: "string" },
+        database_id: { type: "string" },
+        script_name: { type: "string" },
+        migration_sql: { type: "string", description: "Optional SQL to split and audit, never executed by ask_cloud_loop." },
+        allow_mutation: { type: "boolean", description: "Ignored/forced false in v0.7.0." },
+        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.0 runs exactly one supervised iteration." },
+        include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
+        include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
       },
       required: ["request"]
     }
@@ -1215,6 +1237,292 @@ async function askCloudflare(env, args) {
   return { ok: res.status >= 200 && res.status < 300, status: res.status, selected, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactCloudflareData(res.data), response_notes: responseNotes, rate_limit: res.rate_limit, audit };
 }
 
+function makeLoopId(request) {
+  const text = String(request || "");
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = Math.imul(31, h) + text.charCodeAt(i) | 0;
+  return `cloudloop_${Date.now()}_${Math.abs(h).toString(16)}`;
+}
+
+function cloudLoopPacketId(agent, lane) {
+  const base = `${agent || "agent"}_${lane || "packet"}`.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return `${base}_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function makePacket(agent, lane, status, confidence, data = {}) {
+  return {
+    packet_id: cloudLoopPacketId(agent, lane),
+    agent,
+    lane,
+    status,
+    confidence: Math.max(0, Math.min(1, Number(confidence) || 0)),
+    direct_claims: data.direct_claims || [],
+    inferred_guidance: data.inferred_guidance || [],
+    evidence: data.evidence || [],
+    unknowns: data.unknowns || [],
+    risks: data.risks || [],
+    recommended_next_actions: data.recommended_next_actions || [],
+    data: data.data || {}
+  };
+}
+
+function sanitizeCloudLoopArgs(args = {}) {
+  const safe = {};
+  for (const [key, value] of Object.entries(args || {})) {
+    if (value === undefined || value === null || value === "") continue;
+    if (key === "account_id") safe[key] = "provided";
+    else if (key === "migration_sql") safe[key] = { chars: String(value).length, statement_count: splitStatements(String(value)).length, preview: String(value).slice(0, 220) };
+    else if (key === "allow_mutation") safe.allow_mutation_requested = Boolean(value);
+    else safe[key] = value;
+  }
+  safe.allow_mutation_effective = false;
+  return safe;
+}
+
+function compactLoopToolArgs(args = {}) {
+  return Object.fromEntries(Object.entries(args || {}).filter(([, v]) => v !== undefined && v !== null && v !== ""));
+}
+
+function redactLoopToolArgs(args = {}) {
+  return Object.fromEntries(Object.entries(compactLoopToolArgs(args)).map(([k, v]) => [k, k === "account_id" ? "provided" : v]));
+}
+
+function routeCloudLoopRequest(request, args = {}) {
+  const requestedDomain = String(args.domain || "auto").toLowerCase();
+  const domain = requestedDomain === "github" ? "github" : "cloudflare";
+  const mode = args.mode === "read_only" ? "read_only" : "dry_run";
+  const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false });
+  const d1Intent = Boolean(specialized?.tool === "d1_migration_preflight" || (d1Requested(request) && /\b(migration|preflight|schema|sql|statement|sqlite_master|tables?|bindings?)\b/i.test(String(request || ""))));
+  const selectedNextTool = d1Intent ? "d1_migration_preflight" : "ask_cloudflare";
+  return {
+    domain,
+    requested_domain: requestedDomain,
+    mode,
+    effective_mode: "dry_run",
+    allow_mutation_requested: Boolean(args.allow_mutation),
+    allow_mutation_effective: false,
+    max_iterations_requested: args.max_iterations || 1,
+    max_iterations_effective: 1,
+    include_docs: args.include_docs !== false,
+    include_runtime: args.include_runtime !== false,
+    intents: {
+      d1: d1Requested(request),
+      d1_migration_or_schema: d1Intent,
+      worker_settings: workerSettingsRequested(request),
+      deploy_or_binding: /\b(deploy|binding|bindings|secret|secrets|wrangler|worker settings)\b/i.test(String(request || ""))
+    },
+    selected_next_tool: selectedNextTool,
+    specialized_tool: specialized ? { name: specialized.tool, reason: specialized.reason, arguments: redactLoopToolArgs(specialized.arguments || {}) } : null,
+    unsupported: requestedDomain === "github"
+  };
+}
+
+async function cloudForwardDocsPacket(env, request, args = {}) {
+  if (args.include_docs === false) {
+    return makePacket("DocsEvidenceAgent", "forward", "skipped", 1, { unknowns: ["include_docs was false"] });
+  }
+  try {
+    const docs = await docsForAsk(env, request, args.docs_limit || 3);
+    const claims = docs.flatMap(d => d.structured_claims || []);
+    return makePacket("DocsEvidenceAgent", "forward", docs.length ? "success" : "warning", docs.length ? 0.74 : 0.35, {
+      direct_claims: claims,
+      evidence: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet })),
+      unknowns: docs.length ? [] : ["No cached docs evidence matched; refresh_cloudflare_docs may be needed."],
+      recommended_next_actions: docs.length ? [{ name: "get_cloudflare_doc_excerpt", reason: "Read focused excerpts for the strongest docs hits before mutation." }] : [{ name: "refresh_cloudflare_docs", reason: "Refresh cached docs if docs evidence is required." }]
+    });
+  } catch (e) {
+    return makePacket("DocsEvidenceAgent", "forward", "warning", 0.25, { unknowns: [`Docs lookup failed: ${e.message}`] });
+  }
+}
+
+async function cloudForwardEndpointPacket(env, request, args = {}, router = null) {
+  try {
+    const index = await loadIndex(env);
+    const candidates = endpointCandidates(index, request, args.limit || 8);
+    const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false });
+    const deterministic = specialized ? null : chooseDeterministicEndpoint(index, request, { ...args, allow_mutation: false });
+    const toolArgs = specialized ? compactLoopToolArgs(specialized.arguments || {}) : null;
+    const selected = specialized ? {
+      name: specialized.tool,
+      type: "mcp_tool",
+      mode: "read_only_preflight",
+      reason: specialized.reason,
+      arguments: redactLoopToolArgs(toolArgs)
+    } : deterministic ? {
+      name: "call",
+      type: "cloudflare_endpoint",
+      method: deterministic.method,
+      path: deterministic.path,
+      reason: deterministic.reason,
+      query: deterministic.query || {},
+      body: deterministic.body || null
+    } : {
+      name: router?.selected_next_tool || "ask_cloudflare",
+      type: "mcp_tool",
+      mode: "dry_run",
+      arguments: { request, dry_run: true, allow_mutation: false }
+    };
+    return makePacket("EndpointSelectionAgent", "forward", "success", specialized || deterministic ? 0.86 : 0.62, {
+      evidence: [{ endpoint_candidates: compactCandidates(candidates), specialized_tool: specialized ? specialized.tool : null, deterministic_endpoint: deterministic ? { method: deterministic.method, path: deterministic.path } : null }],
+      inferred_guidance: ["Select one focused next action; do not execute write, DDL, deploy, or delete operations in Cloud-Loop v0.7.0."],
+      recommended_next_actions: [selected],
+      data: { selected, candidate_count: candidates.length }
+    });
+  } catch (e) {
+    return makePacket("EndpointSelectionAgent", "forward", "error", 0.2, { unknowns: [`Endpoint selection failed: ${e.message}`] });
+  }
+}
+
+async function cloudForwardRuntimePacket(env, request, args = {}, router = null) {
+  if (args.include_runtime === false) {
+    return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 1, { unknowns: ["include_runtime was false"] });
+  }
+  if (router?.selected_next_tool !== "d1_migration_preflight") {
+    return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 0.78, { inferred_guidance: ["No runtime read was required for this dry-run route."], data: { mutates_cloudflare: false } });
+  }
+  const specialized = specializedToolForRequest(request, { ...args, allow_mutation: false }) || { arguments: args };
+  const toolArgs = compactLoopToolArgs({ ...(specialized.arguments || {}), account_id: args.account_id });
+  try {
+    const result = await d1MigrationPreflight(env, toolArgs);
+    return makePacket("RuntimeReadOnlyAgent", "forward", "success", 0.84, {
+      direct_claims: ["d1_migration_preflight completed as a read-only runtime inspection and did not execute migration SQL."],
+      evidence: [{ tool: "d1_migration_preflight", database_found: result.database_found, worker_found: result.worker_found, warnings: result.warnings, tables_preview: (result.tables || []).slice(0, 20), sql_split: result.sql_split }],
+      inferred_guidance: result.recommended_execution_sequence || [],
+      recommended_next_actions: (result.recommended_next_tools || []).map(name => ({ name, reason: "Recommended by d1_migration_preflight" })),
+      data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false, executes_sql: false }
+    });
+  } catch (e) {
+    return makePacket("RuntimeReadOnlyAgent", "forward", "warning", 0.35, { unknowns: [`Read-only D1 preflight failed: ${e.message}`], data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false } });
+  }
+}
+
+function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router = null) {
+  const text = String(request || "").toLowerCase();
+  const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
+  const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
+  const risks = [
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.0 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+  ];
+  const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
+  if (d1Intent) {
+    risks.push(
+      { key: "one_statement_sql_rule", level: "required", message: "D1 SQL must be executed one statement per call; split migrations and call execute_d1_sql separately only after confirmation." },
+      { key: "migration_ledger_inspection", level: "required", message: "Inspect sqlite_master and migration ledger candidates before applying new schema migrations." },
+      { key: "worker_binding_replacement_warning", level: "required", message: "Worker deploy APIs replace the full binding set; inspect and preserve every binding before any deploy." }
+    );
+    guidance.push("For D1 schema migration requests, route first to d1_migration_preflight and inspect ledger/table state before execution.");
+  }
+  if (deployIntent && !d1Intent) {
+    risks.push({ key: "worker_binding_replacement_warning", level: "required", message: "Worker deploy APIs replace the full binding set; get_worker_settings must be reviewed and secret bindings must be supplied from trusted secrets before deploy." });
+  }
+  if (router?.unsupported) risks.push({ key: "unsupported_domain", level: "blocked", message: "GitHub loop routing is not enabled in the Cloudflare MCP v0.7.0 tool." });
+  return makePacket("InverseRiskAgent", "inverse", risks.some(r => r.level === "blocked") ? "blocked" : "warning", d1Intent ? 0.9 : 0.74, {
+    risks,
+    inferred_guidance: guidance,
+    evidence: [{ forward_packet_count: forwardPackets.length, selected_next_tool: router?.selected_next_tool || null }],
+    recommended_next_actions: d1Intent ? [{ name: "d1_migration_preflight", reason: "Read-only D1 migration safety preflight is required before execution." }] : [{ name: "ask_cloudflare", reason: "Use dry_run=true for endpoint selection before any action." }]
+  });
+}
+
+function cloudRiskPacket(request, args = {}, router = null) {
+  const risks = [];
+  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.0." });
+  if (router?.intents?.d1_migration_or_schema) risks.push({ key: "d1_migration_requires_receipt", level: "warning", message: "Future execution must verify schema after each one-statement call and write an audit receipt." });
+  if (router?.intents?.deploy_or_binding) risks.push({ key: "binding_loss", level: "warning", message: "Deploying a Worker without a full binding manifest can remove secrets, R2, D1, KV, or AI bindings." });
+  if (!risks.length) risks.push({ key: "no_mutation_in_scope", level: "info", message: "No mutation path is selected by this dry-run loop." });
+  return makePacket("SafetyRiskAgent", "risk", risks.some(r => r.level === "blocked") ? "blocked" : "warning", 0.82, { risks, data: { mutates_cloudflare: false, mutations_allowed: false } });
+}
+
+function cloudVerificationPacket(forwardPackets = [], inversePackets = [], riskPackets = [], selectedNextAction = null) {
+  const allRisks = inversePackets.concat(riskPackets).flatMap(p => p.risks || []);
+  const checks = [
+    { name: "selected_next_action_present", ok: Boolean(selectedNextAction?.name) },
+    { name: "forward_packets_present", ok: forwardPackets.length > 0 },
+    { name: "inverse_packets_present", ok: inversePackets.length > 0 },
+    { name: "mutations_made_empty", ok: true },
+    { name: "d1_one_statement_rule_present_when_needed", ok: !selectedNextAction || selectedNextAction.name !== "d1_migration_preflight" || allRisks.some(r => r.key === "one_statement_sql_rule") },
+    { name: "binding_replacement_warning_present_when_needed", ok: allRisks.some(r => r.key === "worker_binding_replacement_warning") || selectedNextAction?.name !== "d1_migration_preflight" }
+  ];
+  return makePacket("VerificationAgent", "verification", checks.every(c => c.ok) ? "success" : "warning", checks.every(c => c.ok) ? 0.9 : 0.55, {
+    direct_claims: ["Verification completed without granting mutation power."],
+    evidence: [{ checks }],
+    unknowns: checks.filter(c => !c.ok).map(c => `Failed verification check: ${c.name}`)
+  });
+}
+
+function synthesizeCloudLoop(request, router, forwardPackets, inversePackets, riskPackets, verificationPackets) {
+  const endpointPacket = forwardPackets.find(p => p.agent === "EndpointSelectionAgent");
+  const selected = endpointPacket?.recommended_next_actions?.[0] || { name: router.selected_next_tool || "ask_cloudflare", type: "mcp_tool", arguments: { request, dry_run: true, allow_mutation: false } };
+  const blocked = router.unsupported || riskPackets.concat(inversePackets).some(p => p.status === "error");
+  const packetStatuses = forwardPackets.concat(inversePackets, riskPackets, verificationPackets).map(p => p.status);
+  return {
+    selected_next_action: selected,
+    requires_confirmation: false,
+    convergence: {
+      status: blocked ? "blocked" : "converged",
+      iteration_count: 1,
+      max_iterations: 1,
+      packet_statuses: packetStatuses,
+      confidence: verificationPackets[0]?.confidence || 0.7,
+      reason: blocked ? "Loop is blocked before mutation or unsupported routing." : "Forward, inverse, risk, and verification packets converge on one safe next action."
+    }
+  };
+}
+
+function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, riskPackets, verificationPackets, selectedNextAction) {
+  const docs = forwardPackets.flatMap(p => p.evidence || []).flatMap(e => Array.isArray(e) ? e : [e]).filter(e => e && e.doc_id);
+  const runtimeCalls = forwardPackets.filter(p => p.data?.called_tool).map(p => p.data.called_tool);
+  return {
+    loop_id: loopId,
+    worker: WORKER_NAME,
+    version: VERSION,
+    tools_considered: unique(["ask_cloud_loop", "ask_cloudflare", "d1_migration_preflight", "get_worker_settings", "query_d1_sql", "execute_d1_sql"]),
+    tools_called: unique(runtimeCalls),
+    api_endpoints_considered: forwardPackets.flatMap(p => p.evidence || []).flatMap(e => e.endpoint_candidates || []).map(e => ({ method: e.method, path: e.path })),
+    api_calls_made: [],
+    mutations_made: [],
+    docs_consulted: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url })),
+    runtime_inspection: runtimeCalls.map(name => ({ tool: name, mode: "read_only" })),
+    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.0 is dry-run/read-only only"] : [],
+    selected_next_action: selectedNextAction,
+    requires_confirmation: false
+  };
+}
+
+async function askCloudLoop(env, args = {}) {
+  const request = String(args.request || "").trim();
+  if (!request) throw new Error("request is required");
+  const safeArgs = { ...args, allow_mutation: false, max_iterations: 1 };
+  const loopId = makeLoopId(request);
+  const router = routeCloudLoopRequest(request, args);
+  const forwardPackets = [];
+  forwardPackets.push(await cloudForwardDocsPacket(env, request, safeArgs));
+  forwardPackets.push(await cloudForwardEndpointPacket(env, request, safeArgs, router));
+  forwardPackets.push(await cloudForwardRuntimePacket(env, request, safeArgs, router));
+  const inversePackets = [cloudInverseRiskPacket(request, safeArgs, forwardPackets, router)];
+  const riskPackets = [cloudRiskPacket(request, safeArgs, router)];
+  const preliminary = synthesizeCloudLoop(request, router, forwardPackets, inversePackets, riskPackets, []);
+  const verificationPackets = [cloudVerificationPacket(forwardPackets, inversePackets, riskPackets, preliminary.selected_next_action)];
+  const synthesis = synthesizeCloudLoop(request, router, forwardPackets, inversePackets, riskPackets, verificationPackets);
+  const receipt = buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, riskPackets, verificationPackets, synthesis.selected_next_action);
+  return {
+    ok: !router.unsupported,
+    loop_id: loopId,
+    version: VERSION,
+    mode: router.effective_mode,
+    request,
+    router: { ...router, sanitized_args: sanitizeCloudLoopArgs(args) },
+    forward_packets: forwardPackets,
+    inverse_packets: inversePackets,
+    risk_packets: riskPackets,
+    verification_packets: verificationPackets,
+    selected_next_action: synthesis.selected_next_action,
+    requires_confirmation: synthesis.requires_confirmation,
+    convergence: synthesis.convergence,
+    receipt
+  };
+}
+
 async function dispatch(name, args, env) {
   if (name === "cf_api_status") {
     let seeded = false, count = null;
@@ -1237,6 +1545,7 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "ask_cloudflare") return await askCloudflare(env, args || {});
+  if (name === "ask_cloud_loop") return await askCloudLoop(env, args || {});
   if (name === "refresh_cloudflare_docs") return await refreshCloudflareDocs(env, args || {});
   if (name === "search_cloudflare_docs") return await searchCloudflareDocs(env, args || {});
   if (name === "get_cloudflare_doc") return await getCloudflareDoc(env, args || {});
