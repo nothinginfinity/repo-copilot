@@ -578,10 +578,58 @@ async function getCloudflareDocExcerpt(env, args = {}) {
   };
 }
 
-async function docsForAsk(env, request, limit = 3) {
+function docsProductForRequest(request, args = {}) {
+  if (args.docs_product) return String(args.docs_product).toLowerCase();
+  const text = String(request || "").toLowerCase();
+  if (d1Requested(request)) return "d1";
+  if (workerSettingsRequested(request) || /\b(worker|workers|script settings|worker settings|bindings?|wrangler|deploy)\b/i.test(text)) return "workers";
+  if (/\b(r2|bucket|buckets)\b/i.test(text)) return "r2";
+  if (/\b(kv|namespace|namespaces)\b/i.test(text)) return "kv";
+  if (/\b(vectorize|vector index|embeddings?)\b/i.test(text)) return "vectorize";
+  return "";
+}
+
+function docsQueryForRequest(request, args = {}) {
+  const text = String(request || "").trim();
+  const product = docsProductForRequest(request, args);
+  if (product === "workers") return `Workers scripts settings bindings deploy secrets environment compatibility Worker deploy bindings replace ${text}`.trim();
+  if (product === "d1") return `D1 migrations sqlite_master migration ledger one statement SQL bindings limits ${text}`.trim();
+  if (product === "r2") return `R2 bucket binding Worker storage ${text}`.trim();
+  if (product === "kv") return `Workers KV namespace binding ${text}`.trim();
+  if (product === "vectorize") return `Vectorize index binding Workers AI embeddings ${text}`.trim();
+  return text;
+}
+
+function docLooksLikeProduct(doc, product) {
+  if (!product) return true;
+  const lower = `${doc.title || ""} ${doc.url || ""} ${doc.product || ""}`.toLowerCase();
+  if (product === "workers") return lower.includes("/workers/") || lower.includes("worker") || lower.includes("wrangler");
+  if (product === "d1") return lower.includes("/d1/") || lower.includes("d1");
+  if (product === "r2") return lower.includes("/r2/") || lower.includes("r2");
+  if (product === "kv") return lower.includes("/kv/") || lower.includes("kv");
+  if (product === "vectorize") return lower.includes("/vectorize/") || lower.includes("vectorize");
+  return lower.includes(product);
+}
+
+async function docsForAsk(env, request, limit = 3, args = {}) {
+  const product = docsProductForRequest(request, args);
+  const query = docsQueryForRequest(request, args);
   try {
-    const r = await searchCloudflareDocs(env, { query: request, limit });
-    return r.results || [];
+    let results = [];
+    if (product) {
+      const scoped = await searchCloudflareDocs(env, { query, product, limit });
+      results = scoped.results || [];
+    }
+    if (!results.length) {
+      const generic = await searchCloudflareDocs(env, { query, limit: Math.max(limit, 5) });
+      results = generic.results || [];
+    }
+    if (product) {
+      const filtered = results.filter(d => docLooksLikeProduct(d, product));
+      if (filtered.length) results = filtered;
+      else if (product === "workers") results = [];
+    }
+    return results.slice(0, limit);
   } catch { return []; }
 }
 
