@@ -92,8 +92,8 @@ const TOOLS = [
         database_id: { type: "string" },
         script_name: { type: "string" },
         migration_sql: { type: "string", description: "Optional SQL to split and audit, never executed by ask_cloud_loop." },
-        allow_mutation: { type: "boolean", description: "Ignored/forced false in v0.7.0." },
-        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.0 runs exactly one supervised iteration." },
+        allow_mutation: { type: "boolean", description: "Ignored/forced false in v0.7.1." },
+        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.1 runs exactly one supervised iteration." },
         include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
         include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
       },
@@ -1412,7 +1412,7 @@ async function cloudForwardEndpointPacket(env, request, args = {}, router = null
     };
     return makePacket("EndpointSelectionAgent", "forward", "success", specialized || deterministic ? 0.86 : 0.62, {
       evidence: [{ endpoint_candidates: compactCandidates(candidates), specialized_tool: specialized ? specialized.tool : null, deterministic_endpoint: deterministic ? { method: deterministic.method, path: deterministic.path } : null }],
-      inferred_guidance: ["Select one focused next action; do not execute write, DDL, deploy, or delete operations in Cloud-Loop v0.7.0."],
+      inferred_guidance: ["Select one focused next action; do not execute write, DDL, deploy, or delete operations in Cloud-Loop v0.7.1."],
       recommended_next_actions: [selected],
       data: { selected, candidate_count: candidates.length }
     });
@@ -1513,7 +1513,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
   const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
   const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.0 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.1 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
   const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
   if (d1Intent) {
@@ -1598,7 +1598,7 @@ function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, r
     mutations_made: [],
     docs_consulted: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url })),
     runtime_inspection: runtimeCalls.map(name => ({ tool: name, mode: "read_only" })),
-    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.0 is dry-run/read-only only"] : [],
+    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.1 is dry-run/read-only only"] : [],
     selected_next_action: selectedNextAction,
     requires_confirmation: false
   };
