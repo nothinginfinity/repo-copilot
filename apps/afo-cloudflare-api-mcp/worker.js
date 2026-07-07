@@ -80,12 +80,12 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.1 never mutates Cloudflare write paths, selects d1_migration_preflight for D1 schema migration dry-runs, and can perform read-only Worker settings inspection."
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.1 never mutates Cloudflare write paths, selects d1_migration_preflight for D1 schema migration dry-runs, and can perform read-only Worker settings inspection.",
     inputSchema: {
       type: "object",
       properties: {
         request: { type: "string", description: "Natural-language Cloudflare investigation or dry-run task" },
-        domain: { type: "string", description: "cloudflare|github|auto. v0.7.0 handles Cloudflare and records non-Cloudflare as blocked/unsupported." },
+        domain: { type: "string", description: "cloudflare|github|auto. v0.7.1 handles Cloudflare and records non-Cloudflare as blocked/unsupported." },
         mode: { type: "string", description: "dry_run|read_only. v0.7.1 forces safe dry-run/read-only behavior; read_only may perform safe GET inspections." },
         account_id: { type: "string" },
         database_name: { type: "string" },
