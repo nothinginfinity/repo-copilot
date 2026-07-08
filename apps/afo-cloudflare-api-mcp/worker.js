@@ -1,4 +1,4 @@
-const VERSION = "0.7.8";
+const VERSION = "0.7.9";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -81,7 +81,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, five explicit inverse safety agents, verification, convergence, and receipt packets. v0.7.8 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, records Worker/D1/schema read-only calls made by D1 preflight chains, honors explicit or natural-language table detail requests, skips protected internal D1 tables during detail PRAGMA reads, and emits InverseDocsAgent, InverseEndpointAgent, InverseMutationAgent, InverseBindingAgent, and InverseD1Agent packets." ,
+    description: "Read-only Cloud-Loop verifier. Routes Cloudflare inspection requests through forward evidence, five explicit inverse safety agents, verification, convergence, and receipt packets. v0.7.9 exposes no mutation-capability input on this tool surface, audits proposed SQL text without applying it, resolves bound D1 databases from Worker settings, records Worker/D1/schema read-only calls, and emits InverseDocsAgent, InverseEndpointAgent, InverseMutationAgent, InverseBindingAgent, and InverseD1Agent packets." ,
     inputSchema: {
       type: "object",
       properties: {
@@ -93,16 +93,67 @@ const TOOLS = [
         database_name: { type: "string" },
         database_id: { type: "string" },
         script_name: { type: "string" },
-        migration_sql: { type: "string", description: "Optional SQL to split and audit, never executed by ask_cloud_loop." },
+        proposed_sql_text: { type: "string", description: "Optional proposed SQL text for audit-only splitting and hazard classification." },
         include_table_details: { type: "boolean", description: "If true, D1 preflight includes table_info, index_list, and foreign_key_list reads for a small table sample." },
         max_table_details: { type: "number", description: "Default 5, max 20; used only when include_table_details is true." },
-        allow_mutation: { type: "boolean", description: "Ignored/forced false in ask_cloud_loop v0.7.8." },
+
         max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.6.1 runs exactly one supervised iteration." },
         include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
         include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
       },
       required: []
     }
+  },
+  {
+    name: "verify_v078_inverse_agents_readonly",
+    description: "Purpose-built read-only verifier for the v0.7.8+ inverse-agent receipt path. Accepts a Worker script name and optional proposed SQL text for audit-only splitting. This tool surface has no Cloudflare write, Worker deploy, delete, D1 write, or DDL capability.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        script_name: { type: "string", description: "Worker script name to inspect." },
+        proposed_sql_text: { type: "string", description: "Optional proposed SQL text for audit-only splitting and hazard classification." },
+        include_worker_settings: { type: "boolean", description: "Default true. Runs the Worker settings read-only loop." },
+        include_bound_d1_resolution: { type: "boolean", description: "Default true when proposed_sql_text is supplied. Runs the bound-D1 schema preflight loop." },
+        include_table_details: { type: "boolean", description: "If true, include a small sample of table detail reads." },
+        max_table_details: { type: "number", description: "Default 2, max 20." },
+        include_runtime: { type: "boolean", description: "Default true." },
+        include_docs: { type: "boolean", description: "Default true." },
+        account_id: { type: "string" }
+      },
+      required: ["script_name"]
+    }
+  },
+  {
+    name: "get_worker_settings_readonly",
+    description: "Reads a Worker's current binding names, binding types, compatibility date, compatibility flags, and safe metadata. Secret values are not returned and settings cannot be changed.",
+    inputSchema: { type: "object", properties: { script_name: { type: "string" }, account_id: { type: "string" } }, required: ["script_name"] }
+  },
+  {
+    name: "resolve_worker_bound_d1_readonly",
+    description: "Reads Worker settings and resolves D1 binding choices for that Worker without changing Cloudflare resources.",
+    inputSchema: { type: "object", properties: { script_name: { type: "string" }, account_id: { type: "string" } }, required: ["script_name"] }
+  },
+  {
+    name: "d1_schema_preflight_readonly",
+    description: "Read-only D1 schema preflight for a target database or a D1 binding on a Worker. Proposed SQL text is split and classified only.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        database_name: { type: "string" },
+        database_id: { type: "string" },
+        script_name: { type: "string" },
+        proposed_sql_text: { type: "string" },
+        include_table_details: { type: "boolean" },
+        max_table_details: { type: "number" },
+        account_id: { type: "string" }
+      },
+      required: []
+    }
+  },
+  {
+    name: "list_d1_tables_readonly",
+    description: "Lists table names in a D1 database using a read-only schema inventory query.",
+    inputSchema: { type: "object", properties: { database_name: { type: "string" }, database_id: { type: "string" }, account_id: { type: "string" } }, required: [] }
   },
   {
     name: "list_skills",
@@ -168,7 +219,7 @@ const TOOLS = [
         database_name: { type: "string", description: "Target D1 database name" },
         database_id: { type: "string", description: "Target D1 database UUID" },
         script_name: { type: "string", description: "Optional Worker script to inspect for D1 bindings" },
-        migration_sql: { type: "string", description: "Optional SQL text to split and audit, never executed by this tool" },
+        proposed_sql_text: { type: "string", description: "Optional proposed SQL text to split and audit without applying it" },
         include_table_details: { type: "boolean", description: "If true, also inspect table_info, index_list, and foreign_key_list for a small number of tables" },
         max_table_details: { type: "number", description: "Default 5, max 20" },
         account_id: { type: "string" }
@@ -309,6 +360,39 @@ const TOOLS = [
     }
   }
 ];
+
+const READ_ONLY_PUBLIC_TOOL_NAMES = new Set([
+  "cf_api_status",
+  "ask_cloud_loop",
+  "verify_v078_inverse_agents_readonly",
+  "get_worker_settings_readonly",
+  "resolve_worker_bound_d1_readonly",
+  "d1_schema_preflight_readonly",
+  "list_d1_tables_readonly",
+  "search_cloudflare_docs",
+  "get_cloudflare_doc_excerpt"
+]);
+
+const ADMIN_TOOL_NAMES = new Set(TOOLS.map(t => t.name).filter(name => !READ_ONLY_PUBLIC_TOOL_NAMES.has(name)));
+
+function adminToolsEnabled(env = {}) {
+  return String(env.EXPOSE_ADMIN_TOOLS || "").toLowerCase() === "true";
+}
+
+function visibleTools(env = {}) {
+  if (adminToolsEnabled(env)) return TOOLS;
+  return TOOLS.filter(t => READ_ONLY_PUBLIC_TOOL_NAMES.has(t.name));
+}
+
+function assertAdminToolEnabled(env = {}, name = "admin_tool") {
+  if (!adminToolsEnabled(env)) {
+    throw new Error(`${name} is disabled on the default read-only verifier surface; use a dedicated admin MCP with EXPOSE_ADMIN_TOOLS=true for Cloudflare writes.`);
+  }
+}
+
+function proposedSqlText(args = {}) {
+  return args.proposed_sql_text || args.migration_sql || args.sql || null;
+}
 
 function j(v, s = 200) { return Response.json(v, { status: s, headers: CORS }); }
 function rr(id, result) { return j({ jsonrpc: "2.0", id, result }); }
@@ -919,31 +1003,30 @@ async function d1MigrationPreflight(env, args) {
     tables,
     warnings,
     recommended_next_tools: [
-      "get_worker_settings",
-      "resolve_d1_database",
-      "list_d1_tables",
-      "query_d1_sql",
-      "execute_d1_sql"
+      "get_worker_settings_readonly",
+      "resolve_worker_bound_d1_readonly",
+      "d1_schema_preflight_readonly",
+      "list_d1_tables_readonly"
     ],
     recommended_execution_sequence: [
-      "get_worker_settings",
-      "resolve_d1_database",
-      "list_d1_tables",
-      "query_d1_sql sqlite_master",
-      "split migration SQL",
-      "execute_d1_sql one statement at a time only after confirmation",
-      "query_d1_sql to verify",
-      "write audit receipt"
+      "get_worker_settings_readonly",
+      "resolve_worker_bound_d1_readonly or resolve_d1_database",
+      "list_d1_tables_readonly",
+      "query_d1_sql sqlite_master read",
+      "split and classify proposed SQL text",
+      "use a separate admin MCP for any later approved write or DDL workflow",
+      "query_d1_sql to verify after any separately approved admin workflow",
+      "write audit receipt from that separate admin workflow"
     ],
     databases: { count: databases.length, matches: target ? [target] : [], list_preview: databases.slice(0, 50).map(d => ({ name: d.name, uuid: d.uuid, created_at: d.created_at, file_size: d.file_size })) },
     target_database: target,
     worker,
     schema,
-    sql_split: splitSqlPreview(args.migration_sql),
+    sql_split: splitSqlPreview(proposedSqlText(args)),
     safety: {
       mutates_cloudflare: false,
       executes_sql: false,
-      write_or_ddl_requires: "Use execute_d1_sql separately, one statement per call, only after explicit confirmation."
+      write_or_ddl_requires: "Use a separate admin MCP after explicit confirmation; this verifier surface does not expose write or DDL tools."
     }
   };
 }
@@ -1192,7 +1275,7 @@ function specializedToolForRequest(request, args) {
       database_name: placeholderD1DatabaseName(rawDatabaseName) ? null : rawDatabaseName,
       database_id: args.database_id || extractPathParam("database_id", request, args),
       script_name: args.script_name || extractWorkerScriptName(request, args),
-      migration_sql: args.migration_sql || args.sql || null,
+      migration_sql: proposedSqlText(args),
       include_table_details: tableDetailsRequested(request, args),
       max_table_details: args.max_table_details,
       account_id: args.account_id,
@@ -1460,7 +1543,7 @@ function sanitizeCloudLoopArgs(args = {}) {
   for (const [key, value] of Object.entries(args || {})) {
     if (value === undefined || value === null || value === "") continue;
     if (key === "account_id") safe[key] = "provided";
-    else if (key === "migration_sql") safe[key] = { chars: String(value).length, statement_count: splitStatements(String(value)).length, preview: String(value).slice(0, 220) };
+    else if (key === "migration_sql" || key === "proposed_sql_text" || key === "sql") safe.proposed_sql_text = { chars: String(value).length, statement_count: splitStatements(String(value)).length, preview: String(value).slice(0, 220) };
     else if (key === "allow_mutation") safe.allow_mutation_requested = Boolean(value);
     else safe[key] = value;
   }
@@ -1928,7 +2011,7 @@ function cloudInverseBindingPacket(request, args = {}, forwardPackets = [], rout
 function cloudInverseD1Packet(request, args = {}, forwardPackets = [], router = null) {
   const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
   const { packet, evidence, data } = runtimeEvidenceFrom(forwardPackets);
-  const sqlHazards = migrationSqlHazards(args.migration_sql || args.sql || "");
+  const sqlHazards = migrationSqlHazards(proposedSqlText(args) || "");
   const risks = [];
   if (d1Intent) {
     risks.push(
@@ -1962,7 +2045,7 @@ function cloudInversePackets(request, args = {}, forwardPackets = [], router = n
 
 function cloudRiskPacket(request, args = {}, router = null) {
   const risks = [];
-  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.6.2." });
+  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "Mutation capability was requested but the Cloud-Loop verifier surface has no mutation-capability input and forces read-only behavior." });
   if (router?.intents?.d1_migration_or_schema) risks.push({ key: "d1_migration_requires_receipt", level: "warning", message: "Future execution must verify schema after each one-statement call and write an audit receipt." });
   if (router?.intents?.deploy_or_binding) risks.push({ key: "binding_loss", level: "warning", message: "Deploying a Worker without a full binding manifest can remove secrets, R2, D1, KV, or AI bindings." });
   if (!risks.length) risks.push({ key: "no_mutation_in_scope", level: "info", message: "No mutation path is selected by this dry-run loop." });
@@ -2028,7 +2111,8 @@ function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, r
     loop_id: loopId,
     worker: WORKER_NAME,
     version: VERSION,
-    tools_considered: unique(["ask_cloud_loop", "ask_cloudflare", "d1_migration_preflight", "get_worker_settings", "query_d1_sql", "execute_d1_sql"]),
+    tools_considered: unique(["ask_cloud_loop", "verify_v078_inverse_agents_readonly", "d1_schema_preflight_readonly", "get_worker_settings_readonly", "resolve_worker_bound_d1_readonly", "list_d1_tables_readonly"]),
+    hidden_admin_tools: Array.from(ADMIN_TOOL_NAMES),
     tools_called: unique(runtimeCalls),
     api_endpoints_considered: forwardPackets.flatMap(p => p.evidence || []).flatMap(e => e.endpoint_candidates || []).map(e => ({ method: e.method, path: e.path })),
     api_calls_made: [],
@@ -2085,6 +2169,92 @@ async function askCloudLoop(env, args = {}) {
   };
 }
 
+async function getWorkerSettingsReadonly(env, args = {}) {
+  const { script_name, account_id } = args;
+  if (!script_name) throw new Error("script_name is required");
+  const settings = await getWorkerSettings(env, script_name, account_id);
+  return { ok: true, mode: "read_only_worker_settings", script_name, settings: compactWorkerSettingsForLoop(settings) };
+}
+
+async function resolveWorkerBoundD1Readonly(env, args = {}) {
+  const { script_name, account_id } = args;
+  if (!script_name) throw new Error("script_name is required");
+  const settings = await getWorkerSettings(env, script_name, account_id);
+  const d1Bindings = d1BindingsFromWorkerSettings(settings);
+  const choices = d1Bindings.map(b => ({ name: b.name, database_id: d1BindingDatabaseId(b), database_name: d1BindingDatabaseName(b) }));
+  const resolution = d1Bindings.length === 1
+    ? { status: "resolved_single_binding", ...choices[0] }
+    : d1Bindings.length > 1
+      ? { status: "ambiguous_multiple_bindings", choices }
+      : { status: "no_d1_bindings", choices: [] };
+  return { ok: true, mode: "read_only_worker_bound_d1_resolution", script_name, binding_count: d1Bindings.length, resolution, choices };
+}
+
+async function d1SchemaPreflightReadonly(env, args = {}) {
+  const toolArgs = { ...args, migration_sql: proposedSqlText(args) };
+  delete toolArgs.proposed_sql_text;
+  const result = await d1MigrationPreflight(env, toolArgs);
+  return { ...result, mode: "read_only_d1_schema_preflight", proposed_sql_text_audit: splitSqlPreview(proposedSqlText(args)) };
+}
+
+async function listD1TablesReadonly(env, args = {}) {
+  const id = await resolveD1Id(env, args, args.account_id);
+  const result = await d1Query(env, id, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name", null, args.account_id);
+  const rows = result?.[0]?.results || result?.results || [];
+  return { ok: true, mode: "read_only_d1_table_inventory", database_id: id, tables: rows.map(r => r.name) };
+}
+
+async function verifyInverseAgentsReadonly(env, args = {}) {
+  const scriptName = String(args.script_name || "").trim();
+  if (!scriptName) throw new Error("script_name is required");
+  const includeRuntime = args.include_runtime !== false;
+  const includeDocs = args.include_docs !== false;
+  const sqlText = proposedSqlText(args);
+  const runs = {};
+  if (args.include_worker_settings !== false) {
+    runs.worker_settings = await askCloudLoop(env, {
+      request: `Read Worker script settings and binding names/types for Worker ${scriptName} through the supervised read-only loop.`,
+      domain: "cloudflare",
+      mode: "read_only",
+      script_name: scriptName,
+      include_runtime: includeRuntime,
+      include_docs: includeDocs,
+      account_id: args.account_id
+    });
+  }
+  if (args.include_bound_d1_resolution !== false || sqlText) {
+    runs.d1_schema_preflight = await askCloudLoop(env, {
+      request: `Plan a read-only D1 schema preflight for the database bound to Worker ${scriptName}. Include table details for a small sample and audit proposed SQL text without applying it.`,
+      domain: "cloudflare",
+      mode: "read_only",
+      script_name: scriptName,
+      proposed_sql_text: sqlText,
+      include_table_details: Boolean(args.include_table_details),
+      max_table_details: args.max_table_details || 2,
+      include_runtime: includeRuntime,
+      include_docs: includeDocs,
+      account_id: args.account_id
+    });
+  }
+  const loops = Object.values(runs).filter(Boolean);
+  const inversePackets = loops.flatMap(loop => loop.inverse_packets || []);
+  const receipts = loops.map(loop => loop.receipt).filter(Boolean);
+  return {
+    ok: loops.every(loop => loop.ok !== false),
+    version: VERSION,
+    mode: "read_only_inverse_agents_verification",
+    writes_possible: false,
+    writes_attempted: false,
+    writes_executed: false,
+    cloudflare_write_calls_made: [],
+    worker_deploys_made: [],
+    d1_write_or_ddl_calls_made: [],
+    inverse_agent_names: unique(inversePackets.map(p => p.agent)),
+    receipts,
+    runs
+  };
+}
+
 async function dispatch(name, args, env) {
   if (name === "cf_api_status") {
     let seeded = false, count = null;
@@ -2102,21 +2272,27 @@ async function dispatch(name, args, env) {
       },
       spec_seeded: seeded,
       indexed_endpoints: count,
-      tools: TOOLS.map(t => t.name)
+      tools: visibleTools(env).map(t => t.name),
+      hidden_admin_tools: Array.from(ADMIN_TOOL_NAMES)
     };
   }
 
   if (name === "ask_cloudflare") return await askCloudflare(env, args || {});
   if (name === "ask_cloud_loop") return await askCloudLoop(env, args || {});
-  if (name === "refresh_cloudflare_docs") return await refreshCloudflareDocs(env, args || {});
+  if (name === "verify_v078_inverse_agents_readonly") return await verifyInverseAgentsReadonly(env, args || {});
+  if (name === "get_worker_settings_readonly") return await getWorkerSettingsReadonly(env, args || {});
+  if (name === "resolve_worker_bound_d1_readonly") return await resolveWorkerBoundD1Readonly(env, args || {});
+  if (name === "d1_schema_preflight_readonly") return await d1SchemaPreflightReadonly(env, args || {});
+  if (name === "list_d1_tables_readonly") return await listD1TablesReadonly(env, args || {});
+  if (name === "refresh_cloudflare_docs") { assertAdminToolEnabled(env, name); return await refreshCloudflareDocs(env, args || {}); }
   if (name === "search_cloudflare_docs") return await searchCloudflareDocs(env, args || {});
   if (name === "get_cloudflare_doc") return await getCloudflareDoc(env, args || {});
   if (name === "get_cloudflare_doc_excerpt") return await getCloudflareDocExcerpt(env, args || {});
   if (name === "d1_migration_preflight") return await d1MigrationPreflight(env, args || {});
-  if (name === "list_skills") return { ...(await loadSkills(env)), worker: WORKER_NAME, how_to_extend: (await loadSkills(env)).how_to_extend || "Copy an existing skill's shape; use triggers, endpoints, guidance, response_note, enabled." };
-  if (name === "upsert_skill") return await upsertSkill(env, args || {});
+  if (name === "list_skills") { assertAdminToolEnabled(env, name); return { ...(await loadSkills(env)), worker: WORKER_NAME, how_to_extend: (await loadSkills(env)).how_to_extend || "Copy an existing skill's shape; use triggers, endpoints, guidance, response_note, enabled." }; }
+  if (name === "upsert_skill") { assertAdminToolEnabled(env, name); return await upsertSkill(env, args || {}); }
 
-  if (name === "seed_spec") return await buildIndex(env);
+  if (name === "seed_spec") { assertAdminToolEnabled(env, name); return await buildIndex(env); }
 
   if (name === "search") {
     const index = await loadIndex(env);
@@ -2136,6 +2312,7 @@ async function dispatch(name, args, env) {
   if (name === "call") {
     const { method, path, query, body, account_id, paginate } = args;
     if (!method || !path) throw new Error("method and path are required");
+    if (mutationMethod(method)) assertAdminToolEnabled(env, name);
     let r = await cfApi(env, method, path, query, body, account_id);
     if (paginate && Array.isArray(r.data?.result) && r.data?.result_info) {
       let combined = r.data.result;
@@ -2178,7 +2355,15 @@ async function dispatch(name, args, env) {
     return { name: args.name, uuid: id };
   }
 
-  if (name === "execute_d1_sql" || name === "query_d1_sql") {
+  if (name === "execute_d1_sql") {
+    assertAdminToolEnabled(env, name);
+    if (!args.sql) throw new Error("sql is required");
+    const id = await resolveD1Id(env, args, args.account_id);
+    const result = await d1Query(env, id, args.sql, args.params, args.account_id);
+    return { database_id: id, result };
+  }
+
+  if (name === "query_d1_sql") {
     if (!args.sql) throw new Error("sql is required");
     const id = await resolveD1Id(env, args, args.account_id);
     const result = await d1Query(env, id, args.sql, args.params, args.account_id);
@@ -2205,6 +2390,7 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "deploy_worker_with_bindings") {
+    assertAdminToolEnabled(env, name);
     const { script_name, script_content, bindings, compatibility_date, compatibility_flags, enable_subdomain, account_id } = args;
     if (!script_name || !script_content) throw new Error("script_name and script_content are required");
     const cfResult = await putScript(env, script_name, script_content, bindings || [], compatibility_date, account_id, compatibility_flags);
@@ -2214,6 +2400,7 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "deploy_worker_from_github") {
+    assertAdminToolEnabled(env, name);
     const { owner, repo, branch, file_path, script_name, bindings, compatibility_date, compatibility_flags, enable_subdomain, account_id } = args;
     if (!owner || !repo || !file_path || !script_name) throw new Error("owner, repo, file_path, and script_name are required");
     const content = await githubFetchRaw(env, owner, repo, file_path, branch);
@@ -2232,6 +2419,7 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "setup_worker_with_d1_schema") {
+    assertAdminToolEnabled(env, name);
     const {
       owner, repo, branch, worker_file_path, script_name, database_name,
       schema_file_path, vars, d1_binding_name, smoke_test, compatibility_date, account_id
@@ -2296,7 +2484,7 @@ export default {
     const url = new URL(request.url);
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
     if (url.pathname === "/health" || url.pathname === "/status") return j(await dispatch("cf_api_status", {}, env));
-    if (url.pathname === "/tools") return j({ ok: true, tools: TOOLS });
+    if (url.pathname === "/tools") return j({ ok: true, tools: visibleTools(env), hidden_admin_tools: Array.from(ADMIN_TOOL_NAMES) });
     if (url.pathname === "/admin/seed") {
       try { return j(await buildIndex(env)); } catch (e) { return j({ error: e.message }, 500); }
     }
@@ -2310,7 +2498,7 @@ export default {
       }
       if (method === "notifications/initialized") return new Response(null, { status: 204, headers: CORS });
       if (method === "ping") return rr(id, {});
-      if (method === "tools/list") return rr(id, { tools: TOOLS });
+      if (method === "tools/list") return rr(id, { tools: visibleTools(env) });
       if (method === "tools/call") {
         let result;
         try {
