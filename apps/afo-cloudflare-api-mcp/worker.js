@@ -1,4 +1,4 @@
-const VERSION = "0.7.9";
+const VERSION = "0.7.10";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -81,7 +81,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Read-only Cloud-Loop verifier. Routes Cloudflare inspection requests through forward evidence, five explicit inverse safety agents, verification, convergence, and receipt packets. v0.7.9 exposes no mutation-capability input on this tool surface, audits proposed SQL text without applying it, resolves bound D1 databases from Worker settings, records Worker/D1/schema read-only calls, and emits InverseDocsAgent, InverseEndpointAgent, InverseMutationAgent, InverseBindingAgent, and InverseD1Agent packets." ,
+    description: "Read-only Cloud-Loop verifier. Routes Cloudflare inspection requests through forward evidence, five explicit inverse safety agents, verification, convergence, and receipt packets. v0.7.10 exposes no mutation-capability input on this schema-clean read-only verifier surface, audits proposed SQL text without applying it, resolves bound D1 databases from Worker settings, records Worker/D1/schema read-only calls, and emits InverseDocsAgent, InverseEndpointAgent, InverseMutationAgent, InverseBindingAgent, and InverseD1Agent packets." ,
     inputSchema: {
       type: "object",
       properties: {
@@ -1979,7 +1979,7 @@ function cloudInverseEndpointPacket(request, args = {}, forwardPackets = [], rou
 function cloudInverseMutationPacket(request, args = {}, forwardPackets = [], router = null) {
   const { selected } = endpointEvidenceFrom(forwardPackets);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.8 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.10 exposes no mutation-capability input on the read-only verifier surface and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
   if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but overridden to false by the supervised Cloud-Loop." });
   if (endpointActionMutates(selected)) risks.push({ key: "mutation_action_selected_but_blocked", level: "blocked", message: "A write-capable endpoint/tool was selected by planning but remains blocked until a separate confirmed mutation path exists." });
@@ -2273,6 +2273,8 @@ async function dispatch(name, args, env) {
       spec_seeded: seeded,
       indexed_endpoints: count,
       tools: visibleTools(env).map(t => t.name),
+      schema_profile: "schema_clean_read_only_verifier",
+      default_surface: "read_only_verifier_only",
       hidden_admin_tools: Array.from(ADMIN_TOOL_NAMES)
     };
   }
