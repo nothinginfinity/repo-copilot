@@ -1,4 +1,4 @@
-const VERSION = "0.7.5.1";
+const VERSION = "0.7.6";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -81,7 +81,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.5 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, and can perform read-only Worker settings inspection.",
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.6 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, and records the Worker/D1/schema read-only calls made by D1 preflight chains.",
     inputSchema: {
       type: "object",
       properties: {
@@ -1626,6 +1626,94 @@ async function enrichD1PreflightArgsFromWorker(env, request, args = {}) {
   }
 }
 
+function cloudLoopD1ReadOnlyApiCalls(toolArgs = {}, result = {}, resolution = null) {
+  const calls = [];
+  const scriptName = toolArgs.script_name || result.worker_name || resolution?.script_name || result.worker?.script_name || null;
+  if (resolution?.script_name) {
+    calls.push({
+      tool: "get_worker_settings",
+      phase: "bound_d1_resolution",
+      method: "GET",
+      path: "/accounts/{account_id}/workers/scripts/{script_name}/settings",
+      script_name: resolution.script_name,
+      read_only: true
+    });
+  }
+  if (scriptName || result.worker_found) {
+    calls.push({
+      tool: "get_worker_settings",
+      phase: "d1_migration_preflight_worker_inspection",
+      method: "GET",
+      path: "/accounts/{account_id}/workers/scripts/{script_name}/settings",
+      script_name: scriptName,
+      read_only: true
+    });
+  }
+  calls.push({
+    tool: "list_d1_databases",
+    phase: "d1_database_resolution",
+    method: "GET",
+    path: "/accounts/{account_id}/d1/database",
+    read_only: true,
+    purpose: "resolve target D1 database and validate binding target"
+  });
+  const databaseId = result.database_id || toolArgs.database_id || resolution?.database_id || null;
+  if (databaseId) {
+    calls.push({
+      tool: "query_d1_sql",
+      phase: "sqlite_master_schema_read",
+      method: "POST",
+      path: "/accounts/{account_id}/d1/database/{database_id}/query",
+      database_id: databaseId,
+      read_only: true,
+      purpose: "sqlite_master schema read"
+    });
+    if (toolArgs.include_table_details && Array.isArray(result.schema?.table_details)) {
+      for (const table of result.schema.table_details) {
+        calls.push({
+          tool: "query_d1_sql",
+          phase: "table_detail_reads",
+          method: "POST",
+          path: "/accounts/{account_id}/d1/database/{database_id}/query",
+          database_id: databaseId,
+          table: table.name,
+          read_only: true,
+          purpose: "table_info/index_list/foreign_key_list detail reads"
+        });
+      }
+    }
+  }
+  return calls;
+}
+
+function cloudLoopD1SqlCalls(toolArgs = {}, result = {}) {
+  const databaseId = result.database_id || toolArgs.database_id || null;
+  if (!databaseId) return [];
+  const calls = [];
+  if (result.schema?.query) {
+    calls.push({
+      tool: "query_d1_sql",
+      kind: "query",
+      execution: false,
+      ddl: false,
+      read_only: true,
+      database_id: databaseId,
+      sql: result.schema.query
+    });
+  }
+  if (toolArgs.include_table_details && Array.isArray(result.schema?.table_details)) {
+    for (const table of result.schema.table_details) {
+      const ident = sqlIdent(table.name);
+      calls.push(
+        { tool: "query_d1_sql", kind: "query", execution: false, ddl: false, read_only: true, database_id: databaseId, table: table.name, sql: `PRAGMA table_info(${ident})` },
+        { tool: "query_d1_sql", kind: "query", execution: false, ddl: false, read_only: true, database_id: databaseId, table: table.name, sql: `PRAGMA index_list(${ident})` },
+        { tool: "query_d1_sql", kind: "query", execution: false, ddl: false, read_only: true, database_id: databaseId, table: table.name, sql: `PRAGMA foreign_key_list(${ident})` }
+      );
+    }
+  }
+  return calls;
+}
+
 async function cloudForwardRuntimePacket(env, request, args = {}, router = null) {
   if (args.include_runtime === false) {
     return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 1, { unknowns: ["include_runtime was false"] });
@@ -1642,7 +1730,19 @@ async function cloudForwardRuntimePacket(env, request, args = {}, router = null)
         evidence: [{ tool: "d1_migration_preflight", database_found: result.database_found, database_id: result.database_id, worker_found: result.worker_found, bound_d1_resolution: enriched.resolution || result.bound_d1_resolution || null, warnings: result.warnings, tables_preview: (result.tables || []).slice(0, 20), sql_split: result.sql_split }],
         inferred_guidance: result.recommended_execution_sequence || [],
         recommended_next_actions: (result.recommended_next_tools || []).map(name => ({ name, reason: "Recommended by d1_migration_preflight" })),
-        data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false, executes_sql: false }
+        data: {
+          called_tool: "d1_migration_preflight",
+          called_tools: unique([
+            "d1_migration_preflight",
+            toolArgs.script_name ? "get_worker_settings" : null,
+            "list_d1_databases",
+            result.database_id ? "query_d1_sql" : null
+          ].filter(Boolean)),
+          mutates_cloudflare: false,
+          executes_sql: false,
+          read_only_api_calls: cloudLoopD1ReadOnlyApiCalls(toolArgs, result, enriched.resolution || result.bound_d1_resolution || null),
+          sql_calls: cloudLoopD1SqlCalls(toolArgs, result)
+        }
       });
     } catch (e) {
       return makePacket("RuntimeReadOnlyAgent", "forward", "warning", 0.35, { unknowns: [`Read-only D1 preflight failed: ${e.message}`], data: { called_tool: "d1_migration_preflight", mutates_cloudflare: false } });
@@ -1757,7 +1857,7 @@ function synthesizeCloudLoop(request, router, forwardPackets, inversePackets, ri
 
 function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, riskPackets, verificationPackets, selectedNextAction) {
   const docs = forwardPackets.flatMap(p => p.evidence || []).flatMap(e => Array.isArray(e) ? e : [e]).filter(e => e && e.doc_id);
-  const runtimeCalls = forwardPackets.filter(p => p.data?.called_tool).map(p => p.data.called_tool);
+  const runtimeCalls = unique(forwardPackets.flatMap(p => p.data?.called_tools || (p.data?.called_tool ? [p.data.called_tool] : [])));
   const readOnlyApiCalls = forwardPackets.flatMap(p => p.data?.read_only_api_calls || []);
   const sqlCalls = forwardPackets.flatMap(p => p.data?.sql_calls || []);
   const sqlExecutionMade = sqlCalls.some(c => c.execution === true || c.kind === "execute");
