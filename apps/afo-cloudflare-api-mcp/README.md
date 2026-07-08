@@ -1,45 +1,57 @@
 # afo-cloudflare-api-mcp
 
-A token-efficient MCP server for the entire Cloudflare API, modeled on Cloudflare's own
-[cloudflare/mcp](https://github.com/cloudflare/mcp) "code mode" pattern but without OAuth or
-arbitrary code execution — just two tools that read a cached OpenAPI index instead of one
-tool per endpoint.
+A schema-clean, read-only Cloudflare verifier MCP surface for AFO Cloud-Loop safety work.
 
-## Tools
+As of v0.7.10, the default connector surface is intentionally read-only. It is designed for fresh-chat safety: the public manifest lists only status, verifier, Worker inspection, bound-D1 resolution, D1 schema preflight, D1 table inventory, and cached docs search/excerpt tools.
+
+## Default visible tools
 
 | Tool | Description |
 |---|---|
-| `cf_api_status` | Health check, binding presence, spec-seeded status |
-| `search` | Search the Cloudflare OpenAPI spec by free text and/or product tag |
-| `call` | Call any Cloudflare API v4 endpoint directly (method, path, query, body) |
-| `seed_spec` | Fetch the latest spec from `cloudflare/api-schemas` on GitHub and rebuild the R2 index |
+| `cf_api_status` | Health check, binding presence, version, visible tools, and schema profile |
+| `ask_cloud_loop` | Supervised read-only Cloud-Loop verifier with forward evidence, inverse safety agents, verification, convergence, and receipts |
+| `verify_v078_inverse_agents_readonly` | One-shot read-only verifier for Worker settings and optional bound-D1 schema preflight evidence |
+| `get_worker_settings_readonly` | Reads Worker binding names/types and safe compatibility metadata without returning secret values or changing settings |
+| `resolve_worker_bound_d1_readonly` | Reads Worker settings and resolves D1 binding choices without changing Cloudflare resources |
+| `d1_schema_preflight_readonly` | Performs read-only D1 schema preflight and proposed SQL text audit without applying SQL |
+| `list_d1_tables_readonly` | Lists D1 table names through read-only schema inventory |
+| `search_cloudflare_docs` | Searches the cached Cloudflare docs knowledge base |
+| `get_cloudflare_doc_excerpt` | Reads a focused cached docs excerpt around a query |
+
+## Safety boundary
+
+The default manifest does not register admin/write/deploy/D1 execution tools. Any future admin surface must be separate or explicitly admin-gated so the read-only verifier remains safe at tool-discovery time, not merely hidden at runtime.
+
+The read-only surface must not deploy Workers, replace bindings, execute D1 write/DDL SQL, mutate skills/spec indexes, or perform generic authenticated Cloudflare endpoint calls.
 
 ## Why this exists
 
-The Cloudflare API has 2,500+ endpoints. Registering one MCP tool per endpoint costs hundreds
-of thousands of tokens just in schemas. This worker instead exposes two tools: `search` finds
-the right endpoint from a lean index (method, path, tags, summary only — no full param
-schemas), and `call` hits it directly with the account's API token attached. This also means
-new Cloudflare resource types (KV, R2, D1, Vectorize, DNS, etc.) no longer need their own
-single-purpose admin MCP worker — one `call` covers all of them.
+Earlier versions proved that hiding risky tools at runtime was not enough. Fresh-context testing of v0.7.9 showed the live status endpoint reported the correct 9-tool read-only surface, but the platform/tool-discovery layer could still see stale or broad schemas and blocked read-only runtime verification calls before they reached the Worker.
 
-## Setup (one time)
+v0.7.10 makes the repo manifest match the intended default surface:
 
-1. Deploy this worker (handled by the deploy pipeline).
-2. In the Cloudflare dashboard, open this worker → Settings → Variables and Secrets, and add:
-   - `CF_API_TOKEN` (secret) — same token used by the other AFO admin MCPs
-   - `CF_ACCOUNT_ID` (secret or plain text) — `280908cb4e54b81745740accf5f0500f`
-3. Confirm the R2 binding `SPEC` → bucket `afo-site-content` is attached (set via the deploy
-   pipeline; check Settings → Bindings if `cf_api_status` reports `SPEC: false`).
-4. Call `seed_spec` once (or `GET /admin/seed`) to populate the index. Re-run any time you want
-   to pick up newly added Cloudflare endpoints.
+```text
+status + verifier + read-only Worker/D1/docs tools only
+```
 
-## Notes
+## Validation expectations
 
-- Spec index is stored at R2 key `cf-openapi-spec/index.json` inside the shared
-  `afo-site-content` bucket — no dedicated bucket needed.
-- `call` auto-substitutes the literal `{account_id}` in a path with the `account_id` argument
-  or `env.CF_ACCOUNT_ID` if omitted. Zone-scoped paths (`{zone_id}`) must be resolved by the
-  caller.
-- Responses over ~30k characters are truncated with a note; narrow the query or use
-  pagination params (`per_page`, `page`, `cursor`) for large result sets.
+A fresh-context test should be able to:
+
+1. call `cf_api_status` and confirm version `0.7.10` after deployment;
+2. see only the 9 default read-only tools in the connector/manifest surface;
+3. run read-only Worker settings verification for `contractor-v004-demo`;
+4. run read-only bound-D1 schema preflight using `proposed_sql_text` only;
+5. receive inverse packets and receipts showing no deploys, no binding changes, no Cloudflare writes, and no D1 write/DDL execution.
+
+## Setup notes
+
+The Worker still requires the existing bindings used by the verifier runtime:
+
+- `CF_API_TOKEN`
+- `CF_ACCOUNT_ID`
+- `GITHUB_TOKEN`
+- `SPEC` R2 bucket binding
+- `AI` binding
+
+The spec/docs cache remains stored under the shared `afo-site-content` R2 bucket.
