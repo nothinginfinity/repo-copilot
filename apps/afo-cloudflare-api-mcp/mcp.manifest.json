@@ -2,16 +2,20 @@
   "schema": "afo.mcp.manifest.v1",
   "name": "afo-cloudflare-api-mcp",
   "worker_name": "afo-cloudflare-api-mcp",
-  "plane": "Cloudflare API Gateway",
-  "risk_profile": "cloudflare_write_gated",
-  "purpose": "Token-efficient access to the entire Cloudflare API (2500+ endpoints across Workers, KV, R2, D1, Vectorize, DNS, Zones, Firewall, Access, and more) via a 2-tool search+call pattern instead of one MCP tool per endpoint. search filters a cached OpenAPI index stored in R2; call makes the live authenticated request. Replaces the need for new single-purpose admin MCPs as new Cloudflare resource types come up.",
+  "plane": "Cloudflare Read-Only Verifier",
+  "risk_profile": "schema_clean_read_only_verifier",
+  "purpose": "Schema-clean read-only Cloudflare verifier surface. Provides status, supervised read-only Cloud-Loop evidence, read-only Worker settings inspection, bound-D1 resolution, read-only D1 schema preflight, read-only D1 table inventory, and cached Cloudflare docs search/excerpts. The default connector surface intentionally omits generic endpoint callers, admin writes, deploy tools, D1 write/DDL execution, skill mutation, and spec refresh tools so fresh chats see only read-only verifier capabilities.",
   "tools": [
     "cf_api_status",
-    "search",
-    "call",
-    "ask_cloudflare",
-    "seed_spec"
+    "ask_cloud_loop",
+    "verify_v078_inverse_agents_readonly",
+    "get_worker_settings_readonly",
+    "resolve_worker_bound_d1_readonly",
+    "d1_schema_preflight_readonly",
+    "list_d1_tables_readonly",
+    "search_cloudflare_docs",
+    "get_cloudflare_doc_excerpt"
   ],
   "source_path": "apps/afo-cloudflare-api-mcp/worker.js",
-  "status": "v0.4.2"
+  "status": "v0.7.10"
 }
