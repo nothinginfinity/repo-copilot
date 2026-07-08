@@ -1,4 +1,4 @@
-const VERSION = "0.7.6";
+const VERSION = "0.7.6.1";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -81,7 +81,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.6 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, and records the Worker/D1/schema read-only calls made by D1 preflight chains.",
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.6.1 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, records Worker/D1/schema read-only calls made by D1 preflight chains, and honors explicit or natural-language table detail requests.",
     inputSchema: {
       type: "object",
       properties: {
@@ -94,8 +94,10 @@ const TOOLS = [
         database_id: { type: "string" },
         script_name: { type: "string" },
         migration_sql: { type: "string", description: "Optional SQL to split and audit, never executed by ask_cloud_loop." },
-        allow_mutation: { type: "boolean", description: "Ignored/forced false in ask_cloud_loop v0.7.5." },
-        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.5 runs exactly one supervised iteration." },
+        include_table_details: { type: "boolean", description: "If true, D1 preflight includes table_info, index_list, and foreign_key_list reads for a small table sample." },
+        max_table_details: { type: "number", description: "Default 5, max 20; used only when include_table_details is true." },
+        allow_mutation: { type: "boolean", description: "Ignored/forced false in ask_cloud_loop v0.7.6.1." },
+        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.6.1 runs exactly one supervised iteration." },
         include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
         include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
       },
@@ -1160,6 +1162,15 @@ function boundD1Requested(request, args = {}) {
   return Boolean(args.resolve_bound_d1 || /\b(bound|attached|binding|bindings|from worker|for worker|on worker)\b/.test(text));
 }
 
+function tableDetailsRequested(request, args = {}) {
+  const text = String(request || "").toLowerCase();
+  return Boolean(
+    args.include_table_details ||
+    /\b(include|with|show|inspect|read|return)\b.{0,50}\b(table details|table detail|columns?|indexes?|foreign keys?|foreign_key|table_info|index_list|foreign_key_list)\b/.test(text) ||
+    /\b(table_info|index_list|foreign_key_list|foreign keys?|columns?|indexes?)\b/.test(text)
+  );
+}
+
 function specializedToolForRequest(request, args) {
   const text = String(request || "").toLowerCase();
   const wantsD1Migration = d1Requested(request) && /\b(migration|preflight|schema|sql|statement|sqlite_master|tables?|bindings?)\b/.test(text);
@@ -1173,7 +1184,7 @@ function specializedToolForRequest(request, args) {
       database_id: args.database_id || extractPathParam("database_id", request, args),
       script_name: args.script_name || extractWorkerScriptName(request, args),
       migration_sql: args.migration_sql || args.sql || null,
-      include_table_details: Boolean(args.include_table_details),
+      include_table_details: tableDetailsRequested(request, args),
       max_table_details: args.max_table_details,
       account_id: args.account_id,
       resolve_bound_d1: boundD1Requested(request, args)
@@ -1784,7 +1795,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
   const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
   const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.5 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.6.1 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
   const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
   if (d1Intent) {
@@ -1809,7 +1820,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
 
 function cloudRiskPacket(request, args = {}, router = null) {
   const risks = [];
-  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.5." });
+  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.6.1." });
   if (router?.intents?.d1_migration_or_schema) risks.push({ key: "d1_migration_requires_receipt", level: "warning", message: "Future execution must verify schema after each one-statement call and write an audit receipt." });
   if (router?.intents?.deploy_or_binding) risks.push({ key: "binding_loss", level: "warning", message: "Deploying a Worker without a full binding manifest can remove secrets, R2, D1, KV, or AI bindings." });
   if (!risks.length) risks.push({ key: "no_mutation_in_scope", level: "info", message: "No mutation path is selected by this dry-run loop." });
