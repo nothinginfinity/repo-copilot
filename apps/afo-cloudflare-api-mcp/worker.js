@@ -1,4 +1,4 @@
-const VERSION = "0.7.6.2";
+const VERSION = "0.7.8";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -81,7 +81,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.6.2 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, records Worker/D1/schema read-only calls made by D1 preflight chains, honors explicit or natural-language table detail requests, and skips protected internal D1 tables during detail PRAGMA reads." ,
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, five explicit inverse safety agents, verification, convergence, and receipt packets. v0.7.8 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, records Worker/D1/schema read-only calls made by D1 preflight chains, honors explicit or natural-language table detail requests, skips protected internal D1 tables during detail PRAGMA reads, and emits InverseDocsAgent, InverseEndpointAgent, InverseMutationAgent, InverseBindingAgent, and InverseD1Agent packets." ,
     inputSchema: {
       type: "object",
       properties: {
@@ -96,7 +96,7 @@ const TOOLS = [
         migration_sql: { type: "string", description: "Optional SQL to split and audit, never executed by ask_cloud_loop." },
         include_table_details: { type: "boolean", description: "If true, D1 preflight includes table_info, index_list, and foreign_key_list reads for a small table sample." },
         max_table_details: { type: "number", description: "Default 5, max 20; used only when include_table_details is true." },
-        allow_mutation: { type: "boolean", description: "Ignored/forced false in ask_cloud_loop v0.7.6.1." },
+        allow_mutation: { type: "boolean", description: "Ignored/forced false in ask_cloud_loop v0.7.8." },
         max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.6.1 runs exactly one supervised iteration." },
         include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
         include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
@@ -1799,32 +1799,165 @@ async function cloudForwardRuntimePacket(env, request, args = {}, router = null)
   return makePacket("RuntimeReadOnlyAgent", "forward", "skipped", 0.78, { inferred_guidance: ["No runtime read was required for this dry-run route."], data: { mutates_cloudflare: false } });
 }
 
-function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router = null) {
-  const text = String(request || "").toLowerCase();
-  const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
-  const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
+function forwardPacketByAgent(forwardPackets = [], agent) {
+  return (forwardPackets || []).find(p => p.agent === agent) || null;
+}
+
+function endpointEvidenceFrom(forwardPackets = []) {
+  const packet = forwardPacketByAgent(forwardPackets, "EndpointSelectionAgent");
+  return { packet, evidence: packet?.evidence?.[0] || {}, selected: packet?.data?.selected || packet?.recommended_next_actions?.[0] || null };
+}
+
+function docsEvidenceFrom(forwardPackets = []) {
+  const packet = forwardPacketByAgent(forwardPackets, "DocsEvidenceAgent");
+  return { packet, docs: (packet?.evidence || []).filter(e => e && e.doc_id) };
+}
+
+function runtimeEvidenceFrom(forwardPackets = []) {
+  const packet = forwardPacketByAgent(forwardPackets, "RuntimeReadOnlyAgent");
+  return { packet, evidence: packet?.evidence?.[0] || {}, data: packet?.data || {} };
+}
+
+function inverseStatus(risks = [], fallback = "success") {
+  if (risks.some(r => r.level === "blocked")) return "blocked";
+  if (risks.some(r => r.level === "required" || r.level === "warning")) return "warning";
+  return fallback;
+}
+
+function docMatchesProduct(doc = {}, product) {
+  if (!product) return true;
+  const lower = `${doc.title || ""} ${doc.url || ""} ${doc.product || ""}`.toLowerCase();
+  if (product === "workers") return lower.includes("/workers/") || lower.includes("worker") || lower.includes("wrangler");
+  if (product === "d1") return lower.includes("/d1/") || lower.includes("d1");
+  return lower.includes(product);
+}
+
+function endpointActionMutates(action = {}) {
+  if (!action) return false;
+  if (action.type === "cloudflare_endpoint") return mutationMethod(action.method);
+  return /\b(deploy_worker|execute_d1_sql|setup_worker|delete|create|update|patch)\b/i.test(String(action.name || ""));
+}
+
+function unresolvedEndpointParams(action = {}, request, args = {}) {
+  if (!action?.path) return [];
+  return pathParamNames(action.path).filter(name => {
+    if (name === "account_id") return false;
+    if (name === "script_name") return !extractWorkerScriptName(request, args);
+    if (name === "database_id") return !extractPathParam("database_id", request, args) && !args.database_id;
+    return !extractPathParam(name, request, args);
+  });
+}
+
+function migrationSqlHazards(sqlText) {
+  const statements = splitStatements(String(sqlText || ""));
+  const hazards = [];
+  if (statements.length > 1) hazards.push({ key: "multi_statement_migration_sql", level: "required", message: `Migration SQL contains ${statements.length} statements; D1 execution must be one statement per confirmed call.` });
+  for (const sql of statements) {
+    const lower = sql.toLowerCase();
+    if (/\b(update|delete)\b/.test(lower) && !/\bwhere\b/.test(lower)) hazards.push({ key: "large_data_write_risk", level: "warning", message: "UPDATE or DELETE without a WHERE clause can touch large row sets; require chunking and explicit confirmation." });
+    if (/\b(drop|truncate|alter)\b/.test(lower)) hazards.push({ key: "ddl_or_destructive_statement_detected", level: "required", message: "DDL/destructive statements require read-only preflight evidence, one-statement execution, and post-change verification." });
+  }
+  return hazards;
+}
+
+function cloudInverseDocsPacket(request, args = {}, forwardPackets = [], router = null) {
+  const { packet, docs } = docsEvidenceFrom(forwardPackets);
+  const product = docsProductForRequest(request, args);
+  const risks = [];
+  if (args.include_docs === false || packet?.status === "skipped") risks.push({ key: "docs_evidence_skipped", level: "warning", message: "Docs evidence was skipped; keep this loop read-only until product-specific docs are checked." });
+  if (!docs.length) risks.push({ key: "docs_evidence_missing", level: "required", message: "No cached docs evidence supported the selected Cloudflare action." });
+  if (docs.length && product && !docs.some(d => docMatchesProduct(d, product))) risks.push({ key: "docs_scope_mismatch", level: "warning", message: `Docs evidence did not clearly match requested product scope: ${product}.` });
+  if (docs.length && !docs.some(d => Array.isArray(d.structured_claims) && d.structured_claims.length)) risks.push({ key: "docs_claims_weak", level: "warning", message: "Docs evidence had snippets but weak structured claims; read focused excerpts before mutation." });
+  return makePacket("InverseDocsAgent", "inverse", inverseStatus(risks), risks.length ? 0.72 : 0.88, {
+    risks,
+    evidence: [{ docs_count: docs.length, docs_status: packet?.status || null, product_scope: product || null, doc_ids: docs.map(d => d.doc_id).slice(0, 5) }],
+    inferred_guidance: ["Use product-scoped docs as support, not as permission to mutate."],
+    recommended_next_actions: risks.length ? [{ name: "get_cloudflare_doc_excerpt", reason: "Read focused docs excerpts for the selected product before any confirmed mutation path." }] : []
+  });
+}
+
+function cloudInverseEndpointPacket(request, args = {}, forwardPackets = [], router = null) {
+  const { evidence, selected } = endpointEvidenceFrom(forwardPackets);
+  const candidates = evidence.endpoint_candidates || [];
+  const missing = unresolvedEndpointParams(selected, request, args);
+  const risks = [];
+  if (!candidates.length && !evidence.specialized_tool) risks.push({ key: "endpoint_candidates_missing", level: "required", message: "No endpoint candidates were available to compare against the selected action." });
+  if (missing.length) risks.push({ key: "unresolved_path_params", level: "required", message: `Selected endpoint still has unresolved path params: ${missing.join(", ")}.` });
+  if (candidates.some(c => mutationMethod(c.method))) risks.push({ key: "mutation_endpoint_candidates_present", level: "warning", message: "Mutation-capable endpoint candidates were present; inverse mutation gate must keep them unselected unless separately confirmed." });
+  if (router?.intents?.d1 && candidates.length && !candidates.some(c => String(c.path || "").includes("/d1/")) && !evidence.specialized_tool) risks.push({ key: "irrelevant_endpoint_candidates", level: "warning", message: "D1 request did not surface D1 endpoint candidates." });
+  return makePacket("InverseEndpointAgent", "inverse", inverseStatus(risks), risks.length ? 0.76 : 0.88, {
+    risks,
+    evidence: [{ selected: selected ? { name: selected.name, type: selected.type, method: selected.method, path: selected.path } : null, candidate_count: candidates.length, specialized_tool: evidence.specialized_tool || null, deterministic_endpoint: evidence.deterministic_endpoint || null }],
+    inferred_guidance: ["Reject irrelevant endpoints and unresolved path parameters before any tool call is considered executable."],
+    recommended_next_actions: missing.length ? [{ name: "ask_cloud_loop", reason: "Retry with explicit path params such as script_name or database_id." }] : []
+  });
+}
+
+function cloudInverseMutationPacket(request, args = {}, forwardPackets = [], router = null) {
+  const { selected } = endpointEvidenceFrom(forwardPackets);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.6.2 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.8 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
-  const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
+  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but overridden to false by the supervised Cloud-Loop." });
+  if (endpointActionMutates(selected)) risks.push({ key: "mutation_action_selected_but_blocked", level: "blocked", message: "A write-capable endpoint/tool was selected by planning but remains blocked until a separate confirmed mutation path exists." });
+  return makePacket("InverseMutationAgent", "inverse", "blocked", 0.92, {
+    risks,
+    evidence: [{ selected: selected ? { name: selected.name, type: selected.type, method: selected.method, path: selected.path } : null, allow_mutation_requested: router?.allow_mutation_requested || false, allow_mutation_effective: false }],
+    inferred_guidance: ["This loop can plan and inspect only; execution requires a different confirmed workflow with preserved bindings and receipts."],
+    recommended_next_actions: [{ name: "ask_cloud_loop", reason: "Continue with read-only preflight evidence; do not execute mutation from Cloud-Loop." }]
+  });
+}
+
+function cloudInverseBindingPacket(request, args = {}, forwardPackets = [], router = null) {
+  const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler|worker settings)\b/i.test(String(request || ""));
+  const { packet, evidence } = runtimeEvidenceFrom(forwardPackets);
+  const bindings = evidence.bindings || [];
+  const risks = [];
+  if (deployIntent) risks.push({ key: "worker_binding_replacement_warning", level: "required", message: "Worker deploy APIs replace the full binding set; inspect and preserve every binding before deploy." });
+  if (deployIntent && packet?.status !== "success") risks.push({ key: "worker_settings_not_confirmed", level: "required", message: "Current Worker settings/bindings were not confirmed by runtime inspection." });
+  if (bindings.some(b => String(b.type || "").includes("secret"))) risks.push({ key: "secret_values_unreadable", level: "required", message: "Secret binding values cannot be read back; a deploy path must supply them from trusted secrets rather than copied settings." });
+  if (bindings.length) risks.push({ key: "binding_manifest_present", level: "info", message: `Runtime inspection saw ${bindings.length} bindings that must be preserved by any deploy path.` });
+  return makePacket("InverseBindingAgent", "inverse", inverseStatus(risks, deployIntent ? "warning" : "success"), deployIntent ? 0.88 : 0.72, {
+    risks,
+    evidence: [{ deploy_or_binding_intent: Boolean(deployIntent), runtime_status: packet?.status || null, binding_count: bindings.length, binding_types: unique(bindings.map(b => b.type)) }],
+    inferred_guidance: ["Never infer deploy safety from source correctness; binding preservation must be separately verified."],
+    recommended_next_actions: deployIntent ? [{ name: "get_worker_settings", reason: "Read current settings before any deploy planning." }] : []
+  });
+}
+
+function cloudInverseD1Packet(request, args = {}, forwardPackets = [], router = null) {
+  const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
+  const { packet, evidence, data } = runtimeEvidenceFrom(forwardPackets);
+  const sqlHazards = migrationSqlHazards(args.migration_sql || args.sql || "");
+  const risks = [];
   if (d1Intent) {
     risks.push(
-      { key: "one_statement_sql_rule", level: "required", message: "D1 SQL must be executed one statement per call; split migrations and call execute_d1_sql separately only after confirmation." },
-      { key: "migration_ledger_inspection", level: "required", message: "Inspect sqlite_master and migration ledger candidates before applying new schema migrations." },
-      { key: "worker_binding_replacement_warning", level: "required", message: "Worker deploy APIs replace the full binding set; inspect and preserve every binding before any deploy." }
+      { key: "one_statement_sql_rule", level: "required", message: "D1 SQL must be executed one statement per call; split migrations and execute separately only after confirmation." },
+      { key: "schema_inspection_required", level: "required", message: "Read sqlite_master/table state before any D1 schema change." },
+      { key: "migration_ledger_inspection", level: "required", message: "Inspect migration ledger candidates before applying new migrations." }
     );
-    guidance.push("For D1 schema migration requests, route first to d1_migration_preflight and inspect ledger/table state before execution.");
+    if (packet?.status !== "success" || data.called_tool !== "d1_migration_preflight") risks.push({ key: "d1_preflight_missing", level: "required", message: "D1 intent did not complete the canonical read-only d1_migration_preflight." });
+    if (Array.isArray(evidence.warnings)) {
+      for (const warning of evidence.warnings.slice(0, 6)) risks.push({ key: "d1_preflight_warning", level: "warning", message: warning });
+    }
+    risks.push(...sqlHazards);
   }
-  if (deployIntent && !d1Intent) {
-    risks.push({ key: "worker_binding_replacement_warning", level: "required", message: "Worker deploy APIs replace the full binding set; get_worker_settings must be reviewed and secret bindings must be supplied from trusted secrets before deploy." });
-  }
-  if (router?.unsupported) risks.push({ key: "unsupported_domain", level: "blocked", message: "GitHub loop routing is not enabled in the Cloudflare MCP v0.7.5 tool." });
-  return makePacket("InverseRiskAgent", "inverse", risks.some(r => r.level === "blocked") ? "blocked" : "warning", d1Intent ? 0.9 : 0.74, {
+  return makePacket("InverseD1Agent", "inverse", inverseStatus(risks, d1Intent ? "warning" : "success"), d1Intent ? 0.9 : 0.7, {
     risks,
-    inferred_guidance: guidance,
-    evidence: [{ forward_packet_count: forwardPackets.length, selected_next_tool: router?.selected_next_tool || null }],
-    recommended_next_actions: d1Intent ? [{ name: "d1_migration_preflight", reason: "Read-only D1 migration safety preflight is required before execution." }] : [{ name: "ask_cloudflare", reason: "Use dry_run=true for endpoint selection before any action." }]
+    evidence: [{ d1_intent: Boolean(d1Intent), runtime_status: packet?.status || null, database_found: evidence.database_found ?? null, worker_found: evidence.worker_found ?? null, bound_d1_resolution: evidence.bound_d1_resolution || null, sql_hazard_count: sqlHazards.length }],
+    inferred_guidance: ["D1 execution remains out of scope until read-only preflight, one-statement splitting, and verification receipt are all explicit."],
+    recommended_next_actions: d1Intent ? [{ name: "d1_migration_preflight", reason: "Use canonical read-only D1 preflight before any confirmed SQL execution path." }] : []
   });
+}
+
+function cloudInversePackets(request, args = {}, forwardPackets = [], router = null) {
+  return [
+    cloudInverseDocsPacket(request, args, forwardPackets, router),
+    cloudInverseEndpointPacket(request, args, forwardPackets, router),
+    cloudInverseMutationPacket(request, args, forwardPackets, router),
+    cloudInverseBindingPacket(request, args, forwardPackets, router),
+    cloudInverseD1Packet(request, args, forwardPackets, router)
+  ];
 }
 
 function cloudRiskPacket(request, args = {}, router = null) {
@@ -1838,17 +1971,25 @@ function cloudRiskPacket(request, args = {}, router = null) {
 
 function cloudVerificationPacket(forwardPackets = [], inversePackets = [], riskPackets = [], selectedNextAction = null) {
   const allRisks = inversePackets.concat(riskPackets).flatMap(p => p.risks || []);
+  const inverseAgents = new Set((inversePackets || []).map(p => p.agent));
+  const d1Needed = selectedNextAction?.name === "d1_migration_preflight" || allRisks.some(r => r.key === "one_statement_sql_rule" || r.key === "schema_inspection_required");
+  const bindingNeeded = allRisks.some(r => r.key === "worker_binding_replacement_warning" || r.key === "worker_settings_not_confirmed");
   const checks = [
     { name: "selected_next_action_present", ok: Boolean(selectedNextAction?.name) },
     { name: "forward_packets_present", ok: forwardPackets.length > 0 },
     { name: "inverse_packets_present", ok: inversePackets.length > 0 },
+    { name: "inverse_docs_agent_present", ok: inverseAgents.has("InverseDocsAgent") },
+    { name: "inverse_endpoint_agent_present", ok: inverseAgents.has("InverseEndpointAgent") },
+    { name: "inverse_mutation_agent_present", ok: inverseAgents.has("InverseMutationAgent") },
+    { name: "inverse_binding_agent_present_when_needed", ok: !bindingNeeded || inverseAgents.has("InverseBindingAgent") },
+    { name: "inverse_d1_agent_present_when_needed", ok: !d1Needed || inverseAgents.has("InverseD1Agent") },
     { name: "mutations_made_empty", ok: true },
-    { name: "d1_one_statement_rule_present_when_needed", ok: !selectedNextAction || selectedNextAction.name !== "d1_migration_preflight" || allRisks.some(r => r.key === "one_statement_sql_rule") },
-    { name: "binding_replacement_warning_present_when_needed", ok: allRisks.some(r => r.key === "worker_binding_replacement_warning") || selectedNextAction?.name !== "d1_migration_preflight" }
+    { name: "d1_one_statement_rule_present_when_needed", ok: !d1Needed || allRisks.some(r => r.key === "one_statement_sql_rule") },
+    { name: "binding_replacement_warning_present_when_needed", ok: !bindingNeeded || allRisks.some(r => r.key === "worker_binding_replacement_warning") }
   ];
   return makePacket("VerificationAgent", "verification", checks.every(c => c.ok) ? "success" : "warning", checks.every(c => c.ok) ? 0.9 : 0.55, {
-    direct_claims: ["Verification completed without granting mutation power."],
-    evidence: [{ checks }],
+    direct_claims: ["Verification completed without granting mutation power and with explicit inverse-agent coverage."],
+    evidence: [{ checks, inverse_agents: Array.from(inverseAgents) }],
     unknowns: checks.filter(c => !c.ok).map(c => `Failed verification check: ${c.name}`)
   });
 }
@@ -1900,7 +2041,11 @@ function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, r
     mutations_made: [],
     docs_consulted: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url })),
     runtime_inspection: runtimeCalls.map(name => ({ tool: name, mode: "read_only" })),
-    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.5 is dry-run/read-only only"] : [],
+    inverse_agents: inversePackets.map(p => ({ agent: p.agent, status: p.status, confidence: p.confidence })),
+    blocked_actions: unique([
+      ...(router.allow_mutation_requested ? ["allow_mutation request ignored; Cloud-Loop is dry-run/read-only only"] : []),
+      ...inversePackets.flatMap(p => p.risks || []).filter(r => r.level === "blocked").map(r => r.key)
+    ]),
     selected_next_action: selectedNextAction,
     requires_confirmation: false
   };
@@ -1916,7 +2061,7 @@ async function askCloudLoop(env, args = {}) {
   forwardPackets.push(await cloudForwardDocsPacket(env, request, safeArgs));
   forwardPackets.push(await cloudForwardEndpointPacket(env, request, safeArgs, router));
   forwardPackets.push(await cloudForwardRuntimePacket(env, request, safeArgs, router));
-  const inversePackets = [cloudInverseRiskPacket(request, safeArgs, forwardPackets, router)];
+  const inversePackets = cloudInversePackets(request, safeArgs, forwardPackets, router);
   const riskPackets = [cloudRiskPacket(request, safeArgs, router)];
   const preliminary = synthesizeCloudLoop(request, router, forwardPackets, inversePackets, riskPackets, []);
   const verificationPackets = [cloudVerificationPacket(forwardPackets, inversePackets, riskPackets, preliminary.selected_next_action)];
