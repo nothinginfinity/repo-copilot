@@ -1,4 +1,4 @@
-const VERSION = "0.7.5";
+const VERSION = "0.7.5.1";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -1079,13 +1079,20 @@ function extractWorkerScriptName(request, args) {
   const explicit = readArgPathParam(args, "script_name");
   if (explicit) return explicit;
   const text = String(request || "");
-  const direct = extractValueAfterLabels(text, ["script_name", "script name", "worker script", "worker", "script"]);
-  if (looksLikeWorkerScriptCandidate(direct)) return cleanParamValue(direct);
-  const quoted = text.match(/["'`]([a-z0-9][a-z0-9._-]*[-_.][a-z0-9._-]*[a-z0-9])["'`]/i);
-  if (quoted && looksLikeWorkerScriptCandidate(quoted[1])) return cleanParamValue(quoted[1]);
+  for (const label of ["script_name", "script name", "worker script", "script", "worker"]) {
+    const candidate = extractValueAfterLabels(text, [label]);
+    if (looksLikeWorkerScriptCandidate(candidate)) return cleanParamValue(candidate);
+  }
+  for (const match of text.matchAll(/["'`]([a-z0-9][a-z0-9._-]*[-_.][a-z0-9._-]*[a-z0-9])["'`]/gi)) {
+    if (looksLikeWorkerScriptCandidate(match[1])) return cleanParamValue(match[1]);
+  }
   const workerContext = /\b(worker|script|worker script)\b/i.test(text);
-  const hyphenated = workerContext ? text.match(/\b([a-z0-9][a-z0-9._-]*[-_.][a-z0-9._-]*[a-z0-9])\b/i) : null;
-  return hyphenated && looksLikeWorkerScriptCandidate(hyphenated[1], { allowBare: true }) ? cleanParamValue(hyphenated[1]) : null;
+  if (workerContext) {
+    for (const match of text.matchAll(/\b([a-z0-9][a-z0-9._-]*[-_.][a-z0-9._-]*[a-z0-9])\b/gi)) {
+      if (looksLikeWorkerScriptCandidate(match[1], { allowBare: true })) return cleanParamValue(match[1]);
+    }
+  }
+  return null;
 }
 
 function extractPathParam(name, request, args) {
