@@ -1,4 +1,4 @@
-const VERSION = "0.7.6.1";
+const VERSION = "0.7.6.2";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -81,7 +81,7 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.6.1 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, records Worker/D1/schema read-only calls made by D1 preflight chains, and honors explicit or natural-language table detail requests.",
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.6.2 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, can perform read-only Worker settings inspection, records Worker/D1/schema read-only calls made by D1 preflight chains, honors explicit or natural-language table detail requests, and skips protected internal D1 tables during detail PRAGMA reads." ,
     inputSchema: {
       type: "object",
       properties: {
@@ -764,6 +764,12 @@ function migrationLedgerNames(rows) {
   return (rows || []).filter(r => r.type === "table" && patterns.some(rx => rx.test(String(r.name || ""))));
 }
 
+function d1TableDetailsEligible(name) {
+  const s = String(name || "");
+  const lower = s.toLowerCase();
+  return Boolean(s && !s.startsWith("_") && !lower.startsWith("sqlite_"));
+}
+
 function splitSqlPreview(sqlText) {
   if (!sqlText) return null;
   const statements = splitStatements(sqlText);
@@ -867,8 +873,10 @@ async function d1MigrationPreflight(env, args) {
     };
     if (args.include_table_details) {
       const max = Math.max(1, Math.min(Number(args.max_table_details) || 5, 20));
-      const tables = master.filter(r => r.type === "table").slice(0, max);
+      const skippedDetailTables = master.filter(r => r.type === "table" && !d1TableDetailsEligible(r.name)).map(r => r.name);
+      const tables = master.filter(r => r.type === "table" && d1TableDetailsEligible(r.name)).slice(0, max);
       schema.table_details = [];
+      if (skippedDetailTables.length) schema.skipped_table_detail_tables = skippedDetailTables;
       for (const table of tables) {
         const name = table.name;
         const columns = d1Rows(await d1Query(env, target.uuid, `PRAGMA table_info(${sqlIdent(name)})`, null, accountId));
@@ -892,6 +900,7 @@ async function d1MigrationPreflight(env, args) {
   if (args.script_name && worker?.bound_d1_resolution?.status === "ambiguous_multiple_bindings") warnings.push("Multiple D1 bindings found on the inspected Worker; pass database_id or a specific binding/database name.");
   if (args.script_name && worker && !d1Bindings.length) warnings.push("No D1 binding matched the target database on the inspected Worker.");
   if (schema?.migration_ledger_candidates?.length) warnings.push("Migration ledger table candidate found; inspect it before applying new migrations.");
+  if (schema?.skipped_table_detail_tables?.length) warnings.push(`Skipped protected/internal D1 tables for table detail PRAGMA reads: ${schema.skipped_table_detail_tables.join(", ")}`);
 
   return {
     ok: true,
@@ -1795,7 +1804,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
   const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
   const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.6.1 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.6.2 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
   const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
   if (d1Intent) {
@@ -1820,7 +1829,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
 
 function cloudRiskPacket(request, args = {}, router = null) {
   const risks = [];
-  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.6.1." });
+  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.6.2." });
   if (router?.intents?.d1_migration_or_schema) risks.push({ key: "d1_migration_requires_receipt", level: "warning", message: "Future execution must verify schema after each one-statement call and write an audit receipt." });
   if (router?.intents?.deploy_or_binding) risks.push({ key: "binding_loss", level: "warning", message: "Deploying a Worker without a full binding manifest can remove secrets, R2, D1, KV, or AI bindings." });
   if (!risks.length) risks.push({ key: "no_mutation_in_scope", level: "info", message: "No mutation path is selected by this dry-run loop." });
