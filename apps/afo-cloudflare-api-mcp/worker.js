@@ -1,4 +1,4 @@
-const VERSION = "0.7.4";
+const VERSION = "0.7.5";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -65,12 +65,13 @@ const TOOLS = [
   },
   {
     name: "ask_cloudflare",
-    description: "AI-assisted Cloudflare API investigator. Takes a natural-language request, searches the Cloudflare OpenAPI index, selects a safe endpoint, builds parameters, executes it, and returns a compact answer with an audit trail. Defaults to read-only GET operations unless allow_mutation=true.",
+    description: "AI-assisted Cloudflare API investigator. Normalizes safety-heavy natural-language requests into a positive Cloudflare read or dry-run action, selects a safe endpoint, builds parameters, executes it when allowed, and returns a compact answer with an audit trail. Defaults to read-only GET operations unless allow_mutation=true.",
     inputSchema: {
       type: "object",
       properties: {
         request: { type: "string", description: "Natural-language Cloudflare API task or investigation question" },
         account_id: { type: "string" },
+        script_name: { type: "string", description: "Optional Worker script name for settings/bindings requests." },
         allow_mutation: { type: "boolean", description: "Default false. Required for POST/PUT/PATCH/DELETE." },
         dry_run: { type: "boolean", description: "If true, select endpoint and params but do not call Cloudflare." },
         limit: { type: "number", description: "Candidate endpoint limit, default 8" }
@@ -80,21 +81,21 @@ const TOOLS = [
   },
   {
     name: "ask_cloud_loop",
-    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.3 never mutates Cloudflare write paths, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, and can perform read-only Worker settings inspection.",
+    description: "Supervised Cloud-Loop dry-run/read-only orchestrator. Routes Cloudflare requests through forward evidence, inverse risk, verification, convergence, and receipt packets. v0.7.5 keeps Cloudflare writes disabled in loop mode, exposes explicit SQL safety receipt fields, resolves bound D1 databases from Worker settings for D1 dry-runs, and can perform read-only Worker settings inspection.",
     inputSchema: {
       type: "object",
       properties: {
         request: { type: "string", description: "Natural-language Cloudflare investigation or dry-run task" },
         prompt: { type: "string", description: "Deprecated alias for request; prefer request." },
-        domain: { type: "string", description: "cloudflare|github|auto. v0.7.3 handles Cloudflare and records non-Cloudflare as blocked/unsupported." },
-        mode: { type: "string", description: "dry_run|read_only. v0.7.3 forces safe dry-run/read-only behavior; read_only may perform safe GET inspections." },
+        domain: { type: "string", description: "cloudflare|github|auto. v0.7.5 handles Cloudflare and records non-Cloudflare as blocked/unsupported." },
+        mode: { type: "string", description: "dry_run|read_only. v0.7.5 keeps safe dry-run/read-only behavior; read_only may perform safe GET inspections." },
         account_id: { type: "string" },
         database_name: { type: "string" },
         database_id: { type: "string" },
         script_name: { type: "string" },
         migration_sql: { type: "string", description: "Optional SQL to split and audit, never executed by ask_cloud_loop." },
-        allow_mutation: { type: "boolean", description: "Ignored/forced false in v0.7.3." },
-        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.3 runs exactly one supervised iteration." },
+        allow_mutation: { type: "boolean", description: "Ignored/forced false in ask_cloud_loop v0.7.5." },
+        max_iterations: { type: "number", description: "Accepted for future compatibility; v0.7.5 runs exactly one supervised iteration." },
         include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
         include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
       },
@@ -1285,15 +1286,58 @@ async function upsertSkill(env, args) {
   return { ok: true, id: skill.id, version: doc.version, total_skills: doc.skills.length };
 }
 
+function askCloudflareSafetyIntent(request, args = {}) {
+  const text = String(request || "").toLowerCase();
+  const allowMutationRequested = args.allow_mutation === true;
+  const mutationProhibitedByText =
+    /\b(read[- ]only|get[- ]only|dry[- ]run|no[- ]write|no[- ]mutation)\b/.test(text) ||
+    /\b(do not|don't|without|avoid|never|no)\b.{0,80}\b(mutate|modify|write|deploy|delete|execute|ddl|change|create|update|patch|remove)\b/.test(text);
+  const readOnlyRequested =
+    Boolean(args.dry_run) ||
+    mutationProhibitedByText ||
+    /\b(read|inspect|get|show|list|return|inventory)\b/.test(text);
+  const dryRunEffective = Boolean(args.dry_run || /\bdry[- ]run\b/.test(text));
+  const allowMutationEffective = Boolean(allowMutationRequested && !mutationProhibitedByText);
+  return {
+    read_only_requested: readOnlyRequested,
+    mutation_prohibited: !allowMutationEffective,
+    allow_mutation_requested: allowMutationRequested,
+    allow_mutation_effective: allowMutationEffective,
+    dry_run_requested: Boolean(args.dry_run),
+    dry_run_effective: dryRunEffective
+  };
+}
+
+function normalizeAskCloudflareRequest(request, args = {}) {
+  const original = String(request || "").trim();
+  const intent = askCloudflareSafetyIntent(original, args);
+  const scriptName = args.script_name || extractWorkerScriptName(original, args);
+  let routingRequest = original;
+  if (workerSettingsRequested(original) && scriptName) {
+    routingRequest = `Read Worker script settings and bindings for script ${scriptName} using GET.`;
+  } else if (workerScriptsListRequested(original, args)) {
+    routingRequest = "List normal Cloudflare Worker scripts using GET.";
+  } else if (d1Requested(original)) {
+    const databaseId = args.database_id || extractPathParam("database_id", original, args);
+    const suffix = databaseId ? ` for database ${databaseId}` : "";
+    if (d1TablesRequested(original) || /\btables?\b/i.test(original)) routingRequest = `Read D1 table inventory${suffix} using a single query.`;
+    else routingRequest = `Plan D1 database inspection${suffix} using the safest available read path.`;
+  }
+  return { original_request: original, routing_request: routingRequest, intent };
+}
+
 async function askCloudflare(env, args) {
-  const request = String(args.request || "").trim();
-  if (!request) throw new Error("request is required");
+  const rawRequest = String(args.request || "").trim();
+  if (!rawRequest) throw new Error("request is required");
+  const normalized = normalizeAskCloudflareRequest(rawRequest, args);
+  const request = normalized.routing_request;
+  const effectiveArgs = { ...args, allow_mutation: normalized.intent.allow_mutation_effective, dry_run: normalized.intent.dry_run_effective };
   const index = await loadIndex(env);
   const skillDoc = await loadSkills(env);
   const requestSkills = matchSkillsByRequest(skillDoc, request);
-  const docsHits = await docsForAsk(env, request, args.docs_limit || 3, args);
-  const candidates = endpointCandidates(index, request, args.limit || 8);
-  const specialized = specializedToolForRequest(request, args);
+  const docsHits = await docsForAsk(env, request, effectiveArgs.docs_limit || 3, effectiveArgs);
+  const candidates = endpointCandidates(index, request, effectiveArgs.limit || 8);
+  const specialized = specializedToolForRequest(request, effectiveArgs);
   if (specialized && args.use_specialized !== false) {
     const toolArgs = Object.fromEntries(Object.entries(specialized.arguments || {}).filter(([, v]) => v !== undefined && v !== null && v !== ""));
     const delegationAudit = {
@@ -1302,30 +1346,31 @@ async function askCloudflare(env, args) {
       tool_arguments: toolArgs,
       skills_applied: requestSkills.map(s => s.id),
       docs_hits: docsHits.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet, structured_claims: d.structured_claims || [] })),
-      endpoint_candidates: compactCandidates(candidates)
+      endpoint_candidates: compactCandidates(candidates),
+      intent_normalization: normalized
     };
-    if (args.dry_run) return { ok: true, dry_run: true, delegated: true, selected_tool: specialized.tool, recommended_next_tool: specialized.tool, reason: specialized.reason, planned_tool_call: { name: specialized.tool, arguments: toolArgs }, audit: delegationAudit };
+    if (effectiveArgs.dry_run) return { ok: true, dry_run: true, delegated: true, selected_tool: specialized.tool, recommended_next_tool: specialized.tool, reason: specialized.reason, planned_tool_call: { name: specialized.tool, arguments: toolArgs }, audit: delegationAudit };
     const result = await d1MigrationPreflight(env, toolArgs);
     return { ok: true, delegated: true, selected_tool: specialized.tool, recommended_next_tool: null, reason: specialized.reason, result, audit: delegationAudit };
   }
   if (!candidates.length) throw new Error("No candidate Cloudflare endpoints found in spec index. Try seed_spec or a more specific request.");
 
-  const deterministic = chooseDeterministicEndpoint(index, request, args);
-  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, { ...args, skills: requestSkills, docs_hits: docsHits }).catch(() => null);
+  const deterministic = chooseDeterministicEndpoint(index, request, effectiveArgs);
+  const ai = deterministic ? null : await aiSelectCloudflare(env, request, candidates, { ...effectiveArgs, skills: requestSkills, docs_hits: docsHits }).catch(() => null);
   const choice = deterministic || (ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" });
 
-  if (mutationMethod(choice.method) && !args.allow_mutation) {
-    return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, audit: { candidates: compactCandidates(candidates) } };
+  if (mutationMethod(choice.method) && !effectiveArgs.allow_mutation) {
+    return { ok: false, blocked: true, reason: "Non-read endpoint selected but allow_mutation was not true.", selected: choice, audit: { candidates: compactCandidates(candidates), intent_normalization: normalized } };
   }
 
-  const pathResolution = resolvePath(choice.path, request, args, env, choice.deterministic_path_params || {});
+  const pathResolution = resolvePath(choice.path, request, effectiveArgs, env, choice.deterministic_path_params || {});
   const selected = {
     method: choice.method,
     path: choice.path,
     endpoint_template: choice.path,
     query: choice.query || {},
     body: choice.body || undefined,
-    account_id: args.account_id ? "provided" : "default",
+    account_id: effectiveArgs.account_id ? "provided" : "default",
     reason: choice.reason || (ai && ai.reason) || "selected"
   };
   const audit = {
@@ -1338,7 +1383,8 @@ async function askCloudflare(env, args) {
     candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates),
     skills_applied: requestSkills.map(s => s.id),
     docs_hits: docsHits.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url, score: d.score, snippet: d.snippet, structured_claims: d.structured_claims || [] })),
-    recommended_next_tool: specialized?.tool || null
+    recommended_next_tool: specialized?.tool || null,
+    intent_normalization: normalized
   };
   const endpointSkills = matchSkillsByEndpoint(skillDoc, choice.path);
   const responseNotes = unique([].concat(requestSkills, endpointSkills).map(s => s.response_note));
@@ -1347,9 +1393,9 @@ async function askCloudflare(env, args) {
     return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected, response_notes: responseNotes, audit };
   }
 
-  if (args.dry_run) return { ok: true, dry_run: true, selected, planned: { ...selected, final_resolved_path: pathResolution.auditPath }, response_notes: responseNotes, audit };
+  if (effectiveArgs.dry_run) return { ok: true, dry_run: true, selected, planned: { ...selected, final_resolved_path: pathResolution.auditPath }, response_notes: responseNotes, audit };
 
-  const res = await cfApi(env, selected.method, pathResolution.resolvedPath, selected.query, selected.body, args.account_id);
+  const res = await cfApi(env, selected.method, pathResolution.resolvedPath, selected.query, selected.body, effectiveArgs.account_id);
   return { ok: res.status >= 200 && res.status < 300, status: res.status, selected, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactCloudflareData(res.data), response_notes: responseNotes, rate_limit: res.rate_limit, audit };
 }
 
