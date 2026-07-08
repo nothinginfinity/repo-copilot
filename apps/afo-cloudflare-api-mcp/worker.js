@@ -1533,7 +1533,7 @@ async function cloudForwardEndpointPacket(env, request, args = {}, router = null
     };
     return makePacket("EndpointSelectionAgent", "forward", "success", specialized || deterministic ? 0.86 : 0.62, {
       evidence: [{ endpoint_candidates: compactCandidates(candidates), specialized_tool: specialized ? specialized.tool : null, deterministic_endpoint: deterministic ? { method: deterministic.method, path: deterministic.path } : null, d1_binding_resolution: boundD1Resolution }],
-      inferred_guidance: ["Select one focused next action; do not execute write, DDL, deploy, or delete operations in Cloud-Loop v0.7.3."],
+      inferred_guidance: ["Select one focused next action; do not execute write, DDL, deploy, or delete operations in Cloud-Loop v0.7.5."],
       recommended_next_actions: [selected],
       data: { selected, candidate_count: candidates.length }
     });
@@ -1677,7 +1677,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
   const d1Intent = router?.intents?.d1_migration_or_schema || d1Requested(request);
   const deployIntent = router?.intents?.deploy_or_binding || /\b(deploy|binding|bindings|secret|secrets|wrangler)\b/.test(text);
   const risks = [
-    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.3 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
+    { key: "mutation_power_withheld", level: "blocked", message: "Cloud-Loop v0.7.5 forces allow_mutation=false and does not execute write, DDL, deploy, delete, or binding changes." }
   ];
   const guidance = ["Use forward packets only to select one safe next action; require a separate explicit command for mutation." ];
   if (d1Intent) {
@@ -1691,7 +1691,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
   if (deployIntent && !d1Intent) {
     risks.push({ key: "worker_binding_replacement_warning", level: "required", message: "Worker deploy APIs replace the full binding set; get_worker_settings must be reviewed and secret bindings must be supplied from trusted secrets before deploy." });
   }
-  if (router?.unsupported) risks.push({ key: "unsupported_domain", level: "blocked", message: "GitHub loop routing is not enabled in the Cloudflare MCP v0.7.3 tool." });
+  if (router?.unsupported) risks.push({ key: "unsupported_domain", level: "blocked", message: "GitHub loop routing is not enabled in the Cloudflare MCP v0.7.5 tool." });
   return makePacket("InverseRiskAgent", "inverse", risks.some(r => r.level === "blocked") ? "blocked" : "warning", d1Intent ? 0.9 : 0.74, {
     risks,
     inferred_guidance: guidance,
@@ -1702,7 +1702,7 @@ function cloudInverseRiskPacket(request, args = {}, forwardPackets = [], router 
 
 function cloudRiskPacket(request, args = {}, router = null) {
   const risks = [];
-  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.3." });
+  if (router?.allow_mutation_requested) risks.push({ key: "requested_mutation_overridden", level: "blocked", message: "allow_mutation was requested but forced to false in ask_cloud_loop v0.7.5." });
   if (router?.intents?.d1_migration_or_schema) risks.push({ key: "d1_migration_requires_receipt", level: "warning", message: "Future execution must verify schema after each one-statement call and write an audit receipt." });
   if (router?.intents?.deploy_or_binding) risks.push({ key: "binding_loss", level: "warning", message: "Deploying a Worker without a full binding manifest can remove secrets, R2, D1, KV, or AI bindings." });
   if (!risks.length) risks.push({ key: "no_mutation_in_scope", level: "info", message: "No mutation path is selected by this dry-run loop." });
@@ -1773,7 +1773,7 @@ function buildCloudLoopReceipt(loopId, router, forwardPackets, inversePackets, r
     mutations_made: [],
     docs_consulted: docs.map(d => ({ doc_id: d.doc_id, title: d.title, url: d.url })),
     runtime_inspection: runtimeCalls.map(name => ({ tool: name, mode: "read_only" })),
-    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.3 is dry-run/read-only only"] : [],
+    blocked_actions: router.allow_mutation_requested ? ["allow_mutation request ignored; v0.7.5 is dry-run/read-only only"] : [],
     selected_next_action: selectedNextAction,
     requires_confirmation: false
   };
