@@ -1,4 +1,4 @@
-const VERSION = "0.7.10";
+const VERSION = "0.7.11";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-cloudflare-api-mcp";
 const CORS = {
@@ -375,13 +375,258 @@ const READ_ONLY_PUBLIC_TOOL_NAMES = new Set([
 
 const ADMIN_TOOL_NAMES = new Set(TOOLS.map(t => t.name).filter(name => !READ_ONLY_PUBLIC_TOOL_NAMES.has(name)));
 
+const READ_ONLY_PUBLIC_TOOL_ORDER = Object.freeze([
+  "cf_api_status",
+  "get_worker_settings_readonly",
+  "resolve_worker_bound_d1_readonly",
+  "d1_schema_preflight_readonly",
+  "list_d1_tables_readonly",
+  "verify_v078_inverse_agents_readonly",
+  "search_cloudflare_docs",
+  "get_cloudflare_doc_excerpt",
+  "ask_cloud_loop"
+]);
+
+const READ_ONLY_TOOL_ANNOTATIONS = Object.freeze({
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false
+});
+
+const READ_ONLY_TEXT_FIELD = Object.freeze({ type: "string", minLength: 1, maxLength: 20000 });
+const READ_ONLY_SCRIPT_FIELD = Object.freeze({ type: "string", minLength: 1, maxLength: 128, description: "Worker script name. Read-only inspection only." });
+const READ_ONLY_ACCOUNT_FIELD = Object.freeze({ type: "string", minLength: 1, maxLength: 128, description: "Optional Cloudflare account id override." });
+const READ_ONLY_DB_NAME_FIELD = Object.freeze({ type: "string", minLength: 1, maxLength: 128, description: "Optional D1 database name for read-only lookup." });
+const READ_ONLY_DB_ID_FIELD = Object.freeze({ type: "string", minLength: 1, maxLength: 128, description: "Optional D1 database id for read-only lookup." });
+const READ_ONLY_SQL_TEXT_FIELD = Object.freeze({ type: "string", maxLength: 50000, description: "Proposed SQL text for audit/splitting only. It is never executed by this read-only verifier surface." });
+
+const READ_ONLY_INPUT_SCHEMAS = Object.freeze({
+  cf_api_status: { type: "object", properties: {}, required: [], additionalProperties: false },
+  get_worker_settings_readonly: {
+    type: "object",
+    properties: { script_name: READ_ONLY_SCRIPT_FIELD, account_id: READ_ONLY_ACCOUNT_FIELD },
+    required: ["script_name"],
+    additionalProperties: false
+  },
+  resolve_worker_bound_d1_readonly: {
+    type: "object",
+    properties: { script_name: READ_ONLY_SCRIPT_FIELD, account_id: READ_ONLY_ACCOUNT_FIELD },
+    required: ["script_name"],
+    additionalProperties: false
+  },
+  d1_schema_preflight_readonly: {
+    type: "object",
+    properties: {
+      database_name: READ_ONLY_DB_NAME_FIELD,
+      database_id: READ_ONLY_DB_ID_FIELD,
+      script_name: READ_ONLY_SCRIPT_FIELD,
+      proposed_sql_text: READ_ONLY_SQL_TEXT_FIELD,
+      include_table_details: { type: "boolean", description: "If true, include read-only PRAGMA table detail reads for a small sample." },
+      max_table_details: { type: "number", minimum: 0, maximum: 20, description: "Default 5, max 20." },
+      account_id: READ_ONLY_ACCOUNT_FIELD
+    },
+    required: [],
+    additionalProperties: false
+  },
+  list_d1_tables_readonly: {
+    type: "object",
+    properties: { database_name: READ_ONLY_DB_NAME_FIELD, database_id: READ_ONLY_DB_ID_FIELD, account_id: READ_ONLY_ACCOUNT_FIELD },
+    required: [],
+    additionalProperties: false
+  },
+  verify_v078_inverse_agents_readonly: {
+    type: "object",
+    properties: {
+      script_name: READ_ONLY_SCRIPT_FIELD,
+      proposed_sql_text: READ_ONLY_SQL_TEXT_FIELD,
+      include_worker_settings: { type: "boolean", description: "Default true. Runs the Worker settings read-only loop." },
+      include_bound_d1_resolution: { type: "boolean", description: "Default true when proposed_sql_text is supplied. Runs bound-D1 read-only preflight." },
+      include_table_details: { type: "boolean", description: "If true, include a small sample of read-only table detail reads." },
+      max_table_details: { type: "number", minimum: 0, maximum: 20, description: "Default 2, max 20." },
+      include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
+      include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." },
+      account_id: READ_ONLY_ACCOUNT_FIELD
+    },
+    required: ["script_name"],
+    additionalProperties: false
+  },
+  search_cloudflare_docs: {
+    type: "object",
+    properties: {
+      query: READ_ONLY_TEXT_FIELD,
+      product: { type: "string", maxLength: 64, description: "Optional Cloudflare product/topic filter." },
+      limit: { type: "number", minimum: 1, maximum: 10, description: "Default 5, max 10." }
+    },
+    required: ["query"],
+    additionalProperties: false
+  },
+  get_cloudflare_doc_excerpt: {
+    type: "object",
+    properties: {
+      doc_id: { type: "string", minLength: 1, maxLength: 220 },
+      query: { type: "string", maxLength: 2000 },
+      max_chars: { type: "number", minimum: 300, maximum: 5000, description: "Default 1800, max 5000." }
+    },
+    required: ["doc_id"],
+    additionalProperties: false
+  },
+  ask_cloud_loop: {
+    type: "object",
+    properties: {
+      request: { type: "string", minLength: 1, maxLength: 6000, description: "Read-only Cloudflare investigation. Prefer narrower tools first when a specific Worker, D1 database, or docs query is known." },
+      domain: { type: "string", enum: ["cloudflare", "auto"], description: "Read-only verifier domain. Non-Cloudflare routing is blocked/unsupported." },
+      mode: { type: "string", enum: ["read_only", "dry_run"], description: "No mutation mode is available on this surface." },
+      account_id: READ_ONLY_ACCOUNT_FIELD,
+      database_name: READ_ONLY_DB_NAME_FIELD,
+      database_id: READ_ONLY_DB_ID_FIELD,
+      script_name: READ_ONLY_SCRIPT_FIELD,
+      proposed_sql_text: READ_ONLY_SQL_TEXT_FIELD,
+      include_table_details: { type: "boolean", description: "If true, D1 preflight includes read-only metadata details for a small table sample." },
+      max_table_details: { type: "number", minimum: 0, maximum: 20, description: "Default 5, max 20." },
+      max_iterations: { type: "number", minimum: 1, maximum: 1, description: "Accepted for compatibility; this verifier runs one supervised read-only iteration." },
+      include_runtime: { type: "boolean", description: "Default true. Enables read-only runtime/preflight packet." },
+      include_docs: { type: "boolean", description: "Default true. Enables cached Cloudflare docs evidence packet." }
+    },
+    required: ["request"],
+    additionalProperties: false
+  }
+});
+
+const READ_ONLY_BASE_OUTPUT_SCHEMA = Object.freeze({
+  type: "object",
+  properties: {
+    ok: { type: "boolean" },
+    mode: { type: "string" },
+    version: { type: "string" },
+    receipt: { type: "object", additionalProperties: true },
+    receipts: { type: "array", items: { type: "object", additionalProperties: true } },
+    writes_possible: { type: "boolean" },
+    writes_attempted: { type: "boolean" },
+    writes_executed: { type: "boolean" },
+    cloudflare_write_calls_made: { type: "array", items: { type: "object", additionalProperties: true } },
+    worker_deploys_made: { type: "array", items: { type: "object", additionalProperties: true } },
+    d1_write_or_ddl_calls_made: { type: "array", items: { type: "object", additionalProperties: true } }
+  },
+  additionalProperties: true
+});
+
+const READ_ONLY_STATUS_OUTPUT_SCHEMA = Object.freeze({
+  type: "object",
+  properties: {
+    worker: { type: "string" },
+    version: { type: "string" },
+    status: { type: "string" },
+    bindings: { type: "object", additionalProperties: { type: "boolean" } },
+    spec_seeded: { type: "boolean" },
+    indexed_endpoints: { type: "number" },
+    tools: { type: "array", items: { type: "string" } },
+    schema_profile: { type: "string" },
+    default_surface: { type: "string" },
+    descriptor_profile: { type: "string" },
+    output_schema_complete: { type: "boolean" },
+    annotation_profile: { type: "string" },
+    narrow_tool_first: { type: "boolean" },
+    hidden_admin_tools: { type: "array", items: { type: "string" } }
+  },
+  additionalProperties: true
+});
+
+const READ_ONLY_DOC_SEARCH_OUTPUT_SCHEMA = Object.freeze({
+  type: "object",
+  properties: {
+    ok: { type: "boolean" },
+    query: { type: "string" },
+    product: { type: "string" },
+    docs_indexed: { type: "number" },
+    results: { type: "array", items: { type: "object", additionalProperties: true } },
+    how_to_refresh: { type: "string" }
+  },
+  additionalProperties: true
+});
+
+const READ_ONLY_DOC_EXCERPT_OUTPUT_SCHEMA = Object.freeze({
+  type: "object",
+  properties: {
+    ok: { type: "boolean" },
+    safe_mode: { type: "string" },
+    doc_id: { type: "string" },
+    title: { type: "string" },
+    url: { type: "string" },
+    product: { type: "string" },
+    query: { type: "string" },
+    excerpt: { type: "string" },
+    structured_claims: { type: "array", items: { type: "object", additionalProperties: true } }
+  },
+  additionalProperties: true
+});
+
+const READ_ONLY_OUTPUT_SCHEMAS = Object.freeze({
+  cf_api_status: READ_ONLY_STATUS_OUTPUT_SCHEMA,
+  get_worker_settings_readonly: READ_ONLY_BASE_OUTPUT_SCHEMA,
+  resolve_worker_bound_d1_readonly: READ_ONLY_BASE_OUTPUT_SCHEMA,
+  d1_schema_preflight_readonly: READ_ONLY_BASE_OUTPUT_SCHEMA,
+  list_d1_tables_readonly: READ_ONLY_BASE_OUTPUT_SCHEMA,
+  verify_v078_inverse_agents_readonly: READ_ONLY_BASE_OUTPUT_SCHEMA,
+  search_cloudflare_docs: READ_ONLY_DOC_SEARCH_OUTPUT_SCHEMA,
+  get_cloudflare_doc_excerpt: READ_ONLY_DOC_EXCERPT_OUTPUT_SCHEMA,
+  ask_cloud_loop: READ_ONLY_BASE_OUTPUT_SCHEMA
+});
+
+const READ_ONLY_TOOL_TITLES = Object.freeze({
+  cf_api_status: "Cloudflare MCP status",
+  get_worker_settings_readonly: "Get Worker settings read-only",
+  resolve_worker_bound_d1_readonly: "Resolve Worker D1 binding read-only",
+  d1_schema_preflight_readonly: "D1 schema preflight read-only",
+  list_d1_tables_readonly: "List D1 tables read-only",
+  verify_v078_inverse_agents_readonly: "Verify inverse agents read-only",
+  search_cloudflare_docs: "Search Cloudflare docs cache",
+  get_cloudflare_doc_excerpt: "Get Cloudflare docs excerpt",
+  ask_cloud_loop: "Advanced Cloud-Loop verifier read-only"
+});
+
+const READ_ONLY_TOOL_DESCRIPTIONS = Object.freeze({
+  ask_cloud_loop: "Advanced read-only Cloud-Loop verifier. Prefer the narrower read-only Worker, D1, or docs tools first. Routes inspection requests through forward evidence, inverse safety agents, verification, convergence, and receipts. It has no deploy, binding-change, Cloudflare write, D1 write/DDL, cache mutation, or generic endpoint-call capability on this schema-clean surface.",
+  get_worker_settings_readonly: "Reads a Worker's current binding names, binding types, compatibility date, compatibility flags, and safe metadata only. Secret values are not returned and settings cannot be changed.",
+  resolve_worker_bound_d1_readonly: "Reads Worker settings and resolves D1 binding choices for that Worker only. Does not change Cloudflare resources.",
+  d1_schema_preflight_readonly: "Audits proposed SQL text and reads D1 schema metadata only. Proposed SQL is split/classified but never executed; DDL/DML/write statements remain non-actions.",
+  list_d1_tables_readonly: "Lists table names in a D1 database using read-only schema inventory only.",
+  verify_v078_inverse_agents_readonly: "Purpose-built read-only verifier for the inverse-agent receipt path. Accepts a Worker script name and optional proposed SQL text for audit-only splitting. No Cloudflare write, Worker deploy, delete, D1 write, or DDL capability is exposed.",
+  search_cloudflare_docs: "Searches the locally cached Cloudflare docs knowledge base and returns source-backed snippets. Does not refresh or mutate the docs cache.",
+  get_cloudflare_doc_excerpt: "Reads a focused sanitized excerpt from a cached Cloudflare docs page. Does not return full doc blobs by default and does not mutate the docs cache."
+});
+
+function orderedReadOnlyTools() {
+  const byName = new Map(TOOLS.map(t => [t.name, t]));
+  return READ_ONLY_PUBLIC_TOOL_ORDER.map(name => byName.get(name)).filter(Boolean);
+}
+
+function withToolDescriptorMetadata(tool) {
+  if (!READ_ONLY_PUBLIC_TOOL_NAMES.has(tool.name)) return tool;
+  return {
+    ...tool,
+    title: READ_ONLY_TOOL_TITLES[tool.name] || tool.name,
+    description: READ_ONLY_TOOL_DESCRIPTIONS[tool.name] || tool.description,
+    inputSchema: READ_ONLY_INPUT_SCHEMAS[tool.name] || tool.inputSchema,
+    outputSchema: READ_ONLY_OUTPUT_SCHEMAS[tool.name] || READ_ONLY_BASE_OUTPUT_SCHEMA,
+    annotations: READ_ONLY_TOOL_ANNOTATIONS,
+    _meta: {
+      ...(tool._meta || {}),
+      "openai/toolInvocation/invoking": "Running read-only verifier",
+      "openai/toolInvocation/invoked": "Read-only verifier complete",
+      "afo/safety_profile": "read_only_no_mutation",
+      "afo/non_actions": "no_worker_deploy,no_binding_change,no_d1_write,no_ddl,no_cloudflare_mutation,no_cache_mutation"
+    }
+  };
+}
+
 function adminToolsEnabled(env = {}) {
   return String(env.EXPOSE_ADMIN_TOOLS || "").toLowerCase() === "true";
 }
 
 function visibleTools(env = {}) {
-  if (adminToolsEnabled(env)) return TOOLS;
-  return TOOLS.filter(t => READ_ONLY_PUBLIC_TOOL_NAMES.has(t.name));
+  const tools = adminToolsEnabled(env) ? TOOLS : orderedReadOnlyTools();
+  return tools.map(withToolDescriptorMetadata);
 }
 
 function assertAdminToolEnabled(env = {}, name = "admin_tool") {
@@ -2273,8 +2518,12 @@ async function dispatch(name, args, env) {
       spec_seeded: seeded,
       indexed_endpoints: count,
       tools: visibleTools(env).map(t => t.name),
-      schema_profile: "schema_clean_read_only_verifier",
+      schema_profile: "schema_clean_output_schema_annotation_clean_read_only_verifier",
       default_surface: "read_only_verifier_only",
+      descriptor_profile: "output_schema_complete_annotation_clean_narrow_tool_first",
+      output_schema_complete: visibleTools(env).every(t => Boolean(t.outputSchema)),
+      annotation_profile: "readOnlyHint:true destructiveHint:false openWorldHint:false idempotentHint:true",
+      narrow_tool_first: true,
       hidden_admin_tools: Array.from(ADMIN_TOOL_NAMES)
     };
   }
@@ -2508,7 +2757,10 @@ export default {
         } catch (e) {
           return tr(id, `Error: ${e.message}`);
         }
-        return tr(id, truncate(JSON.stringify(result, null, 2)));
+        return rr(id, {
+          structuredContent: result,
+          content: [{ type: "text", text: truncate(JSON.stringify(result, null, 2)) }]
+        });
       }
       return er(id, -32601, `Method not found: ${method}`);
     } catch (e) {
