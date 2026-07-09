@@ -3,8 +3,9 @@
   "name": "afo-cloudflare-api-mcp",
   "worker_name": "afo-cloudflare-api-mcp",
   "plane": "Cloudflare Read-Only Verifier",
-  "risk_profile": "schema_clean_read_only_verifier",
-  "purpose": "Schema-clean read-only Cloudflare verifier surface. Provides status, supervised read-only Cloud-Loop evidence, read-only Worker settings inspection, bound-D1 resolution, read-only D1 schema preflight, read-only D1 table inventory, and cached Cloudflare docs search/excerpts. The default connector surface intentionally omits generic endpoint callers, admin writes, deploy tools, D1 write/DDL execution, skill mutation, and spec refresh tools so fresh chats see only read-only verifier capabilities.",
+  "risk_profile": "schema_clean_output_schema_annotation_clean_read_only_verifier",
+  "descriptor_profile": "output_schema_complete_annotation_clean_narrow_tool_first",
+  "purpose": "Schema-clean read-only Cloudflare verifier surface with complete outputSchema descriptors, read-only annotations, and narrow-tool-first ordering. Provides status, read-only Worker settings inspection, bound-D1 resolution, D1 schema preflight, D1 table inventory, inverse-agent verification, cached Cloudflare docs search/excerpts, and an advanced Cloud-Loop verifier fallback. The default connector surface intentionally omits generic endpoint callers, admin writes, deploy tools, D1 write/DDL execution, skill mutation, and spec refresh tools so fresh chats see only read-only verifier capabilities.",
   "tools": [
     "cf_api_status",
     "ask_cloud_loop",
@@ -17,5 +18,5 @@
     "get_cloudflare_doc_excerpt"
   ],
   "source_path": "apps/afo-cloudflare-api-mcp/worker.js",
-  "status": "v0.7.10"
+  "status": "v0.7.11"
 }
