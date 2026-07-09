@@ -1,0 +1,86 @@
+{
+  "worker": "afo-gitzip",
+  "version": "0.2.2-unified",
+  "action": "apply_repo_text_patch",
+  "target": {
+    "owner": "nothinginfinity",
+    "repo": "repo-copilot",
+    "branch": "main",
+    "path": "apps/afo-cloudflare-api-mcp/worker.js"
+  },
+  "source_sha": "24752bc5612a9eda44af0e2eae4d802ac88ca956",
+  "result_sha": "b37e45a31d3127d2e663885e8e43290fb7c82c4f",
+  "commit_sha": "d8b178125475675da6bb1e91ac7d0b8880552789",
+  "diff": {
+    "before_length": 130872,
+    "after_length": 143830,
+    "delta": 12958,
+    "common_prefix": 22,
+    "common_suffix": 159,
+    "before_fingerprint": "b2be00a7",
+    "after_fingerprint": "574d305e"
+  },
+  "applied": [
+    {
+      "label": "op_0",
+      "type": "replace_exact",
+      "changed": true,
+      "replaced": 1
+    },
+    {
+      "label": "op_1",
+      "type": "insert_after",
+      "changed": true
+    },
+    {
+      "label": "op_2",
+      "type": "replace_exact",
+      "changed": true,
+      "replaced": 1
+    },
+    {
+      "label": "op_3",
+      "type": "replace_exact",
+      "changed": true,
+      "replaced": 1
+    },
+    {
+      "label": "op_4",
+      "type": "replace_exact",
+      "changed": true,
+      "replaced": 1
+    }
+  ],
+  "verification": {
+    "ok": true,
+    "results": [
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      },
+      {
+        "label": "contains",
+        "ok": true,
+        "detail": "contains"
+      }
+    ],
+    "failed": []
+  },
+  "timestamp": "2026-07-09T00:55:32.583Z"
+}
