@@ -682,6 +682,7 @@ async function dispatch(name, args, env) {
         GITHUB_TOKEN: Boolean(env.GITHUB_TOKEN),
         SPEC: Boolean(env.SPEC),
         AI: Boolean(env.AI),
+        CAIRNSTONE_MCP_URL: env.CAIRNSTONE_MCP_URL || CAIRNSTONE_MCP_DEFAULT,
         DEFAULT_OWNER: env.DEFAULT_OWNER || null,
         DEFAULT_REPO: env.DEFAULT_REPO || null
       },
@@ -692,6 +693,8 @@ async function dispatch(name, args, env) {
   }
 
   if (name === "ask_github") return await askGithub(env, args || {});
+  if (name === "list_skills") return await listCanonicalSkills(env);
+  if (name === "upsert_skill") return await upsertDraftSkill(env, args || {});
 
   if (name === "seed_spec") return await buildIndex(env);
 
