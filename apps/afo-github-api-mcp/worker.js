@@ -474,33 +474,197 @@ function compactCandidates(candidates) {
   return (candidates || []).slice(0, 12).map(c => ({ method: c.method, path: c.path, summary: c.summary, tags: c.tags }));
 }
 
+const CAIRNSTONE_MCP_DEFAULT = "https://cairnstone-v6.jaredtechfit.workers.dev/mcp";
+const CANONICAL_SKILL_IDS = ["github.actions-triage", "github.actions-job-logs"];
+const ACCEPTED_SKILLS_CACHE_KEY = "skills/github-api.accepted-bundle.v1.json";
+const DRAFT_SKILLS_KEY = "skills/github-api.drafts.v1.json";
+const PROTECTED_SKILL_IDS = new Set([...CANONICAL_SKILL_IDS, "actions-triage", "actions-job-logs"]);
+
+async function sha256Text(value) {
+  const bytes = new TextEncoder().encode(String(value));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function isHex(value, length) {
+  return new RegExp(`^[0-9a-f]{${length}}$`, "i").test(String(value || ""));
+}
+
+async function callCairnstoneTool(env, name, args) {
+  const endpoint = env.CAIRNSTONE_MCP_URL || CAIRNSTONE_MCP_DEFAULT;
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "content-type": "application/json", "accept": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: crypto.randomUUID(), method: "tools/call", params: { name, arguments: args || {} } })
+  });
+  if (!res.ok) throw new Error(`cairnstone_http_${res.status}`);
+  const rpc = await res.json();
+  if (rpc.error) throw new Error(`cairnstone_rpc_${rpc.error.code}:${rpc.error.message}`);
+  const text = rpc?.result?.content?.find?.(item => item.type === "text")?.text;
+  if (!text) throw new Error("cairnstone_empty_tool_result");
+  const parsed = JSON.parse(text);
+  if (!parsed || parsed.ok === false) throw new Error(`cairnstone_bundle_error:${parsed?.error || "unknown"}`);
+  return parsed;
+}
+
+async function validateAcceptedBundle(bundle) {
+  if (!bundle || bundle.schema !== "cairnstone-accepted-skill-bundle-v1") return { ok: false, error: "invalid_bundle_schema" };
+  if (bundle.authority !== "cairnstone_path_head") return { ok: false, error: "invalid_bundle_authority" };
+  if (!isHex(bundle.manifest_head, 64)) return { ok: false, error: "invalid_manifest_head" };
+  if (!isHex(bundle?.bundle_identity?.sha256, 64)) return { ok: false, error: "invalid_bundle_identity" };
+  const byId = new Map((bundle.skills || []).map(skill => [skill.skill_id, skill]));
+  for (const id of CANONICAL_SKILL_IDS) {
+    const skill = byId.get(id);
+    if (!skill) return { ok: false, error: `missing_canonical_skill:${id}` };
+    if (skill.authority !== "cairnstone_path_head") return { ok: false, error: `invalid_skill_authority:${id}` };
+    if (!isHex(skill.stone_hash, 64) || !isHex(skill.commit_sha, 40)) return { ok: false, error: `invalid_skill_provenance:${id}` };
+    if (!isHex(skill?.content_identity?.sha256, 64)) return { ok: false, error: `invalid_content_identity:${id}` };
+    if (await sha256Text(skill.content || "") !== String(skill.content_identity.sha256).toLowerCase()) return { ok: false, error: `content_hash_mismatch:${id}` };
+  }
+  return { ok: true };
+}
+
+async function loadCanonicalSkillBundle(env) {
+  let liveError = null;
+  try {
+    const bundle = await callCairnstoneTool(env, "cairnstone_get_skill_bundle", { skill_ids: CANONICAL_SKILL_IDS });
+    const validation = await validateAcceptedBundle(bundle);
+    if (!validation.ok) throw new Error(validation.error);
+    const cached = { schema: "afo-github-accepted-skill-cache-v1", cached_at: new Date().toISOString(), bundle };
+    await env.SPEC.put(ACCEPTED_SKILLS_CACHE_KEY, JSON.stringify(cached));
+    return { ok: true, source: "cairnstone_live", bundle, cached_at: cached.cached_at };
+  } catch (error) {
+    liveError = String(error && error.message ? error.message : error);
+  }
+  try {
+    const obj = await env.SPEC.get(ACCEPTED_SKILLS_CACHE_KEY);
+    if (!obj) return { ok: false, error: "accepted_skill_bundle_unavailable", live_error: liveError, cache: "missing" };
+    const cached = JSON.parse(await obj.text());
+    const validation = await validateAcceptedBundle(cached.bundle);
+    if (!validation.ok) return { ok: false, error: "accepted_skill_cache_invalid", detail: validation.error, live_error: liveError };
+    return { ok: true, source: "last_known_accepted_cache", bundle: cached.bundle, cached_at: cached.cached_at || null, live_error: liveError };
+  } catch (error) {
+    return { ok: false, error: "accepted_skill_cache_load_failed", live_error: liveError, cache_error: String(error && error.message ? error.message : error) };
+  }
+}
+
+async function loadDraftSkills(env) {
+  try {
+    const obj = await env.SPEC.get(DRAFT_SKILLS_KEY);
+    return obj ? JSON.parse(await obj.text()) : { schema: "afo-github-skill-drafts-v1", version: 0, skills: [] };
+  } catch {
+    return { schema: "afo-github-skill-drafts-v1", version: 0, skills: [], load_error: true };
+  }
+}
+
+async function listCanonicalSkills(env) {
+  const accepted = await loadCanonicalSkillBundle(env);
+  const drafts = await loadDraftSkills(env);
+  if (!accepted.ok) return { ...accepted, authority: "cairnstone_path_head", drafts: drafts.skills || [] };
+  return {
+    ok: true,
+    authority: "cairnstone_path_head",
+    source: accepted.source,
+    manifest_head: accepted.bundle.manifest_head,
+    bundle_identity: accepted.bundle.bundle_identity,
+    cache_key: ACCEPTED_SKILLS_CACHE_KEY,
+    cached_at: accepted.cached_at,
+    live_error: accepted.live_error || undefined,
+    skills: accepted.bundle.skills.map(skill => ({ id: skill.skill_id, version: skill.skill_version, title: skill.title, stone_hash: skill.stone_hash, commit_sha: skill.commit_sha, content_identity: skill.content_identity, authority: skill.authority })),
+    drafts: drafts.skills || [],
+    production_policy: "Only CairnStone accepted path HEADs are authority. R2 stores last-known accepted cache plus non-production drafts."
+  };
+}
+
+async function upsertDraftSkill(env, args) {
+  const skill = args.skill;
+  if (!skill || !skill.id || !skill.guidance) throw new Error("skill object with at least {id, guidance} required");
+  const id = String(skill.id);
+  if (PROTECTED_SKILL_IDS.has(id)) return { ok: false, error: "canonical_skill_protected", id, authority: "cairnstone_path_head", message: "Use Git + CairnStone acceptance to change canonical production skills; upsert_skill cannot override them." };
+  const stage = String(skill.stage || "draft").toLowerCase();
+  if (!["draft", "experimental", "staging"].includes(stage)) return { ok: false, error: "invalid_skill_stage", allowed: ["draft", "experimental", "staging"] };
+  const doc = await loadDraftSkills(env);
+  const normalized = { ...skill, id, stage, production_authority: false, updated_at: new Date().toISOString() };
+  const index = (doc.skills || []).findIndex(item => item.id === id);
+  if (index >= 0) doc.skills[index] = { ...doc.skills[index], ...normalized };
+  else (doc.skills = doc.skills || []).push(normalized);
+  doc.version = (doc.version || 0) + 1;
+  doc.updated_at = new Date().toISOString();
+  await env.SPEC.put(DRAFT_SKILLS_KEY, JSON.stringify(doc, null, 2));
+  return { ok: true, id, stage, version: doc.version, production_authority: false };
+}
+
+function actionsFailureTriageRequested(request) {
+  const text = requestText(request);
+  return /\b(github actions|actions|workflow|ci|deploy|deployment)\b/.test(text) && /\b(fail|failed|failure|failing|error|broken|diagnose|triage)\b/.test(text);
+}
+function actionsLogsRequested(request) {
+  const text = requestText(request);
+  return /\blogs?\b/.test(text) && /\b(job|actions|workflow|deploy|deployment|fail|failed|failure)\b/.test(text);
+}
+function matchCanonicalSkills(bundle, request) {
+  const text = requestText(request);
+  return (bundle.skills || []).filter(skill => {
+    if ((skill.triggers || []).some(trigger => text.includes(String(trigger).toLowerCase()))) return true;
+    if (skill.skill_id === "github.actions-triage") return actionsFailureTriageRequested(request);
+    if (skill.skill_id === "github.actions-job-logs") return actionsLogsRequested(request);
+    return false;
+  });
+}
+function applyAcceptedCandidatePolicy(candidates, requestSkills) {
+  const ids = new Set((requestSkills || []).map(skill => skill.skill_id));
+  const rejected = [];
+  let filtered = candidates || [];
+  if (ids.has("github.actions-triage")) filtered = filtered.filter(candidate => {
+    const reject = String(candidate.path || "").includes("/pages/deployments");
+    if (reject) rejected.push({ method: candidate.method, path: candidate.path, reason: "Rejected by accepted github.actions-triage: GitHub Pages deployment endpoints are not GitHub Actions run/job evidence." });
+    return !reject;
+  });
+  return { candidates: filtered, rejected };
+}
+function chooseAcceptedSkillEndpoint(index, request, args, env, requestSkills) {
+  const ids = new Set((requestSkills || []).map(skill => skill.skill_id));
+  const runId = githubPathParam("run_id", request, args, env);
+  const jobId = githubPathParam("job_id", request, args, env);
+  if (ids.has("github.actions-job-logs") && actionsLogsRequested(request) && jobId) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/jobs/{job_id}/logs"), query: {}, body: null, reason: "accepted skill github.actions-job-logs: raw logs use job_id only after the job is known", deterministic_path_params: { job_id: jobId } };
+  if (ids.has("github.actions-job-logs") && actionsLogsRequested(request) && runId) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs/{run_id}/jobs"), query: {}, body: null, reason: "accepted skill github.actions-job-logs: inspect jobs and step conclusions before raw logs", deterministic_path_params: { run_id: runId } };
+  if (ids.has("github.actions-triage") && actionsFailureTriageRequested(request)) return { ...endpointFromIndex(index, "GET", "/repos/{owner}/{repo}/actions/runs"), query: { per_page: args.limit || 10, status: "failure" }, body: null, reason: "accepted skill github.actions-triage: start from Actions workflow runs, not Pages deployments", deterministic_path_params: {} };
+  return null;
+}
+function acceptedSkillFlow(requestSkills) {
+  const ids = new Set((requestSkills || []).map(skill => skill.skill_id));
+  if (!ids.has("github.actions-triage")) return undefined;
+  return ["Actions workflow runs", "select the relevant failed run by evidence", "list jobs and step conclusions for that run", "identify the failing job_id", ids.has("github.actions-job-logs") ? "inspect raw job logs only if job/step conclusions are insufficient" : "inspect deeper evidence only if needed"];
+}
+
 async function askGithub(env, args) {
   const request = String(args.request || "").trim();
   if (!request) throw new Error("request is required");
   const index = await loadIndex(env);
-  const candidates = endpointCandidates(index, request, args.limit || 8);
-  if (!candidates.length) throw new Error("No candidate GitHub endpoints found in spec index. Try seed_spec or a more specific request.");
-  const deterministic = chooseDeterministicGithubEndpoint(index, request, args, env);
-  const ai = deterministic ? null : await aiSelectGithub(env, request, candidates, args).catch(() => null);
+  const accepted = await loadCanonicalSkillBundle(env);
+  if (!accepted.ok) return { ok: false, error_type: "skill_authority_unavailable", ...accepted, policy: "fail_closed_no_mutable_skill_fallback" };
+  const requestSkills = matchCanonicalSkills(accepted.bundle, request);
+  const rawCandidates = endpointCandidates(index, request, args.limit || 8);
+  const policy = applyAcceptedCandidatePolicy(rawCandidates, requestSkills);
+  const candidates = policy.candidates;
+  const acceptedDeterministic = chooseAcceptedSkillEndpoint(index, request, args, env, requestSkills);
+  const deterministic = acceptedDeterministic || chooseDeterministicGithubEndpoint(index, request, args, env);
+  if (!deterministic && !candidates.length) throw new Error("No candidate GitHub endpoints found in spec index after accepted-skill policy.");
+  const ai = deterministic ? null : await aiSelectGithub(env, request, candidates, args, requestSkills).catch(() => null);
   const choice = deterministic || (ai && candidates.find(c => c.method === ai.method && c.path === ai.path) ? ai : { ...candidates.find(c => c.method === "GET") || candidates[0], query: {}, body: null, reason: "heuristic fallback" });
-  if (mutationMethod(choice.method) && !args.allow_mutation) {
-    return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
-  }
+  if (mutationMethod(choice.method) && !args.allow_mutation) return { ok: false, blocked: true, reason: "Mutation endpoint selected but allow_mutation was not true.", selected: choice, candidates };
   const { owner, repo } = resolveOwnerRepo(env, args);
   const pathResolution = resolveGithubPath(choice.path, request, args, env, choice.deterministic_path_params || {});
   const planned = { method: choice.method, path: choice.path, endpoint_template: choice.path, query: choice.query || {}, body: choice.body || undefined, owner, repo, reason: choice.reason || (ai && ai.reason) || "selected" };
   const audit = {
-    selected_endpoint_template: choice.path,
-    extracted_path_params: pathResolution.rawParams,
-    required_path_params: pathResolution.required,
-    unresolved_path_params: pathResolution.missing,
-    final_resolved_path: pathResolution.resolvedPath,
-    query_params: planned.query,
-    candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates)
+    skill_authority: "cairnstone_path_head", skill_source: accepted.source, manifest_head: accepted.bundle.manifest_head, bundle_identity: accepted.bundle.bundle_identity,
+    skills_applied: requestSkills.map(skill => skill.skill_id),
+    skill_provenance: requestSkills.map(skill => ({ skill_id: skill.skill_id, version: skill.skill_version, stone_hash: skill.stone_hash, commit_sha: skill.commit_sha, content_identity: skill.content_identity })),
+    selected_flow: acceptedSkillFlow(requestSkills), rejected_endpoints: policy.rejected,
+    selected_endpoint_template: choice.path, extracted_path_params: pathResolution.rawParams, required_path_params: pathResolution.required, unresolved_path_params: pathResolution.missing,
+    final_resolved_path: pathResolution.resolvedPath, query_params: planned.query, candidates: compactCandidates(deterministic ? [choice, ...candidates] : candidates)
   };
-  if (pathResolution.missing.length) {
-    return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected: planned, audit };
-  }
+  if (pathResolution.missing.length) return { ok: false, error_type: "missing_path_param", missing_params: pathResolution.missing, selected: planned, audit };
   if (args.dry_run) return { ok: true, dry_run: true, selected: planned, planned: { ...planned, final_resolved_path: pathResolution.resolvedPath }, path_params: audit.extracted_path_params, audit };
   const res = await ghApi(env, planned.method, pathResolution.resolvedPath, planned.query, planned.body, owner, repo);
   return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactGithubData(res.data), rate_limit: res.rate_limit, audit };
