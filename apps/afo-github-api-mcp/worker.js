@@ -492,11 +492,14 @@ function isHex(value, length) {
 
 async function callCairnstoneTool(env, name, args) {
   const endpoint = env.CAIRNSTONE_MCP_URL || CAIRNSTONE_MCP_DEFAULT;
-  const res = await fetch(endpoint, {
+  const init = {
     method: "POST",
     headers: { "content-type": "application/json", "accept": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: crypto.randomUUID(), method: "tools/call", params: { name, arguments: args || {} } })
-  });
+  };
+  const res = env.CAIRNSTONE
+    ? await env.CAIRNSTONE.fetch(new Request("https://cairnstone.internal/mcp", init))
+    : await fetch(endpoint, init);
   if (!res.ok) throw new Error(`cairnstone_http_${res.status}`);
   const rpc = await res.json();
   if (rpc.error) throw new Error(`cairnstone_rpc_${rpc.error.code}:${rpc.error.message}`);
@@ -682,6 +685,7 @@ async function dispatch(name, args, env) {
         GITHUB_TOKEN: Boolean(env.GITHUB_TOKEN),
         SPEC: Boolean(env.SPEC),
         AI: Boolean(env.AI),
+        CAIRNSTONE_SERVICE: Boolean(env.CAIRNSTONE),
         CAIRNSTONE_MCP_URL: env.CAIRNSTONE_MCP_URL || CAIRNSTONE_MCP_DEFAULT,
         DEFAULT_OWNER: env.DEFAULT_OWNER || null,
         DEFAULT_REPO: env.DEFAULT_REPO || null
