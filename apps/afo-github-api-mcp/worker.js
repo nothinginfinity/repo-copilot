@@ -1,10 +1,11 @@
-const VERSION = "0.3.3";
+const VERSION = "0.4.1-v691";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id"
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Mcp-Session-Id",
+  "Access-Control-Expose-Headers": "Mcp-Session-Id"
 };
 
 const SPEC_URL = "https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.json";
@@ -65,6 +66,16 @@ const TOOLS = [
       },
       required: ["request"]
     }
+  },
+  {
+    name: "list_skills",
+    description: "List the canonical CairnStone-accepted skill bundle used by ask_github, including provenance and whether it came from live CairnStone or the last-known accepted R2 cache.",
+    inputSchema: { type: "object", properties: {}, required: [] }
+  },
+  {
+    name: "upsert_skill",
+    description: "Write a draft/experimental/staging skill only. Canonical accepted skill IDs are protected and cannot be overridden; production authority remains CairnStone path HEADs.",
+    inputSchema: { type: "object", properties: { skill: { type: "object" } }, required: ["skill"] }
   },
   {
     name: "seed_spec",
@@ -272,6 +283,10 @@ function endpointCandidates(index, request, limit = 8) {
 }
 
 function extractJson(text) {
+  if (text && typeof text === "object") {
+    if (text.choices && text.choices[0] && text.choices[0].message) text = text.choices[0].message.content;
+    else return text;
+  }
   const raw = String(text || "").trim();
   try { return JSON.parse(raw); } catch {}
   const match = raw.match(/\{[\s\S]*\}/);
@@ -279,8 +294,9 @@ function extractJson(text) {
   return null;
 }
 
-async function aiSelectGithub(env, request, candidates, args) {
+async function aiSelectGithub(env, request, candidates, args, skills = []) {
   if (!env.AI) return null;
+  const skillLines = (skills || []).map(skill => `ACCEPTED SKILL [${skill.skill_id} @ ${skill.skill_version}]:\n${skill.content}`);
   const prompt = [
     "You are selecting a GitHub REST API endpoint for an MCP worker.",
     "Return strict JSON only with keys: method,path,query,body,reason.",
@@ -289,6 +305,7 @@ async function aiSelectGithub(env, request, candidates, args) {
     `default_owner=${args.owner || env.DEFAULT_OWNER || ""}`,
     `default_repo=${args.repo || env.DEFAULT_REPO || ""}`,
     `request=${request}`,
+    ...skillLines,
     `candidates=${JSON.stringify(candidates).slice(0, 12000)}`
   ].join("\n");
   const out = await env.AI.run(AI_MODEL, { messages: [{ role: "user", content: prompt }], max_tokens: 900 });
