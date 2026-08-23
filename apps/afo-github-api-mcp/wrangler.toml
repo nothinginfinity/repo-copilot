@@ -9,6 +9,10 @@ bucket_name = "afo-site-content"
 [ai]
 binding = "AI"
 
+[[services]]
+binding = "CAIRNSTONE"
+service = "cairnstone-v6"
+
 [vars]
 DEFAULT_OWNER = "nothinginfinity"
 DEFAULT_REPO = "repo-copilot"
