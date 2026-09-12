@@ -1,4 +1,4 @@
-const VERSION = "0.4.1-v691";
+const VERSION = "0.5.0-v050";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
@@ -130,6 +130,33 @@ const TOOLS = [
       type: "object",
       properties: { owner: { type: "string" }, repo: { type: "string" }, run_id: { type: "number" } },
       required: ["run_id"]
+    }
+  },
+  {
+    name: "github_repo_snapshot",
+    description: "V0.5.0 read-only. Resolve a mutable GitHub ref (branch/tag/commit) exactly once to an immutable commit SHA and tree SHA, then resolve exact blob identity/size/presence for each requested path against that pinned commit. Produces a deterministic afo-github-evidence-v1 envelope with an evidence_digest that repeats identically for the same immutable repo state. Fails closed with github_snapshot_race if the mutable ref moves during compilation. Never mutates GitHub or CairnStone state.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        owner: { type: "string" },
+        repo: { type: "string" },
+        ref: { type: "string", description: "Branch, tag, or commit SHA. Defaults to the repo's default branch." },
+        paths: { type: "array", items: { type: "string" }, description: `Bounded list of paths to resolve blob evidence for (max ${MAX_SNAPSHOT_PATHS}). Omit for identity-only evidence.` }
+      },
+      required: []
+    }
+  },
+  {
+    name: "github_evidence",
+    description: "V0.5.0 read-only. Compact afo-github-evidence-v1 identity: resolves a mutable ref to its immutable commit SHA and tree SHA only (no per-path blob resolution). Cheaper than github_repo_snapshot when you just need a pinned, deterministic identity for a ref. Never mutates GitHub or CairnStone state.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        owner: { type: "string" },
+        repo: { type: "string" },
+        ref: { type: "string", description: "Branch, tag, or commit SHA. Defaults to the repo's default branch." }
+      },
+      required: []
     }
   }
 ];
@@ -673,6 +700,169 @@ async function askGithub(env, args) {
   return { ok: res.status >= 200 && res.status < 300, status: res.status, selected: planned, path_params: audit.extracted_path_params, final_resolved_path: audit.final_resolved_path, data: compactGithubData(res.data), rate_limit: res.rate_limit, audit };
 }
 
+// --- V0.5.0: Immutable Evidence / Repository Snapshot ---------------------
+// Read-only. Never mutates GitHub. Never mutates CairnStone accepted state.
+// Mutable refs (branch/tag) are navigation inputs only; durable evidence
+// resolves to immutable commit/tree/blob identities (afo-github-evidence-v1).
+
+const MAX_SNAPSHOT_PATHS = 25;
+
+function stableStringify(value) {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  const keys = Object.keys(value).sort();
+  return `{${keys.map(k => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(",")}}`;
+}
+
+// Isolated from ghApi() on purpose: evidence calls are GET-only and need
+// header-level provenance (ETag) that existing tools don't require, and
+// existing tools' {status,data,rate_limit,links} shape must not change.
+async function ghApiEvidence(env, path, query, owner, repo) {
+  if (!env.GITHUB_TOKEN) throw new Error("GITHUB_TOKEN binding missing");
+  let resolvedPath = path;
+  if (owner) resolvedPath = resolvedPath.replaceAll("{owner}", owner);
+  if (repo) resolvedPath = resolvedPath.replaceAll("{repo}", repo);
+  let url = `https://api.github.com${resolvedPath}`;
+  if (query && Object.keys(query).length) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) qs.set(k, String(v));
+    url += `${url.includes("?") ? "&" : "?"}${qs.toString()}`;
+  }
+  const res = await fetchWithRetry(url, { method: "GET", headers: ghHeaders(env, false) });
+  const text = await res.text();
+  let parsed;
+  try { parsed = text ? JSON.parse(text) : {}; } catch { parsed = { raw: text }; }
+  return {
+    status: res.status,
+    data: parsed,
+    rate_limit: extractRateLimit(res.headers),
+    etag: res.headers.get("etag") || null,
+    endpoint: resolvedPath
+  };
+}
+
+async function resolveCommitAndTreeEvidence(env, owner, repo, ref) {
+  const apiPath = "/repos/{owner}/{repo}/commits/" + encodeURIComponent(ref);
+  const call = await ghApiEvidence(env, apiPath, null, owner, repo);
+  if (call.status !== 200) return { ok: false, status: call.status, data: call.data, call };
+  return { ok: true, commit_sha: call.data.sha, tree_sha: call.data?.commit?.tree?.sha || null, call };
+}
+
+async function resolvePathEvidence(env, owner, repo, commitSha, path) {
+  const encodedPath = String(path).split("/").map(encodeURIComponent).join("/");
+  const apiPath = `/repos/{owner}/{repo}/contents/${encodedPath}`;
+  const call = await ghApiEvidence(env, apiPath, { ref: commitSha }, owner, repo);
+  if (call.status === 200) {
+    if (Array.isArray(call.data)) {
+      return { evidence: { path, type: "dir", blob_sha: null, bytes: null, presence: "present" }, call };
+    }
+    const d = call.data;
+    return {
+      evidence: { path, type: d.type || "file", blob_sha: d.sha || null, bytes: typeof d.size === "number" ? d.size : null, presence: "present" },
+      call
+    };
+  }
+  if (call.status === 404) return { evidence: { path, type: null, blob_sha: null, bytes: null, presence: "missing" }, call };
+  return { evidence: { path, type: null, blob_sha: null, bytes: null, presence: "error", error_status: call.status }, call };
+}
+
+function summarizeEvidenceCalls(calls) {
+  return calls.map(c => ({ method: "GET", endpoint: c.endpoint, status: c.status, etag: c.etag, purpose: c.purpose, rate_limit: c.rate_limit }));
+}
+
+async function githubEvidence(env, args) {
+  const { owner, repo } = resolveOwnerRepo(env, args);
+  if (!owner || !repo) throw new Error("owner and repo are required (no default set)");
+  const calls = [];
+  let usedRef = args.ref || null;
+  let defaultBranch = null;
+  if (!usedRef) {
+    const repoCall = await ghApiEvidence(env, "/repos/{owner}/{repo}", null, owner, repo);
+    calls.push({ ...repoCall, purpose: "resolve_default_branch" });
+    if (repoCall.status !== 200) return { ok: false, error_type: "repo_lookup_failed", status: repoCall.status, data: repoCall.data };
+    defaultBranch = repoCall.data.default_branch;
+    usedRef = defaultBranch;
+  }
+  const resolved = await resolveCommitAndTreeEvidence(env, owner, repo, usedRef);
+  calls.push({ ...resolved.call, purpose: "resolve_commit" });
+  if (!resolved.ok) return { ok: false, error_type: "ref_resolution_failed", status: resolved.status, data: resolved.data, requested_ref: args.ref || null, used_ref: usedRef };
+  const identity = {
+    schema: "afo-github-evidence-v1", owner, repo,
+    requested_ref: args.ref || null, used_ref: usedRef,
+    resolved: { commit_sha: resolved.commit_sha, tree_sha: resolved.tree_sha, default_branch: defaultBranch },
+    paths: [], coverage: { requested_path_count: 0, resolved_path_count: 0, truncated: false },
+    accepted_state_authority: false
+  };
+  const evidence_digest = await sha256Text(stableStringify(identity));
+  return {
+    ok: true, ...identity, evidence_digest,
+    observation_id: crypto.randomUUID(), observed_at: new Date().toISOString(),
+    github_operations: summarizeEvidenceCalls(calls),
+    note: "compact identity-only evidence (commit/tree only, no path resolution); use github_repo_snapshot for path-level blob evidence"
+  };
+}
+
+async function githubRepoSnapshot(env, args) {
+  const { owner, repo } = resolveOwnerRepo(env, args);
+  if (!owner || !repo) throw new Error("owner and repo are required (no default set)");
+  const requestedPaths = Array.isArray(args.paths) ? args.paths.filter(Boolean) : [];
+  if (requestedPaths.length > MAX_SNAPSHOT_PATHS) {
+    return { ok: false, error_type: "too_many_paths", max_paths: MAX_SNAPSHOT_PATHS, requested: requestedPaths.length };
+  }
+  const calls = [];
+  let usedRef = args.ref || null;
+  let repoInfo = null;
+  if (!usedRef) {
+    const repoCall = await ghApiEvidence(env, "/repos/{owner}/{repo}", null, owner, repo);
+    calls.push({ ...repoCall, purpose: "resolve_default_branch" });
+    if (repoCall.status !== 200) return { ok: false, error_type: "repo_lookup_failed", status: repoCall.status, data: repoCall.data };
+    repoInfo = repoCall.data;
+    usedRef = repoInfo.default_branch;
+  }
+  const first = await resolveCommitAndTreeEvidence(env, owner, repo, usedRef);
+  calls.push({ ...first.call, purpose: "resolve_commit_first" });
+  if (!first.ok) return { ok: false, error_type: "ref_resolution_failed", status: first.status, data: first.data, requested_ref: args.ref || null, used_ref: usedRef };
+  const commitSha = first.commit_sha;
+  const treeSha = first.tree_sha;
+
+  const pathResults = [];
+  for (const p of requestedPaths) {
+    const { evidence, call } = await resolvePathEvidence(env, owner, repo, commitSha, p);
+    pathResults.push(evidence);
+    calls.push({ ...call, purpose: `path_evidence:${p}` });
+  }
+
+  const refIsImmutable = isHex(usedRef, 40);
+  if (!refIsImmutable) {
+    const second = await resolveCommitAndTreeEvidence(env, owner, repo, usedRef);
+    calls.push({ ...second.call, purpose: "resolve_commit_recheck" });
+    if (second.ok && second.commit_sha !== commitSha) {
+      return {
+        ok: false, error_type: "github_snapshot_race", owner, repo,
+        requested_ref: args.ref || null, used_ref: usedRef,
+        first_resolved_commit: commitSha, second_resolved_commit: second.commit_sha,
+        accepted_state_authority: false
+      };
+    }
+  }
+
+  const identity = {
+    schema: "afo-github-evidence-v1", owner, repo,
+    requested_ref: args.ref || null, used_ref: usedRef,
+    resolved: { commit_sha: commitSha, tree_sha: treeSha, default_branch: repoInfo ? repoInfo.default_branch : null },
+    paths: pathResults,
+    coverage: { requested_path_count: requestedPaths.length, resolved_path_count: pathResults.length, truncated: false },
+    accepted_state_authority: false
+  };
+  const evidence_digest = await sha256Text(stableStringify(identity));
+  return {
+    ok: true, ...identity, evidence_digest,
+    observation_id: crypto.randomUUID(), observed_at: new Date().toISOString(),
+    github_operations: summarizeEvidenceCalls(calls),
+    race_checked: !refIsImmutable
+  };
+}
+
 async function dispatch(name, args, env) {
   if (name === "gh_api_status") {
     let seeded = false, count = null;
@@ -792,6 +982,9 @@ async function dispatch(name, args, env) {
       rate_limit: res.rate_limit
     };
   }
+
+  if (name === "github_repo_snapshot") return await githubRepoSnapshot(env, args || {});
+  if (name === "github_evidence") return await githubEvidence(env, args || {});
 
   if (name === "list_workflow_run_jobs") {
     const { run_id } = args;
