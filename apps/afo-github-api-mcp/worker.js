@@ -1,4 +1,4 @@
-const VERSION = "0.5.0-v050";
+const VERSION = "0.5.1-v051";
 const AI_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const WORKER_NAME = "afo-github-api-mcp";
 const CORS = {
@@ -157,6 +157,23 @@ const TOOLS = [
         ref: { type: "string", description: "Branch, tag, or commit SHA. Defaults to the repo's default branch." }
       },
       required: []
+    }
+  },
+  {
+    name: "github_plan_operation",
+    description: "V0.5.1 planning-only. Normalizes a GitHub REST call (method + path template + params) into a github-intent-v1 envelope: resolved path, risk_class (read/mutation), authorization requirement (automatic/human_confirmation — the same vocabulary as CairnStone's own tool broker), best-effort required-permission hints, an idempotency classification, and a recommended concurrency guard. Makes zero network calls to GitHub — use `call` or `ask_github` to actually execute. Mutation execution and CairnStone-authorized broker dispatch are not implemented until a later V0.5.x slice.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        method: { type: "string", description: "HTTP method: GET, POST, PUT, PATCH, or DELETE" },
+        path: { type: "string", description: "API path template, e.g. /repos/{owner}/{repo}/pulls/{pull_number}/merge" },
+        owner: { type: "string" },
+        repo: { type: "string" },
+        params: { type: "object", description: "Explicit values for any {placeholder} in path besides owner/repo, e.g. { pull_number: 42 }" },
+        query: { type: "object", description: "Query string parameters, included in the intent for reference only — not sent anywhere" },
+        body: { type: "object", description: "JSON request body, included in the intent for reference only — not sent anywhere" }
+      },
+      required: ["method", "path"]
     }
   }
 ];
@@ -863,6 +880,112 @@ async function githubRepoSnapshot(env, args) {
   };
 }
 
+// --- V0.5.1: Normalized GitHub Intent + CairnStone Broker Contract --------
+// Planning-only. Makes ZERO network calls to GitHub — classifies a proposed
+// operation into a github-intent-v1 envelope using the same risk_class /
+// authorization vocabulary as CairnStone's own tool broker (read/mutation,
+// automatic/human_confirmation), so a future slice can hand these off to a
+// real authorization flow without inventing a second taxonomy.
+
+const GITHUB_TAG_PERMISSION_HINTS = {
+  repos: ["contents", "metadata"],
+  branches: ["contents"],
+  pulls: ["pull_requests"],
+  issues: ["issues"],
+  actions: ["actions"],
+  releases: ["contents"],
+  orgs: ["organization_administration"],
+  webhooks: ["webhooks"],
+  checks: ["checks"],
+  git: ["contents"],
+  "code-scanning": ["security_events"],
+  "secret-scanning": ["security_events"],
+  dependabot: ["vulnerability_alerts"],
+  teams: ["organization_administration"],
+  users: ["metadata"]
+};
+
+function inferPermissionHints(tags, path) {
+  const hints = new Set();
+  for (const tag of tags || []) {
+    const mapped = GITHUB_TAG_PERMISSION_HINTS[String(tag).toLowerCase()];
+    if (mapped) mapped.forEach(h => hints.add(h));
+  }
+  if (!hints.size && /\/branches\/[^/]+\/protection/.test(path || "")) hints.add("administration");
+  if (!hints.size) hints.add("unknown");
+  return { scopes: Array.from(hints), best_effort: true, source: "tag_heuristic", verified_against_github_security_scheme: false };
+}
+
+function classifyIdempotency(method, path) {
+  if (["GET", "HEAD"].includes(method)) return { class: "idempotent", note: "safe read method" };
+  if (method === "DELETE") return { class: "idempotent_by_target_state", note: "repeated delete of an already-deleted resource returns 404 but end state is unchanged; do not treat a 404 retry as a failure" };
+  if (method === "PUT") return { class: "likely_idempotent", note: "many PUT endpoints (contents update, branch protection) are idempotent given an identical payload, but this is not guaranteed for every PUT endpoint" };
+  if (/\/dispatches$/.test(path || "")) return { class: "not_idempotent", note: "workflow_dispatch triggers a new run on every call" };
+  return { class: "not_idempotent", note: "POST/PATCH endpoints generally create or partially mutate state on each call; do not retry blindly" };
+}
+
+function classifyConcurrencyGuard(method, path) {
+  if (["GET", "HEAD"].includes(method)) return { recommended: false, mechanism: "not_applicable", note: "reads do not require a concurrency guard" };
+  if (/\/contents\//.test(path || "") && ["PUT", "DELETE"].includes(method)) {
+    return { recommended: true, mechanism: "expected_file_sha", note: "GitHub's Contents API requires the current blob sha for update/delete; fetch it first (e.g. via github_repo_snapshot) to guard against a stale write" };
+  }
+  if (/\/protection$/.test(path || "") && method === "PUT") {
+    return { recommended: true, mechanism: "none_available", note: "branch protection PUT has no native precondition; call github_evidence immediately before and after to detect concurrent changes out of band" };
+  }
+  return { recommended: true, mechanism: "none_available", note: "no known native precondition for this endpoint; consider pinning to an evidence_digest from github_repo_snapshot/github_evidence taken immediately before this operation" };
+}
+
+async function githubPlanOperation(env, args) {
+  const method = String(args.method || "").toUpperCase();
+  const path = String(args.path || "");
+  if (!method || !path) throw new Error("method and path are required");
+  const { owner, repo } = resolveOwnerRepo(env, args);
+  const presetParams = { ...(args.params || {}) };
+  if (owner && presetParams.owner === undefined) presetParams.owner = owner;
+  if (repo && presetParams.repo === undefined) presetParams.repo = repo;
+  const names = githubPathParamNames(path);
+  const resolvedPath = path.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, name) =>
+    (presetParams[name] !== undefined && presetParams[name] !== null && presetParams[name] !== "")
+      ? encodeGithubParam(name, presetParams[name]) : `{${name}}`);
+  const unresolvedParams = names.filter(name => presetParams[name] === undefined || presetParams[name] === null || presetParams[name] === "");
+
+  let specMatch = null;
+  try {
+    const index = await loadIndex(env);
+    const found = (index || []).find(e => e.method === method && e.path === path);
+    if (found) specMatch = { tags: found.tags, summary: found.summary, operationId: found.operationId };
+  } catch {}
+
+  const isMutation = mutationMethod(method);
+  const riskClass = isMutation ? "mutation" : "read";
+  const authorization = isMutation ? "human_confirmation" : "automatic";
+
+  return {
+    ok: true,
+    schema: "github-intent-v1",
+    intent_id: crypto.randomUUID(),
+    method,
+    endpoint_template: path,
+    resolved_path: resolvedPath,
+    unresolved_params: unresolvedParams,
+    target: { owner: owner || null, repo: repo || null },
+    query: args.query || {},
+    body: args.body || undefined,
+    spec_match: specMatch || { note: "no exact (method,path) match in the indexed OpenAPI spec; template may still be valid" },
+    risk_class: riskClass,
+    authorization: authorization,
+    required_github_permissions_hint: inferPermissionHints(specMatch ? specMatch.tags : [], path),
+    idempotency: classifyIdempotency(method, path),
+    concurrency_guard: classifyConcurrencyGuard(method, path),
+    executed: false,
+    accepted_state_authority: false,
+    created_at: new Date().toISOString(),
+    note: isMutation
+      ? "Planning only — never sent to GitHub. Mutation execution and CairnStone-authorized broker dispatch are not implemented until a later V0.5.x slice."
+      : "Planning only — never sent to GitHub. Reads remain eligible for automatic execution via the existing call/ask_github tools; this tool only classifies and normalizes, it does not execute."
+  };
+}
+
 async function dispatch(name, args, env) {
   if (name === "gh_api_status") {
     let seeded = false, count = null;
@@ -985,6 +1108,7 @@ async function dispatch(name, args, env) {
 
   if (name === "github_repo_snapshot") return await githubRepoSnapshot(env, args || {});
   if (name === "github_evidence") return await githubEvidence(env, args || {});
+  if (name === "github_plan_operation") return await githubPlanOperation(env, args || {});
 
   if (name === "list_workflow_run_jobs") {
     const { run_id } = args;
