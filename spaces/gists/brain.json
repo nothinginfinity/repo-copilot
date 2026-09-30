@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-09-30T23:50:00.000Z",
+  "generated_at": "2026-09-30T23:59:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 8,
+  "note_count": 9,
   "has_more": false,
-  "fortune_decode": "Agent second brain. Latest: 2026-09-30 user question on boot instructions.",
+  "fortune_decode": "User connected x.com Grok to another Grok account; old Alice STARTUP style preference is still attached.",
   "notes": [
     {
-      "title": "User asked which instructions are in use and why Alice boot ran",
+      "title": "How Alice boot instructions reached this Grok session",
       "date": "2026-09-30",
       "source": "Grok",
       "project": "repo-copilot",
-      "new_concepts": ["custom response style", "Alice boot injection", "user preference override"],
-      "decisions": "The STARTUP block requiring G-000-alice-boot.md + brain.json + inbox.md is a user-specified response-style preference applied on every turn.",
-      "open_questions": "Does the operator want this style disabled for general Grok chats?",
+      "new_concepts": ["account linking", "persisted response style", "custom instructions sync"],
+      "decisions": "The STARTUP harness is arriving as a user response-style preference on this x.com Grok chat, likely carried over when the user connected another Grok account.",
+      "open_questions": "Confirm whether Grok custom styles/memories sync on account connect and whether user wants the harness disabled here.",
       "cid": "grok/alice/jared",
       "gist_snapshot": null,
       "notion_url": null
