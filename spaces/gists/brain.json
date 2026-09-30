@@ -1,44 +1,22 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-09-30T23:46:00.000Z",
+  "generated_at": "2026-09-30T23:50:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 7,
+  "note_count": 8,
   "has_more": false,
-  "fortune_decode": "Agent second brain. 7 sessions distilled. Latest: 2026-09-30. Projects: repo-copilot. Top concepts: token-friendly languages, clean tokens, C#/.NET priors, agent compression.",
+  "fortune_decode": "Agent second brain. Latest: 2026-09-30 user question on boot instructions.",
   "notes": [
     {
-      "title": "Token-friendly languages and clean tokens for agents",
+      "title": "User asked which instructions are in use and why Alice boot ran",
       "date": "2026-09-30",
       "source": "Grok",
       "project": "repo-copilot",
-      "new_concepts": [
-        "clean tokens",
-        "shared priors",
-        "token-friendly language",
-        "C#/.NET conventions",
-        "agent code compression"
-      ],
-      "decisions": "C#/.NET currently strongest candidate among mainstream languages for deterministic reconstruction from training priors due to consistent conventions like Clean Architecture and analyzers.",
-      "open_questions": "How does Go or Rust compare on clean-token density vs C#?",
+      "new_concepts": ["custom response style", "Alice boot injection", "user preference override"],
+      "decisions": "The STARTUP block requiring G-000-alice-boot.md + brain.json + inbox.md is a user-specified response-style preference applied on every turn.",
+      "open_questions": "Does the operator want this style disabled for general Grok chats?",
       "cid": "grok/alice/jared",
       "gist_snapshot": null,
       "notion_url": null
-    },
-    {
-      "title": "archive_block op added to notion-ops",
-      "date": "2026-05-09",
-      "source": "Perplexity",
-      "project": "repo-copilot",
-      "new_concepts": [
-        "archive_block",
-        "notion-ops-soft-delete",
-        "unarchive-support"
-      ],
-      "decisions": "Added archive_block op — PATCH /blocks/{id} with archived:true; unarchive boolean supported",
-      "open_questions": "Should we also add a dedicated archive_database alias op for clarity?",
-      "cid": "bob/c2/jared",
-      "gist_snapshot": null,
-      "notion_url": "https://app.notion.com/p/archive_block-op-added-to-notion-ops-35bd927c9792814ca1d5d3153a97af62"
     }
   ]
 }
