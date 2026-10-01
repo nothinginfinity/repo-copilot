@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-01T00:01:00.000Z",
+  "generated_at": "2026-10-01T00:08:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 10,
+  "note_count": 11,
   "has_more": false,
-  "fortune_decode": "User wants to point Grok Alice boot at a newer harness. Two layers: Grok style preference + GitHub harness files.",
+  "fortune_decode": "This x.com Grok session has GitHub, GitZip, CairnStone family, Automations. No Cursor MCP in the tool list.",
   "notes": [
     {
-      "title": "Where to update the Alice harness for this Grok session",
+      "title": "Connectors visible to this x.com Grok session",
       "date": "2026-09-30",
       "source": "Grok",
       "project": "repo-copilot",
-      "new_concepts": ["harness update location", "Grok response style", "G-000 vs alice/BOOT.md"],
-      "decisions": "Live file this session loads is spaces/gists/G-000-alice-boot.md. Designed future home is nothinginfinity/agent-bridge alice/BOOT.md. The STARTUP paths themselves live in Grok custom response style on the linked account.",
-      "open_questions": "Path and name of the new harness the user already wrote.",
+      "new_concepts": ["connected tools", "GitHub MCP", "CairnStone", "GitZip", "no Cursor MCP"],
+      "decisions": "Session can use GitHub, GitHub API MCP, GitZip, CairnStone/CairnStone B/Mcp-Core/StoneCoreAuth, Automations. Cursor tools are not exposed here.",
+      "open_questions": null,
       "cid": "grok/alice/jared",
       "gist_snapshot": null,
       "notion_url": null
