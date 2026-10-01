@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-09-30T23:59:00.000Z",
+  "generated_at": "2026-10-01T00:01:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 9,
+  "note_count": 10,
   "has_more": false,
-  "fortune_decode": "User connected x.com Grok to another Grok account; old Alice STARTUP style preference is still attached.",
+  "fortune_decode": "User wants to point Grok Alice boot at a newer harness. Two layers: Grok style preference + GitHub harness files.",
   "notes": [
     {
-      "title": "How Alice boot instructions reached this Grok session",
+      "title": "Where to update the Alice harness for this Grok session",
       "date": "2026-09-30",
       "source": "Grok",
       "project": "repo-copilot",
-      "new_concepts": ["account linking", "persisted response style", "custom instructions sync"],
-      "decisions": "The STARTUP harness is arriving as a user response-style preference on this x.com Grok chat, likely carried over when the user connected another Grok account.",
-      "open_questions": "Confirm whether Grok custom styles/memories sync on account connect and whether user wants the harness disabled here.",
+      "new_concepts": ["harness update location", "Grok response style", "G-000 vs alice/BOOT.md"],
+      "decisions": "Live file this session loads is spaces/gists/G-000-alice-boot.md. Designed future home is nothinginfinity/agent-bridge alice/BOOT.md. The STARTUP paths themselves live in Grok custom response style on the linked account.",
+      "open_questions": "Path and name of the new harness the user already wrote.",
       "cid": "grok/alice/jared",
       "gist_snapshot": null,
       "notion_url": null
