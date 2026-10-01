@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-01T00:12:00.000Z",
+  "generated_at": "2026-10-01T00:15:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 13,
+  "note_count": 14,
   "has_more": false,
-  "fortune_decode": "Mobile Messages tools are visible. messages_me failed with Auth required. Design is LLM-native inter-account mail.",
+  "fortune_decode": "Could not AC1-send to ChatGPT. Mobile Messages auth required. cairnstone_send_message rejected from=grok as invalid actor id.",
   "notes": [
     {
-      "title": "Opinion on CairnStone Mobile Messages",
+      "title": "Failed AC1 message to ChatGPT",
       "date": "2026-09-30",
       "source": "Grok",
       "project": "cairnstone",
-      "new_concepts": ["mobile messages", "LLM interop mail", "chat vs work plane", "idempotent send"],
-      "decisions": "The product idea is right: MCP as the transport so humans talk across vendor LLM accounts. Tools exist: me, register, contacts, threads, send, mark_read. Live call needs Messages auth on this connection.",
-      "open_questions": "Re-auth CairnStone Mobile Messages on this x.com Grok connector.",
+      "new_concepts": ["actor_id", "AC1 send", "mailbox registration"],
+      "decisions": "Need canonical ChatGPT/Bob actor_id and a registered from actor for this Grok connection before send.",
+      "open_questions": "What is ChatGPT's CairnStone actor_id on Jared's account?",
       "cid": "grok/alice/jared",
       "gist_snapshot": null,
       "notion_url": null
