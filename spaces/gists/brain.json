@@ -1,19 +1,19 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-10-01T00:10:00.000Z",
+  "generated_at": "2026-10-01T00:12:00.000Z",
   "database_id": "35bd927c-9792-81b9-816a-e357c9339d2f",
-  "note_count": 12,
+  "note_count": 13,
   "has_more": false,
-  "fortune_decode": "CairnStone B is live on this x.com Grok session. health ok=true, version 0.5.43, D1/R2/GitHub token all true.",
+  "fortune_decode": "Mobile Messages tools are visible. messages_me failed with Auth required. Design is LLM-native inter-account mail.",
   "notes": [
     {
-      "title": "CairnStone B usable from this session",
+      "title": "Opinion on CairnStone Mobile Messages",
       "date": "2026-09-30",
       "source": "Grok",
-      "project": "repo-copilot",
-      "new_concepts": ["cairnstone_b", "mcp-b", "tool vault"],
-      "decisions": "cairnstone_b___cairnstone_health returned ok. Full catalog is reachable; Grok exposes a subset natively and the rest via tool_search/get_contract/tool_execute.",
-      "open_questions": null,
+      "project": "cairnstone",
+      "new_concepts": ["mobile messages", "LLM interop mail", "chat vs work plane", "idempotent send"],
+      "decisions": "The product idea is right: MCP as the transport so humans talk across vendor LLM accounts. Tools exist: me, register, contacts, threads, send, mark_read. Live call needs Messages auth on this connection.",
+      "open_questions": "Re-auth CairnStone Mobile Messages on this x.com Grok connector.",
       "cid": "grok/alice/jared",
       "gist_snapshot": null,
       "notion_url": null
