@@ -112,6 +112,18 @@ function buildIndex(spec) {
   return items;
 }
 
+// Restrict the FLRS credentials to zone Email Routing API operations.
+function selectCloudflareToken(env, method, resolvedPath) {
+  const isEmailRouting = /^\/zones\/[^/]+\/email\/routing(?:\/|$)/.test(resolvedPath);
+  if (!isEmailRouting) return env.CF_API_TOKEN;
+  const binding = method.toUpperCase() === "GET"
+    ? "FLRS-Email-Routing"
+    : "FLRS-Email-Routing-Zone-Edit";
+  const token = env[binding];
+  if (!token) throw new Error("Email Routing credential binding unavailable");
+  return token;
+}
+
 async function dispatch(name, args, env) {
   if (name === "api_status") {
     let meta = null;
@@ -123,6 +135,8 @@ async function dispatch(name, args, env) {
       bindings: {
         CF_ACCOUNT_ID: Boolean(env.CF_ACCOUNT_ID),
         CF_API_TOKEN: Boolean(env.CF_API_TOKEN),
+        FLRS_EMAIL_ROUTING: Boolean(env["FLRS-Email-Routing"]),
+        FLRS_EMAIL_ROUTING_ZONE_EDIT: Boolean(env["FLRS-Email-Routing-Zone-Edit"]),
         SPEC_KV: Boolean(env.SPEC_KV)
       },
       spec_index: meta || { built: false, note: "Run build_spec_index first" },
@@ -197,7 +211,7 @@ async function dispatch(name, args, env) {
     const opts = {
       method: method.toUpperCase(),
       headers: {
-        Authorization: `Bearer ${env.CF_API_TOKEN}`,
+        Authorization: `Bearer ${selectCloudflareToken(env, method, resolvedPath)}`,
         "Content-Type": "application/json"
       }
     };
