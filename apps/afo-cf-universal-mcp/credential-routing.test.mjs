@@ -19,11 +19,11 @@ async function invoke(method, path, env = bindings) {
   return result.json();
 }
 test("GET routing rules selects read credential", async () => {
-  await invoke("GET", "/zones/z/email/routing/rules");
+  await invoke("GET", "/zones/0c29fb4ead378390a43818a4b0a80857/email/routing/rules");
   assert.deepEqual(calls, ["Bearer read"]);
 });
 test("POST routing rules selects edit credential", async () => {
-  await invoke("POST", "/zones/z/email/routing/rules");
+  await invoke("POST", "/zones/0c29fb4ead378390a43818a4b0a80857/email/routing/rules");
   assert.deepEqual(calls, ["Bearer edit"]);
 });
 test("unrelated endpoints retain existing credential", async () => {
@@ -31,8 +31,13 @@ test("unrelated endpoints retain existing credential", async () => {
   assert.deepEqual(calls, ["Bearer general"]);
 });
 test("missing routing secret fails closed", async () => {
-  const result = await invoke("GET", "/zones/z/email/routing/rules",
+  const result = await invoke("GET", "/zones/0c29fb4ead378390a43818a4b0a80857/email/routing/rules",
     {CF_ACCOUNT_ID:"a", CF_API_TOKEN:"general"});
   assert.equal(calls.length, 0);
   assert.match(result.error.message, /credential binding unavailable/);
+});
+
+test("other zone Email Routing retains existing credential", async () => {
+  await invoke("GET", "/zones/otherzone/email/routing/rules");
+  assert.deepEqual(calls, ["Bearer general"]);
 });
