@@ -114,7 +114,7 @@ function buildIndex(spec) {
 
 // Restrict the FLRS credentials to zone Email Routing API operations.
 function selectCloudflareToken(env, method, resolvedPath) {
-  const isEmailRouting = /^\/zones\/[^/]+\/email\/routing(?:\/|$)/.test(resolvedPath);
+  const isEmailRouting = /^\/zones\/0c29fb4ead378390a43818a4b0a80857\/email\/routing(?:\/|$)/.test(resolvedPath);
   if (!isEmailRouting) return env.CF_API_TOKEN;
   const binding = method.toUpperCase() === "GET"
     ? "FLRS-Email-Routing"
